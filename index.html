@@ -657,11 +657,45 @@
       </div>
     </div>
 
-    <!-- ============ TAB: FACTURAS ============ -->
+    <!-- ============ TAB: FACTURAS DIAN ============ -->
     <div class="tc" id="inv-tab-factd">
-      <div class="panel-i">
-        <h3 style="font-size:14px;font-weight:700;margin:0 0 14px;color:#fff">Facturas DIAN <span id="fact-count" style="color:#94a3b8;font-weight:400;margin-left:8px;font-size:12px">—</span></h3>
-        <div id="fact-tree"><p style="color:#94a3b8;text-align:center;padding:30px"><span class="spinner"></span>Cargando facturas…</p></div>
+      <div class="panel-i" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <h3 style="font-size:14px;font-weight:700;margin:0;color:#fff">Facturas DIAN<span id="fact-count" style="color:#94a3b8;font-weight:400;margin-left:8px;font-size:12px">—</span></h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="fact-filter-anno" class="filter" style="min-width:110px"><option value="">Todos los años</option></select>
+            <select id="fact-filter-mes" class="filter" style="min-width:130px"><option value="">Todos los meses</option></select>
+            <input type="text" id="fact-filter-text" class="filter" placeholder="Filtrar por proveedor, N°, NIT…" style="min-width:240px">
+          </div>
+        </div>
+        <div id="fact-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px"></div>
+        <div style="overflow:auto;max-height:600px;border-radius:10px">
+          <table class="mat" id="fact-table">
+            <thead><tr><th style="width:110px">N° Factura</th><th style="width:110px">Fecha</th><th>Proveedor</th><th style="width:110px">NIT</th><th class="money" style="width:130px">Total</th><th style="width:90px">Acción</th></tr></thead>
+            <tbody id="fact-tbody"><tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8"><span class="spinner"></span>Cargando facturas DIAN…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DETALLE FACTURA DIAN -->
+    <div id="fact-modal" style="display:none;position:fixed;inset:0;background:rgba(10,15,30,.85);backdrop-filter:blur(8px);z-index:9000;align-items:center;justify-content:center;padding:20px">
+      <div style="background:linear-gradient(135deg,rgba(20,26,55,.95),rgba(15,20,40,.95));border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px 28px;max-width:920px;width:100%;max-height:88vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:240px">
+            <h3 id="fact-modal-title" style="font-size:22px;font-weight:700;margin:0;color:#fff;font-family:'Space Grotesk',sans-serif">—</h3>
+            <p id="fact-modal-prov" style="color:#a5b4fc;font-size:14px;margin:4px 0 0;font-weight:600">—</p>
+            <p id="fact-modal-meta" style="color:#94a3b8;font-size:12px;margin:4px 0 0">—</p>
+          </div>
+          <button class="back-btn" onclick="document.getElementById('fact-modal').style.display='none'">✕ Cerrar</button>
+        </div>
+        <div id="fact-modal-totals" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px;padding:14px;background:rgba(0,0,0,.25);border-radius:10px;border:1px solid rgba(255,255,255,.06)"></div>
+        <div style="overflow:auto;max-height:55vh;border-radius:10px">
+          <table class="mat" id="fact-modal-table">
+            <thead><tr><th class="num" style="width:50px">#</th><th>Descripción</th><th class="num" style="width:70px">Cant.</th><th style="width:60px">Und</th><th class="money" style="width:110px">Precio unit.</th><th class="money" style="width:120px">Total línea</th></tr></thead>
+            <tbody id="fact-modal-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1114,7 +1148,7 @@ document.querySelectorAll('#screen-inventario .ti .tb').forEach(b=>b.addEventLis
   document.getElementById('inv-tab-'+INV_TAB).classList.add('active');
   if(INV_TAB==='tabla'){ invLoadTablaPagina(); }
   else if(INV_TAB==='req'){ invLoadRequisiciones().then(invRenderRequisiciones); }
-  else if(INV_TAB==='factd'){ invLoadFacturas().then(invRenderFacturas); }
+  else if(INV_TAB==='factd'){ invLoadFacturas().then(() => { invPopulateFacturasFilters(); invRenderFacturas(); }); }
   else if(INV_DATA){ invRefreshCharts(); }
 }));
 ['inv-filter','inv-fuente-filter','inv-status-filter'].forEach(id=>{
@@ -1187,52 +1221,101 @@ function showReqDetail(id){
 async function invLoadFacturas(){
   if(FACT_DATA) return FACT_DATA;
   try{
-    const d = await jsonp(APPS_URL, {action:'facturas'});
+    const d = await jsonp(APPS_URL, {action:'facturas_dian'});
     FACT_DATA = d;
     return d;
   }catch(e){
-    document.getElementById('fact-tree').innerHTML = '<p style="color:#ef4444;text-align:center;padding:30px">Error: '+e.message+'</p>';
+    document.getElementById('fact-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#ef4444">Error: '+e.message+'</td></tr>';
     return null;
   }
 }
 
-function invRenderFacturas(){
-  if(!FACT_DATA || !FACT_DATA.por_anno) return;
-  const years = Object.keys(FACT_DATA.por_anno).sort().reverse();
-  let totalFiles = 0;
-  let html = '';
-  years.forEach(year => {
-    const months = FACT_DATA.por_anno[year];
-    const monthKeys = Object.keys(months).sort((a,b) => {
-      const ma = parseInt(a.match(/^(\d+)/)?.[1] || 0);
-      const mb = parseInt(b.match(/^(\d+)/)?.[1] || 0);
-      return mb - ma;
-    });
-    let yearCount = 0;
-    monthKeys.forEach(m => yearCount += months[m].length);
-    totalFiles += yearCount;
-    html += '<details open style="margin-bottom:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px"><summary style="cursor:pointer;padding:12px 14px;font-weight:700;color:#fff;font-size:15px;font-family:Space Grotesk,sans-serif">'+year+'<span style="color:#94a3b8;font-weight:400;font-size:12px;margin-left:10px">'+yearCount+' facturas</span></summary>';
-    monthKeys.forEach(mes => {
-      const files = months[mes];
-      html += '<details style="margin:6px 0 6px 12px;border-left:2px solid rgba(99,102,241,.3);padding-left:10px"><summary style="cursor:pointer;padding:6px 10px;font-weight:600;color:#a5b4fc;font-size:13px">'+mes+'<span style="color:#94a3b8;font-weight:400;margin-left:8px">('+files.length+')</span></summary>';
-      html += '<div style="padding:6px 12px 10px">';
-      files.forEach(f => {
-        const url = 'https://drive.google.com/file/d/'+f.id+'/view';
-        const sizeKB = f.size ? Math.round(f.size/1024)+' KB' : '';
-        const isPdf = (f.mime||'').includes('pdf');
-        html += '<a href="'+url+'" target="_blank" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin:3px 0;background:rgba(255,255,255,.03);border-radius:8px;color:#cbd5e1;text-decoration:none;font-size:13px;border:1px solid rgba(255,255,255,.05)" onmouseover="this.style.background=\'rgba(255,255,255,.07)\'" onmouseout="this.style.background=\'rgba(255,255,255,.03)\'">'+
-          '<span>'+(isPdf?'· ':'· ')+f.nombre+'</span>'+
-          '<span style="color:#94a3b8;font-size:11px">'+sizeKB+'</span>'+
-        '</a>';
-      });
-      html += '</div></details>';
-    });
-    html += '</details>';
+const moneyFmtCO = v => v == null || isNaN(v) ? '—' : '$' + Number(v).toLocaleString('es-CO', {maximumFractionDigits: 0});
+function fmtFecha(s){ if(!s) return '—'; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? (m[3]+'/'+m[2]+'/'+m[1]) : String(s); }
+
+function invPopulateFacturasFilters(){
+  if(!FACT_DATA || !FACT_DATA.facturas) return;
+  const annos = [...new Set(FACT_DATA.facturas.map(f => f.anno).filter(Boolean))].sort().reverse();
+  const meses = [...new Set(FACT_DATA.facturas.map(f => f.mes).filter(Boolean))].sort((a,b) => {
+    const ma = parseInt((a||'').match(/^(\d+)/)?.[1] || 0);
+    const mb = parseInt((b||'').match(/^(\d+)/)?.[1] || 0);
+    return ma - mb;
   });
-  if(totalFiles === 0) html = '<p style="color:#94a3b8;text-align:center;padding:30px">Sin facturas registradas.</p>';
-  document.getElementById('fact-count').textContent = '· '+totalFiles+' archivos en total';
-  document.getElementById('fact-tree').innerHTML = html;
+  const selA = document.getElementById('fact-filter-anno');
+  const selM = document.getElementById('fact-filter-mes');
+  selA.innerHTML = '<option value="">Todos los años</option>' + annos.map(a => '<option value="'+a+'">'+a+'</option>').join('');
+  selM.innerHTML = '<option value="">Todos los meses</option>' + meses.map(m => '<option value="'+m+'">'+m+'</option>').join('');
 }
+
+function invRenderFacturas(){
+  if(!FACT_DATA || !FACT_DATA.facturas) return;
+  const fAnno = document.getElementById('fact-filter-anno').value;
+  const fMes = document.getElementById('fact-filter-mes').value;
+  const fTxt = (document.getElementById('fact-filter-text').value || '').toLowerCase();
+  const rows = FACT_DATA.facturas.filter(f => {
+    if(fAnno && f.anno !== fAnno) return false;
+    if(fMes && f.mes !== fMes) return false;
+    if(fTxt){
+      const s = (f.numero + ' ' + f.proveedor + ' ' + f.nit).toLowerCase();
+      if(s.indexOf(fTxt) < 0) return false;
+    }
+    return true;
+  });
+  // Summary cards
+  const totalGen = rows.reduce((s,f) => s + (Number(f.total)||0), 0);
+  const ivaGen = rows.reduce((s,f) => s + (Number(f.iva)||0), 0);
+  const provsUnicos = new Set(rows.map(f => f.nit).filter(Boolean)).size;
+  document.getElementById('fact-summary').innerHTML =
+    '<div class="kpi-card" style="--acc:#22d3ee;padding:12px"><div class="l">Facturas</div><div class="v">'+rows.length.toLocaleString('es-CO')+'</div></div>' +
+    '<div class="kpi-card" style="--acc:#10b981;padding:12px"><div class="l">Total facturado</div><div class="v" style="font-size:18px">'+moneyFmtCO(totalGen)+'</div></div>' +
+    '<div class="kpi-card" style="--acc:#a855f7;padding:12px"><div class="l">IVA total</div><div class="v" style="font-size:18px">'+moneyFmtCO(ivaGen)+'</div></div>' +
+    '<div class="kpi-card" style="--acc:#ec4899;padding:12px"><div class="l">Proveedores</div><div class="v">'+provsUnicos+'</div></div>';
+
+  document.getElementById('fact-count').textContent = '· '+rows.length+' de '+FACT_DATA.facturas.length;
+  const tbody = document.getElementById('fact-tbody');
+  if(rows.length === 0){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8">Sin facturas que coincidan con el filtro</td></tr>';
+    return;
+  }
+  // Mostrar máx 200 por rendimiento
+  const visible = rows.slice(0, 200);
+  tbody.innerHTML = visible.map(f =>
+    '<tr>' +
+      '<td style="font-weight:700;color:#a5b4fc">'+(f.numero||'—')+'</td>' +
+      '<td>'+fmtFecha(f.fecha)+'</td>' +
+      '<td>'+(f.proveedor||'—')+'</td>' +
+      '<td style="font-size:11px;color:#94a3b8">'+(f.nit||'—')+'</td>' +
+      '<td class="money">'+moneyFmtCO(f.total)+'</td>' +
+      '<td><button class="back-btn" style="padding:5px 10px;font-size:12px" onclick="showFactDetail(\''+f.id.replace(/\'/g,"\\'")+'\')">Ver detalle</button></td>' +
+    '</tr>'
+  ).join('') + (rows.length > 200 ? '<tr><td colspan="6" style="text-align:center;padding:14px;color:#94a3b8;font-size:12px">Mostrando 200 de '+rows.length+' · usa filtros para refinar</td></tr>' : '');
+}
+
+function showFactDetail(id){
+  if(!FACT_DATA) return;
+  const f = FACT_DATA.facturas.find(x => x.id === id);
+  const items = FACT_DATA.items_por_factura[id] || [];
+  if(!f) return;
+  document.getElementById('fact-modal-title').textContent = 'Factura ' + (f.numero || '—');
+  document.getElementById('fact-modal-prov').textContent = f.proveedor || '—';
+  document.getElementById('fact-modal-meta').textContent = 'NIT ' + (f.nit || '—') + ' · Emitida ' + fmtFecha(f.fecha) + ' · ' + items.length + ' item(s)';
+  document.getElementById('fact-modal-totals').innerHTML =
+    '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:700">Subtotal</div><div style="font-size:18px;font-weight:700;color:#fff;font-family:Space Grotesk,sans-serif">'+moneyFmtCO(f.subtotal)+'</div></div>' +
+    '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:700">IVA</div><div style="font-size:18px;font-weight:700;color:#a5b4fc;font-family:Space Grotesk,sans-serif">'+moneyFmtCO(f.iva)+'</div></div>' +
+    '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:700">Total a pagar</div><div style="font-size:20px;font-weight:700;color:#10b981;font-family:Space Grotesk,sans-serif">'+moneyFmtCO(f.total)+'</div></div>';
+  document.getElementById('fact-modal-tbody').innerHTML = items.length ?
+    items.map(it => '<tr><td class="num">'+(it.linea||'—')+'</td><td>'+(it.descripcion||'—')+'</td><td class="num">'+Number(it.cantidad||0).toLocaleString('es-CO')+'</td><td>'+(it.unidad||'')+'</td><td class="money">'+moneyFmtCO(it.precio_unit)+'</td><td class="money">'+moneyFmtCO(it.total_linea)+'</td></tr>').join('') :
+    '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Sin items capturados en el XML</td></tr>';
+  document.getElementById('fact-modal').style.display = 'flex';
+}
+
+// Hooks de filtros facturas DIAN
+window.addEventListener('DOMContentLoaded', () => {
+  ['fact-filter-anno','fact-filter-mes','fact-filter-text'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener(id === 'fact-filter-text' ? 'input' : 'change', invRenderFacturas);
+  });
+});
 
 // Hook req filter
 window.addEventListener('DOMContentLoaded', () => {
