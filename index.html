@@ -261,7 +261,18 @@
       </div>
     </div>
 
-    <div class="menu-footer">
+    <!-- Panel Hoy debes hacer · FASE B -->
+  <div id="acciones-hoy-wrap" style="max-width:1280px;margin:14px auto 0;padding:0 28px;display:none">
+    <div style="background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(245,158,11,.04));backdrop-filter:blur(20px);border:1px solid rgba(245,158,11,.2);border-radius:18px;padding:22px 26px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <h3 style="font-family:Space Grotesk,sans-serif;font-size:18px;font-weight:700;margin:0;color:#fff">Hoy debes atender<span id="acciones-hoy-count" style="color:#fbbf24;font-weight:400;margin-left:10px;font-size:13px">—</span></h3>
+        <span style="font-size:11px;color:#94a3b8">Prioridades automáticas según inventario + indicadores</span>
+      </div>
+      <div id="acciones-hoy-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px"></div>
+    </div>
+  </div>
+
+  <div class="menu-footer">
       <span class="menu-status-pill"><span class="dot"></span><span id="menu-status">Conectado · datos en vivo</span></span>
     </div>
   </div>
@@ -305,6 +316,27 @@
       <div class="kpi-i"><div class="label">Utilidad al Corte</div><div class="value" id="kpi-util">—</div><div class="sub" id="kpi-util-sub">—</div></div>
       <div class="kpi-i"><div class="label">Proyección Final</div><div class="value" id="kpi-proy">—</div><div class="sub" id="kpi-proy-sub">—</div></div>
     </div>
+
+    <!-- KPIs avanzados FASE B -->
+    <div class="grid kpis4" style="margin-bottom:14px">
+      <div class="kpi-i" style="border-left:3px solid #06b6d4"><div class="label">% Avance Global</div><div class="value" id="kpi-pctavance">—</div><div class="sub" id="kpi-pctavance-sub">—</div></div>
+      <div class="kpi-i" style="border-left:3px solid #a855f7"><div class="label">Margen Total</div><div class="value" id="kpi-margen">—</div><div class="sub" id="kpi-margen-sub">—</div></div>
+      <div class="kpi-i" style="border-left:3px solid #ef4444"><div class="label">Actividades Críticas</div><div class="value" id="kpi-criticas">—</div><div class="sub">margen negativo</div></div>
+      <div class="kpi-i" style="border-left:3px solid #f59e0b"><div class="label">Top Sobrecosto Unit.</div><div class="value" id="kpi-topcosto">—</div><div class="sub" id="kpi-topcosto-sub">—</div></div>
+    </div>
+
+    <!-- Curva S + Pareto FASE B -->
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" id="ind-curvas-grid">
+      <div class="panel">
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">Curva S · Avance acumulado por corte</h3>
+        <div style="position:relative;height:280px"><canvas id="ind-chart-curvas"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">Pareto · Top 15 actividades por valor</h3>
+        <div style="position:relative;height:280px"><canvas id="ind-chart-pareto"></canvas></div>
+      </div>
+    </div>
+    <style>@media(max-width:900px){#ind-curvas-grid{grid-template-columns:1fr!important}}</style>
 
     <!-- Categorías -->
     <div class="panel" style="margin-bottom:14px">
@@ -589,6 +621,8 @@ async function boot(){
       return B.localeCompare(A);
     });
     IND_LATEST = IND_CORTES[0];
+    // Disparar panel acciones cuando hay data
+    setTimeout(function(){ try{ renderAccionesHoy(); }catch(e){console.warn(e);} }, 800);
     IND_CURRENT = IND_LATEST;
     renderIndCorteSelect();
     renderIndCorte();
@@ -687,6 +721,11 @@ function renderIndCorte(){
       '<td><span class="pill">'+(a.cat_nombre? a.cat_nombre.substring(0,18):'—')+'</span></td>'+
     '</tr>';
   }).join('');
+
+  // FASE B
+  try{ renderKpisAvanzados(); }catch(e){console.warn('kpis avanzados:',e);}
+  try{ renderCurvaS(); }catch(e){console.warn('curva S:',e);}
+  try{ renderPareto(); }catch(e){console.warn('pareto:',e);}
 }
 
 /* ====================== INVENTARIO (vista) ====================== */
@@ -1048,6 +1087,157 @@ window.addEventListener('DOMContentLoaded', () => {
   const fi = document.getElementById('req-filter');
   if(fi) fi.addEventListener('input', invRenderRequisiciones);
 });
+
+/* ====================== FASE B · CURVA S + PARETO + ACCIONES ====================== */
+let CHART_CURVAS = null;
+let CHART_PARETO = null;
+
+function calcAvanceCorte(corteData){
+  // % avance promedio ponderado: sum(cant_ejec * costo_contr_u) / sum(cant_contr * costo_contr_u)
+  let exec = 0, contr = 0;
+  (corteData.actividades||[]).forEach(a => {
+    const cu = Number(a.costo_contr_u)||0;
+    contr += (Number(a.cant_contr)||0) * cu;
+    exec += (Number(a.cant_ejec)||0) * cu;
+  });
+  return contr > 0 ? (exec / contr) : 0;
+}
+
+function renderCurvaS(){
+  if(!IND_DATA || !IND_CORTES.length) return;
+  // Ordenar cortes cronológicamente (DD-MM-YYYY)
+  const cortes = IND_CORTES.slice().sort((a,b)=>{
+    const A = a.split('-').reverse().join('');
+    const B = b.split('-').reverse().join('');
+    return A.localeCompare(B);
+  });
+  const labels = cortes.map(c => c.substring(0,5));  // dd-mm
+  const valores = cortes.map(c => calcAvanceCorte(IND_DATA[c]) * 100);
+  // Planeada lineal (simple): de 0% a 100% sobre los cortes
+  const planeada = cortes.map((_,i) => ((i+1)/cortes.length)*100);
+
+  const ctx = document.getElementById('ind-chart-curvas');
+  if(!ctx) return;
+  if(CHART_CURVAS) CHART_CURVAS.destroy();
+  CHART_CURVAS = new Chart(ctx, {
+    type:'line',
+    data:{ labels: labels, datasets:[
+      { label:'Avance real %', data:valores, borderColor:'#22d3ee', backgroundColor:'rgba(34,211,238,.15)', borderWidth:2.5, tension:.35, fill:true, pointRadius:4, pointBackgroundColor:'#22d3ee' },
+      { label:'Avance planeado %', data:planeada, borderColor:'#a5b4fc', borderWidth:2, borderDash:[5,5], tension:0, fill:false, pointRadius:0 }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#cbd5e1', font:{size:11}}} },
+      scales:{
+        x:{ ticks:{color:'#94a3b8', font:{size:10}}, grid:{color:'rgba(255,255,255,.04)'} },
+        y:{ ticks:{color:'#94a3b8', font:{size:10}, callback:v=>v+'%'}, grid:{color:'rgba(255,255,255,.06)'}, min:0 }
+      }
+    }
+  });
+}
+
+function renderPareto(){
+  if(!IND_DATA || !IND_CURRENT) return;
+  const d = IND_DATA[IND_CURRENT];
+  if(!d || !d.actividades) return;
+  // Top 15 por total_contr
+  const top = d.actividades.slice().sort((a,b)=>(b.total_contr||0)-(a.total_contr||0)).slice(0,15);
+  const total = d.actividades.reduce((s,a)=>s+(a.total_contr||0),0);
+  let acc = 0;
+  const acumPct = top.map(a => { acc += (a.total_contr||0); return total>0 ? (acc/total*100) : 0; });
+  const labels = top.map(a => (a.actividad||'').substring(0,22) + ((a.actividad||'').length>22?'…':''));
+  const vals = top.map(a => a.total_contr||0);
+
+  const ctx = document.getElementById('ind-chart-pareto');
+  if(!ctx) return;
+  if(CHART_PARETO) CHART_PARETO.destroy();
+  CHART_PARETO = new Chart(ctx, {
+    data:{ labels: labels, datasets:[
+      { type:'bar', label:'Valor contractual', data:vals, backgroundColor:'rgba(168,85,247,.6)', borderColor:'#a855f7', borderWidth:1, yAxisID:'y' },
+      { type:'line', label:'% acumulado', data:acumPct, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', borderWidth:2.5, tension:.3, pointRadius:3, pointBackgroundColor:'#f59e0b', yAxisID:'y1', fill:false }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{labels:{color:'#cbd5e1', font:{size:11}}} },
+      scales:{
+        y:{ ticks:{color:'#94a3b8', font:{size:9}}, grid:{color:'rgba(255,255,255,.04)'} },
+        x:{ ticks:{color:'#94a3b8', font:{size:9}, callback:v=>{const ab=Math.abs(v);if(ab>=1e9)return '$'+(v/1e9).toFixed(1)+'B';if(ab>=1e6)return '$'+(v/1e6).toFixed(0)+'M';if(ab>=1e3)return '$'+(v/1e3).toFixed(0)+'K';return '$'+v;}}, grid:{color:'rgba(255,255,255,.06)'} },
+        y1:{ position:'right', display:false }
+      }
+    }
+  });
+}
+
+function renderKpisAvanzados(){
+  if(!IND_DATA || !IND_CURRENT) return;
+  const d = IND_DATA[IND_CURRENT];
+  if(!d) return;
+  const acts = d.actividades||[];
+  // % Avance global
+  const avance = calcAvanceCorte(d) * 100;
+  document.getElementById('kpi-pctavance').textContent = avance.toFixed(1) + '%';
+  document.getElementById('kpi-pctavance-sub').textContent = 'Ponderado por valor';
+  // Margen total
+  const totT = d.totales['COSTO TOTAL']||{};
+  const totalContr = totT.total_contr || 0;
+  const proyFinal = totT.proy_final || 0;
+  const margenPct = totalContr > 0 ? (proyFinal/totalContr*100) : 0;
+  const margenEl = document.getElementById('kpi-margen');
+  margenEl.innerHTML = (proyFinal >= 0 ? '<span class="pos">' : '<span class="neg">') + margenPct.toFixed(1) + '%</span>';
+  document.getElementById('kpi-margen-sub').textContent = moneyShort(proyFinal);
+  // Actividades críticas (margen negativo)
+  const criticas = acts.filter(a => (Number(a.util_perd)||0) < 0).length;
+  const critEl = document.getElementById('kpi-criticas');
+  critEl.innerHTML = '<span class="' + (criticas>5?'neg':(criticas>0?'warn':'pos')) + '">' + criticas + '</span>';
+  // Top sobrecosto unitario
+  const topSob = acts.slice().sort((a,b)=>(Number(b.dif_unit)||0)-(Number(a.dif_unit)||0))[0];
+  if(topSob){
+    document.getElementById('kpi-topcosto').innerHTML = '<span class="neg">' + money(topSob.dif_unit) + '</span>';
+    document.getElementById('kpi-topcosto-sub').textContent = (topSob.actividad||'').substring(0,28);
+  }
+}
+
+async function renderAccionesHoy(){
+  const wrap = document.getElementById('acciones-hoy-wrap');
+  if(!wrap) return;
+  let actions = [];
+  // 1. Alertas inventario (vía endpoint monaco_metricas)
+  try{
+    const m = await jsonp(APPS_URL, {action:'monaco_metricas'});
+    let bajos = 0, agotados = 0, emitirOC = 0;
+    Object.keys(m||{}).forEach(cod => {
+      const r = m[cod];
+      if(r.estado_dinamico === 'BAJO') bajos++;
+      if(r.estado_dinamico === 'AGOTADO') agotados++;
+      if(r.emitir_oc) emitirOC++;
+    });
+    if(agotados > 0) actions.push({color:'#ef4444', icon:'!', title:agotados+' SKUs agotados', desc:'Stock = 0, frenan obra'});
+    if(bajos > 0) actions.push({color:'#f59e0b', icon:'·', title:bajos+' SKUs en stock bajo', desc:'Por debajo del mínimo dinámico'});
+    if(emitirOC > 0) actions.push({color:'#a855f7', icon:'·', title:emitirOC+' órdenes de compra urgentes', desc:'Tiempo de agotamiento ≤ 20 días'});
+  }catch(e){}
+  // 2. Actividades críticas (margen negativo, top 3)
+  try{
+    if(IND_DATA && IND_CURRENT){
+      const acts = (IND_DATA[IND_CURRENT].actividades||[]).filter(a=>(Number(a.util_perd)||0)<0);
+      if(acts.length > 0){
+        const peor = acts.sort((a,b)=>(Number(a.util_perd)||0)-(Number(b.util_perd)||0))[0];
+        actions.push({color:'#ec4899', icon:'·', title:acts.length+' actividades con pérdida', desc:'Peor: '+(peor.actividad||'').substring(0,30)+' ('+moneyShort(peor.util_perd)+')'});
+      }
+    }
+  }catch(e){}
+  if(actions.length === 0){
+    wrap.style.display = 'none';
+    return;
+  }
+  document.getElementById('acciones-hoy-count').textContent = '· '+actions.length+' situación(es) a revisar';
+  document.getElementById('acciones-hoy-list').innerHTML = actions.map(a =>
+    '<div style="background:rgba(0,0,0,.25);border:1px solid '+a.color+'40;border-left:3px solid '+a.color+';border-radius:10px;padding:12px 14px">' +
+    '<div style="display:flex;align-items:center;gap:8px;color:'+a.color+';font-weight:700;font-size:14px;margin-bottom:4px"><span style="font-size:18px">'+a.icon+'</span>'+a.title+'</div>' +
+    '<div style="color:#cbd5e1;font-size:12px;line-height:1.4">'+a.desc+'</div>' +
+    '</div>'
+  ).join('');
+  wrap.style.display = 'block';
+}
 
 /* ====================== LOGIN GATE ====================== */
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
