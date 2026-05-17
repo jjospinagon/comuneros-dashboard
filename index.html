@@ -250,83 +250,89 @@
           <path d="M0,50 L20,46 L40,42 L60,38 L80,32 L100,30 L120,24 L140,18 L160,15 L180,12 L200,8" stroke="#22d3ee" stroke-width="2" fill="none"/>
         </svg>
       </div>
-      <div class="lg-kpis">
-        <div class="lg-kpi"><div class="v" style="color:rgba(255,255,255,.35);letter-spacing:4px">— — —</div><div class="l">Valor vigente</div></div>
-        <div class="lg-kpi"><div class="v" style="color:rgba(255,255,255,.35);letter-spacing:4px">— —</div><div class="l">% Avance</div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07)">
+        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">EVM en vivo</span>
+        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Multi-corte</span>
+        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Curva S</span>
+        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Pareto 80-20</span>
+        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">SPI / CPI</span>
+        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Proyección EAC</span>
       </div>
-      <div style="margin-top:14px;padding:10px 12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.2);border-radius:8px;font-size:11px;color:#67e8f9;text-align:center;letter-spacing:.05em">🔒 Ingresa para ver valores reales</div>
     </div>
 
     <!-- Centro: Logo M + Form -->
     <div class="lg-center">
-      <svg class="m-logo" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg">
+      <svg class="m-logo" viewBox="0 0 260 240" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="mStroke" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#22d3ee"/>
-            <stop offset=".5" stop-color="#a78bfa"/>
-            <stop offset="1" stop-color="#ec4899"/>
+          <linearGradient id="mStroke" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#67e8f9"/>
+            <stop offset=".5" stop-color="#22d3ee"/>
+            <stop offset="1" stop-color="#0891b2"/>
           </linearGradient>
           <radialGradient id="dotCore" cx=".5" cy=".5" r=".5">
-            <stop offset="0" stop-color="#67e8f9"/>
-            <stop offset=".4" stop-color="#22d3ee"/>
+            <stop offset="0" stop-color="#ecfeff"/>
+            <stop offset=".25" stop-color="#67e8f9"/>
+            <stop offset=".7" stop-color="#22d3ee"/>
             <stop offset="1" stop-color="#0891b2" stop-opacity=".3"/>
           </radialGradient>
           <radialGradient id="dotGlow" cx=".5" cy=".5" r=".5">
-            <stop offset="0" stop-color="#22d3ee" stop-opacity=".5"/>
+            <stop offset="0" stop-color="#22d3ee" stop-opacity=".75"/>
+            <stop offset=".4" stop-color="#22d3ee" stop-opacity=".25"/>
             <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
           </radialGradient>
-          <filter id="mGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <filter id="mGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="blur1"/>
+            <feMerge><feMergeNode in="blur1"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
-        <!-- Trazado principal de la M con stroke uniforme -->
-        <g stroke="url(#mStroke)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#mGlow)">
-          <!-- Pie izquierdo subiendo al pico izquierdo -->
-          <line x1="40" y1="190" x2="40" y2="35"/>
-          <!-- Pico izquierdo al valle central -->
-          <line x1="40" y1="35" x2="120" y2="115"/>
-          <!-- Valle al pico derecho -->
-          <line x1="120" y1="115" x2="200" y2="35"/>
-          <!-- Pico derecho bajando al pie derecho -->
-          <line x1="200" y1="35" x2="200" y2="190"/>
+        <!-- Trazado principal de la M: 4 líneas que forman 2 pies verticales + 2 diagonales del valle -->
+        <g stroke="url(#mStroke)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#mGlow)">
+          <line x1="45" y1="210" x2="45" y2="30"/>
+          <line x1="45" y1="30" x2="130" y2="135"/>
+          <line x1="130" y1="135" x2="215" y2="30"/>
+          <line x1="215" y1="30" x2="215" y2="210"/>
         </g>
-        <!-- Glow detrás de cada punto -->
+        <!-- Halos de glow detrás de cada vértice principal -->
         <g fill="url(#dotGlow)">
-          <circle cx="40" cy="35" r="16"/>
-          <circle cx="200" cy="35" r="16"/>
-          <circle cx="40" cy="190" r="14"/>
-          <circle cx="200" cy="190" r="14"/>
-          <circle cx="120" cy="115" r="14"/>
+          <circle cx="45" cy="30" r="22"/>
+          <circle cx="215" cy="30" r="22"/>
+          <circle cx="45" cy="210" r="18"/>
+          <circle cx="215" cy="210" r="18"/>
+          <circle cx="130" cy="135" r="20"/>
         </g>
-        <!-- Núcleo brillante de cada punto -->
-        <g fill="url(#dotCore)" stroke="#ecfeff" stroke-width="1.5">
-          <!-- 4 esquinas + valle central (más grandes) -->
-          <circle cx="40" cy="35" r="6"/>
-          <circle cx="200" cy="35" r="6"/>
-          <circle cx="40" cy="190" r="5.5"/>
-          <circle cx="200" cy="190" r="5.5"/>
-          <circle cx="120" cy="115" r="6"/>
+        <!-- Núcleos principales (5 vértices) -->
+        <g stroke="#ecfeff" stroke-width="1.5">
+          <circle cx="45" cy="30" r="8" fill="url(#dotCore)"/>
+          <circle cx="215" cy="30" r="8" fill="url(#dotCore)"/>
+          <circle cx="45" cy="210" r="7" fill="url(#dotCore)"/>
+          <circle cx="215" cy="210" r="7" fill="url(#dotCore)"/>
+          <circle cx="130" cy="135" r="8" fill="url(#dotCore)"/>
         </g>
-        <!-- Puntos secundarios (más pequeños) en los puntos medios de las diagonales -->
-        <g fill="#67e8f9" opacity=".7">
-          <circle cx="80" cy="75" r="3"/>
-          <circle cx="160" cy="75" r="3"/>
+        <!-- Puntos secundarios en los recorridos (estilo blueprint, como en la imagen) -->
+        <g fill="#67e8f9" stroke="#ecfeff" stroke-width=".8">
+          <!-- Punto medio del pie izquierdo -->
+          <circle cx="45" cy="120" r="4"/>
+          <!-- Punto medio del pie derecho -->
+          <circle cx="215" cy="120" r="4"/>
+          <!-- Punto medio diagonal izquierda -->
+          <circle cx="87" cy="82" r="4"/>
+          <!-- Punto medio diagonal derecha -->
+          <circle cx="173" cy="82" r="4"/>
         </g>
       </svg>
       <div class="lg-card">
         <div class="m-mini">
-          <svg width="40" height="38" viewBox="0 0 240 220">
-            <g stroke="#22d3ee" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="40" y1="190" x2="40" y2="35"/>
-              <line x1="40" y1="35" x2="120" y2="115"/>
-              <line x1="120" y1="115" x2="200" y2="35"/>
-              <line x1="200" y1="35" x2="200" y2="190"/>
+          <svg width="42" height="40" viewBox="0 0 260 240">
+            <g stroke="#22d3ee" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="45" y1="210" x2="45" y2="30"/>
+              <line x1="45" y1="30" x2="130" y2="135"/>
+              <line x1="130" y1="135" x2="215" y2="30"/>
+              <line x1="215" y1="30" x2="215" y2="210"/>
             </g>
             <g fill="#67e8f9">
-              <circle cx="40" cy="35" r="9"/>
-              <circle cx="200" cy="35" r="9"/>
-              <circle cx="120" cy="115" r="8"/>
+              <circle cx="45" cy="30" r="11"/>
+              <circle cx="215" cy="30" r="11"/>
+              <circle cx="130" cy="135" r="10"/>
             </g>
           </svg>
         </div>
@@ -358,11 +364,14 @@
           <path d="M0,40 L20,38 L40,30 L60,32 L80,22 L100,20 L120,14 L140,16 L160,10 L180,8 L200,6" stroke="#ec4899" stroke-width="2" fill="none"/>
         </svg>
       </div>
-      <div class="lg-kpis">
-        <div class="lg-kpi"><div class="v" style="color:rgba(255,255,255,.35);letter-spacing:4px">— — —</div><div class="l">Valor consol.</div></div>
-        <div class="lg-kpi"><div class="v" style="color:rgba(255,255,255,.35);letter-spacing:4px">— —</div><div class="l">Restock</div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07)">
+        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Facturas DIAN</span>
+        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">F-ALM-04 sync</span>
+        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Stock dinámico</span>
+        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Alertas auto</span>
+        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Requisiciones</span>
+        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Lead time real</span>
       </div>
-      <div style="margin-top:14px;padding:10px 12px;background:rgba(236,72,153,.08);border:1px solid rgba(236,72,153,.2);border-radius:8px;font-size:11px;color:#f9a8d4;text-align:center;letter-spacing:.05em">🔒 Ingresa para ver valores reales</div>
     </div>
   </div>
 </div>
