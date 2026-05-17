@@ -196,6 +196,34 @@
 </head>
 <body>
 
+<!-- ============ LOGIN GATE ============ -->
+<div id="login-overlay" style="position:fixed;inset:0;background:rgba(10,15,30,.97);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:linear-gradient(135deg,rgba(99,102,241,.18),rgba(168,85,247,.10));border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:40px 36px;max-width:460px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.4);">
+    <div style="text-align:center;margin-bottom:30px;">
+      <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:10px;font-weight:600;">Consorcio Infrared Comuneros 2025</div>
+      <h2 style="font-size:28px;font-weight:700;color:#fff;margin:0 0 8px;letter-spacing:-0.02em;">Bienvenido al Cockpit</h2>
+      <p style="color:rgba(255,255,255,.6);font-size:14px;margin:0;line-height:1.5;">Registra tu acceso para visualizar la información del contrato.</p>
+    </div>
+    <form id="login-form" onsubmit="event.preventDefault();handleLogin();">
+      <div style="margin-bottom:14px;">
+        <label style="display:block;color:rgba(255,255,255,.78);font-size:12px;margin-bottom:6px;font-weight:600;letter-spacing:.02em;">NOMBRE</label>
+        <input type="text" id="login-nombre" required maxlength="100" autocomplete="given-name" style="width:100%;padding:13px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:15px;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(99,102,241,.7)';this.style.background='rgba(255,255,255,.09)'" onblur="this.style.borderColor='rgba(255,255,255,.12)';this.style.background='rgba(255,255,255,.06)'">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;color:rgba(255,255,255,.78);font-size:12px;margin-bottom:6px;font-weight:600;letter-spacing:.02em;">APELLIDOS</label>
+        <input type="text" id="login-apellidos" required maxlength="100" autocomplete="family-name" style="width:100%;padding:13px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:15px;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(99,102,241,.7)';this.style.background='rgba(255,255,255,.09)'" onblur="this.style.borderColor='rgba(255,255,255,.12)';this.style.background='rgba(255,255,255,.06)'">
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="display:block;color:rgba(255,255,255,.78);font-size:12px;margin-bottom:6px;font-weight:600;letter-spacing:.02em;">CORREO ELECTRÓNICO</label>
+        <input type="email" id="login-correo" required maxlength="100" autocomplete="email" placeholder="nombre@dominio.com" style="width:100%;padding:13px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:15px;outline:none;font-family:inherit;" onfocus="this.style.borderColor='rgba(99,102,241,.7)';this.style.background='rgba(255,255,255,.09)'" onblur="this.style.borderColor='rgba(255,255,255,.12)';this.style.background='rgba(255,255,255,.06)'">
+      </div>
+      <div id="login-error" style="display:none;color:#fca5a5;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px;"></div>
+      <button id="login-btn" type="submit" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.01em;box-shadow:0 8px 24px rgba(99,102,241,.35);">Ingresar &rarr;</button>
+    </form>
+    <p style="text-align:center;color:rgba(255,255,255,.4);font-size:11px;margin-top:22px;line-height:1.5;">Tu registro queda almacenado en bit&aacute;cora<br>para trazabilidad institucional de visitas.</p>
+  </div>
+</div>
+
 <!-- ============ MENU INICIAL ============ -->
 <div class="screen active" id="screen-menu">
   <div class="menu-wrap">
@@ -851,8 +879,37 @@ document.querySelectorAll('#screen-inventario .ti .tb').forEach(b=>b.addEventLis
   if(el) el.addEventListener('input',()=>{INV_PAGE=1; clearTimeout(_tablaTimer); _tablaTimer=setTimeout(()=>invLoadTablaPagina(),350);});
 });
 
-/* ====================== ARRANCAR ====================== */
-boot();
+/* ====================== LOGIN GATE ====================== */
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+function showLoginError(m){const el=document.getElementById('login-error');el.textContent=m;el.style.display='block';}
+function hideLoginError(){const el=document.getElementById('login-error');if(el)el.style.display='none';}
+async function handleLogin(){
+  hideLoginError();
+  const btn=document.getElementById('login-btn');
+  const nombre=(document.getElementById('login-nombre').value||'').trim();
+  const apellidos=(document.getElementById('login-apellidos').value||'').trim();
+  const correo=(document.getElementById('login-correo').value||'').trim();
+  if(!nombre||!apellidos||!correo){showLoginError('Todos los campos son obligatorios');return;}
+  if(!EMAIL_REGEX.test(correo)){showLoginError('Correo con formato invalido (revisa el @ y dominio).');return;}
+  btn.disabled=true;btn.textContent='Registrando...';btn.style.opacity='0.7';
+  try{
+    const res=await jsonp(APPS_URL,{
+      action:'registrar_ingreso',
+      nombre:nombre,apellidos:apellidos,correo:correo,
+      ua:(navigator.userAgent||'').slice(0,200),
+      url:location.href.slice(0,200)
+    });
+    if(!res||!res.ok)throw new Error((res&&res.error)||'No fue posible registrar el ingreso. Intenta de nuevo.');
+    const ov=document.getElementById('login-overlay');
+    if(ov){ov.style.opacity='0';ov.style.transition='opacity .35s ease-out';setTimeout(function(){if(ov.parentNode)ov.parentNode.removeChild(ov);},380);}
+    boot();
+  }catch(e){
+    showLoginError(e.message||'Error inesperado');
+    btn.disabled=false;btn.textContent='Ingresar \u2192';btn.style.opacity='1';
+  }
+}
+setTimeout(function(){var n=document.getElementById('login-nombre');if(n)n.focus();},250);
+/* boot() se llama solo al login exitoso */
 </script>
 </body>
 </html>
