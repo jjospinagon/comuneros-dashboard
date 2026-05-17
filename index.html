@@ -371,6 +371,8 @@
       <button class="tb" data-tab="cons">Vista Consolidado<span class="badge-new">NUEVO</span></button>
       <button class="tb" data-tab="cmp">Comparación</button>
       <button class="tb" data-tab="tabla">Tabla Maestra</button>
+      <button class="tb" data-tab="req">Requisiciones<span class="badge-new">NUEVO</span></button>
+      <button class="tb" data-tab="factd">Facturas<span class="badge-new">NUEVO</span></button>
     </div>
 
     <!-- TAB FACTURAS -->
@@ -454,6 +456,54 @@
         </div>
       </div>
     </div>
+
+    <!-- ============ TAB: REQUISICIONES ============ -->
+    <div class="tc" id="inv-tab-req">
+      <div class="panel-i" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          <h3 style="font-size:14px;font-weight:700;margin:0;color:#fff">Requisiciones de almacén<span id="req-count" style="color:#94a3b8;font-weight:400;margin-left:8px;font-size:12px">—</span></h3>
+          <input type="text" class="filter" id="req-filter" placeholder="Filtrar por código, fecha…" style="min-width:240px">
+        </div>
+        <div style="overflow:auto;max-height:600px;border-radius:10px">
+          <table class="mat" id="req-table">
+            <thead><tr><th style="width:90px">Consecutivo</th><th style="width:110px">Fecha</th><th class="num" style="width:80px">Items</th><th>Acciones</th></tr></thead>
+            <tbody id="req-tbody"><tr><td colspan="4" style="text-align:center;padding:30px;color:#94a3b8"><span class="spinner"></span>Cargando requisiciones…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TAB: FACTURAS ============ -->
+    <div class="tc" id="inv-tab-factd">
+      <div class="panel-i">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 14px;color:#fff">Facturas DIAN <span id="fact-count" style="color:#94a3b8;font-weight:400;margin-left:8px;font-size:12px">—</span></h3>
+        <div id="fact-tree"><p style="color:#94a3b8;text-align:center;padding:30px"><span class="spinner"></span>Cargando facturas…</p></div>
+      </div>
+    </div>
+
+    <!-- ============ MODAL DETALLE REQUISICIÓN ============ -->
+    <div id="req-modal" style="display:none;position:fixed;inset:0;background:rgba(10,15,30,.85);backdrop-filter:blur(8px);z-index:9000;align-items:center;justify-content:center;padding:20px">
+      <div style="background:linear-gradient(135deg,rgba(20,26,55,.95),rgba(15,20,40,.95));border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px 28px;max-width:780px;width:100%;max-height:85vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap">
+          <div>
+            <h3 id="req-modal-title" style="font-size:20px;font-weight:700;margin:0;color:#fff;font-family:'Space Grotesk',sans-serif">—</h3>
+            <p id="req-modal-subtitle" style="color:#94a3b8;font-size:13px;margin:4px 0 0">—</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <a id="req-modal-xlsx" href="#" target="_blank" class="back-btn" style="text-decoration:none">XLSX</a>
+            <a id="req-modal-pdf" href="#" target="_blank" class="back-btn" style="text-decoration:none">PDF</a>
+            <button class="back-btn" onclick="document.getElementById('req-modal').style.display='none'">✕ Cerrar</button>
+          </div>
+        </div>
+        <div style="overflow:auto;max-height:60vh;border-radius:10px">
+          <table class="mat" id="req-modal-table">
+            <thead><tr><th class="num" style="width:60px">N°</th><th>Descripción</th><th class="num" style="width:90px">Cantidad</th><th style="width:80px">Unidad</th></tr></thead>
+            <tbody id="req-modal-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -872,11 +922,131 @@ document.querySelectorAll('#screen-inventario .ti .tb').forEach(b=>b.addEventLis
   INV_TAB = b.dataset.tab;
   document.getElementById('inv-tab-'+INV_TAB).classList.add('active');
   if(INV_TAB==='tabla'){ invLoadTablaPagina(); }
+  else if(INV_TAB==='req'){ invLoadRequisiciones().then(invRenderRequisiciones); }
+  else if(INV_TAB==='factd'){ invLoadFacturas().then(invRenderFacturas); }
   else if(INV_DATA){ invRefreshCharts(); }
 }));
 ['inv-filter','inv-fuente-filter','inv-status-filter'].forEach(id=>{
   const el=document.getElementById(id);
   if(el) el.addEventListener('input',()=>{INV_PAGE=1; clearTimeout(_tablaTimer); _tablaTimer=setTimeout(()=>invLoadTablaPagina(),350);});
+});
+
+/* ====================== REQUISICIONES + FACTURAS ====================== */
+let REQ_DATA = null;
+let FACT_DATA = null;
+
+async function invLoadRequisiciones(){
+  if(REQ_DATA) return REQ_DATA;
+  try{
+    const d = await jsonp(APPS_URL, {action:'requisiciones'});
+    REQ_DATA = d;
+    return d;
+  }catch(e){
+    document.getElementById('req-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:#ef4444">Error cargando: '+e.message+'</td></tr>';
+    return null;
+  }
+}
+
+function invRenderRequisiciones(){
+  if(!REQ_DATA || !REQ_DATA.requisiciones) return;
+  const filter = (document.getElementById('req-filter').value||'').toLowerCase();
+  const rows = REQ_DATA.requisiciones.filter(r => {
+    if(!filter) return true;
+    const s = (r.consecutivo+' '+r.fecha+' '+r.id).toLowerCase();
+    return s.indexOf(filter) >= 0;
+  });
+  document.getElementById('req-count').textContent = '· '+rows.length+' de '+REQ_DATA.requisiciones.length;
+  const tbody = document.getElementById('req-tbody');
+  if(rows.length === 0){
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:#94a3b8">Sin requisiciones que coincidan</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const xlsxLink = r.archivo_xlsx_id ? 'https://drive.google.com/file/d/'+r.archivo_xlsx_id+'/view' : '';
+    const pdfLink = r.archivo_pdf_id ? 'https://drive.google.com/file/d/'+r.archivo_pdf_id+'/view' : '';
+    return '<tr>'+
+      '<td style="font-weight:700;color:#a5b4fc">'+r.consecutivo+'</td>'+
+      '<td>'+(r.fecha||'—')+'</td>'+
+      '<td class="num">'+r.total_items+'</td>'+
+      '<td><button class="back-btn" style="padding:5px 10px;font-size:12px" onclick="showReqDetail(\''+r.id+'\')">Ver detalle</button>' +
+      (xlsxLink ? ' <a class="back-btn" style="padding:5px 10px;font-size:12px;text-decoration:none" href="'+xlsxLink+'" target="_blank">XLSX</a>' : '') +
+      (pdfLink ? ' <a class="back-btn" style="padding:5px 10px;font-size:12px;text-decoration:none" href="'+pdfLink+'" target="_blank">PDF</a>' : '') +
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function showReqDetail(id){
+  if(!REQ_DATA) return;
+  const req = REQ_DATA.requisiciones.find(r => r.id === id);
+  const items = REQ_DATA.items_por_req[id] || [];
+  if(!req) return;
+  document.getElementById('req-modal-title').textContent = 'Requisición '+req.consecutivo;
+  document.getElementById('req-modal-subtitle').textContent = (req.fecha||'sin fecha') + ' · ' + items.length + ' items';
+  document.getElementById('req-modal-xlsx').href = req.archivo_xlsx_id ? 'https://drive.google.com/file/d/'+req.archivo_xlsx_id+'/view' : '#';
+  document.getElementById('req-modal-xlsx').style.display = req.archivo_xlsx_id ? 'inline-flex' : 'none';
+  document.getElementById('req-modal-pdf').href = req.archivo_pdf_id ? 'https://drive.google.com/file/d/'+req.archivo_pdf_id+'/view' : '#';
+  document.getElementById('req-modal-pdf').style.display = req.archivo_pdf_id ? 'inline-flex' : 'none';
+  document.getElementById('req-modal-tbody').innerHTML = items.length ?
+    items.map(it => '<tr><td class="num">'+(it.n||'—')+'</td><td>'+(it.desc||'—')+'</td><td class="num">'+(it.cantidad||0)+'</td><td>'+(it.unidad||'')+'</td></tr>').join('') :
+    '<tr><td colspan="4" style="text-align:center;padding:20px;color:#94a3b8">Sin items capturados</td></tr>';
+  document.getElementById('req-modal').style.display = 'flex';
+}
+
+async function invLoadFacturas(){
+  if(FACT_DATA) return FACT_DATA;
+  try{
+    const d = await jsonp(APPS_URL, {action:'facturas'});
+    FACT_DATA = d;
+    return d;
+  }catch(e){
+    document.getElementById('fact-tree').innerHTML = '<p style="color:#ef4444;text-align:center;padding:30px">Error: '+e.message+'</p>';
+    return null;
+  }
+}
+
+function invRenderFacturas(){
+  if(!FACT_DATA || !FACT_DATA.por_anno) return;
+  const years = Object.keys(FACT_DATA.por_anno).sort().reverse();
+  let totalFiles = 0;
+  let html = '';
+  years.forEach(year => {
+    const months = FACT_DATA.por_anno[year];
+    const monthKeys = Object.keys(months).sort((a,b) => {
+      const ma = parseInt(a.match(/^(\d+)/)?.[1] || 0);
+      const mb = parseInt(b.match(/^(\d+)/)?.[1] || 0);
+      return mb - ma;
+    });
+    let yearCount = 0;
+    monthKeys.forEach(m => yearCount += months[m].length);
+    totalFiles += yearCount;
+    html += '<details open style="margin-bottom:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px"><summary style="cursor:pointer;padding:12px 14px;font-weight:700;color:#fff;font-size:15px;font-family:Space Grotesk,sans-serif">'+year+'<span style="color:#94a3b8;font-weight:400;font-size:12px;margin-left:10px">'+yearCount+' facturas</span></summary>';
+    monthKeys.forEach(mes => {
+      const files = months[mes];
+      html += '<details style="margin:6px 0 6px 12px;border-left:2px solid rgba(99,102,241,.3);padding-left:10px"><summary style="cursor:pointer;padding:6px 10px;font-weight:600;color:#a5b4fc;font-size:13px">'+mes+'<span style="color:#94a3b8;font-weight:400;margin-left:8px">('+files.length+')</span></summary>';
+      html += '<div style="padding:6px 12px 10px">';
+      files.forEach(f => {
+        const url = 'https://drive.google.com/file/d/'+f.id+'/view';
+        const sizeKB = f.size ? Math.round(f.size/1024)+' KB' : '';
+        const isPdf = (f.mime||'').includes('pdf');
+        html += '<a href="'+url+'" target="_blank" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin:3px 0;background:rgba(255,255,255,.03);border-radius:8px;color:#cbd5e1;text-decoration:none;font-size:13px;border:1px solid rgba(255,255,255,.05)" onmouseover="this.style.background=\'rgba(255,255,255,.07)\'" onmouseout="this.style.background=\'rgba(255,255,255,.03)\'">'+
+          '<span>'+(isPdf?'· ':'· ')+f.nombre+'</span>'+
+          '<span style="color:#94a3b8;font-size:11px">'+sizeKB+'</span>'+
+        '</a>';
+      });
+      html += '</div></details>';
+    });
+    html += '</details>';
+  });
+  if(totalFiles === 0) html = '<p style="color:#94a3b8;text-align:center;padding:30px">Sin facturas registradas.</p>';
+  document.getElementById('fact-count').textContent = '· '+totalFiles+' archivos en total';
+  document.getElementById('fact-tree').innerHTML = html;
+}
+
+// Hook req filter
+window.addEventListener('DOMContentLoaded', () => {
+  const fi = document.getElementById('req-filter');
+  if(fi) fi.addEventListener('input', invRenderRequisiciones);
 });
 
 /* ====================== LOGIN GATE ====================== */
