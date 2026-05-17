@@ -242,7 +242,7 @@
     <div class="lg-side">
       <div class="ico" style="background:linear-gradient(135deg,#3b82f6,#22d3ee)">📊</div>
       <h4>Indicadores Contractuales</h4>
-      <p class="s">Avance económico multi-corte · 6 fechas · 93 actividades · EVM, hitos contractuales y proyecciones.</p>
+      <p class="s">Avance económico multi-corte, Earned Value Management, hitos contractuales y proyecciones financieras.</p>
       <div class="lg-spark">
         <svg viewBox="0 0 200 60" preserveAspectRatio="none" style="width:100%;height:100%">
           <defs><linearGradient id="lgGr1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".4"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></linearGradient></defs>
@@ -251,38 +251,82 @@
         </svg>
       </div>
       <div class="lg-kpis">
-        <div class="lg-kpi"><div class="v">$9.92B</div><div class="l">Valor vigente</div></div>
-        <div class="lg-kpi"><div class="v">21.8%</div><div class="l">% Avance</div></div>
+        <div class="lg-kpi"><div class="v" style="color:rgba(255,255,255,.35);letter-spacing:4px">— — —</div><div class="l">Valor vigente</div></div>
+        <div class="lg-kpi"><div class="v" style="color:rgba(255,255,255,.35);letter-spacing:4px">— —</div><div class="l">% Avance</div></div>
       </div>
+      <div style="margin-top:14px;padding:10px 12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.2);border-radius:8px;font-size:11px;color:#67e8f9;text-align:center;letter-spacing:.05em">🔒 Ingresa para ver valores reales</div>
     </div>
 
     <!-- Centro: Logo M + Form -->
     <div class="lg-center">
-      <svg class="m-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <svg class="m-logo" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="mStroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/></linearGradient>
-          <radialGradient id="dotG" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#22d3ee" stop-opacity="1"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mStroke" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#22d3ee"/>
+            <stop offset=".5" stop-color="#a78bfa"/>
+            <stop offset="1" stop-color="#ec4899"/>
+          </linearGradient>
+          <radialGradient id="dotCore" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#67e8f9"/>
+            <stop offset=".4" stop-color="#22d3ee"/>
+            <stop offset="1" stop-color="#0891b2" stop-opacity=".3"/>
+          </radialGradient>
+          <radialGradient id="dotGlow" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#22d3ee" stop-opacity=".5"/>
+            <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="mGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
         </defs>
-        <g stroke="url(#mStroke)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="35,165 35,45 100,120 165,45 165,165"/>
-          <line x1="35" y1="45" x2="100" y2="120"/>
-          <line x1="100" y1="120" x2="165" y2="45"/>
+        <!-- Trazado principal de la M con stroke uniforme -->
+        <g stroke="url(#mStroke)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#mGlow)">
+          <!-- Pie izquierdo subiendo al pico izquierdo -->
+          <line x1="40" y1="190" x2="40" y2="35"/>
+          <!-- Pico izquierdo al valle central -->
+          <line x1="40" y1="35" x2="120" y2="115"/>
+          <!-- Valle al pico derecho -->
+          <line x1="120" y1="115" x2="200" y2="35"/>
+          <!-- Pico derecho bajando al pie derecho -->
+          <line x1="200" y1="35" x2="200" y2="190"/>
         </g>
-        <g fill="url(#dotG)">
-          <circle cx="35" cy="45" r="6"/>
-          <circle cx="35" cy="165" r="6"/>
-          <circle cx="100" cy="120" r="6"/>
-          <circle cx="165" cy="45" r="6"/>
-          <circle cx="165" cy="165" r="6"/>
-          <circle cx="67" cy="82" r="4"/>
-          <circle cx="132" cy="82" r="4"/>
+        <!-- Glow detrás de cada punto -->
+        <g fill="url(#dotGlow)">
+          <circle cx="40" cy="35" r="16"/>
+          <circle cx="200" cy="35" r="16"/>
+          <circle cx="40" cy="190" r="14"/>
+          <circle cx="200" cy="190" r="14"/>
+          <circle cx="120" cy="115" r="14"/>
+        </g>
+        <!-- Núcleo brillante de cada punto -->
+        <g fill="url(#dotCore)" stroke="#ecfeff" stroke-width="1.5">
+          <!-- 4 esquinas + valle central (más grandes) -->
+          <circle cx="40" cy="35" r="6"/>
+          <circle cx="200" cy="35" r="6"/>
+          <circle cx="40" cy="190" r="5.5"/>
+          <circle cx="200" cy="190" r="5.5"/>
+          <circle cx="120" cy="115" r="6"/>
+        </g>
+        <!-- Puntos secundarios (más pequeños) en los puntos medios de las diagonales -->
+        <g fill="#67e8f9" opacity=".7">
+          <circle cx="80" cy="75" r="3"/>
+          <circle cx="160" cy="75" r="3"/>
         </g>
       </svg>
       <div class="lg-card">
         <div class="m-mini">
-          <svg width="36" height="36" viewBox="0 0 200 200">
-            <g stroke="#22d3ee" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="35,165 35,45 100,120 165,45 165,165"/>
+          <svg width="40" height="38" viewBox="0 0 240 220">
+            <g stroke="#22d3ee" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="40" y1="190" x2="40" y2="35"/>
+              <line x1="40" y1="35" x2="120" y2="115"/>
+              <line x1="120" y1="115" x2="200" y2="35"/>
+              <line x1="200" y1="35" x2="200" y2="190"/>
+            </g>
+            <g fill="#67e8f9">
+              <circle cx="40" cy="35" r="9"/>
+              <circle cx="200" cy="35" r="9"/>
+              <circle cx="120" cy="115" r="8"/>
             </g>
           </svg>
         </div>
@@ -306,7 +350,7 @@
     <div class="lg-side">
       <div class="ico" style="background:linear-gradient(135deg,#a855f7,#ec4899)">📦</div>
       <h4>Inventario Valorizado</h4>
-      <p class="s">Stock consolidado del almacén · 235 ítems únicos · valoración por facturas DIAN, F-ALM-04 y comparación entre fuentes.</p>
+      <p class="s">Stock consolidado del almacén, valoración por facturas DIAN, F-ALM-04 y comparación cruzada entre fuentes de inventario.</p>
       <div class="lg-spark">
         <svg viewBox="0 0 200 60" preserveAspectRatio="none" style="width:100%;height:100%">
           <defs><linearGradient id="lgGr2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ec4899" stop-opacity=".4"/><stop offset="1" stop-color="#ec4899" stop-opacity="0"/></linearGradient></defs>
@@ -315,9 +359,10 @@
         </svg>
       </div>
       <div class="lg-kpis">
-        <div class="lg-kpi"><div class="v">$291M</div><div class="l">Valor consol.</div></div>
-        <div class="lg-kpi"><div class="v">120</div><div class="l">Restock</div></div>
+        <div class="lg-kpi"><div class="v" style="color:rgba(255,255,255,.35);letter-spacing:4px">— — —</div><div class="l">Valor consol.</div></div>
+        <div class="lg-kpi"><div class="v" style="color:rgba(255,255,255,.35);letter-spacing:4px">— —</div><div class="l">Restock</div></div>
       </div>
+      <div style="margin-top:14px;padding:10px 12px;background:rgba(236,72,153,.08);border:1px solid rgba(236,72,153,.2);border-radius:8px;font-size:11px;color:#f9a8d4;text-align:center;letter-spacing:.05em">🔒 Ingresa para ver valores reales</div>
     </div>
   </div>
 </div>
