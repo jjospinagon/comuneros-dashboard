@@ -547,14 +547,21 @@
               <th class="frz frz-2">Actividad</th>
               <th>Categoría</th>
               <th>Und</th>
-              <th class="num">Cant. Contr.</th>
-              <th class="num">Cant. Ejec.</th>
-              <th class="num">% Ejec.</th>
-              <th class="num">Costo Contr. Unit</th>
-              <th class="num">Costo Real Unit</th>
-              <th class="num">Total Contractual</th>
-              <th class="num">Total Real</th>
-              <th class="num">Util / Pérd</th>
+              <th class="num">Cant. Contractual</th>
+              <th class="num">Costo Contr. ($)</th>
+              <th class="num">Total Contractual ($)</th>
+              <th class="num">Costo Real ($)</th>
+              <th class="num">Dif. Costo vs Contr.</th>
+              <th class="num">Cant. Ejec. al Corte</th>
+              <th class="num">Cant. Adicional</th>
+              <th class="num">% Ejecución</th>
+              <th class="num">May/Men Cant ($)</th>
+              <th class="num">Util / Pérd no comp.</th>
+              <th class="num">Margen Económico</th>
+              <th class="num">Costo Contr. al Corte</th>
+              <th class="num">Costo Real al Corte</th>
+              <th class="num">Proy. Econ. al Corte</th>
+              <th class="num">Proy. Econ. al Finalizar</th>
             </tr>
           </thead>
           <tbody id="tbody-act"></tbody>
@@ -588,13 +595,12 @@
 
     <!-- TABS -->
     <div class="ti">
+      <button class="tb active" data-tab="cons">Vista Consolidado</button>
+      <button class="tb" data-tab="req">Requisiciones</button>
+      <button class="tb" data-tab="factd">Facturas DIAN</button>
+      <button class="tb" data-tab="cmp">Comparación</button>
       <button class="tb" data-tab="fact">Vista Facturas</button>
       <button class="tb" data-tab="alm">Vista Almacén</button>
-      <button class="tb active" data-tab="cons">Vista Consolidado<span class="badge-new">NUEVO</span></button>
-      <button class="tb" data-tab="cmp">Comparación</button>
-      <button class="tb" data-tab="tabla">Tabla Maestra</button>
-      <button class="tb" data-tab="req">Requisiciones<span class="badge-new">NUEVO</span></button>
-      <button class="tb" data-tab="factd">Facturas<span class="badge-new">NUEVO</span></button>
     </div>
 
     <!-- TAB FACTURAS -->
@@ -646,39 +652,6 @@
       </div>
     </div>
 
-    <!-- TAB TABLA MAESTRA -->
-    <div class="tc" id="inv-tab-tabla">
-      <div class="panel-i">
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-          <input type="text" id="inv-filter" class="filter" placeholder="Buscar por código, descripción, factura…" style="flex:1;min-width:280px">
-          <select id="inv-fuente-filter" class="filter">
-            <option value="all">Todas las fuentes</option>
-            <option value="facturas">Solo Facturas</option>
-            <option value="almacen">Solo Almacén</option>
-            <option value="consolidado">Solo Consolidado</option>
-          </select>
-          <select id="inv-status-filter" class="filter">
-            <option value="all">Todos los status</option>
-            <option value="ok">En Stock</option>
-            <option value="low">Bajo</option>
-            <option value="out">Agotado</option>
-            <option value="neg">Negativo</option>
-          </select>
-          <span style="font-size:11.5px;color:#94a3b8" id="inv-row-count">— ítems</span>
-        </div>
-        <div class="scroll" style="max-height:600px">
-          <table class="mat">
-            <thead><tr><th>Cód</th><th>Descripción</th><th>Und</th><th>Stock</th><th>Precio</th><th>Valor</th><th>Status</th><th>Fuente</th></tr></thead>
-            <tbody id="inv-tbody-maestra"></tbody>
-          </table>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#94a3b8;margin-top:10px">
-          <span id="inv-page-info">—</span>
-          <div class="pgn" id="inv-pagination"></div>
-        </div>
-      </div>
-    </div>
-
     <!-- ============ TAB: REQUISICIONES ============ -->
     <div class="tc" id="inv-tab-req">
       <div class="panel-i" style="margin-bottom:14px">
@@ -713,6 +686,42 @@
             <tbody id="fact-tbody"><tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8"><span class="spinner"></span>Cargando facturas DIAN…</td></tr></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- TABLA MAESTRA · SIEMPRE VISIBLE BAJO LAS PESTAÑAS -->
+    <div class="panel-i" style="margin-top:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <h3 style="font-size:14px;font-weight:700;margin:0;color:#fff;display:flex;align-items:center;gap:8px">
+          <span style="display:inline-block;width:4px;height:18px;background:linear-gradient(180deg,#22d3ee,#10b981);border-radius:2px"></span>
+          Tabla Maestra de Inventario · <span style="color:#94a3b8;font-weight:500;font-size:12px" id="inv-row-count">— ítems</span>
+        </h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="inv-filter" class="filter" placeholder="Buscar código, descripción, factura…" style="min-width:240px">
+          <select id="inv-fuente-filter" class="filter">
+            <option value="all">Todas las fuentes</option>
+            <option value="facturas">Solo Facturas</option>
+            <option value="almacen">Solo Almacén</option>
+            <option value="consolidado">Solo Consolidado</option>
+          </select>
+          <select id="inv-status-filter" class="filter">
+            <option value="all">Todos los status</option>
+            <option value="ok">En Stock</option>
+            <option value="low">Bajo</option>
+            <option value="out">Agotado</option>
+            <option value="neg">Negativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="scroll" style="max-height:600px">
+        <table class="mat">
+          <thead><tr><th>Cód</th><th>Descripción</th><th>Und</th><th>Stock</th><th>Precio</th><th>Valor</th><th>Status</th><th>Fuente</th></tr></thead>
+          <tbody id="inv-tbody-maestra"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#94a3b8;margin-top:10px">
+        <span id="inv-page-info">—</span>
+        <div class="pgn" id="inv-pagination"></div>
       </div>
     </div>
 
@@ -914,6 +923,18 @@ function renderIndCorteSelect(){
 }
 
 let ACT_ROWS = [];
+// Helper: pinta valor con flecha + color verde/rojo según signo (gana=verde, pierde=rojo)
+function dirCell(val, fmt, goodIsPositive){
+  if(val == null || val === '' || isNaN(Number(val))) return '<span style="color:#64748b">—</span>';
+  const v = Number(val);
+  const good = goodIsPositive === false ? (v < 0) : (v > 0);
+  const bad  = goodIsPositive === false ? (v > 0) : (v < 0);
+  const color = good ? '#10b981' : bad ? '#ef4444' : '#cbd5e1';
+  const arrow = v > 0 ? '▲' : v < 0 ? '▼' : '·';
+  const text  = (fmt === 'money') ? moneyC(v) : (fmt === 'pct') ? (v*100).toFixed(1)+'%' : num(v);
+  return '<span style="color:'+color+';font-weight:600;display:inline-flex;align-items:center;gap:4px;justify-content:flex-end">'+
+    '<span style="font-size:10px;opacity:.85">'+arrow+'</span>'+text+'</span>';
+}
 function renderActividades(){
   const filter = (document.getElementById('act-filter')?.value||'').toLowerCase().trim();
   const rows = !filter ? ACT_ROWS : ACT_ROWS.filter(a=>{
@@ -922,23 +943,28 @@ function renderActividades(){
   });
   document.getElementById('act-count').textContent = rows.length + ' de ' + ACT_ROWS.length + ' ítems';
   document.getElementById('tbody-act').innerHTML = rows.map(a=>{
-    const pe = a.porc_ejec!=null ? (a.porc_ejec*100).toFixed(1)+'%' : '—';
     const totContr = (a.total_contr!=null) ? a.total_contr : ((Number(a.cant_contr)||0)*(Number(a.costo_contr_u)||0));
-    const totReal  = (a.total_real!=null)  ? a.total_real  : ((Number(a.cant_ejec) ||0)*(Number(a.costo_real_u) ||0));
-    const utilCls = (Number(a.util_perd)||0) < 0 ? 'color:#fca5a5' : (Number(a.util_perd)||0) > 0 ? 'color:#86efac' : 'color:#cbd5e1';
+    // dif_unit positivo = costo real menor (ganancia)
     return '<tr>'+
       '<td class="frz frz-1">'+(a.item||'')+'</td>'+
       '<td class="frz frz-2">'+(a.actividad||'')+'</td>'+
       '<td><span class="pill">'+(a.cat_nombre||'—')+'</span></td>'+
       '<td>'+(a.unidad||'')+'</td>'+
       '<td class="num">'+num(a.cant_contr)+'</td>'+
-      '<td class="num">'+num(a.cant_ejec)+'</td>'+
-      '<td class="num">'+pe+'</td>'+
       '<td class="num">'+money(a.costo_contr_u)+'</td>'+
+      '<td class="num" style="color:#a5b4fc;font-weight:600">'+money(totContr)+'</td>'+
       '<td class="num">'+money(a.costo_real_u)+'</td>'+
-      '<td class="num">'+money(totContr)+'</td>'+
-      '<td class="num">'+money(totReal)+'</td>'+
-      '<td class="num" style="'+utilCls+';font-weight:600">'+moneyC(a.util_perd)+'</td>'+
+      '<td class="num">'+dirCell(a.dif_unit,'money',true)+'</td>'+
+      '<td class="num">'+num(a.cant_ejec)+'</td>'+
+      '<td class="num">'+num(a.cant_adic)+'</td>'+
+      '<td class="num">'+dirCell(a.porc_ejec,'pct',true)+'</td>'+
+      '<td class="num">'+dirCell(a.may_men,'money',true)+'</td>'+
+      '<td class="num">'+dirCell(a.util_perd,'money',true)+'</td>'+
+      '<td class="num">'+dirCell(a.margen,'pct',true)+'</td>'+
+      '<td class="num">'+money(a.costo_contr_corte)+'</td>'+
+      '<td class="num">'+money(a.costo_real_corte)+'</td>'+
+      '<td class="num">'+dirCell(a.proy_corte,'money',true)+'</td>'+
+      '<td class="num">'+dirCell(a.proy_final,'money',true)+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -1081,7 +1107,8 @@ function invRefreshCharts(){
   if(INV_TAB==='alm') invRenderAlmCharts();
   if(INV_TAB==='cons') invRenderConsCharts();
   if(INV_TAB==='cmp') invRenderCmpCharts();
-  if(INV_TAB==='tabla') invLoadTablaPagina();
+  // Tabla Maestra ahora es siempre visible bajo las pestañas — cargar siempre
+  invLoadTablaPagina();
 }
 
 const APX_COMMON = {
@@ -1229,8 +1256,7 @@ document.querySelectorAll('#screen-inventario .ti .tb').forEach(b=>b.addEventLis
   b.classList.add('active');
   INV_TAB = b.dataset.tab;
   document.getElementById('inv-tab-'+INV_TAB).classList.add('active');
-  if(INV_TAB==='tabla'){ invLoadTablaPagina(); }
-  else if(INV_TAB==='req'){ invLoadRequisiciones().then(invRenderRequisiciones); }
+  if(INV_TAB==='req'){ invLoadRequisiciones().then(invRenderRequisiciones); }
   else if(INV_TAB==='factd'){ invLoadFacturas().then(() => { invPopulateFacturasFilters(); invRenderFacturas(); }); }
   else if(INV_DATA){ invRefreshCharts(); }
 }));
@@ -1616,13 +1642,35 @@ function showAPUUnavailable(){
   const w = document.getElementById('apu-not-available');
   if(w) w.style.display = 'block';
 }
+// Lookup descripción real desde IND_DATA.actividades cuando APU tiene #ERROR! o vacío
+function getApuDesc(item, fallback){
+  const f = fallback || '';
+  if(f && f.indexOf('#') < 0 && f.length > 2) return f;
+  // buscar en IND_DATA
+  try{
+    if(IND_DATA && IND_CURRENT){
+      const acts = IND_DATA[IND_CURRENT].actividades || [];
+      const hit = acts.find(a => String(a.item) === String(item));
+      if(hit && hit.actividad) return hit.actividad;
+    }
+    // probar en cualquier corte
+    if(IND_DATA){
+      for(const k of Object.keys(IND_DATA)){
+        const acts = IND_DATA[k].actividades || [];
+        const hit = acts.find(a => String(a.item) === String(item));
+        if(hit && hit.actividad) return hit.actividad;
+      }
+    }
+  }catch(_){}
+  return f || '(sin descripción)';
+}
 function populateAPUSelect(){
   if(!APU_DATA) return;
   const sel = document.getElementById('apu-item-select');
   if(!sel) return;
   const items = Object.keys(APU_DATA).sort((a,b)=>String(a).localeCompare(String(b),'es',{numeric:true}));
   sel.innerHTML = '<option value="">— selecciona un ítem —</option>' +
-    items.map(k => '<option value="'+k+'">'+k+' · '+(APU_DATA[k].desc||'').substring(0,60)+'</option>').join('');
+    items.map(k => '<option value="'+k+'">'+k+' · '+getApuDesc(k, APU_DATA[k].desc).substring(0,60)+'</option>').join('');
   sel.onchange = e => renderAPURadar(e.target.value);
   // Pre-seleccionar el ítem con más materiales
   let best = null, bestN = 0;
@@ -1690,6 +1738,22 @@ function renderAPURadar(item){
 
 /* ===== ALERTAS INTERACTIVAS ===== */
 let ALERT_STORE = {};  // key -> {title, color, columns, rows}
+let INV_LOOKUP = null; // codigo -> {desc, stock, precio, valor, und}
+
+async function cargarLookupInventario(){
+  if(INV_LOOKUP) return INV_LOOKUP;
+  try{
+    const p = await jsonp(APPS_URL, {action:'tabla', fuente:'all', page:1, size:5000, search:'', status:'all'});
+    INV_LOOKUP = {};
+    (p && p.rows || []).forEach(r => {
+      const cod = String(r.cod);
+      if(!INV_LOOKUP[cod]){
+        INV_LOOKUP[cod] = {desc:r.desc, stock:r.stock, precio:r.precio, valor:r.valor, und:r.und};
+      }
+    });
+  }catch(e){ console.warn('lookup inv falló:', e); INV_LOOKUP = {}; }
+  return INV_LOOKUP;
+}
 
 async function renderAccionesHoy(){
   const wrap = document.getElementById('acciones-hoy-wrap');
@@ -1697,45 +1761,48 @@ async function renderAccionesHoy(){
   let actions = [];
   ALERT_STORE = {};
 
+  // Garantizar lookup de inventario para enriquecer alertas
+  await cargarLookupInventario();
+  const enrich = (cod, r) => {
+    const inv = (INV_LOOKUP && INV_LOOKUP[cod]) || {};
+    return {
+      cod,
+      desc: inv.desc || '—',
+      stock: inv.stock!=null ? inv.stock : 0,
+      und: inv.und || '',
+      precio: inv.precio || 0,
+      min: r.stock_min_dinamico || 0,
+      consumo: r.consumo_prom_mes || 0,
+      dias_agot: (r.dias_para_agotar==null ? '—' : Math.round(r.dias_para_agotar))
+    };
+  };
+
   // 1. Alertas inventario (vía endpoint monaco_metricas)
   try{
     const m = await jsonp(APPS_URL, {action:'monaco_metricas'});
     const bajos=[], agotados=[], emitirOC=[];
     Object.keys(m||{}).forEach(cod => {
       const r = m[cod] || {};
-      r.codigo = cod;
-      if(r.estado_dinamico === 'BAJO') bajos.push(r);
-      if(r.estado_dinamico === 'AGOTADO') agotados.push(r);
-      if(r.emitir_oc) emitirOC.push(r);
+      const x = enrich(cod, r);
+      if(r.estado_dinamico === 'BAJO') bajos.push(x);
+      if(r.estado_dinamico === 'AGOTADO') agotados.push(x);
+      if(r.emitir_oc) emitirOC.push(x);
     });
+    const colsLista = ['Código','Descripción','Und','Stock','Mínimo','Consumo/mes','Días para agotar','Valor unitario'];
+    const rowsLista = arr => arr.map(x => [x.cod, x.desc, x.und||'—', num(x.stock), num(x.min), x.consumo? x.consumo.toFixed(1):'0', x.dias_agot, money(x.precio)]);
     if(agotados.length){
-      const k = 'inv-agotados';
-      ALERT_STORE[k] = {
-        title: agotados.length+' SKUs agotados',
-        color: '#ef4444',
-        columns: ['Código','Descripción','Stock','Mínimo','Días cobertura'],
-        rows: agotados.map(r => [r.codigo, r.descripcion||'—', num(r.stock||0), num(r.minimo_dinamico||r.minimo||0), r.dias_cobertura!=null?r.dias_cobertura:'—'])
-      };
+      const k='inv-agotados';
+      ALERT_STORE[k]={title:agotados.length+' SKUs agotados',color:'#ef4444',columns:colsLista,rows:rowsLista(agotados)};
       actions.push({key:k, color:'#ef4444', icon:'!', title:ALERT_STORE[k].title, desc:'Stock = 0, frenan obra'});
     }
     if(bajos.length){
-      const k = 'inv-bajos';
-      ALERT_STORE[k] = {
-        title: bajos.length+' SKUs en stock bajo',
-        color: '#f59e0b',
-        columns: ['Código','Descripción','Stock','Mínimo','Días cobertura'],
-        rows: bajos.map(r => [r.codigo, r.descripcion||'—', num(r.stock||0), num(r.minimo_dinamico||r.minimo||0), r.dias_cobertura!=null?r.dias_cobertura:'—'])
-      };
+      const k='inv-bajos';
+      ALERT_STORE[k]={title:bajos.length+' SKUs en stock bajo',color:'#f59e0b',columns:colsLista,rows:rowsLista(bajos)};
       actions.push({key:k, color:'#f59e0b', icon:'·', title:ALERT_STORE[k].title, desc:'Por debajo del mínimo dinámico'});
     }
     if(emitirOC.length){
-      const k = 'inv-oc';
-      ALERT_STORE[k] = {
-        title: emitirOC.length+' órdenes de compra urgentes',
-        color: '#22d3ee',
-        columns: ['Código','Descripción','Stock','Mínimo','Días cobertura'],
-        rows: emitirOC.map(r => [r.codigo, r.descripcion||'—', num(r.stock||0), num(r.minimo_dinamico||r.minimo||0), r.dias_cobertura!=null?r.dias_cobertura:'—'])
-      };
+      const k='inv-oc';
+      ALERT_STORE[k]={title:emitirOC.length+' órdenes de compra urgentes',color:'#22d3ee',columns:colsLista,rows:rowsLista(emitirOC)};
       actions.push({key:k, color:'#22d3ee', icon:'·', title:ALERT_STORE[k].title, desc:'Tiempo de agotamiento ≤ 20 días'});
     }
   }catch(e){console.warn('alertas inv:', e);}
