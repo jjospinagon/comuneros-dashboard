@@ -800,14 +800,39 @@ const APPS_URL = "https://script.google.com/macros/s/AKfycbxtP8Q6PQ0AGFDnU1UpGg4
 const fmt0 = new Intl.NumberFormat('es-CO',{maximumFractionDigits:0});
 const fmt2 = new Intl.NumberFormat('es-CO',{maximumFractionDigits:2});
 const money = v => (v==null||isNaN(v))?'—':'$'+fmt0.format(v);
+// Notación COP: M = millones (10^6). 9.920 M = nueve mil novecientos veinte millones.
+// No usamos 'B' porque en español = 10^12. Para >= 1e12 sí usamos 'B' (billones).
 const moneyShort = v => {
   if(v==null||isNaN(v)) return '—';
   const abs = Math.abs(v);
-  if(abs>=1e9) return '$'+(v/1e9).toFixed(2)+'B';
-  if(abs>=1e6) return '$'+(v/1e6).toFixed(1)+'M';
-  if(abs>=1e3) return '$'+(v/1e3).toFixed(0)+'K';
+  if(abs>=1e12) return '$'+(v/1e12).toLocaleString('es-CO',{maximumFractionDigits:2})+' B';
+  if(abs>=1e6)  return '$'+(v/1e6) .toLocaleString('es-CO',{maximumFractionDigits:1})+' M';
+  if(abs>=1e3)  return '$'+(v/1e3) .toLocaleString('es-CO',{maximumFractionDigits:0})+' K';
   return '$'+fmt0.format(v);
 };
+
+/* ============ NORMALIZACIÓN DE DESCRIPCIONES ============
+   Unifica formatos: fracciones → decimales, dimensiones con 'x', limpia espacios.
+   Usado para mostrar consistencia visual y para join entre items duplicados. */
+function normalizarDesc(s){
+  if(!s) return '';
+  let t = String(s).toUpperCase().trim();
+  // Reemplazar fracciones unicode
+  t = t.replace(/½/g,'1/2').replace(/¼/g,'1/4').replace(/¾/g,'3/4').replace(/⅓/g,'1/3').replace(/⅔/g,'2/3').replace(/⅛/g,'1/8').replace(/⅜/g,'3/8').replace(/⅝/g,'5/8').replace(/⅞/g,'7/8');
+  // Mixtos tipo "1 1/2" → "1.5"  (orden importa: primero mixtos, luego simples)
+  t = t.replace(/\b(\d+)\s+(\d+)\/(\d+)\b/g, (_,e,n,d)=>(parseInt(e)+parseInt(n)/parseInt(d)).toString().replace('.', '.'));
+  // Fracciones simples "3/4" → "0.75"
+  t = t.replace(/\b(\d+)\/(\d+)\b/g, (_,n,d)=>(parseInt(n)/parseInt(d)).toString());
+  // Comillas dobles que denotan pulgadas → texto plano (más limpio)
+  t = t.replace(/"/g, '').replace(/''/g, '');
+  // Dimensiones con * → x
+  t = t.replace(/\s*[\*×]\s*/g, 'x');
+  // Unidades comunes: PULG / PULGADAS → in eliminado (lo deja implícito)
+  t = t.replace(/\bPULGADAS?\b/g, '').replace(/\bPULG\b/g, '');
+  // Doble espacio → uno solo
+  t = t.replace(/\s{2,}/g, ' ').trim();
+  return t;
+}
 const moneyC = v => { if(v==null||isNaN(v)) return '—'; const s='$'+fmt0.format(v); const cls=v>0?'pos':(v<0?'neg':''); return '<span class="'+cls+'">'+s+'</span>'; };
 const num = v => (v==null||isNaN(v))?'—':fmt2.format(v);
 const pct = v => (v==null||isNaN(v))?'—':(v*100).toLocaleString('es-CO',{maximumFractionDigits:2})+'%';
@@ -1159,8 +1184,9 @@ function colChart(elId,data,color){
     xaxis:{categories:data.map(d=>d[0]),labels:{style:{colors:'#94a3b8'}}},
     yaxis:{labels:{formatter:v=>moneyShort(v),style:{colors:'#cbd5e1'}}},
     grid:APX_COMMON.grid,
-    plotOptions:{bar:{borderRadius:5,columnWidth:'58%'}},
+    plotOptions:{bar:{borderRadius:5,columnWidth:'58%',dataLabels:{position:'top'}}},
     colors:[color],
+    dataLabels:{enabled:true,formatter:v=>moneyShort(v),offsetY:-20,style:{fontSize:'10.5px',colors:['#cbd5e1'],fontWeight:600}},
     tooltip:{theme:'dark',y:{formatter:v=>money(v)}}
   }); c.render(); return c;
 }
@@ -1232,11 +1258,15 @@ function renderTablaPagina(data){
   tb.innerHTML = (data.rows||[]).map(r=>{
     const s=statusOf(r.stock||0);
     const sinPrecio = !r.precio || r.precio <= 0;
-    const queryHC = encodeURIComponent((r.desc||'').replace(/[\(\)\[\]]/g,' ').replace(/\s+/g,' ').trim().substring(0,80));
+    const descNorm = normalizarDesc(r.desc);
+    // Query de búsqueda Homecenter: solo los primeros 3-4 tokens significativos (más relevantes)
+    const tokens = descNorm.split(/\s+/).filter(t => t.length >= 2 && !/^(DE|EL|LA|EN|CON|PARA|POR|UN|UNA|UND|PCS)$/.test(t));
+    const queryStr = tokens.slice(0, 5).join(' ');
+    const queryHC = encodeURIComponent(queryStr);
     const precioCel = sinPrecio
-      ? '<a href="https://www.homecenter.com.co/homecenter-co/search/?q='+queryHC+'" target="_blank" rel="noopener" title="Buscar en Homecenter" style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border:1px solid rgba(34,211,238,.35);border-radius:6px;color:#22d3ee;font-size:11px;font-weight:600;text-decoration:none;background:rgba(34,211,238,.07)">🔍 Buscar</a>'
+      ? '<a href="https://www.homecenter.com.co/homecenter-co/search?Ntt='+queryHC+'" target="_blank" rel="noopener" title="Buscar &quot;'+queryStr+'&quot; en Homecenter" style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border:1px solid rgba(34,211,238,.35);border-radius:6px;color:#22d3ee;font-size:11px;font-weight:600;text-decoration:none;background:rgba(34,211,238,.07)">🔍 Homecenter</a>'
       : money(r.precio);
-    return '<tr><td class="num">'+r.cod+'</td><td>'+escapeHTML(r.desc)+'</td><td class="num">'+escapeHTML(r.und||'—')+'</td><td class="num">'+fmt0.format(r.stock||0)+'</td><td class="money">'+precioCel+'</td><td class="money">'+money(r.valor)+'</td><td><span class="sp '+s.c+'">'+s.l+'</span></td><td style="font-size:11.5px">'+(r.fuente||'')+'</td></tr>';
+    return '<tr><td class="num">'+r.cod+'</td><td>'+escapeHTML(descNorm)+'</td><td class="num">'+escapeHTML(r.und||'—')+'</td><td class="num">'+fmt0.format(r.stock||0)+'</td><td class="money">'+precioCel+'</td><td class="money">'+money(r.valor)+'</td><td><span class="sp '+s.c+'">'+s.l+'</span></td><td style="font-size:11.5px">'+(r.fuente||'')+'</td></tr>';
   }).join('');
   const start = (INV_PAGE-1)*INV_PAGE_SIZE;
   document.getElementById('inv-page-info').textContent = 'Mostrando '+(start+1)+'–'+Math.min(start+INV_PAGE_SIZE, data.total||0)+' de '+(data.total||0);
@@ -1688,7 +1718,7 @@ function renderAPURadar(item){
   const topN = mats.slice(0, 10);  // máximo 10 puntos en el radar
   const totalVU = mats.reduce((s,m) => s+(Number(m.valor_unit)||0), 0);
 
-  document.getElementById('apu-item-name').textContent = item + ' · ' + (apu.desc||'').substring(0,60);
+  document.getElementById('apu-item-name').textContent = item + ' · ' + getApuDesc(item, apu.desc).substring(0,80);
   document.getElementById('apu-radar-wrap').style.display = 'grid';
   document.getElementById('apu-not-available').style.display = 'none';
 
@@ -1776,15 +1806,14 @@ let INV_LOOKUP = null; // codigo -> {desc, stock, precio, valor, und}
 async function cargarLookupInventario(){
   if(INV_LOOKUP) return INV_LOOKUP;
   try{
-    const p = await jsonp(APPS_URL, {action:'tabla', fuente:'all', page:1, size:5000, search:'', status:'all'});
-    INV_LOOKUP = {};
-    (p && p.rows || []).forEach(r => {
+    const p = await jsonp(APPS_URL, {action:'tabla', fuente:'consolidado', page:1, size:5000, search:'', status:'all'});
+    INV_LOOKUP = {rows: (p && p.rows) || [], reorder: (p && p.reorder) || 5};
+    INV_LOOKUP.byCod = {};
+    INV_LOOKUP.rows.forEach(r => {
       const cod = String(r.cod);
-      if(!INV_LOOKUP[cod]){
-        INV_LOOKUP[cod] = {desc:r.desc, stock:r.stock, precio:r.precio, valor:r.valor, und:r.und};
-      }
+      if(!INV_LOOKUP.byCod[cod]) INV_LOOKUP.byCod[cod] = r;
     });
-  }catch(e){ console.warn('lookup inv falló:', e); INV_LOOKUP = {}; }
+  }catch(e){ console.warn('lookup inv falló:', e); INV_LOOKUP = {rows:[], byCod:{}, reorder:5}; }
   return INV_LOOKUP;
 }
 
@@ -1794,51 +1823,39 @@ async function renderAccionesHoy(){
   let actions = [];
   ALERT_STORE = {};
 
-  // Garantizar lookup de inventario para enriquecer alertas
+  // Fuente única: INVENTARIO_CONSOLIDADO (vía endpoint tabla con fuente=consolidado)
   await cargarLookupInventario();
-  const enrich = (cod, r) => {
-    const inv = (INV_LOOKUP && INV_LOOKUP[cod]) || {};
-    return {
-      cod,
-      desc: inv.desc || '—',
-      stock: inv.stock!=null ? inv.stock : 0,
-      und: inv.und || '',
-      precio: inv.precio || 0,
-      min: r.stock_min_dinamico || 0,
-      consumo: r.consumo_prom_mes || 0,
-      dias_agot: (r.dias_para_agotar==null ? '—' : Math.round(r.dias_para_agotar))
-    };
-  };
+  const reorder = INV_LOOKUP.reorder || 5;
+  const rows = INV_LOOKUP.rows || [];
 
-  // 1. Alertas inventario (vía endpoint monaco_metricas)
-  try{
-    const m = await jsonp(APPS_URL, {action:'monaco_metricas'});
-    const bajos=[], agotados=[], emitirOC=[];
-    Object.keys(m||{}).forEach(cod => {
-      const r = m[cod] || {};
-      const x = enrich(cod, r);
-      if(r.estado_dinamico === 'BAJO') bajos.push(x);
-      if(r.estado_dinamico === 'AGOTADO') agotados.push(x);
-      if(r.emitir_oc) emitirOC.push(x);
-    });
-    const colsLista = ['Código','Descripción','Und','Stock','Mínimo','Consumo/mes','Días para agotar','Valor unitario'];
-    const rowsLista = arr => arr.map(x => [x.cod, x.desc, x.und||'—', num(x.stock), num(x.min), x.consumo? x.consumo.toFixed(1):'0', x.dias_agot, money(x.precio)]);
-    if(agotados.length){
-      const k='inv-agotados';
-      ALERT_STORE[k]={title:agotados.length+' SKUs agotados',color:'#ef4444',columns:colsLista,rows:rowsLista(agotados)};
-      actions.push({key:k, color:'#ef4444', icon:'!', title:ALERT_STORE[k].title, desc:'Stock = 0, frenan obra'});
-    }
-    if(bajos.length){
-      const k='inv-bajos';
-      ALERT_STORE[k]={title:bajos.length+' SKUs en stock bajo',color:'#f59e0b',columns:colsLista,rows:rowsLista(bajos)};
-      actions.push({key:k, color:'#f59e0b', icon:'·', title:ALERT_STORE[k].title, desc:'Por debajo del mínimo dinámico'});
-    }
-    if(emitirOC.length){
-      const k='inv-oc';
-      ALERT_STORE[k]={title:emitirOC.length+' órdenes de compra urgentes',color:'#22d3ee',columns:colsLista,rows:rowsLista(emitirOC)};
-      actions.push({key:k, color:'#22d3ee', icon:'·', title:ALERT_STORE[k].title, desc:'Tiempo de agotamiento ≤ 20 días'});
-    }
-  }catch(e){console.warn('alertas inv:', e);}
+  const agotados = [];
+  const bajos = [];
+  const negativos = [];
+  rows.forEach(r => {
+    const stock = Number(r.stock) || 0;
+    if(stock < 0) negativos.push(r);
+    else if(stock === 0) agotados.push(r);
+    else if(stock <= reorder) bajos.push(r);
+  });
+
+  const colsLista = ['Código','Descripción','Und','Stock','Precio Unit.','Valor en stock','Factura'];
+  const rowsLista = arr => arr.map(r => [r.cod, normalizarDesc(r.desc), r.und||'—', num(r.stock), money(r.precio), money(r.valor), r.factura||'—']);
+
+  if(agotados.length){
+    const k='inv-agotados';
+    ALERT_STORE[k]={title:agotados.length+' SKUs agotados',color:'#ef4444',columns:colsLista,rows:rowsLista(agotados)};
+    actions.push({key:k, color:'#ef4444', icon:'!', title:ALERT_STORE[k].title, desc:'Stock = 0 según consolidado · frenan obra'});
+  }
+  if(bajos.length){
+    const k='inv-bajos';
+    ALERT_STORE[k]={title:bajos.length+' SKUs en stock bajo',color:'#f59e0b',columns:colsLista,rows:rowsLista(bajos)};
+    actions.push({key:k, color:'#f59e0b', icon:'·', title:ALERT_STORE[k].title, desc:'Stock ≤ '+reorder+' unidades (umbral reorder consolidado)'});
+  }
+  if(negativos.length){
+    const k='inv-neg';
+    ALERT_STORE[k]={title:negativos.length+' SKUs con stock negativo',color:'#ec4899',columns:colsLista,rows:rowsLista(negativos)};
+    actions.push({key:k, color:'#ec4899', icon:'!', title:ALERT_STORE[k].title, desc:'Salidas mayores a entradas registradas · revisar kardex'});
+  }
 
   // 2. Actividades con pérdida
   try{
