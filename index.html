@@ -2156,15 +2156,6 @@ document.addEventListener('DOMContentLoaded', function(){
       handleLogin();
     });
   }
-  /* Si ya hay sesion guardada, ocultar overlay y arrancar */
-  try{
-    const cached = localStorage.getItem(LOGIN_KEY);
-    if(cached){
-      const ov = document.getElementById('login-overlay');
-      if(ov) ov.style.display = 'none';
-      boot();
-    }
-  }catch(_){}
 });
 /* boot() se llama solo al login exitoso */
 
