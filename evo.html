@@ -123,6 +123,7 @@
   <div class="scroll-x" style="margin-top:12px">
     <div class="flex gap-2" style="max-width:1400px;margin:0 auto">
       <button class="tab active" data-tab="diagnostico">📊 Diagnóstico</button>
+      <button class="tab" data-tab="briefing">📋 Briefing<span class="badge-new">NUEVO</span></button>
       <button class="tab" data-tab="motorIA">🧠 Motor IA<span class="badge-new">EN VIVO</span></button>
       <button class="tab" data-tab="auditor">💰 Auditor Facturas<span class="badge-new">EN VIVO</span></button>
       <button class="tab" data-tab="actividades">📋 Actividades</button>
@@ -130,6 +131,7 @@
       <button class="tab" data-tab="montecarlo">🎲 Monte Carlo</button>
       <button class="tab" data-tab="tendencia">📉 Tendencia Cortes<span class="badge-new">NUEVO</span></button>
       <button class="tab" data-tab="pareto">🎯 Pareto 80-20<span class="badge-new">NUEVO</span></button>
+      <button class="tab" data-tab="apus">🧮 APUs Explorer<span class="badge-new">NUEVO</span></button>
       <button class="tab" data-tab="quickwins">⚡ 15 Quick Wins</button>
       <button class="tab" data-tab="apuestas">🎯 5 Apuestas</button>
       <button class="tab" data-tab="brechas">🔍 Brechas Mercado</button>
@@ -199,6 +201,23 @@
         <div class="text-sm text-slate-300">Falta auditor automático facturas (Adaptive) y reconciliación 3-way OC+Factura+Remisión (SubBase). Mercado SaaS USD 50-200M validado.</div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ============ BRIEFING ============ -->
+<section id="t-briefing" class="tab-content" style="display:none">
+  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(168,85,247,.06))">
+    <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
+      <div>
+        <div class="pill pill-evo mb-2">Auto-generado desde todos los endpoints · 30 segundos de lectura</div>
+        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📋 Briefing del Día · Comuneros</h3>
+      </div>
+      <button onclick="loadBriefing(true)" class="pill pill-info" style="cursor:pointer;border:none;padding:8px 14px">🔄 Regenerar</button>
+    </div>
+    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Resumen ejecutivo automático cruzando inventario + facturas DIAN + cortes contractuales + eventos detectados por Motor IA. Diseñado para leer en 30 segundos antes de una reunión de junta o llamada con la entidad.</p>
+  </div>
+  <div id="briefingContent">
+    <div class="panel"><div class="text-center text-slate-400" style="padding:60px">⏳ Generando briefing...</div></div>
   </div>
 </section>
 
@@ -431,6 +450,42 @@ EAC(t) = PD / SPI(t)   (duración estimada)</pre>
   </div>
 </section>
 
+<!-- ============ APUS EXPLORER ============ -->
+<section id="t-apus" class="tab-content" style="display:none">
+  <div class="panel mb-4">
+    <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
+      <div>
+        <div class="pill pill-evo mb-2">EN VIVO · 64 APUs parseados desde ANALISIS COMUNEROS.xlsx</div>
+        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🧮 Explorador de APUs</h3>
+      </div>
+      <input id="apuFilter" placeholder="Filtrar APU…" class="pill" style="background:rgba(255,255,255,.05);color:#fff;padding:6px 12px;min-width:220px;border:1px solid rgba(255,255,255,.1)">
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="apusKpis">
+    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">APUs analizados</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Materiales únicos</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">APU promedio costo</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">APU más caro</div><div class="val">—</div><div class="sub">cargando…</div></div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="panel">
+      <h3>Lista APUs (ranking por costo)</h3>
+      <div class="scroll-x" style="max-height:600px">
+        <table id="apuTable">
+          <thead><tr><th>Ítem</th><th>Descripción</th><th class="num">Materiales</th><th class="num">Costo</th></tr></thead>
+          <tbody><tr><td colspan="4" style="text-align:center;padding:30px;color:#64748b">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Detalle del APU seleccionado · <span id="apuSelTitle" class="gradient-text" style="font-size:13px">— elegir uno de la lista —</span></h3>
+      <div id="apuDetail" class="text-sm text-slate-400" style="padding:20px;text-align:center">Click en cualquier APU de la lista para ver el desglose de materiales.</div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ QUICK WINS ============ -->
 <section id="t-quickwins" class="tab-content" style="display:none">
   <div class="panel mb-4">
@@ -550,6 +605,8 @@ document.querySelectorAll('.tab').forEach(function(b){
     if(tab==='montecarlo' && !window._mcLoaded) loadMonteCarlo();
     if(tab==='tendencia' && !window._tendLoaded) loadTendencia();
     if(tab==='pareto' && !window._paretoLoaded) loadPareto();
+    if(tab==='briefing' && !window._briefingLoaded) loadBriefing();
+    if(tab==='apus' && !window._apusLoaded) loadAPUs();
   });
 });
 
@@ -1154,6 +1211,237 @@ async function loadPareto(){
       '</tr>';
     }).join('');
   } catch(e){ console.warn('pareto inv:', e); }
+}
+
+/* ============ BRIEFING DEL DÍA ============ */
+async function loadBriefing(force){
+  window._briefingLoaded = true;
+  var ctn = document.getElementById('briefingContent');
+  ctn.innerHTML = '<div class="panel"><div class="text-center text-slate-400" style="padding:60px">⏳ Generando briefing...</div></div>';
+  try {
+    // Cargar todos los datos necesarios
+    var promises = [
+      jsonp(APPS_URL, {action:'monaco_eventos'+(force?'&_t='+Date.now():'')}),
+      jsonp(APPS_URL, {action:'monaco_auditor'+(force?'&_t='+Date.now():'')}),
+      EVO_RESUMEN ? Promise.resolve(EVO_RESUMEN) : jsonp(APPS_URL, {action:'monaco_evo_resumen'})
+    ];
+    var results = await Promise.all(promises);
+    var motorD = results[0] || {eventos:[]};
+    var auditD = results[1] || {hallazgos:[],resumen:{}};
+    var resumen = results[2] || {};
+
+    // Computar indicadores del último corte
+    var indStats = {};
+    if(IND_DATA && IND_LATEST){
+      var d = IND_DATA[IND_LATEST];
+      if(d){
+        var acts = d.actividades || [];
+        var totT = (d.totales && d.totales['COSTO TOTAL']) || {};
+        var contr=0, exec=0, real=0, perdida=0;
+        acts.forEach(function(a){
+          var cu = Number(a.costo_contr_u)||0, ru = Number(a.costo_real_u)||0;
+          contr += (Number(a.cant_contr)||0)*cu;
+          exec += (Number(a.cant_ejec)||0)*cu;
+          real += (Number(a.cant_ejec)||0)*ru;
+          if((Number(a.util_perd)||0)<0 && (Number(a.porc_ejec)||0)>0) perdida++;
+        });
+        indStats = {
+          corte: IND_LATEST,
+          avance: contr>0?exec/contr:0,
+          cpi: real>0?exec/real:1,
+          contractual: Number(totT.total_contr)||contr,
+          proy_final: Number(totT.proy_final)||0,
+          margen: (Number(totT.total_contr)||contr)>0?(Number(totT.proy_corte)||0)/(Number(totT.total_contr)||contr):0,
+          actividades: acts.length,
+          perdida: perdida
+        };
+      }
+    }
+
+    var fecha = new Date().toLocaleString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    var critEvents = (motorD.eventos||[]).filter(function(e){return e.severidad==='CRITICA';}).length;
+    var altaEvents = (motorD.eventos||[]).filter(function(e){return e.severidad==='ALTA';}).length;
+    var impactoMotor = (motorD.eventos||[]).reduce(function(s,e){return s+(Number(e.impactoCop)||0);},0);
+
+    var html = '';
+
+    // Header con fecha
+    html += '<div class="panel mb-4"><div class="flex justify-between items-start flex-wrap gap-2">' +
+      '<div><div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Briefing automático</div>' +
+      '<div style="font-size:18px;font-weight:700;color:#fff;font-family:Space Grotesk;margin-top:2px">'+fecha+'</div></div>' +
+      '<div class="badge-live">DATOS EN VIVO</div></div></div>';
+
+    // 1. Estado del proyecto
+    html += '<div class="panel mb-4"><h3>1. Estado del proyecto al corte '+(indStats.corte||'—').replace(/-/g,'/')+'</h3>';
+    if(indStats.contractual){
+      var avancePct = (indStats.avance*100).toFixed(1);
+      var marPct = (indStats.margen*100).toFixed(1);
+      var cpi = indStats.cpi.toFixed(2);
+      var diagnos = indStats.cpi >= 1 ? '<span class="pill pill-ok">ANALÍTICAMENTE SANO · CPI '+cpi+'</span>' : indStats.cpi >= 0.95 ? '<span class="pill pill-warn">CPI '+cpi+' · vigilar</span>' : '<span class="pill pill-crit">CPI '+cpi+' · sobrecosto</span>';
+      var marg = indStats.margen >= 0.1 ? '<span class="pill pill-ok">Margen +'+marPct+'%</span>' : indStats.margen >= 0 ? '<span class="pill pill-warn">Margen '+marPct+'%</span>' : '<span class="pill pill-crit">Margen '+marPct+'% (NEGATIVO)</span>';
+      html += '<p class="text-sm text-slate-300">Valor contractual <b>'+moneyShort(indStats.contractual)+'</b>. Avance ponderado del corte: <b>'+avancePct+'%</b>. ';
+      html += diagnos + ' ' + marg + '. ';
+      html += 'Proyección al cierre: <b>'+moneyShort(indStats.proy_final)+'</b>. ';
+      if(indStats.perdida>0) html += '<b>'+indStats.perdida+' de '+indStats.actividades+' actividades</b> tienen pérdida acumulada. ';
+      html += '</p>';
+    } else {
+      html += '<p class="text-sm text-slate-400">Sin datos de corte cargados.</p>';
+    }
+    html += '</div>';
+
+    // 2. Eventos Motor IA
+    html += '<div class="panel mb-4"><h3>2. Eventos detectados por Motor IA (últimas 24h)</h3>';
+    if((motorD.eventos||[]).length===0){
+      html += '<p class="text-sm text-slate-300">✓ Sin eventos críticos. El motor analizó inventario, facturas y actividades sin encontrar anomalías.</p>';
+    } else {
+      html += '<div class="flex gap-2 flex-wrap mb-3">';
+      if(critEvents) html += '<span class="pill pill-crit">'+critEvents+' críticos</span>';
+      if(altaEvents) html += '<span class="pill pill-warn">'+altaEvents+' altos</span>';
+      html += '<span class="pill pill-info">Total impacto estimado: '+moneyShort(impactoMotor)+'</span></div>';
+      html += '<ul class="bullets">';
+      (motorD.eventos||[]).slice(0,5).forEach(function(ev){
+        html += '<li><b>['+ev.severidad+']</b> '+escapeHTML(ev.observacion);
+        if(ev.impactoCop) html += ' · impacto '+moneyShort(ev.impactoCop);
+        html += '</li>';
+      });
+      html += '</ul>';
+      if((motorD.eventos||[]).length>5) html += '<p class="text-xs text-slate-500 mt-2">'+((motorD.eventos||[]).length-5)+' eventos adicionales en la pestaña Motor IA</p>';
+    }
+    html += '</div>';
+
+    // 3. Auditoría facturas
+    html += '<div class="panel mb-4"><h3>3. Salud financiera · facturas DIAN</h3>';
+    var auR = auditD.resumen || {};
+    html += '<p class="text-sm text-slate-300">Auditadas <b>'+(auR.total||0)+'</b> facturas DIAN. ';
+    if(auR.criticas) html += '<span class="pill pill-crit">'+auR.criticas+' hallazgos críticos</span> ';
+    if(auR.altas) html += '<span class="pill pill-warn">'+auR.altas+' hallazgos altos</span> ';
+    if(auR.medias) html += '<span class="pill pill-info">'+auR.medias+' medios</span> ';
+    if(!auR.criticas && !auR.altas) html += '<span class="pill pill-ok">Sin riesgos críticos detectados</span> ';
+    if(auR.valor_riesgo) html += '. Valor en riesgo: <b>'+moneyShort(auR.valor_riesgo)+'</b>';
+    html += '.</p>';
+    html += '</div>';
+
+    // 4. Inventario
+    html += '<div class="panel mb-4"><h3>4. Inventario consolidado</h3>';
+    html += '<p class="text-sm text-slate-300"><b>'+fmt0.format(resumen.items_inventario||0)+' ítems</b> únicos por valor de <b>'+moneyShort(resumen.valor_inventario||0)+'</b>. ';
+    html += '<b>'+fmt0.format(resumen.facturas_dian||0)+' facturas DIAN</b> parseadas de <b>'+(resumen.proveedores||0)+' proveedores únicos</b> · facturación total <b>'+moneyShort(resumen.valor_facturado||0)+'</b>. ';
+    if(resumen.items_sin_precio) html += '<span class="pill pill-warn">'+resumen.items_sin_precio+' ítems aún sin precio</span> ';
+    html += '</p></div>';
+
+    // 5. Cobertura plataforma
+    html += '<div class="panel mb-4"><h3>5. Posicionamiento Monaco vs mercado</h3>';
+    html += '<p class="text-sm text-slate-300">Hoy Monaco cubre <b>'+resumen.capacidades_cubiertas+' de 110 capacidades</b> de referencia (8%). ';
+    html += 'Con las 15 quick wins propuestas: <b>22%</b>. ';
+    html += 'Con las 5 apuestas (Motor IA, Auditor Facturas, 3-Way Match, Pliego SECOP II, PWA): <b>45%+</b>. ';
+    html += 'Ver detalle en las pestañas <b>Brechas Mercado</b> y <b>Roadmap 24m</b>.</p></div>';
+
+    // 6. Acciones recomendadas
+    html += '<div class="panel" style="border-left:4px solid #10b981"><h3>6. Acciones recomendadas hoy</h3>';
+    html += '<ol class="bullets" style="counter-reset:item">';
+    if(critEvents) html += '<li><b>Atender los '+critEvents+' eventos críticos</b> del Motor IA (impacto estimado '+moneyShort(impactoMotor)+').</li>';
+    if(auR.criticas) html += '<li>Revisar las '+auR.criticas+' facturas con hallazgo crítico (posibles duplicados/sobrepagos).</li>';
+    if(indStats.margen<0) html += '<li><b>Margen negativo:</b> revisar APUs de las '+indStats.perdida+' actividades con pérdida. Negociar proveedores o ajustar alcance.</li>';
+    if(resumen.items_sin_precio>0) html += '<li>Los '+resumen.items_sin_precio+' ítems sin precio bloquean cálculo de valor real. Revisar pestaña Tabla Maestra del dashboard estable.</li>';
+    if(!critEvents && !auR.criticas && indStats.margen>=0){
+      html += '<li>Proyecto bajo control. <b>Aprovechar para implementar Quick Wins</b> del Cuadrante I (Earned Schedule, WhatsApp, SST, DIAN nativa).</li>';
+      html += '<li>Considerar arrancar Sprint 1 del roadmap mientras no hay incendios operacionales.</li>';
+    }
+    html += '</ol></div>';
+
+    ctn.innerHTML = html;
+  } catch(e){
+    ctn.innerHTML = '<div class="panel"><div class="text-center text-red-400" style="padding:40px">Error generando briefing: '+e.message+'</div></div>';
+    console.error(e);
+  }
+}
+
+/* ============ APUS EXPLORER ============ */
+async function loadAPUs(){
+  window._apusLoaded = true;
+  try {
+    var apus = await jsonp(APPS_URL, {action:'apus'});
+    if(!apus || typeof apus !== 'object'){
+      document.getElementById('apuTable').querySelector('tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:#64748b">Sin datos de APUs · ejecutar parsearAPUsDesdeAnalisis en Apps Script</td></tr>';
+      return;
+    }
+    var arr = Object.keys(apus).map(function(item){
+      var apu = apus[item];
+      var mats = apu.materiales || [];
+      var costo = mats.reduce(function(s,m){return s + (Number(m.valor_unit)||0);},0);
+      return {item:item, desc:apu.desc||'', materiales:mats, costo:costo, n:mats.length};
+    }).sort(function(a,b){return b.costo-a.costo;});
+
+    window._APUS_ARR = arr;
+    var totalMat = arr.reduce(function(s,a){return s+a.n;},0);
+    var avgCosto = arr.length ? arr.reduce(function(s,a){return s+a.costo;},0)/arr.length : 0;
+    var maxA = arr[0];
+
+    document.getElementById('apusKpis').innerHTML =
+      '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">APUs analizados</div><div class="val">'+arr.length+'</div><div class="sub">parseados de ANALISIS COMUNEROS</div></div>' +
+      '<div class="kpi" style="--acc:#10b981"><div class="lbl">Total materiales</div><div class="val">'+totalMat+'</div><div class="sub">filas de materiales</div></div>' +
+      '<div class="kpi" style="--acc:#f59e0b"><div class="lbl">APU promedio costo</div><div class="val">'+moneyShort(avgCosto)+'</div><div class="sub">por unidad</div></div>' +
+      '<div class="kpi" style="--acc:#ef4444"><div class="lbl">APU más caro</div><div class="val">'+moneyShort(maxA.costo)+'</div><div class="sub">'+maxA.item+'</div></div>';
+
+    function renderList(items){
+      var tbody = document.getElementById('apuTable').querySelector('tbody');
+      tbody.innerHTML = items.map(function(a){
+        return '<tr style="cursor:pointer" onclick="showAPU(\\''+a.item+'\\')">'+
+          '<td style="font-weight:600;color:#a5b4fc">'+escapeHTML(a.item)+'</td>'+
+          '<td style="font-size:11.5px">'+escapeHTML((a.desc||'').substring(0,55))+'</td>'+
+          '<td class="num">'+a.n+'</td>'+
+          '<td class="num" style="font-weight:600">'+moneyShort(a.costo)+'</td>'+
+        '</tr>';
+      }).join('');
+    }
+    renderList(arr);
+
+    document.getElementById('apuFilter').oninput = function(e){
+      var f = e.target.value.toLowerCase();
+      renderList(arr.filter(function(a){return (a.item+' '+a.desc).toLowerCase().indexOf(f)>=0;}));
+    };
+    // Auto-seleccionar el primero
+    if(arr.length) showAPU(arr[0].item);
+  } catch(e){
+    document.getElementById('apuTable').querySelector('tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:#ef4444">Error: '+e.message+'</td></tr>';
+  }
+}
+
+function showAPU(item){
+  var apu = (window._APUS_ARR||[]).find(function(a){return a.item===item;});
+  if(!apu) return;
+  document.getElementById('apuSelTitle').textContent = item + ' · ' + (apu.desc||'').substring(0,60);
+  var totalCosto = apu.costo;
+  var html = '<div class="grid grid-cols-2 gap-3 mb-3">' +
+    '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">Costo unitario</div><div class="val" style="font-size:17px">'+moneyShort(totalCosto)+'</div></div>' +
+    '<div class="kpi" style="--acc:#10b981"><div class="lbl">Materiales</div><div class="val" style="font-size:17px">'+apu.n+'</div></div>' +
+  '</div>';
+  var mats = apu.materiales.slice().sort(function(a,b){return (Number(b.valor_unit)||0)-(Number(a.valor_unit)||0);});
+  html += '<div class="scroll-x" style="max-height:400px"><table style="font-size:11.5px">';
+  html += '<thead><tr><th>Material</th><th>Und</th><th class="num">Cant</th><th class="num">Precio</th><th class="num">Valor</th><th class="num">% APU</th></tr></thead><tbody>';
+  var acumPct = 0;
+  mats.forEach(function(m){
+    var val = Number(m.valor_unit)||0;
+    var pctL = totalCosto>0?(val/totalCosto*100):0;
+    acumPct += pctL;
+    var bar = '<div style="background:rgba(34,211,238,.12);height:3px;border-radius:2px;margin-top:2px;overflow:hidden"><div style="background:#22d3ee;height:100%;width:'+Math.min(100,pctL).toFixed(1)+'%"></div></div>';
+    html += '<tr>'+
+      '<td>'+escapeHTML((m.desc||'').substring(0,40))+'</td>'+
+      '<td>'+escapeHTML(m.und||'')+'</td>'+
+      '<td class="num">'+num(m.cantidad)+'</td>'+
+      '<td class="num">'+money(m.precio_apu)+'</td>'+
+      '<td class="num" style="font-weight:600">'+money(val)+'</td>'+
+      '<td class="num">'+pctL.toFixed(1)+'%'+bar+'</td>'+
+    '</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  // Análisis 80-20
+  var ord = mats.slice().sort(function(a,b){return (Number(b.valor_unit)||0)-(Number(a.valor_unit)||0);});
+  var acc=0; var critN=0;
+  for(var i=0;i<ord.length;i++){ acc += (Number(ord[i].valor_unit)||0); critN++; if(acc>=totalCosto*0.8) break; }
+  html += '<div class="mt-3 text-xs text-slate-400"><b>Análisis 80-20:</b> '+critN+' de '+mats.length+' materiales concentran el 80% del costo del APU. Estos son los críticos a vigilar precio.</div>';
+
+  document.getElementById('apuDetail').innerHTML = html;
 }
 
 /* ============ QUICK WINS ============ */
