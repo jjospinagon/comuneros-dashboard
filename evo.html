@@ -1385,7 +1385,7 @@ async function loadAPUs(){
     function renderList(items){
       var tbody = document.getElementById('apuTable').querySelector('tbody');
       tbody.innerHTML = items.map(function(a){
-        return '<tr style="cursor:pointer" onclick="showAPU(\\''+a.item+'\\')">'+
+        return '<tr style="cursor:pointer" onclick="showAPU(\''+a.item+'\')">'+
           '<td style="font-weight:600;color:#a5b4fc">'+escapeHTML(a.item)+'</td>'+
           '<td style="font-size:11.5px">'+escapeHTML((a.desc||'').substring(0,55))+'</td>'+
           '<td class="num">'+a.n+'</td>'+
