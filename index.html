@@ -460,6 +460,30 @@
         <span style="font-size:11px;color:#94a3b8">Prioridades automáticas según inventario + indicadores</span>
       </div>
       <div id="acciones-hoy-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px"></div>
+
+      <div class="menu-card ind" onclick="goTo('contrato')" style="background:linear-gradient(180deg,rgba(34,211,238,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#6366f1,#22d3ee)">CON</div>
+        <h2>Informacion del Contrato</h2>
+        <p class="desc">Identificacion contractual, partes, documentos oficiales (SECOP II, MGA, presupuesto) y balances vigentes con modificaciones.</p>
+        <div class="kpis">
+          <div class="kpi"><div class="v">023/25</div><div class="l">Contrato</div></div>
+          <div class="kpi"><div class="v">V7</div><div class="l">Balance</div></div>
+          <div class="kpi"><div class="v">29</div><div class="l">NPs</div></div>
+        </div>
+        <div class="cta">Abrir informacion completa <span class="arrow">&rarr;</span></div>
+      </div>
+
+      <div class="menu-card inv" onclick="goTo('comunicaciones')" style="background:linear-gradient(180deg,rgba(168,85,247,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#a855f7,#ef4444)">COM</div>
+        <h2>Comunicaciones</h2>
+        <p class="desc">Oficios enviados y recibidos &middot; obra + interventoria &middot; busqueda por palabra clave, filtros por anio/mes y acceso a anexos en Drive.</p>
+        <div class="kpis">
+          <div class="kpi"><div class="v" id="mn-com-1">&mdash;</div><div class="l">Total</div></div>
+          <div class="kpi"><div class="v" id="mn-com-2">&mdash;</div><div class="l">Enviados</div></div>
+          <div class="kpi"><div class="v" id="mn-com-3">&mdash;</div><div class="l">Recibidos</div></div>
+        </div>
+        <div class="cta">Ir al consolidado <span class="arrow">&rarr;</span></div>
+      </div>
     </div>
   </div>
 
@@ -798,6 +822,136 @@
   </div>
 </div>
 
+<!-- ============ VISTA CONTRATO ============ -->
+<div class="screen" id="screen-contrato">
+  <div style="padding:18px;max-width:1280px;margin:0 auto">
+    <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+    <header style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 18px;gap:12px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:20px;color:#fff">📑 Información del Contrato</h1>
+        <h2 style="margin:0;font-size:13px;color:#94a3b8;font-weight:400">Contrato 023 de 2025 · Construcción Alcantarillado Comuneros · Montenegro, Quindío</h2>
+      </div>
+      <span class="badge" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:6px 10px;border-radius:8px;color:#94a3b8;font-size:12px">Balance vigente: V7 — Adición 07-04-2026</span>
+    </header>
+
+    <div class="grid" style="display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr))">
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #22d3ee"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Contrato</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">023 de 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Obra civil</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Entidad</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">EMPRESA PARA EL DESARROLLO TERRITORIAL</div><div style="font-size:11px;color:#64748b;margin-top:2px">Quindío</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #f59e0b"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Contratista</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">CONSORCIO INFRARED COMUNEROS 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Consorcio de obra</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #a855f7"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Interventoría</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">UT INTERCOMUNEROS 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Interventoría externa</div></div>
+    </div>
+
+    <div class="grid" style="display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-top:14px">
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">📋 Identificación contractual</h3>
+        <table style="width:100%;font-size:12.5px"><tbody>
+          <tr><td style="padding:6px 0;color:#94a3b8;width:35%">Objeto</td><td style="font-weight:600;color:#cbd5e1">Construcción del sistema de alcantarillado y obras complementarias — Comuneros, Quindío</td></tr>
+          <tr><td style="padding:6px 0;color:#94a3b8">N° contrato</td><td style="font-weight:600;color:#cbd5e1">023 de 2025</td></tr>
+          <tr><td style="padding:6px 0;color:#94a3b8">Modalidad</td><td style="color:#cbd5e1">Licitación pública SECOP II</td></tr>
+          <tr><td style="padding:6px 0;color:#94a3b8">Fecha inicio</td><td style="color:#cbd5e1">02-09-2025</td></tr>
+          <tr><td style="padding:6px 0;color:#94a3b8">Fecha fin contractual</td><td style="color:#cbd5e1">05-12-2026</td></tr>
+          <tr><td style="padding:6px 0;color:#94a3b8">Balance vigente</td><td><span style="background:rgba(16,185,129,.18);color:#10b981;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:700">002 · ADICIÓN 07-04-2026</span></td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 6px;color:#fff">🗂️ Documentos oficiales</h3>
+        <div style="font-size:11px;color:#64748b;margin-bottom:10px">Click para abrir en Google Drive · acceso restringido</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <a href="https://drive.google.com/file/d/1Ok8cp5YRdhcyEeIO_43OBNKcpl2-APMi/view" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;color:#cbd5e1"><div style="font-size:22px">📊</div><div style="flex:1"><div style="font-weight:600;font-size:12.5px;color:#fff">PPTO PTA 1 — INFRARED</div><div style="font-size:11px;color:#94a3b8">Presupuesto oficial · xlsx · 7.95 MB</div></div></a>
+          <a href="https://drive.google.com/file/d/13xp6JAeFPhC0aCqOC1bVCBCmuLM5Zde-/view" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;color:#cbd5e1"><div style="font-size:22px">📄</div><div style="flex:1"><div style="font-weight:600;font-size:12.5px;color:#fff">MGA COMUNEROS</div><div style="font-size:11px;color:#94a3b8">Metodología General Ajustada · pdf · 253 KB</div></div></a>
+          <a href="https://drive.google.com/drive/folders/1xVhSOVpAnb5YhAPMEzZS8cSdcNK6EA-a" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;color:#cbd5e1"><div style="font-size:22px">📁</div><div style="flex:1"><div style="font-weight:600;font-size:12.5px;color:#fff">SECOP II</div><div style="font-size:11px;color:#94a3b8">Carpeta del proceso licitatorio</div></div></a>
+          <a href="https://drive.google.com/file/d/1yKTZUDa5U9uc4Ru9c8RMemtWgaerZBLQ/view" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;color:#cbd5e1"><div style="font-size:22px">📘</div><div style="flex:1"><div style="font-weight:600;font-size:12.5px;color:#fff">V3 — BALANCE 001</div><div style="font-size:11px;color:#94a3b8">Balance inicial · 12 NPs · xlsx</div></div></a>
+          <a href="https://drive.google.com/file/d/1R1ixEcbNwjAnwAxDx8JCNIi6SJwoXL-r/view" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;color:#cbd5e1"><div style="font-size:22px">📗</div><div style="flex:1"><div style="font-weight:600;font-size:12.5px;color:#fff">V7 — BALANCE 002 + ADICIÓN 07-04-2026</div><div style="font-size:11px;color:#94a3b8">Balance vigente · 29 NPs · xlsx · 4.6 MB</div></div></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VISTA COMUNICACIONES ============ -->
+<style>
+  #screen-comunicaciones .wrap{max-width:1500px;margin:0 auto;padding:18px}
+  #screen-comunicaciones .panel{background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px}
+  #screen-comunicaciones header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 18px;gap:12px;flex-wrap:wrap}
+  #screen-comunicaciones h1{margin:0;font-size:20px;color:#fff}
+  #screen-comunicaciones h2{margin:0;font-size:13px;color:#94a3b8;font-weight:400}
+  #screen-comunicaciones .kpi-i{background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;border-left:3px solid var(--acc,#22d3ee)}
+  #screen-comunicaciones .kpi-i .label{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  #screen-comunicaciones .kpi-i .value{font-size:24px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;margin-top:4px}
+  #screen-comunicaciones .kpi-i .sub{font-size:11px;color:#64748b;margin-top:2px}
+  #screen-comunicaciones .grid{display:grid;gap:14px}
+  #screen-comunicaciones .kpis5{grid-template-columns:repeat(5,minmax(0,1fr))}
+  @media(max-width:1100px){#screen-comunicaciones .kpis5{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:700px){#screen-comunicaciones .kpis5{grid-template-columns:repeat(2,1fr)}}
+  #screen-comunicaciones table{width:100%;border-collapse:collapse;font-size:11.5px}
+  #screen-comunicaciones th{text-align:left;padding:9px 10px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:rgba(10,14,39,.95);z-index:1}
+  #screen-comunicaciones td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:#cbd5e1}
+  #screen-comunicaciones tr:hover td{background:rgba(255,255,255,.03);cursor:pointer}
+  #screen-comunicaciones .filter-input{background:#1e2a4a;border:1px solid rgba(255,255,255,.15);color:#fff;padding:8px 10px;border-radius:8px;font-size:12.5px;width:100%}
+  #screen-comunicaciones .filter-input:focus{outline:2px solid #6366f1;border-color:transparent}
+  #screen-comunicaciones .tag{padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;display:inline-block}
+  #screen-comunicaciones .tree-year{font-weight:700;color:#22d3ee;cursor:pointer;padding:4px 0;font-size:12px}
+  #screen-comunicaciones .tree-month{padding:3px 0 3px 14px;color:#cbd5e1;cursor:pointer;font-size:11.5px}
+  #screen-comunicaciones .tree-month:hover{color:#fff}
+</style>
+<div class="screen" id="screen-comunicaciones">
+  <div class="wrap">
+    <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+    <header>
+      <div>
+        <h1>📨 Comunicaciones Contractuales</h1>
+        <h2>Oficios enviados y recibidos · obra + interventoría · consolidado en vivo</h2>
+      </div>
+      <button onclick="cmsLoadData(true)" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);color:#a5b4fc;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">🔄 Recargar</button>
+    </header>
+
+    <div class="grid kpis5" style="margin-bottom:14px">
+      <div class="kpi-i" style="--acc:#22d3ee"><div class="label">Total oficios</div><div class="value" id="cms-k-total">—</div><div class="sub">consolidado</div></div>
+      <div class="kpi-i" style="--acc:#10b981"><div class="label">Enviados</div><div class="value" id="cms-k-env">—</div><div class="sub">obra + interv</div></div>
+      <div class="kpi-i" style="--acc:#f59e0b"><div class="label">Recibidos</div><div class="value" id="cms-k-rec">—</div><div class="sub">obra + interv</div></div>
+      <div class="kpi-i" style="--acc:#a855f7"><div class="label">Obra</div><div class="value" id="cms-k-obra">—</div><div class="sub">consorcio</div></div>
+      <div class="kpi-i" style="--acc:#ef4444"><div class="label">Interventoría</div><div class="value" id="cms-k-int">—</div><div class="sub">UT intercom.</div></div>
+    </div>
+
+    <div class="panel" style="margin-bottom:12px">
+      <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:10px">
+        <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Búsqueda libre</div><input id="cms-search" type="text" class="filter-input" placeholder="palabra, consecutivo, asunto…"></div>
+        <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Fuente</div><select id="cms-fuente" class="filter-input"><option value="">Todas</option><option value="obra">Obra</option><option value="interventoria">Interventoría</option></select></div>
+        <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Tipo</div><select id="cms-tipo" class="filter-input"><option value="">Todos</option><option value="enviado">Enviados</option><option value="recibido">Recibidos</option></select></div>
+        <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Año</div><select id="cms-anio" class="filter-input"><option value="">Todos</option></select></div>
+        <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Mes</div><select id="cms-mes" class="filter-input"><option value="">Todos</option></select></div>
+      </div>
+      <div style="font-size:11px;color:#64748b;margin-top:8px"><span id="cms-count">—</span> resultados</div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:280px 1fr;gap:14px">
+      <div class="panel" style="max-height:580px;overflow:auto">
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#fff">🗓️ Calendario</h3>
+        <div id="cms-arbol"><div style="color:#94a3b8;padding:14px;text-align:center;font-size:12px">⏳ Cargando…</div></div>
+      </div>
+      <div class="panel" style="max-height:580px;overflow:auto">
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#fff">📜 Oficios</h3>
+        <div style="overflow:auto">
+          <table id="cms-table">
+            <thead><tr><th>Fecha</th><th>Fuente</th><th>Tipo</th><th>Consecutivo</th><th>Asunto</th><th>Estado</th></tr></thead>
+            <tbody><tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando oficios…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="cms-detail-panel" style="display:none;margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <h3 style="font-size:15px;font-weight:700;margin:0;color:#fff">📄 Detalle del oficio</h3>
+        <button onclick="document.getElementById('cms-detail-panel').style.display='none'" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer">✕ cerrar</button>
+      </div>
+      <div id="cms-detail"></div>
+    </div>
+  </div>
+</div>
+
+
 <!-- ============ MODAL DETALLE ALERTA ============ -->
 <div id="alert-modal" style="display:none;position:fixed;inset:0;background:rgba(10,15,30,.85);backdrop-filter:blur(8px);z-index:9500;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeAlertDetail()">
   <div style="background:linear-gradient(135deg,rgba(20,26,55,.97),rgba(15,20,40,.97));border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px 28px;max-width:920px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
@@ -883,8 +1037,8 @@ function goTo(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
-  // Lazy init de inventario al primer ingreso
   if(name==='inventario' && !INV_LOADED){ invLoadData(); }
+  if(name==='comunicaciones' && !CMS_LOADED){ cmsLoadData(); }
 }
 
 /* ====================== DATA SHARED ====================== */
@@ -1946,27 +2100,36 @@ function showAlertDetail(key){
   if(!a) return;
   const modal = document.getElementById('alert-modal');
   document.getElementById('alert-modal-title').innerHTML = '<span style="color:'+a.color+'">●</span> ' + a.title;
-  const thead = '<tr>' + a.columns.map(c => '<th style="text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:rgba(15,20,40,.95);z-index:1">'+c+'</th>').join('') + '</tr>';
-  const tbody = a.rows.map(r => '<tr style="border-bottom:1px solid rgba(255,255,255,.04)">' + r.map((v,i) => '<td style="padding:7px 10px;font-size:12px;color:'+(i===0?'#a5b4fc':'#cbd5e1')+';font-weight:'+(i===0?'600':'400')+'">'+v+'</td>').join('') + '</tr>').join('');
-  document.getElementById('alert-modal-body').innerHTML = '<thead>'+thead+'</thead><tbody>'+tbody+'</tbody>';
-  document.getElementById('alert-modal-count').textContent = a.rows.length+' registro(s)';
+  const thead = '<tr><th>Codigo</th><th>Descripcion</th><th>Stock/Valor</th><th>Status</th></tr>';
+  const tbody = (a.items || []).map(it =>
+    '<tr><td>' + (it.codigo || '') + '</td>' +
+    '<td>' + ((it.desc || '').substring(0, 60)) + '</td>' +
+    '<td>' + (it.stock != null ? it.stock : (it.valor != null ? it.valor : '')) + '</td>' +
+    '<td>' + (it.status || '') + '</td></tr>'
+  ).join('');
+  const body = document.getElementById('alert-modal-body');
+  if(body) body.innerHTML = '<table style="width:100%;font-size:11.5px;border-collapse:collapse"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>';
   modal.style.display = 'flex';
 }
-function closeAlertDetail(){ document.getElementById('alert-modal').style.display = 'none'; }
+
+document.addEventListener('click', e => {
+  if(e.target && e.target.id === 'alert-modal-close'){ document.getElementById('alert-modal').style.display = 'none'; }
+});
 
 /* ====================== LOGIN GATE ====================== */
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-function showLoginError(m){const el=document.getElementById('login-error');el.textContent=m;el.style.display='block';}
-function hideLoginError(){const el=document.getElementById('login-error');if(el)el.style.display='none';}
+const LOGIN_KEY = 'comuneros_login_v1';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function showLoginError(msg){ const el = document.getElementById('login-error'); if(el){ el.textContent = msg; el.style.display = 'block'; } }
+function hideLoginError(){ const el = document.getElementById('login-error'); if(el){ el.style.display = 'none'; } }
+
 async function handleLogin(){
   hideLoginError();
-  const btn=document.getElementById('login-btn');
-  const nombre=(document.getElementById('login-nombre').value||'').trim();
-  const apellidos=(document.getElementById('login-apellidos').value||'').trim();
-  const correo=(document.getElementById('login-correo').value||'').trim();
+  const nombre = (document.getElementById('login-nombre') || {value:''}).value.trim();
+  const apellidos = (document.getElementById('login-apellidos') || {value:''}).value.trim();
+  const correo = (document.getElementById('login-correo') || {value:''}).value.trim();
   if(!nombre||!apellidos||!correo){showLoginError('Todos los campos son obligatorios');return;}
   if(!EMAIL_REGEX.test(correo)){showLoginError('Correo con formato invalido (revisa el @ y dominio).');return;}
-  btn.disabled=true;btn.textContent='Registrando...';btn.style.opacity='0.7';
+  const btn = document.getElementById('login-submit'); if(btn) btn.disabled = true;
   try{
     const res=await jsonp(APPS_URL,{
       action:'registrar_ingreso',
@@ -1975,16 +2138,198 @@ async function handleLogin(){
       url:location.href.slice(0,200)
     });
     if(!res||!res.ok)throw new Error((res&&res.error)||'No fue posible registrar el ingreso. Intenta de nuevo.');
-    const ov=document.getElementById('login-overlay');
-    if(ov){ov.style.opacity='0';ov.style.transition='opacity .35s ease-out';setTimeout(function(){if(ov.parentNode)ov.parentNode.removeChild(ov);},380);}
+    try{ localStorage.setItem(LOGIN_KEY, JSON.stringify({nombre,apellidos,correo,ts:Date.now()})); }catch(_){ }
+    const gate = document.getElementById('login-gate'); if(gate) gate.style.display = 'none';
     boot();
   }catch(e){
     showLoginError(e.message||'Error inesperado');
-    btn.disabled=false;btn.textContent='Ingresar \u2192';btn.style.opacity='1';
+    if(btn) btn.disabled = false;
   }
 }
-setTimeout(function(){var n=document.getElementById('login-nombre');if(n)n.focus();},250);
+document.addEventListener('click', e => { if(e.target && e.target.id === 'login-submit'){ handleLogin(); } });
+document.addEventListener('keydown', e => { if(e.key === 'Enter'){ const gate = document.getElementById('login-gate'); if(gate && gate.style.display !== 'none'){ handleLogin(); } } });
 /* boot() se llama solo al login exitoso */
+
+/* ====================== COMUNICACIONES (G3 monaco) ====================== */
+let CMS_LOADED = false;
+const CMS_STATE = { items:[], indice:{}, fuente:'', tipo:'', anio:'', mes:'', q:'' };
+
+async function cmsLoadData(force){
+  CMS_LOADED = true;
+  const tbody = document.getElementById('cms-table').querySelector('tbody');
+  if(force) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">⏳ Recargando…</td></tr>';
+  try{
+    const d = await jsonp(APPS_URL, {action:'comunicaciones'});
+    if(!d || !d.items){
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#ef4444">No se pudo cargar el consolidado de comunicaciones.</td></tr>';
+      return;
+    }
+    CMS_STATE.items = d.items;
+    CMS_STATE.indice = d.indice || {};
+    const t = d.totales || {};
+    document.getElementById('cms-k-total').textContent = (t.total||0);
+    document.getElementById('cms-k-env').textContent   = (t.enviados||0);
+    document.getElementById('cms-k-rec').textContent   = (t.recibidos||0);
+    document.getElementById('cms-k-obra').textContent  = (t.obra||0);
+    document.getElementById('cms-k-int').textContent   = (t.interventoria||0);
+    // KPIs en el menú principal
+    const mc1 = document.getElementById('mn-com-1'); if(mc1) mc1.textContent = (t.total||0);
+    const mc2 = document.getElementById('mn-com-2'); if(mc2) mc2.textContent = (t.enviados||0);
+    const mc3 = document.getElementById('mn-com-3'); if(mc3) mc3.textContent = (t.recibidos||0);
+
+    const anios = Object.keys(CMS_STATE.indice).sort().reverse();
+    const selA = document.getElementById('cms-anio');
+    selA.innerHTML = '<option value="">Todos</option>' + anios.map(a => `<option value="${a}">${a}</option>`).join('');
+    selA.onchange = e => { CMS_STATE.anio = e.target.value; cmsPoblarMeses(); cmsAplicarFiltros(); };
+    document.getElementById('cms-fuente').onchange = e => { CMS_STATE.fuente = e.target.value; cmsAplicarFiltros(); };
+    document.getElementById('cms-tipo').onchange   = e => { CMS_STATE.tipo   = e.target.value; cmsAplicarFiltros(); };
+    document.getElementById('cms-mes').onchange    = e => { CMS_STATE.mes    = e.target.value; cmsAplicarFiltros(); };
+    document.getElementById('cms-search').oninput  = e => { CMS_STATE.q = e.target.value.toLowerCase(); cmsAplicarFiltros(); };
+    cmsRenderArbol();
+    cmsAplicarFiltros();
+  } catch(e){
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#ef4444">Error cargando comunicaciones: ${cmsEscape(e.message||String(e))}</td></tr>`;
+  }
+}
+
+function cmsEscape(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function cmsPoblarMeses(){
+  const sel = document.getElementById('cms-mes');
+  if(!CMS_STATE.anio){ sel.innerHTML = '<option value="">Todos</option>'; return; }
+  const meses = Object.keys(CMS_STATE.indice[CMS_STATE.anio]||{}).sort();
+  const nm = {'01':'enero','02':'febrero','03':'marzo','04':'abril','05':'mayo','06':'junio','07':'julio','08':'agosto','09':'septiembre','10':'octubre','11':'noviembre','12':'diciembre'};
+  sel.innerHTML = '<option value="">Todos</option>' + meses.map(m => `<option value="${m}">${m} · ${nm[m]||''}</option>`).join('');
+}
+
+function cmsAplicarFiltros(){
+  let arr = CMS_STATE.items.slice();
+  if(CMS_STATE.fuente) arr = arr.filter(x => x.fuente===CMS_STATE.fuente);
+  if(CMS_STATE.tipo)   arr = arr.filter(x => x.tipo===CMS_STATE.tipo);
+  if(CMS_STATE.anio)   arr = arr.filter(x => x.anio===CMS_STATE.anio);
+  if(CMS_STATE.mes)    arr = arr.filter(x => x.mes===CMS_STATE.mes);
+  if(CMS_STATE.q){
+    const q = CMS_STATE.q;
+    arr = arr.filter(x =>
+      (x.consecutivo||'').toLowerCase().includes(q) ||
+      (x.asunto||'').toLowerCase().includes(q) ||
+      (x.tipo_doc||'').toLowerCase().includes(q) ||
+      (x.remitente||'').toLowerCase().includes(q) ||
+      (x.destinatario||'').toLowerCase().includes(q) ||
+      (x.observaciones||'').toLowerCase().includes(q)
+    );
+  }
+  document.getElementById('cms-count').textContent = arr.length;
+  cmsRenderTabla(arr);
+}
+
+function cmsRenderTabla(arr){
+  const tbody = document.getElementById('cms-table').querySelector('tbody');
+  if(!arr.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">Sin resultados con los filtros aplicados.</td></tr>';
+    return;
+  }
+  const fc = {obra:'#a855f7', interventoria:'#ef4444'};
+  const tc = {enviado:'#10b981', recibido:'#f59e0b'};
+  tbody.innerHTML = arr.slice(0,300).map(x => {
+    const cf = fc[x.fuente]||'#94a3b8';
+    const ct = tc[x.tipo]||'#94a3b8';
+    const fLbl = x.fuente==='obra'?'OBRA':(x.fuente==='interventoria'?'INTERV':'—');
+    return `<tr onclick="cmsShowOficio(${x.id})">
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">${cmsEscape(x.fecha||'')}</td>
+      <td><span class="tag" style="background:${cf}22;color:${cf}">${fLbl}</span></td>
+      <td><span class="tag" style="background:${ct}22;color:${ct}">${cmsEscape(x.tipo)}</span></td>
+      <td style="font-family:monospace;font-size:11px">${cmsEscape((x.consecutivo||'').substring(0,30))}</td>
+      <td>${cmsEscape((x.asunto||'').substring(0,70))}</td>
+      <td>${cmsEscape(x.estado||'')}</td>
+    </tr>`;
+  }).join('') + (arr.length>300?`<tr><td colspan="6" style="text-align:center;padding:10px;color:#64748b">… ${arr.length-300} más. Refina filtros.</td></tr>`:'');
+}
+
+function cmsRenderArbol(){
+  const c = document.getElementById('cms-arbol');
+  const nm = {'01':'ene','02':'feb','03':'mar','04':'abr','05':'may','06':'jun','07':'jul','08':'ago','09':'sep','10':'oct','11':'nov','12':'dic'};
+  const anios = Object.keys(CMS_STATE.indice||{}).sort().reverse();
+  if(!anios.length){ c.innerHTML = '<div style="color:#94a3b8;padding:14px;text-align:center;font-size:12px">— sin datos —</div>'; return; }
+  let html = '';
+  anios.forEach(a => {
+    const meses = Object.keys(CMS_STATE.indice[a]||{}).sort().reverse();
+    let totalAnio = 0;
+    meses.forEach(m => Object.keys(CMS_STATE.indice[a][m]||{}).forEach(d => { totalAnio += CMS_STATE.indice[a][m][d].length; }));
+    html += `<div style="margin-bottom:10px"><div class="tree-year" onclick="cmsFiltrarAnio('${a}')">📅 ${a} <span style="color:#64748b;font-weight:400">(${totalAnio})</span></div>`;
+    meses.forEach(m => {
+      let total = 0;
+      Object.keys(CMS_STATE.indice[a][m]||{}).forEach(d => { total += CMS_STATE.indice[a][m][d].length; });
+      html += `<div class="tree-month" onclick="cmsFiltrarMes('${a}','${m}')">└ ${m} · ${nm[m]} <span style="color:#64748b">(${total})</span></div>`;
+    });
+    html += '</div>';
+  });
+  c.innerHTML = html;
+}
+
+function cmsFiltrarAnio(a){ document.getElementById('cms-anio').value = a; CMS_STATE.anio = a; document.getElementById('cms-mes').value = ''; CMS_STATE.mes = ''; cmsPoblarMeses(); cmsAplicarFiltros(); }
+function cmsFiltrarMes(a, m){ document.getElementById('cms-anio').value = a; CMS_STATE.anio = a; cmsPoblarMeses(); document.getElementById('cms-mes').value = m; CMS_STATE.mes = m; cmsAplicarFiltros(); }
+
+function cmsShowOficio(id){
+  const x = CMS_STATE.items.find(i => i.id===id);
+  if(!x) return;
+  const fc = {obra:'#a855f7', interventoria:'#ef4444'};
+  const tc = {enviado:'#10b981', recibido:'#f59e0b'};
+  const cf = fc[x.fuente]||'#94a3b8';
+  const ct = tc[x.tipo]||'#94a3b8';
+  let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div><div style="font-size:11px;color:#94a3b8">Consecutivo</div><div style="font-weight:700;font-family:monospace;color:#a5b4fc">${cmsEscape(x.consecutivo||'—')}</div></div>
+    <div><div style="font-size:11px;color:#94a3b8">Fecha</div><div style="font-weight:700;color:#cbd5e1">${cmsEscape(x.fecha||'—')}</div></div>
+    <div><div style="font-size:11px;color:#94a3b8">Tipo doc.</div><div style="color:#cbd5e1">${cmsEscape(x.tipo_doc||'—')}</div></div>
+    <div><div style="font-size:11px;color:#94a3b8">Medio</div><div style="color:#cbd5e1">${cmsEscape(x.medio||'—')}</div></div>
+    <div><div style="font-size:11px;color:#94a3b8">Remitente</div><div style="color:#cbd5e1">${cmsEscape(x.remitente||'—')}</div></div>
+    <div><div style="font-size:11px;color:#94a3b8">Destinatario</div><div style="color:#cbd5e1">${cmsEscape(x.destinatario||'—')}</div></div>
+    <div><div style="font-size:11px;color:#94a3b8">Estado</div><div style="color:#cbd5e1">${cmsEscape(x.estado||'—')}</div></div>
+    <div><div style="font-size:11px;color:#94a3b8">Resp. req. / días</div><div style="color:#cbd5e1">${cmsEscape(x.resp_req||'—')} / ${cmsEscape(String(x.dias_resp||'—'))} días · límite: ${cmsEscape(x.fecha_limite||'—')}</div></div>
+  </div>`;
+  html += `<div style="margin-top:8px"><div style="font-size:11px;color:#94a3b8">Asunto</div><div style="background:rgba(255,255,255,.04);padding:8px 10px;border-radius:6px;font-size:12.5px;color:#cbd5e1">${cmsEscape(x.asunto||'—')}</div></div>`;
+  if(x.observaciones) html += `<div style="margin-top:8px"><div style="font-size:11px;color:#94a3b8">Observaciones</div><div style="background:rgba(255,255,255,.04);padding:8px 10px;border-radius:6px;font-size:12.5px;color:#cbd5e1">${cmsEscape(x.observaciones)}</div></div>`;
+  html += `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <span class="tag" style="background:${cf}22;color:${cf};padding:3px 8px">${cmsEscape(x.fuente.toUpperCase())}</span>
+    <span class="tag" style="background:${ct}22;color:${ct};padding:3px 8px">${cmsEscape(x.tipo.toUpperCase())}</span>
+  </div>`;
+  if(x.anexos_folder_url){
+    const consSafe = (x.consecutivo||'').replace(/'/g, '');
+    html += `<div style="margin-top:14px">
+      <button onclick="cmsCargarAnexos('${x.fuente}','${x.tipo}','${consSafe}')" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);color:#a5b4fc;padding:6px 12px;border-radius:6px;font-size:11.5px;cursor:pointer;font-weight:600;margin-right:8px">📎 Ver anexos en Drive</button>
+      <a href="${x.anexos_folder_url}" target="_blank" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;padding:6px 12px;border-radius:6px;font-size:11.5px;text-decoration:none;font-weight:600">🗂️ Abrir carpeta ${x.fuente}/${x.tipo}</a>
+    </div>
+    <div id="cms-anexos" style="margin-top:12px"></div>`;
+  }
+  document.getElementById('cms-detail').innerHTML = html;
+  document.getElementById('cms-detail-panel').style.display = 'block';
+  document.getElementById('cms-detail-panel').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function cmsCargarAnexos(fuente, tipo, consecutivo){
+  const box = document.getElementById('cms-anexos');
+  if(!box) return;
+  box.innerHTML = '<div style="color:#94a3b8;padding:8px;font-size:11px">⏳ Buscando anexos en Drive…</div>';
+  try{
+    const d = await jsonp(APPS_URL, {action:'anexos_oficio', fuente, tipo, consecutivo});
+    if(!d || d.error){ box.innerHTML = `<div style="color:#fbbf24;padding:8px;font-size:11px">No se encontraron anexos. ${d&&d.error?d.error:''}</div>`; return; }
+    if(!d.archivos || !d.archivos.length){ box.innerHTML = `<div style="color:#94a3b8;padding:8px;font-size:11px">Sin archivos vinculados al consecutivo <code>${cmsEscape(consecutivo)}</code>. Revisa directamente la <a href="${d.folder_url}" target="_blank" style="color:#22d3ee">carpeta ${cmsEscape(fuente)}/${cmsEscape(tipo)}</a>.</div>`; return; }
+    const iconos = {'application/pdf':'PDF','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'DOCX','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'XLSX','image/jpeg':'IMG','image/png':'IMG','application/vnd.google-apps.folder':'DIR'};
+    let html = `<div style="font-size:11px;color:#94a3b8;margin-bottom:8px">${d.archivos.length} archivo(s) relacionado(s) al consecutivo ${cmsEscape(consecutivo)}</div>`;
+    html += d.archivos.map(a => {
+      const ico = iconos[a.mimeType] || 'FILE';
+      return `<a href="${a.viewUrl}" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:10px;margin-bottom:6px;color:#cbd5e1">
+        <div style="font-size:10.5px;font-weight:700;color:#22d3ee;width:42px;text-align:center;background:rgba(34,211,238,.08);padding:3px 0;border-radius:4px">${ico}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cmsEscape(a.title)}</div><div style="font-size:10.5px;color:#94a3b8">${cmsEscape(a.modifiedTime||'')} · ${cmsHumanSize(a.size)}</div></div>
+      </a>`;
+    }).join('');
+    box.innerHTML = html;
+  }catch(e){ box.innerHTML = `<div style="color:#ef4444;padding:8px;font-size:11px">Error: ${cmsEscape(e.message||String(e))}</div>`; }
+}
+
+function cmsHumanSize(b){ b = Number(b)||0; if(b < 1024) return b+' B'; if(b < 1048576) return (b/1024).toFixed(1)+' KB'; if(b < 1073741824) return (b/1048576).toFixed(1)+' MB'; return (b/1073741824).toFixed(2)+' GB'; }
+
 </script>
+
 </body>
 </html>
