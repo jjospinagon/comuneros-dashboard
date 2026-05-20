@@ -2129,7 +2129,7 @@ async function handleLogin(){
   const correo = (document.getElementById('login-correo') || {value:''}).value.trim();
   if(!nombre||!apellidos||!correo){showLoginError('Todos los campos son obligatorios');return;}
   if(!EMAIL_REGEX.test(correo)){showLoginError('Correo con formato invalido (revisa el @ y dominio).');return;}
-  const btn = document.getElementById('login-submit'); if(btn) btn.disabled = true;
+  const btn = document.getElementById('login-btn'); if(btn) btn.disabled = true;
   try{
     const res=await jsonp(APPS_URL,{
       action:'registrar_ingreso',
@@ -2139,15 +2139,33 @@ async function handleLogin(){
     });
     if(!res||!res.ok)throw new Error((res&&res.error)||'No fue posible registrar el ingreso. Intenta de nuevo.');
     try{ localStorage.setItem(LOGIN_KEY, JSON.stringify({nombre,apellidos,correo,ts:Date.now()})); }catch(_){ }
-    const gate = document.getElementById('login-gate'); if(gate) gate.style.display = 'none';
+    const ov = document.getElementById('login-overlay'); if(ov) ov.style.display = 'none';
     boot();
   }catch(e){
     showLoginError(e.message||'Error inesperado');
     if(btn) btn.disabled = false;
   }
 }
-document.addEventListener('click', e => { if(e.target && e.target.id === 'login-submit'){ handleLogin(); } });
-document.addEventListener('keydown', e => { if(e.key === 'Enter'){ const gate = document.getElementById('login-gate'); if(gate && gate.style.display !== 'none'){ handleLogin(); } } });
+
+/* Interceptar submit del form (el boton es type=submit dentro de #login-form) */
+document.addEventListener('DOMContentLoaded', function(){
+  const form = document.getElementById('login-form');
+  if(form){
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      handleLogin();
+    });
+  }
+  /* Si ya hay sesion guardada, ocultar overlay y arrancar */
+  try{
+    const cached = localStorage.getItem(LOGIN_KEY);
+    if(cached){
+      const ov = document.getElementById('login-overlay');
+      if(ov) ov.style.display = 'none';
+      boot();
+    }
+  }catch(_){}
+});
 /* boot() se llama solo al login exitoso */
 
 /* ====================== COMUNICACIONES (G3 monaco) ====================== */
