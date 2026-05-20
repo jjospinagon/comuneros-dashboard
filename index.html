@@ -425,8 +425,8 @@
         <div class="cta">Ver dashboard completo <span class="arrow">→</span></div>
       </div>
 
-      <!-- CARD CONTRATO (NUEVO) -->
-      <a href="./evo.html#contrato" class="menu-card ind" style="text-decoration:none;color:inherit;background:linear-gradient(180deg,rgba(34,211,238,.05),rgba(20,26,55,.4))">
+      <!-- CARD CONTRATO -->
+      <div class="menu-card ind" onclick="goTo('contrato')" style="background:linear-gradient(180deg,rgba(34,211,238,.05),rgba(20,26,55,.4))">
         <div class="icon" style="background:linear-gradient(135deg,#6366f1,#22d3ee)">📑</div>
         <h2>Información del Contrato</h2>
         <p class="desc">Identificación contractual, partes, documentos oficiales (SECOP II, MGA, presupuesto) y balances vigentes con modificaciones.</p>
@@ -436,10 +436,10 @@
           <div class="kpi"><div class="v">29</div><div class="l">NPs</div></div>
         </div>
         <div class="cta">Abrir información completa <span class="arrow">→</span></div>
-      </a>
+      </div>
 
-      <!-- CARD COMUNICACIONES (NUEVO) -->
-      <a href="./evo.html#comunicaciones" class="menu-card inv" style="text-decoration:none;color:inherit;background:linear-gradient(180deg,rgba(168,85,247,.05),rgba(20,26,55,.4))">
+      <!-- CARD COMUNICACIONES -->
+      <div class="menu-card inv" onclick="goTo('comunicaciones')" style="background:linear-gradient(180deg,rgba(168,85,247,.05),rgba(20,26,55,.4))">
         <div class="icon" style="background:linear-gradient(135deg,#a855f7,#ef4444)">📨</div>
         <h2>Comunicaciones</h2>
         <p class="desc">Oficios enviados y recibidos · obra + interventoría · búsqueda por palabra clave, filtros por año/mes y acceso a anexos en Drive.</p>
@@ -449,7 +449,8 @@
           <div class="kpi"><div class="v" id="mn-com-3">—</div><div class="l">Recibidos</div></div>
         </div>
         <div class="cta">Ir al consolidado <span class="arrow">→</span></div>
-      </a>
+      </div>
+
     </div>
 
     <!-- Panel Hoy debes hacer · FASE B -->
@@ -460,31 +461,8 @@
         <span style="font-size:11px;color:#94a3b8">Prioridades automáticas según inventario + indicadores</span>
       </div>
       <div id="acciones-hoy-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px"></div>
-
-      <div class="menu-card ind" onclick="goTo('contrato')" style="background:linear-gradient(180deg,rgba(34,211,238,.05),rgba(20,26,55,.4))">
-        <div class="icon" style="background:linear-gradient(135deg,#6366f1,#22d3ee)">CON</div>
-        <h2>Informacion del Contrato</h2>
-        <p class="desc">Identificacion contractual, partes, documentos oficiales (SECOP II, MGA, presupuesto) y balances vigentes con modificaciones.</p>
-        <div class="kpis">
-          <div class="kpi"><div class="v">023/25</div><div class="l">Contrato</div></div>
-          <div class="kpi"><div class="v">V7</div><div class="l">Balance</div></div>
-          <div class="kpi"><div class="v">29</div><div class="l">NPs</div></div>
-        </div>
-        <div class="cta">Abrir informacion completa <span class="arrow">&rarr;</span></div>
-      </div>
-
-      <div class="menu-card inv" onclick="goTo('comunicaciones')" style="background:linear-gradient(180deg,rgba(168,85,247,.05),rgba(20,26,55,.4))">
-        <div class="icon" style="background:linear-gradient(135deg,#a855f7,#ef4444)">COM</div>
-        <h2>Comunicaciones</h2>
-        <p class="desc">Oficios enviados y recibidos &middot; obra + interventoria &middot; busqueda por palabra clave, filtros por anio/mes y acceso a anexos en Drive.</p>
-        <div class="kpis">
-          <div class="kpi"><div class="v" id="mn-com-1">&mdash;</div><div class="l">Total</div></div>
-          <div class="kpi"><div class="v" id="mn-com-2">&mdash;</div><div class="l">Enviados</div></div>
-          <div class="kpi"><div class="v" id="mn-com-3">&mdash;</div><div class="l">Recibidos</div></div>
-        </div>
-        <div class="cta">Ir al consolidado <span class="arrow">&rarr;</span></div>
-      </div>
     </div>
+  </div>
   </div>
 
   <div class="menu-footer">
