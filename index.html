@@ -424,6 +424,32 @@
         </div>
         <div class="cta">Ver dashboard completo <span class="arrow">→</span></div>
       </div>
+
+      <!-- CARD CONTRATO (NUEVO) -->
+      <a href="./evo.html#contrato" class="menu-card ind" style="text-decoration:none;color:inherit;background:linear-gradient(180deg,rgba(34,211,238,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#6366f1,#22d3ee)">📑</div>
+        <h2>Información del Contrato</h2>
+        <p class="desc">Identificación contractual, partes, documentos oficiales (SECOP II, MGA, presupuesto) y balances vigentes con modificaciones.</p>
+        <div class="kpis">
+          <div class="kpi"><div class="v">023/25</div><div class="l">Contrato</div></div>
+          <div class="kpi"><div class="v">V7</div><div class="l">Balance</div></div>
+          <div class="kpi"><div class="v">29</div><div class="l">NPs</div></div>
+        </div>
+        <div class="cta">Abrir información completa <span class="arrow">→</span></div>
+      </a>
+
+      <!-- CARD COMUNICACIONES (NUEVO) -->
+      <a href="./evo.html#comunicaciones" class="menu-card inv" style="text-decoration:none;color:inherit;background:linear-gradient(180deg,rgba(168,85,247,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#a855f7,#ef4444)">📨</div>
+        <h2>Comunicaciones</h2>
+        <p class="desc">Oficios enviados y recibidos · obra + interventoría · búsqueda por palabra clave, filtros por año/mes y acceso a anexos en Drive.</p>
+        <div class="kpis">
+          <div class="kpi"><div class="v" id="mn-com-1">—</div><div class="l">Total</div></div>
+          <div class="kpi"><div class="v" id="mn-com-2">—</div><div class="l">Enviados</div></div>
+          <div class="kpi"><div class="v" id="mn-com-3">—</div><div class="l">Recibidos</div></div>
+        </div>
+        <div class="cta">Ir al consolidado <span class="arrow">→</span></div>
+      </a>
     </div>
 
     <!-- Panel Hoy debes hacer · FASE B -->
@@ -1700,7 +1726,13 @@ function populateAPUSelect(){
   if(!sel) return;
   const items = Object.keys(APU_DATA).sort((a,b)=>String(a).localeCompare(String(b),'es',{numeric:true}));
   sel.innerHTML = '<option value="">— selecciona un ítem —</option>' +
-    items.map(k => '<option value="'+k+'">'+k+' · '+getApuDesc(k, APU_DATA[k].desc).substring(0,60)+'</option>').join('');
+    items.map(k => {
+      const apu = APU_DATA[k];
+      const isNP = apu && apu._origen && String(apu._origen).indexOf('NP-') === 0;
+      const tag = isNP ? '⚡NP · ' : '';
+      const lbl = k + ' · ' + tag + getApuDesc(k, apu.desc).substring(0,60);
+      return '<option value="'+k+'">'+lbl+'</option>';
+    }).join('');
   sel.onchange = e => renderAPURadar(e.target.value);
   // Pre-seleccionar el ítem con más materiales
   let best = null, bestN = 0;
@@ -1710,9 +1742,21 @@ function populateAPUSelect(){
 function renderAPURadar(item){
   if(!APU_DATA || !item || !APU_DATA[item]) return;
   const apu = APU_DATA[item];
+  const isNP = apu._origen && String(apu._origen).indexOf('NP-') === 0;
   const mats = (apu.materiales||[]).slice()
     .filter(m => (Number(m.cantidad)||0) > 0 || (Number(m.valor_unit)||0) > 0);
-  if(!mats.length) return;
+  if(!mats.length){
+    // Sin materiales (típico de NPs de pura mano de obra/equipo)
+    document.getElementById('apu-item-name').textContent = item + ' · ' + getApuDesc(item, apu.desc).substring(0,80) + (isNP ? ' [NP]' : '');
+    document.getElementById('apu-radar-wrap').style.display = 'none';
+    const w = document.getElementById('apu-not-available');
+    if(w){
+      w.style.display = 'block';
+      w.innerHTML = '<b>Sin materiales en este APU.</b> Predominan mano de obra / equipo / transporte. ' +
+        (isNP ? '<br><span style="color:#fbbf24">Origen: ' + apu._origen + ' (balance contractual)</span>' : '');
+    }
+    return;
+  }
   // Ranking por valor_unit (impacto económico)
   mats.sort((a,b) => (Number(b.valor_unit)||0) - (Number(a.valor_unit)||0));
   const topN = mats.slice(0, 10);  // máximo 10 puntos en el radar
