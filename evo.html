@@ -1356,6 +1356,29 @@ async function loadBriefing(force){
 }
 
 /* ============ APUS EXPLORER ============ */
+// Resuelve descripción de APU: si apu.desc trae #ERROR! o está vacía,
+// busca en IND_DATA.actividades por item code.
+function resolveApuDesc(item, fallback){
+  var f = String(fallback||'').trim();
+  if(f && f.indexOf('#') < 0 && f.length > 2) return f;
+  try{
+    if(IND_DATA && IND_LATEST){
+      var acts = IND_DATA[IND_LATEST].actividades || [];
+      var hit = acts.find(function(a){ return String(a.item) === String(item); });
+      if(hit && hit.actividad) return hit.actividad;
+    }
+    if(IND_DATA){
+      for(var k in IND_DATA){
+        if(String(k).indexOf('_')===0) continue;
+        var acts2 = (IND_DATA[k] && IND_DATA[k].actividades) || [];
+        var hit2 = acts2.find(function(a){ return String(a.item) === String(item); });
+        if(hit2 && hit2.actividad) return hit2.actividad;
+      }
+    }
+  }catch(_){}
+  return f || '(sin descripción)';
+}
+
 async function loadAPUs(){
   window._apusLoaded = true;
   try {
@@ -1368,7 +1391,9 @@ async function loadAPUs(){
       var apu = apus[item];
       var mats = apu.materiales || [];
       var costo = mats.reduce(function(s,m){return s + (Number(m.valor_unit)||0);},0);
-      return {item:item, desc:apu.desc||'', materiales:mats, costo:costo, n:mats.length};
+      // FALLBACK descripción real desde actividades del corte
+      var descReal = resolveApuDesc(item, apu.desc);
+      return {item:item, desc:descReal, materiales:mats, costo:costo, n:mats.length};
     }).sort(function(a,b){return b.costo-a.costo;});
 
     window._APUS_ARR = arr;
