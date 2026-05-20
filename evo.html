@@ -738,14 +738,16 @@ TSPI = (PD − AT) / (PD − ES)
 
 <script>
 /* =================== TABS =================== */
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  const tab=b.dataset.tab;
-  document.querySelectorAll('.tab-content').forEach(s=>s.style.display='none');
-  const el=document.getElementById('t-'+tab);
-  if(el) el.style.display='block';
-  window.scrollTo({top:0,behavior:'smooth'});
+document.querySelectorAll('.tab').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    var tab = b.dataset.tab;
+    document.querySelectorAll('.tab-content').forEach(function(s){s.style.display='none';});
+    var el = document.getElementById('t-'+tab);
+    if(el) el.style.display = 'block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
 });
 
 /* =================== CHART HELPERS =================== */
