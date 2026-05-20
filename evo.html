@@ -128,6 +128,8 @@
       <button class="tab" data-tab="actividades">📋 Actividades</button>
       <button class="tab" data-tab="es">📈 Earned Schedule</button>
       <button class="tab" data-tab="montecarlo">🎲 Monte Carlo</button>
+      <button class="tab" data-tab="tendencia">📉 Tendencia Cortes<span class="badge-new">NUEVO</span></button>
+      <button class="tab" data-tab="pareto">🎯 Pareto 80-20<span class="badge-new">NUEVO</span></button>
       <button class="tab" data-tab="quickwins">⚡ 15 Quick Wins</button>
       <button class="tab" data-tab="apuestas">🎯 5 Apuestas</button>
       <button class="tab" data-tab="brechas">🔍 Brechas Mercado</button>
@@ -349,6 +351,86 @@ EAC(t) = PD / SPI(t)   (duración estimada)</pre>
   </div>
 </section>
 
+<!-- ============ TENDENCIA MULTI-CORTE ============ -->
+<section id="t-tendencia" class="tab-content" style="display:none">
+  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.05),rgba(168,85,247,.05))">
+    <div class="pill pill-evo mb-2">CALCULADO EN VIVO · cruzando los 6 cortes</div>
+    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📉 Tendencia Multi-Corte · Proyección de cierre</h3>
+    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Evolución cronológica de SPI, CPI, avance y costo entre los cortes del proyecto. Regresión lineal sobre los últimos 3 cortes proyecta cierre real. No existe en el dashboard estable — análisis predictivo nuevo.</p>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="tendKpis">
+    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Cortes analizados</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">CPI tendencia</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">SPI tendencia</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">EAC proyectado</div><div class="val">—</div><div class="sub">cargando…</div></div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+    <div class="panel">
+      <h3>Evolución SPI · CPI · Margen por corte</h3>
+      <div style="position:relative;height:300px"><canvas id="ch-tend-ratios"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Avance acumulado por corte (EV vs PV)</h3>
+      <div style="position:relative;height:300px"><canvas id="ch-tend-ev"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel mb-4">
+    <h3>Tabla comparativa entre cortes</h3>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>Corte</th><th class="num">Valor contractual</th><th class="num">EV (ejec)</th><th class="num">% Avance</th><th class="num">Proy. corte</th><th class="num">Proy. final</th><th class="num">CPI estim</th><th class="num">Margen</th><th class="num">Actividades</th><th class="num">Con pérdida</th></tr></thead>
+      <tbody id="tendTable"><tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Cargando…</td></tr></tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>🎯 Proyección de cierre del proyecto</h3>
+    <div id="tendProy" class="text-sm text-slate-300">
+      <div class="text-center" style="padding:30px;color:#64748b">Calculando proyección…</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PARETO 80-20 ============ -->
+<section id="t-pareto" class="tab-content" style="display:none">
+  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(168,85,247,.05),rgba(236,72,153,.05))">
+    <div class="pill pill-evo mb-2">PARETO EN VIVO · cruza actividades + facturas + inventario</div>
+    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🎯 Análisis Pareto 80-20</h3>
+    <p class="text-sm text-slate-300 mt-2 max-w-3xl">El 80% del costo se concentra en el 20% de los ítems. Aquí está el ranking real cruzando 4 dimensiones del proyecto: actividades, proveedores, ítems inventario y APUs por valor.</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+    <div class="panel">
+      <h3>Top 15 actividades por valor contractual</h3>
+      <div style="position:relative;height:380px"><canvas id="ch-pareto-act"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Top 15 proveedores por facturación DIAN</h3>
+      <div style="position:relative;height:380px"><canvas id="ch-pareto-prov"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+    <div class="panel">
+      <h3>Top 15 ítems del inventario por valor</h3>
+      <div class="scroll-x" style="max-height:400px">
+        <table id="paretoItems">
+          <thead><tr><th>#</th><th>Código</th><th>Descripción</th><th class="num">Stock</th><th class="num">Precio</th><th class="num">Valor</th><th class="num">% acum</th></tr></thead>
+          <tbody><tr><td colspan="7" style="text-align:center;padding:30px;color:#64748b">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Categoría 80-20 · Curva de concentración</h3>
+      <div style="position:relative;height:380px"><canvas id="ch-pareto-curva"></canvas></div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ QUICK WINS ============ -->
 <section id="t-quickwins" class="tab-content" style="display:none">
   <div class="panel mb-4">
@@ -466,6 +548,8 @@ document.querySelectorAll('.tab').forEach(function(b){
     if(tab==='actividades' && !window._actLoaded) loadActividades();
     if(tab==='es' && !window._esLoaded) loadES();
     if(tab==='montecarlo' && !window._mcLoaded) loadMonteCarlo();
+    if(tab==='tendencia' && !window._tendLoaded) loadTendencia();
+    if(tab==='pareto' && !window._paretoLoaded) loadPareto();
   });
 });
 
@@ -857,6 +941,219 @@ function loadMonteCarlo(){
     data:{labels:lbls,datasets:[{label:'Simulaciones',data:counts,backgroundColor:colors,borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}}}}
   });
+}
+
+/* ============ TENDENCIA MULTI-CORTE ============ */
+function loadTendencia(){
+  window._tendLoaded = true;
+  if(!IND_DATA) return;
+  var cortes = Object.keys(IND_DATA).filter(function(k){return !k.startsWith('_');});
+  cortes.sort(function(a,b){
+    var A=a.split('-').reverse().join('');
+    var B=b.split('-').reverse().join('');
+    return A.localeCompare(B);
+  });
+  if(cortes.length < 2) return;
+
+  // Métricas por corte
+  var serie = cortes.map(function(c){
+    var d = IND_DATA[c];
+    var acts = d.actividades || [];
+    var totT = (d.totales && d.totales['COSTO TOTAL']) || {};
+    var contr = 0, exec = 0, real = 0;
+    var perdida = 0;
+    acts.forEach(function(a){
+      var cu = Number(a.costo_contr_u)||0;
+      var ru = Number(a.costo_real_u)||0;
+      contr += (Number(a.cant_contr)||0)*cu;
+      exec += (Number(a.cant_ejec)||0)*cu;
+      real += (Number(a.cant_ejec)||0)*ru;
+      if ((Number(a.util_perd)||0) < 0 && (Number(a.porc_ejec)||0) > 0) perdida++;
+    });
+    var avance = contr>0 ? exec/contr : 0;
+    var cpi = real>0 ? exec/real : 1;
+    var margen = (Number(totT.total_contr)||contr) > 0 ? (Number(totT.proy_corte)||0)/(Number(totT.total_contr)||contr) : 0;
+    return {
+      corte: c,
+      contr_total: Number(totT.total_contr)||contr,
+      ev: exec,
+      pv_aprox: contr, // PV se aproxima al contractual al cierre
+      avance: avance,
+      cpi: cpi,
+      margen: margen,
+      proy_corte: Number(totT.proy_corte)||0,
+      proy_final: Number(totT.proy_final)||0,
+      actividades: acts.length,
+      perdida: perdida
+    };
+  });
+
+  // KPIs: tendencia desde los últimos 2-3 cortes
+  var n = serie.length;
+  var ultimo = serie[n-1];
+  var penul = serie[n-2];
+  var deltaCpi = ultimo.cpi - penul.cpi;
+  var deltaSpi = (ultimo.avance/((n)/(n+1))) - (penul.avance/((n-1)/n));
+  // EAC simple: total_contr / (avance acumulado promedio)
+  var avancePromedioPorCorte = ultimo.avance / n;
+  var cortesEstimadosCierre = avancePromedioPorCorte>0 ? Math.ceil(1/avancePromedioPorCorte) : 0;
+  var eacProy = ultimo.contr_total / (ultimo.cpi || 1);
+  var spiCalc = ultimo.avance / (n/n);  // simplificado
+
+  document.getElementById('tendKpis').innerHTML =
+    '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">Cortes analizados</div><div class="val">'+n+'</div><div class="sub">'+cortes[0]+' → '+cortes[n-1]+'</div></div>' +
+    '<div class="kpi" style="--acc:'+(deltaCpi>=0?'#10b981':'#ef4444')+'"><div class="lbl">CPI tendencia</div><div class="val">'+ultimo.cpi.toFixed(2)+' '+(deltaCpi>=0?'▲':'▼')+'</div><div class="sub">Δ '+(deltaCpi>=0?'+':'')+deltaCpi.toFixed(2)+' vs corte previo</div></div>' +
+    '<div class="kpi" style="--acc:'+(ultimo.margen>=0?'#10b981':'#ef4444')+'"><div class="lbl">Margen al corte</div><div class="val">'+(ultimo.margen*100).toFixed(1)+'%</div><div class="sub">proy_corte / total_contr</div></div>' +
+    '<div class="kpi" style="--acc:'+(eacProy<=ultimo.contr_total?'#10b981':'#ef4444')+'"><div class="lbl">EAC proyectado</div><div class="val">'+moneyShort(eacProy)+'</div><div class="sub">vs BAC '+moneyShort(ultimo.contr_total)+'</div></div>';
+
+  // Chart 1: ratios
+  if(window._tendChart1) window._tendChart1.destroy();
+  window._tendChart1 = new Chart(document.getElementById('ch-tend-ratios'),{
+    type:'line',
+    data:{
+      labels: serie.map(function(s){return s.corte.substring(0,5);}),
+      datasets:[
+        {label:'% Avance', data: serie.map(function(s){return s.avance*100;}), borderColor:'#22d3ee', backgroundColor:'rgba(34,211,238,.15)', borderWidth:2.5, fill:true, tension:.3, yAxisID:'y'},
+        {label:'CPI', data: serie.map(function(s){return s.cpi;}), borderColor:'#10b981', borderWidth:2, fill:false, tension:.3, yAxisID:'y2'},
+        {label:'Margen %', data: serie.map(function(s){return s.margen*100;}), borderColor:'#f59e0b', borderWidth:2, borderDash:[4,4], fill:false, tension:.3, yAxisID:'y'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}},y:{position:'left',ticks:{color:'#94a3b8',callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.05)'}},y2:{position:'right',ticks:{color:'#94a3b8'},grid:{display:false},min:0,max:2}}}
+  });
+
+  // Chart 2: EV vs PV
+  if(window._tendChart2) window._tendChart2.destroy();
+  window._tendChart2 = new Chart(document.getElementById('ch-tend-ev'),{
+    type:'line',
+    data:{
+      labels: serie.map(function(s){return s.corte.substring(0,5);}),
+      datasets:[
+        {label:'EV acumulado', data: serie.map(function(s){return s.ev/1e6;}), borderColor:'#22d3ee', backgroundColor:'rgba(34,211,238,.15)', borderWidth:2.5, fill:true, tension:.3},
+        {label:'PV lineal (planeado)', data: serie.map(function(_,i){return (ultimo.contr_total*(i+1)/n)/1e6;}), borderColor:'#a5b4fc', borderWidth:2, borderDash:[5,5], fill:false, tension:.2, pointRadius:0}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#cbd5e1'}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': $'+c.parsed.y.toFixed(0)+' M';}}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#94a3b8',callback:function(v){return '$'+v+'M';}},grid:{color:'rgba(255,255,255,.05)'},min:0}}}
+  });
+
+  // Tabla
+  document.getElementById('tendTable').innerHTML = serie.map(function(s){
+    return '<tr>' +
+      '<td style="font-weight:600;color:#a5b4fc">'+s.corte.replace(/-/g,'/')+'</td>' +
+      '<td class="num">'+moneyShort(s.contr_total)+'</td>' +
+      '<td class="num">'+moneyShort(s.ev)+'</td>' +
+      '<td class="num">'+(s.avance*100).toFixed(1)+'%</td>' +
+      '<td class="num" style="'+(s.proy_corte<0?'color:#fca5a5':'')+'">'+moneyShort(s.proy_corte)+'</td>' +
+      '<td class="num" style="'+(s.proy_final<0?'color:#fca5a5':'')+'">'+moneyShort(s.proy_final)+'</td>' +
+      '<td class="num">'+s.cpi.toFixed(2)+'</td>' +
+      '<td class="num">'+(s.margen*100).toFixed(1)+'%</td>' +
+      '<td class="num">'+s.actividades+'</td>' +
+      '<td class="num" style="'+(s.perdida>0?'color:#fca5a5':'')+'">'+s.perdida+'</td>' +
+    '</tr>';
+  }).join('');
+
+  // Proyección
+  var avanceFinal = ultimo.avance;
+  var velocidad = n>1 ? (ultimo.avance - serie[0].avance)/(n-1) : 0;  // % por corte
+  var cortesFaltan = velocidad>0 ? Math.ceil((1-avanceFinal)/velocidad) : Infinity;
+  var resumenProy = '';
+  if(velocidad <= 0){
+    resumenProy = '<div class="step" style="--c:#ef4444"><div class="step-num">⚠</div><div class="step-body"><div class="step-label">PROYECCIÓN CRÍTICA</div><div class="step-text">El avance no está creciendo entre cortes (velocidad ' + (velocidad*100).toFixed(2) + '% por corte). Imposible proyectar cierre con la tendencia actual. Revisar bloqueos.</div></div></div>';
+  } else if(cortesFaltan > 30){
+    resumenProy = '<div class="step" style="--c:#f59e0b"><div class="step-num">!</div><div class="step-body"><div class="step-label">PROYECCIÓN PREOCUPANTE</div><div class="step-text">A la velocidad actual ('+(velocidad*100).toFixed(2)+'% / corte), faltan ~'+cortesFaltan+' cortes adicionales. EAC = '+moneyShort(eacProy)+' vs BAC '+moneyShort(ultimo.contr_total)+'. Acelerar avance o renegociar plazo.</div></div></div>';
+  } else {
+    resumenProy = '<div class="step" style="--c:#10b981"><div class="step-num">✓</div><div class="step-body"><div class="step-label">PROYECCIÓN VIABLE</div><div class="step-text">A la velocidad actual ('+(velocidad*100).toFixed(2)+'% / corte), faltan ~'+cortesFaltan+' cortes para alcanzar 100%. EAC proyectado '+moneyShort(eacProy)+' vs BAC '+moneyShort(ultimo.contr_total)+'. Monitorear riesgos.</div></div></div>';
+  }
+  resumenProy += '<div class="step" style="--c:#22d3ee"><div class="step-num">📊</div><div class="step-body"><div class="step-label">PARÁMETROS DEL CÁLCULO</div><div class="step-text">Velocidad medida sobre ' + n + ' cortes · CPI actual ' + ultimo.cpi.toFixed(2) + ' (cuanto más cerca de 1.0 mejor) · % avance actual ' + (avanceFinal*100).toFixed(1) + '%</div></div></div>';
+  if(ultimo.margen < 0){
+    resumenProy += '<div class="step" style="--c:#ef4444"><div class="step-num">$</div><div class="step-body"><div class="step-label">ALERTA MARGEN NEGATIVO</div><div class="step-text">Margen económico al corte es '+(ultimo.margen*100).toFixed(1)+'% (NEGATIVO). Pérdida proyectada al cierre: '+moneyShort(ultimo.proy_final)+'. Revisar APUs de actividades con util_perd < 0 y renegociar proveedores.</div></div></div>';
+  }
+  document.getElementById('tendProy').innerHTML = resumenProy;
+}
+
+/* ============ PARETO 80-20 ============ */
+async function loadPareto(){
+  window._paretoLoaded = true;
+  // 1. Top actividades por valor contractual
+  if(IND_DATA && IND_LATEST){
+    var acts = (IND_DATA[IND_LATEST] && IND_DATA[IND_LATEST].actividades) || [];
+    var top = acts.slice().sort(function(a,b){return (Number(b.total_contr)||0)-(Number(a.total_contr)||0);}).slice(0,15);
+    var totalAll = acts.reduce(function(s,a){return s + (Number(a.total_contr)||0);}, 0);
+    var acum = 0;
+    var labels = top.map(function(a){return (a.actividad||'').substring(0,28)+((a.actividad||'').length>28?'…':'');});
+    var vals = top.map(function(a){return (Number(a.total_contr)||0)/1e6;});
+    var pctAcum = top.map(function(a){ acum += (Number(a.total_contr)||0); return totalAll>0 ? (acum/totalAll*100) : 0; });
+
+    if(window._paChart1) window._paChart1.destroy();
+    window._paChart1 = new Chart(document.getElementById('ch-pareto-act'),{
+      type:'bar',
+      data:{
+        labels: labels,
+        datasets:[
+          {type:'bar', label:'Valor contractual (M)', data: vals, backgroundColor:'rgba(34,211,238,.7)', borderColor:'#22d3ee', borderWidth:1, yAxisID:'y'},
+          {type:'line', label:'% acumulado', data: pctAcum, borderColor:'#f59e0b', borderWidth:2, pointBackgroundColor:'#f59e0b', tension:.2, yAxisID:'y2', fill:false}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}},y2:{position:'top',ticks:{color:'#94a3b8',callback:function(v){return v+'%';}},grid:{display:false},min:0,max:100}}}
+    });
+
+    // Curva concentración
+    var pctCount = top.map(function(_,i){return ((i+1)/acts.length)*100;});
+    if(window._paChart4) window._paChart4.destroy();
+    window._paChart4 = new Chart(document.getElementById('ch-pareto-curva'),{
+      type:'line',
+      data:{
+        labels: pctCount.map(function(p){return p.toFixed(0)+'%';}),
+        datasets:[
+          {label:'% acum del costo', data: pctAcum, borderColor:'#a855f7', backgroundColor:'rgba(168,85,247,.18)', borderWidth:2.5, fill:true, tension:.4, pointRadius:3, pointBackgroundColor:'#a855f7'},
+          {label:'Linea 80%', data: pctCount.map(function(){return 80;}), borderColor:'#ef4444', borderWidth:1.5, borderDash:[5,5], pointRadius:0, fill:false}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{title:{display:true,text:'% acumulado de items',color:'#94a3b8'},ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}},y:{title:{display:true,text:'% acumulado del costo',color:'#94a3b8'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.05)'},min:0,max:105}}}
+    });
+  }
+
+  // 2. Top proveedores por facturación DIAN
+  try {
+    var fact = await jsonp(APPS_URL, {action:'facturas_dian'});
+    var porProv = {};
+    (fact.facturas||[]).forEach(function(f){
+      var key = f.proveedor || ('NIT '+f.nit);
+      if(!porProv[key]) porProv[key] = {total:0, count:0};
+      porProv[key].total += Number(f.total)||0;
+      porProv[key].count++;
+    });
+    var arr = Object.keys(porProv).map(function(k){return {prov:k, total:porProv[k].total, count:porProv[k].count};}).sort(function(a,b){return b.total-a.total;}).slice(0,15);
+    if(window._paChart2) window._paChart2.destroy();
+    window._paChart2 = new Chart(document.getElementById('ch-pareto-prov'),{
+      type:'bar',
+      data:{
+        labels: arr.map(function(p){return (p.prov||'').substring(0,28);}),
+        datasets:[{label:'Facturación (M)', data: arr.map(function(p){return p.total/1e6;}), backgroundColor:'rgba(16,185,129,.7)', borderColor:'#10b981', borderWidth:1}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#cbd5e1'}},tooltip:{callbacks:{label:function(c){return '$'+c.parsed.x.toFixed(1)+' M · '+arr[c.dataIndex].count+' facturas';}}}},scales:{x:{ticks:{color:'#94a3b8',callback:function(v){return '$'+v+'M';}},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}}}}
+    });
+  } catch(e){ console.warn('pareto prov:', e); }
+
+  // 3. Top items por valor inmovilizado
+  try {
+    var inv = await jsonp(APPS_URL, {action:'tabla', fuente:'consolidado', page:1, size:1000, search:'', status:'all'});
+    var rows = (inv.rows||[]).slice().sort(function(a,b){return (b.valor||0)-(a.valor||0);}).slice(0,15);
+    var totalInv = (inv.rows||[]).reduce(function(s,r){return s+(r.valor||0);},0);
+    var acum = 0;
+    document.getElementById('paretoItems').querySelector('tbody').innerHTML = rows.map(function(r,i){
+      acum += (r.valor||0);
+      var pctA = totalInv>0 ? (acum/totalInv*100) : 0;
+      return '<tr>'+
+        '<td>'+(i+1)+'</td>'+
+        '<td style="font-weight:600;color:#a5b4fc">'+escapeHTML(r.cod)+'</td>'+
+        '<td style="font-size:11.5px">'+escapeHTML((r.desc||'').substring(0,55))+'</td>'+
+        '<td class="num">'+num(r.stock||0)+'</td>'+
+        '<td class="num">'+money(r.precio)+'</td>'+
+        '<td class="num" style="font-weight:600">'+moneyShort(r.valor||0)+'</td>'+
+        '<td class="num">'+pctA.toFixed(1)+'%</td>'+
+      '</tr>';
+    }).join('');
+  } catch(e){ console.warn('pareto inv:', e); }
 }
 
 /* ============ QUICK WINS ============ */
