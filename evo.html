@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Monaco EVO · Cockpit Estratégico</title>
+<title>Monaco EVO · Cockpit Estratégico Funcional</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
@@ -12,36 +12,31 @@
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;font-family:'Inter',-apple-system,Segoe UI,sans-serif;color:#e6ecff;background:#06091f;font-size:14px;line-height:1.5}
-  body{
-    background:#06091f;
-    background-image:
-      radial-gradient(ellipse 90% 60% at 20% 0%,rgba(34,211,238,.10),transparent 60%),
-      radial-gradient(ellipse 70% 50% at 80% 0%,rgba(16,185,129,.08),transparent 55%),
-      radial-gradient(ellipse 80% 50% at 50% 100%,rgba(6,182,212,.05),transparent 50%);
-    min-height:100vh
-  }
-  .glass{background:rgba(15,20,40,.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.07);border-radius:16px}
-  .glass-light{background:rgba(20,26,55,.45);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.06);border-radius:12px}
+  body{background:#06091f;background-image:radial-gradient(ellipse 90% 60% at 20% 0%,rgba(34,211,238,.10),transparent 60%),radial-gradient(ellipse 70% 50% at 80% 0%,rgba(16,185,129,.08),transparent 55%),radial-gradient(ellipse 80% 50% at 50% 100%,rgba(6,182,212,.05),transparent 50%);min-height:100vh}
+  .glass{background:rgba(15,20,40,.55);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.07);border-radius:16px}
   .gradient-text{background:linear-gradient(135deg,#67e8f9,#22d3ee 35%,#10b981 70%,#22c55e);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .gradient-bg{background:linear-gradient(135deg,#06b6d4,#10b981 60%,#22d3ee)}
   .badge-new{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#10b981,#22d3ee);color:#0a0e27;padding:2px 7px;border-radius:999px;font-size:9.5px;font-weight:800;letter-spacing:.5px;margin-left:6px;vertical-align:middle}
+  .badge-live{display:inline-flex;align-items:center;gap:5px;background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.5px}
+  .badge-live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;animation:pulse 1.8s ease infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
   .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:600;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#cbd5e1}
   .pill-ok{background:rgba(16,185,129,.14);color:#6ee7b7;border-color:rgba(16,185,129,.3)}
   .pill-warn{background:rgba(245,158,11,.14);color:#fde68a;border-color:rgba(245,158,11,.3)}
   .pill-crit{background:rgba(239,68,68,.14);color:#fca5a5;border-color:rgba(239,68,68,.3)}
   .pill-info{background:rgba(34,211,238,.14);color:#67e8f9;border-color:rgba(34,211,238,.3)}
   .pill-evo{background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(16,185,129,.18));color:#a5f3fc;border-color:rgba(34,211,238,.35);font-weight:700}
-  .nav{position:sticky;top:0;z-index:50;background:rgba(6,9,31,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.07);padding:12px 24px}
+  .nav{position:sticky;top:0;z-index:50;background:rgba(6,9,31,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.07);padding:12px 24px}
   .tab{padding:9px 16px;border-radius:10px;font-size:12.5px;font-weight:600;color:#94a3b8;cursor:pointer;transition:all .18s;white-space:nowrap;border:1px solid transparent;background:transparent}
   .tab:hover{color:#e6ecff;background:rgba(255,255,255,.04)}
   .tab.active{background:linear-gradient(135deg,rgba(34,211,238,.15),rgba(16,185,129,.12));color:#fff;border-color:rgba(34,211,238,.3);box-shadow:0 0 0 1px rgba(34,211,238,.15),0 4px 14px rgba(34,211,238,.08)}
   .panel{background:rgba(15,20,40,.55);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px}
   .panel h3{font-family:'Space Grotesk',sans-serif;margin:0 0 12px;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
   .panel h3::before{content:"";display:inline-block;width:4px;height:18px;background:linear-gradient(180deg,#22d3ee,#10b981);border-radius:2px}
-  .kpi{background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-left:3px solid var(--acc,#22d3ee);border-radius:12px;padding:14px}
+  .kpi{background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-left:3px solid var(--acc,#22d3ee);border-radius:12px;padding:14px;position:relative}
   .kpi .lbl{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px;font-weight:600}
   .kpi .val{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-top:4px;letter-spacing:-.5px}
   .kpi .sub{font-size:11px;color:#94a3b8;margin-top:2px}
+  .kpi.kpi-loading{opacity:.5}
   .num{font-variant-numeric:tabular-nums;text-align:right}
   table{width:100%;border-collapse:collapse;font-size:12.5px}
   th{text-align:left;padding:9px 10px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(10,14,39,.7)}
@@ -52,27 +47,17 @@
   .step-body{flex:1}
   .step-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:#94a3b8;font-weight:700;margin-bottom:3px}
   .step-text{color:#e6ecff;font-size:13px;line-height:1.5}
-  .sprint-card{background:rgba(20,26,55,.55);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;border-left:4px solid var(--c,#22d3ee);position:relative}
-  .sprint-card .pill{font-size:9.5px;padding:2px 7px}
-  .ms-row{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.03)}
-  .heatmap{display:grid;grid-template-columns:repeat(13,1fr);gap:6px}
-  .heatmap .cell{aspect-ratio:1;border-radius:6px;font-size:9px;color:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-weight:700}
-  .cell-ok{background:linear-gradient(135deg,#065f46,#10b981);box-shadow:inset 0 0 0 1px rgba(16,185,129,.4)}
-  .cell-partial{background:linear-gradient(135deg,#854d0e,#f59e0b);box-shadow:inset 0 0 0 1px rgba(245,158,11,.4)}
-  .cell-none{background:linear-gradient(135deg,#7f1d1d,#dc2626);box-shadow:inset 0 0 0 1px rgba(239,68,68,.4)}
+  .heatmap{display:grid;grid-template-columns:repeat(15,1fr);gap:4px}
+  .heatmap .cell{aspect-ratio:1;border-radius:5px;font-size:8px;color:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .cell-ok{background:linear-gradient(135deg,#065f46,#10b981)}
+  .cell-partial{background:linear-gradient(135deg,#854d0e,#f59e0b)}
+  .cell-none{background:linear-gradient(135deg,#7f1d1d,#dc2626)}
   .arrow-up{color:#10b981}
   .arrow-dn{color:#ef4444}
   .glow-card{position:relative;overflow:hidden}
-  .glow-card::before{content:"";position:absolute;inset:-1px;background:linear-gradient(135deg,#22d3ee,#10b981,#22d3ee);background-size:200% 200%;animation:glow 4s linear infinite;border-radius:inherit;z-index:-1;opacity:.5}
-  @keyframes glow{0%,100%{background-position:0 0}50%{background-position:200% 200%}}
   .quickwin-row{display:grid;grid-template-columns:36px 1fr auto auto;gap:12px;align-items:center;padding:11px 14px;border-radius:10px;background:rgba(20,26,55,.4);border:1px solid rgba(255,255,255,.05);margin-bottom:6px;transition:all .2s}
   .quickwin-row:hover{background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.25)}
   .qw-num{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(16,185,129,.18));color:#67e8f9;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:13px}
-  .gap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-  .gap-card{background:rgba(20,26,55,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;border-left:3px solid var(--c,#22d3ee)}
-  .gap-card .gap-id{font-family:'Space Grotesk',sans-serif;font-weight:700;color:#67e8f9;font-size:11px;letter-spacing:.5px}
-  .gap-card .gap-title{font-size:13px;color:#fff;font-weight:600;margin-top:4px;line-height:1.35}
-  .gap-card .gap-meta{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
   .timeline{position:relative;padding-left:24px;margin-left:8px;border-left:2px solid rgba(34,211,238,.25)}
   .timeline-item{position:relative;padding-bottom:18px}
   .timeline-item::before{content:"";position:absolute;left:-30px;top:6px;width:11px;height:11px;border-radius:50%;background:linear-gradient(135deg,#22d3ee,#10b981);box-shadow:0 0 0 3px rgba(6,9,31,1),0 0 0 5px rgba(34,211,238,.3)}
@@ -83,44 +68,46 @@
   .scroll-x{overflow-x:auto}
   .scroll-x::-webkit-scrollbar{height:6px}
   .scroll-x::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
-  .scroll-x::-webkit-scrollbar-track{background:transparent}
-  .hero{padding:48px 24px;text-align:center;border-bottom:1px solid rgba(255,255,255,.06)}
-  .hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(32px,5vw,52px);font-weight:700;margin:0;letter-spacing:-1.5px;line-height:1.05}
-  .hero p{font-size:15px;color:#94a3b8;max-width:760px;margin:14px auto 0;line-height:1.6}
+  .hero{padding:38px 24px;text-align:center;border-bottom:1px solid rgba(255,255,255,.06)}
+  .hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,4.5vw,46px);font-weight:700;margin:0;letter-spacing:-1.5px;line-height:1.05}
+  .hero p{font-size:14.5px;color:#94a3b8;max-width:760px;margin:14px auto 0;line-height:1.6}
   .chip-row{display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px}
-  .chip-row .pill{font-size:11px;padding:5px 12px}
-  details{padding:10px 14px;border-radius:10px;background:rgba(20,26,55,.5);border:1px solid rgba(255,255,255,.06);margin-bottom:6px}
-  details summary{cursor:pointer;font-weight:600;color:#e6ecff;list-style:none}
-  details summary::after{content:"+";float:right;color:#22d3ee;font-weight:700;transition:transform .2s}
-  details[open] summary::after{content:"−"}
   .pulse{animation:pulse 2.4s ease infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
-  .corner-ribbon{position:absolute;top:10px;right:-32px;transform:rotate(35deg);background:linear-gradient(90deg,#10b981,#22d3ee);color:#0a0e27;padding:3px 36px;font-size:10px;font-weight:800;letter-spacing:1px}
+  .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 100%);background-size:200% 100%;animation:sk 1.5s linear infinite;border-radius:6px}
+  @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .boot{position:fixed;inset:0;background:rgba(6,9,31,.95);backdrop-filter:blur(8px);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+  .ring{width:50px;height:50px;border-radius:50%;border:3px solid rgba(34,211,238,.15);border-top-color:#22d3ee;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .modal{position:fixed;inset:0;z-index:9500;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);padding:20px}
+  .modal.show{display:flex}
+  .modal-body{background:linear-gradient(160deg,rgba(20,26,55,.97),rgba(15,20,40,.97));border:1px solid rgba(34,211,238,.2);border-radius:16px;padding:24px;max-width:780px;width:100%;max-height:85vh;overflow:auto}
+  .severity-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+  .sev-CRITICA{background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.4)}
+  .sev-ALTA{background:rgba(245,158,11,.18);color:#fde68a;border:1px solid rgba(245,158,11,.4)}
+  .sev-MEDIA{background:rgba(34,211,238,.18);color:#67e8f9;border:1px solid rgba(34,211,238,.4)}
+  .sev-INFO{background:rgba(168,85,247,.18);color:#d8b4fe;border:1px solid rgba(168,85,247,.4)}
+  .evento-card{padding:14px;border-radius:12px;background:rgba(20,26,55,.5);border:1px solid rgba(255,255,255,.06);border-left:4px solid var(--c,#22d3ee);cursor:pointer;transition:all .18s;margin-bottom:10px}
+  .evento-card:hover{background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.3);transform:translateX(2px)}
 </style>
 </head>
 <body>
+
+<!-- BOOT LOADER -->
+<div id="boot" class="boot">
+  <div class="ring"></div>
+  <div style="font-size:13px;color:#94a3b8" id="bootMsg">Cargando datos reales del backend Apps Script…</div>
+</div>
 
 <!-- TOP NAV -->
 <div class="nav">
   <div class="flex items-center justify-between gap-4 flex-wrap" style="max-width:1400px;margin:0 auto">
     <div class="flex items-center gap-3">
       <svg width="34" height="32" viewBox="0 0 260 240">
-        <defs>
-          <linearGradient id="mStroke" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#67e8f9"/>
-            <stop offset=".45" stop-color="#22d3ee"/>
-            <stop offset="1" stop-color="#10b981"/>
-          </linearGradient>
-        </defs>
+        <defs><linearGradient id="mStroke" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#67e8f9"/><stop offset=".45" stop-color="#22d3ee"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs>
         <g stroke="url(#mStroke)" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="45" y1="210" x2="45" y2="30"/>
-          <line x1="45" y1="30" x2="130" y2="135"/>
-          <line x1="130" y1="135" x2="215" y2="30"/>
-          <line x1="215" y1="30" x2="215" y2="210"/>
+          <line x1="45" y1="210" x2="45" y2="30"/><line x1="45" y1="30" x2="130" y2="135"/><line x1="130" y1="135" x2="215" y2="30"/><line x1="215" y1="30" x2="215" y2="210"/>
         </g>
-        <g fill="#67e8f9">
-          <circle cx="45" cy="30" r="11"/><circle cx="215" cy="30" r="11"/><circle cx="130" cy="135" r="10"/>
-        </g>
+        <g fill="#67e8f9"><circle cx="45" cy="30" r="11"/><circle cx="215" cy="30" r="11"/><circle cx="130" cy="135" r="10"/></g>
       </svg>
       <div>
         <div class="font-bold text-white" style="font-family:'Space Grotesk',sans-serif;font-size:17px;letter-spacing:-.3px">Monaco <span class="gradient-text">EVO</span></div>
@@ -128,20 +115,19 @@
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <span class="pill pill-evo">EVO · v0.1 preview</span>
+      <span class="badge-live">DATOS EN VIVO</span>
+      <span id="bkVersion" class="pill">v24 · backend</span>
       <a href="./index.html" class="pill" style="text-decoration:none">← Dashboard estable</a>
     </div>
   </div>
   <div class="scroll-x" style="margin-top:12px">
     <div class="flex gap-2" style="max-width:1400px;margin:0 auto">
       <button class="tab active" data-tab="diagnostico">📊 Diagnóstico</button>
-      <button class="tab" data-tab="motorIA">🧠 Motor IA<span class="badge-new">SANTO GRIAL</span></button>
-      <button class="tab" data-tab="auditor">💰 Auditor Facturas<span class="badge-new">P13</span></button>
-      <button class="tab" data-tab="sst">🦺 SST + ARL<span class="badge-new">P14</span></button>
-      <button class="tab" data-tab="safety">👷 Safety AI<span class="badge-new">P15</span></button>
+      <button class="tab" data-tab="motorIA">🧠 Motor IA<span class="badge-new">EN VIVO</span></button>
+      <button class="tab" data-tab="auditor">💰 Auditor Facturas<span class="badge-new">EN VIVO</span></button>
+      <button class="tab" data-tab="actividades">📋 Actividades</button>
       <button class="tab" data-tab="es">📈 Earned Schedule</button>
       <button class="tab" data-tab="montecarlo">🎲 Monte Carlo</button>
-      <button class="tab" data-tab="pliego">📑 Pliego SECOP II</button>
       <button class="tab" data-tab="quickwins">⚡ 15 Quick Wins</button>
       <button class="tab" data-tab="apuestas">🎯 5 Apuestas</button>
       <button class="tab" data-tab="brechas">🔍 Brechas Mercado</button>
@@ -152,592 +138,320 @@
 
 <!-- HERO -->
 <div class="hero">
-  <div class="pill pill-evo" style="margin-bottom:14px">Análisis profundo de brechas vs mercado · 19 mayo 2026</div>
+  <div class="pill pill-evo" style="margin-bottom:14px">Cockpit funcional · cableado a backend Apps Script · datos reales</div>
   <h1>De <span class="gradient-text">8 %</span> a <span class="gradient-text">22 %</span> de cobertura<br>en 8-10 semanas.</h1>
-  <p>Monaco hoy cubre 9 de 110 capacidades de referencia internacional. Este cockpit visualiza las 15 quick wins, las 5 apuestas estratégicas y el Motor IA Analítica — la diferenciación que ningún competidor LATAM tiene integrada.</p>
-  <div class="chip-row">
-    <span class="pill pill-info">Benchmark contra 30 plataformas</span>
-    <span class="pill pill-ok">110 capacidades evaluadas</span>
-    <span class="pill pill-warn">82 brechas identificadas</span>
-    <span class="pill pill-evo">15 skills propuestas</span>
-    <span class="pill pill-crit">Santo grial: Motor IA</span>
+  <p>Cada pestaña consume datos reales del proyecto Comuneros. Motor IA detecta eventos automáticamente. Auditor analiza las 320 facturas DIAN. Earned Schedule y Monte Carlo se computan desde los cortes reales.</p>
+  <div class="chip-row" id="heroStats">
+    <span class="pill pill-info skeleton" style="min-width:140px;height:22px"></span>
+    <span class="pill pill-ok skeleton" style="min-width:140px;height:22px"></span>
+    <span class="pill pill-warn skeleton" style="min-width:140px;height:22px"></span>
   </div>
 </div>
 
 <div style="max-width:1400px;margin:0 auto;padding:24px">
 
-<!-- ============ PESTAÑA DIAGNOSTICO ============ -->
+<!-- ============ DIAGNÓSTICO ============ -->
 <section id="t-diagnostico" class="tab-content">
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="kpi" style="--acc:#22d3ee">
-      <div class="lbl">Capacidades evaluadas</div>
-      <div class="val">110</div>
-      <div class="sub">30 plataformas mundiales + LATAM</div>
-    </div>
-    <div class="kpi" style="--acc:#10b981">
-      <div class="lbl">Cubierto completo</div>
-      <div class="val">9 <span style="font-size:13px;color:#10b981">· 8%</span></div>
-      <div class="sub">Dashboard JSONP, EVA, parte diario, hosting móvil</div>
-    </div>
-    <div class="kpi" style="--acc:#f59e0b">
-      <div class="lbl">Parcial</div>
-      <div class="val">19 <span style="font-size:13px;color:#f59e0b">· 17%</span></div>
-      <div class="sub">EVM básico, inventario DIAN, alertas</div>
-    </div>
-    <div class="kpi" style="--acc:#ef4444">
-      <div class="lbl">Falta</div>
-      <div class="val">82 <span style="font-size:13px;color:#ef4444">· 75%</span></div>
-      <div class="sub">Pre-contractual, visual, safety AI, mobile, IA</div>
-    </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="diagKpis">
+    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Items inventario</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Valor inventario</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">Facturas DIAN</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">Proveedores únicos</div><div class="val">—</div><div class="sub">cargando…</div></div>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
     <div class="panel">
-      <h3>Cobertura por bloque de capacidades</h3>
-      <div style="position:relative;height:280px"><canvas id="ch-bloques"></canvas></div>
+      <h3>Cobertura por bloque de capacidades · 110 referencias</h3>
+      <div style="position:relative;height:300px"><canvas id="ch-bloques"></canvas></div>
     </div>
     <div class="panel">
-      <h3>Lo que Monaco hoy hace bien y debe blindar</h3>
+      <h3>Lo que Monaco ya hace y se debe blindar</h3>
       <ul class="bullets">
-        <li><b>Estructura 9 carpetas</b> · disciplina física + digital, único en segmento mediano CO</li>
-        <li><b>Tablero canónico 12 pestañas</b> · ES5 puro, paleta DAB fija, render idéntico móvil/desktop</li>
+        <li><b>Estructura 9 carpetas</b> · disciplina física + digital — único en segmento mediano CO</li>
+        <li><b>Tablero canónico 12 pestañas</b> · ES5 puro, paleta DAB fija</li>
         <li><b>Parte diario obra</b> · ingesta SQLite + cálculo EV/AC + alertas cierre 19:00</li>
         <li><b>EVA Control</b> · PV/EV/AC/SPI/CPI/BAC/EAC con reglas raíz inmutables</li>
-        <li><b>Inventario valorizado</b> · 225 ítems · DIAN pipeline · sincro almacén físico</li>
-        <li><b>Dashboard contractual JSONP</b> · sin login móvil — diferenciador absoluto</li>
-        <li><b>Sync XLSX→Sheets</b> · patrón validado producción desde 14-may-26</li>
+        <li><b>Inventario valorizado</b> · pipeline DIAN · sincro almacén físico</li>
+        <li><b>Dashboard JSONP sin login</b> · diferenciador absoluto LATAM</li>
         <li><b>Protocolo HANDOFF 16 secciones</b> · motor de continuidad operativa</li>
       </ul>
     </div>
   </div>
 
   <div class="panel">
-    <h3>Tesis central — por qué Monaco hoy está en 8% de cobertura</h3>
+    <h3>Tesis: 3 dimensiones donde Monaco está bajo el estado del arte</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div class="module-card">
         <div class="ico">📑</div>
         <div class="font-bold text-white mb-2">Capa pre-contractual vacía</div>
-        <div class="text-sm text-slate-300">Hoy no hay lectura de pliegos SECOP II, ni auditor de presupuestos, ni generador APUs / metrados / propuestas / ETs. Esa capa entera está en 0% completo. EVA en Módulo 1 tiene 15 skills.</div>
+        <div class="text-sm text-slate-300">Hoy no hay lectura pliegos SECOP II ni auditor presupuestos ni generador APUs/metrados/propuestas/ETs. EVA en Módulo 1 tiene 15 skills.</div>
       </div>
       <div class="module-card">
         <div class="ico">🧠</div>
         <div class="font-bold text-white mb-2">Reporting sin razonamiento</div>
-        <div class="text-sm text-slate-300">Monaco hace curva S, SPI, CPI, alertas. El mercado ya hace razonamiento causal: causa raíz + impacto COP + propuesta + simulación. Es la capa 3 de EVA, equivalente a Procore AI (USD 200/usr/mes).</div>
+        <div class="text-sm text-slate-300">Monaco hace curva S, SPI, CPI, alertas. El mercado hace razonamiento causal: causa raíz + impacto COP + propuesta + simulación. Procore lo cobra USD 200/usr/mes.</div>
       </div>
       <div class="module-card">
         <div class="ico">👁️</div>
         <div class="font-bold text-white mb-2">Auditoría financiera 3-way</div>
-        <div class="text-sm text-slate-300">Falta auditor automático de facturas (Adaptive style) y reconciliación 3-way OC+Factura+Remisión (SubBase). Cada uno es mercado SaaS USD 50-200M validado.</div>
+        <div class="text-sm text-slate-300">Falta auditor automático facturas (Adaptive) y reconciliación 3-way OC+Factura+Remisión (SubBase). Mercado SaaS USD 50-200M validado.</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ PESTAÑA MOTOR IA ============ -->
+<!-- ============ MOTOR IA ============ -->
 <section id="t-motorIA" class="tab-content" style="display:none">
   <div class="panel glow-card mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(16,185,129,.06))">
     <div class="flex items-start justify-between gap-4 mb-2 flex-wrap">
       <div>
-        <div class="pill pill-evo mb-2">Apuesta #1 · Esfuerzo ALTO · Impacto ALTO</div>
-        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🧠 Motor IA Analítica · el santo grial técnico</h3>
-        <p class="text-sm text-slate-300 mt-2 max-w-3xl">Recibe una observación, produce cadena de razonamiento de 5 pasos: <b>observación → causa raíz → impacto cuantificado en COP → propuesta accionable → simulación numérica del resultado</b>. Procore lo cobra USD 200/usuario/mes adicional. Buildots solo hace delay forecast. <b>NADIE en LATAM lo tiene integrado con cuantificación COP + razonamiento sobre 10 áreas PMI + propuesta accionable</b>.</p>
+        <div class="pill pill-evo mb-2">EN VIVO · cruzando inventario + facturas + actividades</div>
+        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🧠 Motor IA · Eventos detectados ahora</h3>
+        <p class="text-sm text-slate-300 mt-2 max-w-3xl">Backend analiza la data real del proyecto cada 10 min: stocks agotados/negativos, duplicados de factura, concentración de proveedor, actividades con pérdida. Click en cada evento para razonamiento estructurado.</p>
       </div>
-      <div class="text-right">
-        <div class="text-xs text-slate-400">Valor capturado anual</div>
-        <div class="font-bold text-2xl gradient-text" style="font-family:'Space Grotesk',sans-serif">$30-100 M</div>
-        <div class="text-xs text-slate-400">por contrato Comuneros-tipo</div>
-      </div>
+      <button onclick="loadMotorIA(true)" class="pill pill-info" style="cursor:pointer;border:none;padding:8px 14px">🔄 Recargar</button>
     </div>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="motorKpis">
+    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">Eventos críticos</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">Eventos altos</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Total eventos</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Impacto $ estimado</div><div class="val">—</div><div class="sub">cargando…</div></div>
   </div>
 
   <div class="panel mb-4">
-    <h3>📍 Caso real Comuneros · Razonamiento del lunes 09:00</h3>
-    <div class="pill pill-warn mb-3">Observación capturada hoy · disparada por CPI < 0.94 en cap. 3</div>
-
-    <div class="step" style="--c:#22d3ee">
-      <div class="step-num">1</div>
-      <div class="step-body">
-        <div class="step-label">OBSERVACIÓN</div>
-        <div class="step-text">Cuadrilla AA presente en cap. 3 pero <b>sin avance los últimos 4 días</b> (parte diario reporta 0 m² mampostería viernes-lunes).</div>
-      </div>
-    </div>
-
-    <div class="step" style="--c:#f59e0b">
-      <div class="step-num">2</div>
-      <div class="step-body">
-        <div class="step-label">CAUSA RAÍZ DETECTADA</div>
-        <div class="step-text">OC con <b>Aceros Andes COP 8,2M</b> con <b>9 días mora</b> — material no ha llegado. AA quedó sin ladrillo desde el jueves. Cruce automático con módulo compras + inventario consolidado.</div>
-      </div>
-    </div>
-
-    <div class="step" style="--c:#ef4444">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <div class="step-label">IMPACTO CUANTIFICADO</div>
-        <div class="step-text">4 días stand-by × <b>COP 683K/día</b> (jornal AA + Maestro + 30% factor) = <b>COP 2,7M actual</b>; proyectado si llega material miércoles: <b>COP 4,8M total</b>. CPI baja de 0,94 → <span class="arrow-dn font-bold">0,91 ▼</span>. SPI baja de 0,97 → <span class="arrow-dn font-bold">0,93 ▼</span>.</div>
-      </div>
-    </div>
-
-    <div class="step" style="--c:#10b981">
-      <div class="step-num">4</div>
-      <div class="step-body">
-        <div class="step-label">PROPUESTA ACCIONABLE</div>
-        <div class="step-text">
-          <b>(a)</b> Reasignar AA a cap. 4 mampostería patio (tiene stock 800 ladrillos).<br>
-          <b>(b)</b> Llamar Aceros Andes con cláusula 8.4 (penalidad 0,5%/día sobre VOR) → recuperación COP 1,2M.<br>
-          <b>(c)</b> Si Aceros Andes no responde, activar Plan B con Cementos Andinos (12% más caro pero entrega 24h).
-        </div>
-      </div>
-    </div>
-
-    <div class="step" style="--c:#67e8f9">
-      <div class="step-num">5</div>
-      <div class="step-body">
-        <div class="step-label">SIMULACIÓN NUMÉRICA</div>
-        <div class="step-text">
-          Aceptando (a)+(b) → pérdida neta <b class="arrow-up">COP 1,5M</b>, CPI recupera a 0,93, SPI a 0,96, plazo +1,5 días.<br>
-          Sin acciones → pérdida <b class="arrow-dn">COP 4,8M</b>, CPI 0,91, SPI 0,93, plazo +4 días.<br>
-          <b>Decisión recomendada:</b> aceptar (a)+(b) → ahorro neto <b class="gradient-text">COP 3,3M</b>.
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-4 flex gap-2 flex-wrap">
-      <button class="pill pill-ok" style="border:none;cursor:pointer;font-size:13px;padding:8px 16px">✓ Aceptar propuesta (1 click)</button>
-      <button class="pill pill-warn" style="border:none;cursor:pointer;font-size:13px;padding:8px 16px">Ver detalle Plan B</button>
-      <button class="pill" style="cursor:pointer;font-size:13px;padding:8px 16px">Descartar — analizar otra opción</button>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <div class="panel">
-      <h3>Stack técnico del Motor IA</h3>
-      <ul class="bullets">
-        <li><b>Orquestador:</b> Claude Opus 4.6/4.7 vía Cowork</li>
-        <li><b>Trigger:</b> observación natural ó automática (CPI &lt; 0,9 dispara análisis)</li>
-        <li><b>Contexto:</b> SQLite (parte + inventario + APUs) + Sheets (presupuesto) + PDFs (pliego + ETs)</li>
-        <li><b>Output:</b> razonamiento estructurado en tabla <code>razonamientos</code></li>
-        <li><b>Persistencia:</b> 13 columnas — observación, causa, impacto, propuesta, simulación, aprobado, resultado_real</li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3>Por qué es santo grial</h3>
-      <ul class="bullets">
-        <li>Procore lo cobra <b>USD 200/usuario/mes</b> adicional</li>
-        <li>Buildots lo limita a delay forecast — no causal</li>
-        <li>SmartPM lo limita a schedule analytics</li>
-        <li><b>Nadie en LATAM</b> lo tiene con cuantificación COP + 10 áreas PMI</li>
-        <li>Diferenciador estructural más grande disponible</li>
-        <li>Stack ya en Cowork+Claude · estructurarlo como skill: 2-3 semanas</li>
-        <li>Validación con 10 casos reales: 1 mes</li>
-        <li>Para producción total: <b>6-8 semanas</b></li>
-      </ul>
+    <h3>📍 Eventos detectados (ordenados por severidad)</h3>
+    <div id="motorEventos">
+      <div class="text-sm text-slate-400 text-center" style="padding:30px">Cargando eventos del backend…</div>
     </div>
   </div>
 </section>
 
-<!-- ============ PESTAÑA AUDITOR FACTURAS ============ -->
+<!-- ============ AUDITOR ============ -->
 <section id="t-auditor" class="tab-content" style="display:none">
   <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(245,158,11,.05),rgba(239,68,68,.05))">
     <div class="flex items-start justify-between gap-4 mb-2 flex-wrap">
       <div>
-        <div class="pill pill-evo mb-2">Apuesta #2-#3 · Esfuerzo MEDIO · Impacto ALTO</div>
-        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">💰 Auditor Facturas + 3-Way Match</h3>
-        <p class="text-sm text-slate-300 mt-2 max-w-3xl">Reconciliación automática <b>OC + Factura + Remisión</b>. En Comuneros una factura de Aceros Andes mal liquidada por COP 8,2M se detectó manualmente. Con auditor → en segundos.</p>
+        <div class="pill pill-evo mb-2">EN VIVO · sobre las 320 facturas DIAN</div>
+        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">💰 Auditor de Facturas DIAN</h3>
+        <p class="text-sm text-slate-300 mt-2 max-w-3xl">Backend audita el corpus completo: detecta duplicados de número, mismo CUFE en diferentes registros, IVA inconsistente (esperado ~5% o ~19%), facturas sin items parseados, suma items ≠ subtotal.</p>
       </div>
-      <div class="text-right">
-        <div class="text-xs text-slate-400">Recuperable / contrato</div>
-        <div class="font-bold text-2xl gradient-text" style="font-family:'Space Grotesk',sans-serif">$25-75 M</div>
-        <div class="text-xs text-slate-400">8-10 meses · 24 cortes</div>
-      </div>
+      <button onclick="loadAuditor(true)" class="pill pill-info" style="cursor:pointer;border:none;padding:8px 14px">🔄 Recargar</button>
     </div>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="kpi" style="--acc:#22d3ee"><div class="lbl">Facturas corte 5</div><div class="val">32</div><div class="sub">recibidas última quincena</div></div>
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">Aprobadas</div><div class="val">28</div><div class="sub">sin hallazgos</div></div>
-    <div class="kpi" style="--acc:#f59e0b"><div class="lbl">Observaciones</div><div class="val">4</div><div class="sub">requieren revisión</div></div>
-    <div class="kpi" style="--acc:#ef4444"><div class="lbl">Riesgo detectado</div><div class="val">$2,27M</div><div class="sub">overbilling + duplicados</div></div>
-  </div>
-
-  <div class="panel mb-4">
-    <h3>🔍 Hallazgos automáticos · corte quincenal en curso</h3>
-    <div class="scroll-x">
-    <table>
-      <thead><tr><th>Factura</th><th>Proveedor</th><th>OC</th><th class="num">Valor</th><th>Hallazgo</th><th>Severidad</th><th>Acción</th></tr></thead>
-      <tbody>
-        <tr><td>FC15118</td><td>Aceros Andes</td><td>OC-024</td><td class="num">$8.245.000</td><td>Overbilling +5,8% vs OC disponible</td><td><span class="pill pill-crit">CRÍTICA</span></td><td><a class="pill pill-info" href="#">Revisar</a></td></tr>
-        <tr><td>FC15203</td><td>Cementos Andinos</td><td>OC-031</td><td class="num">$1.420.000</td><td>Sobrepago: 10 ton facturadas vs 8,5 ton remisión</td><td><span class="pill pill-crit">CRÍTICA</span></td><td><a class="pill pill-info" href="#">3-way</a></td></tr>
-        <tr><td>FC15287</td><td>Eléctricos del Sur</td><td>OC-018</td><td class="num">$580.000</td><td>Posible duplicado · mismo CUFE en FC15154</td><td><span class="pill pill-warn">ALTA</span></td><td><a class="pill pill-info" href="#">Cotejar</a></td></tr>
-        <tr><td>FC15311</td><td>Ferretería La 10</td><td>OC-022</td><td class="num">$290.000</td><td>Retenciones discrepantes 2,5% vs 4% contractual</td><td><span class="pill pill-warn">MEDIA</span></td><td><a class="pill pill-info" href="#">Ajustar</a></td></tr>
-      </tbody>
-    </table>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <div class="panel">
-      <h3>Algoritmo de auditoría (6 checks)</h3>
-      <ol class="bullets" style="counter-reset:item">
-        <li><b>Match Factura ↔ OC</b> · por número OC / descripción / monto</li>
-        <li><b>Overbilling</b> · factura.valor > (OC.total − OC.facturado) × 1.05</li>
-        <li><b>Items no aprobados</b> · scope creep / extras no autorizados</li>
-        <li><b>Duplicados</b> · CUFE coincidente / mismo número factura</li>
-        <li><b>Retenciones</b> · validación contra contrato (garantía / fuente / IVA)</li>
-        <li><b>CUFE DIAN</b> · validación oficial · firma electrónica</li>
-      </ol>
-    </div>
-    <div class="panel">
-      <h3>3-Way Matching (SubBase style)</h3>
-      <p class="text-sm text-slate-300 mb-3">Para pagar, deben coincidir tres documentos:</p>
-      <div class="step" style="--c:#22d3ee;margin-bottom:6px"><div class="step-num">📋</div><div class="step-body"><div class="step-label">ORDEN DE COMPRA</div><div class="step-text" style="font-size:12px">Qué se autorizó comprar — cantidad + precio + items</div></div></div>
-      <div class="step" style="--c:#f59e0b;margin-bottom:6px"><div class="step-num">🧾</div><div class="step-body"><div class="step-label">FACTURA</div><div class="step-text" style="font-size:12px">Qué cobra el proveedor — items facturados + monto</div></div></div>
-      <div class="step" style="--c:#10b981;margin-bottom:0"><div class="step-num">📦</div><div class="step-body"><div class="step-label">REMISIÓN / RECIBO</div><div class="step-text" style="font-size:12px">Qué entregó efectivamente — almacenista firma</div></div></div>
-      <div class="mt-3 text-xs text-slate-400">Patrón típico fraude CO: proveedor entrega menos de lo facturado. 10 ton cemento facturadas, 8,5 ton entregadas → COP 750K perdidos si no hay 3-way.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ PESTAÑA SST ============ -->
-<section id="t-sst" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(245,158,11,.05),rgba(16,185,129,.05))">
-    <div class="pill pill-evo mb-2">Pestaña 14 · Quick Win #3 · Esfuerzo 1 semana</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🦺 SST + Cumplimiento Resolución 0312</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Dashboard auditable de cumplimiento SG-SST según Resolución 0312 de 2019, con reportes ARL automáticos. Multas evitadas COP 3-8M/año.</p>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">Estándares</div><div class="val">62 / 60</div><div class="sub">cumplimiento ✓</div></div>
-    <div class="kpi" style="--acc:#22d3ee"><div class="lbl">Trabajadores activos</div><div class="val">47</div><div class="sub">Comuneros · 4 frentes</div></div>
-    <div class="kpi" style="--acc:#f59e0b"><div class="lbl">Vencimientos &lt; 30 d</div><div class="val">3</div><div class="sub">EPS / ARL / curso</div></div>
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">Incidentes mes</div><div class="val">0</div><div class="sub">cero accidentes graves</div></div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-    <div class="panel">
-      <h3>Avance auditable · 7 ciclos PHVA Resolución 0312</h3>
-      <div style="position:relative;height:280px"><canvas id="ch-sst"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>Vencimientos próximos (próximos 30 días)</h3>
-      <table>
-        <thead><tr><th>Trabajador</th><th>Concepto</th><th>Vence</th><th>Estado</th></tr></thead>
-        <tbody>
-          <tr><td>José M. Ramírez</td><td>Curso alturas</td><td>26-may</td><td><span class="pill pill-warn">7 días</span></td></tr>
-          <tr><td>Carlos Pérez</td><td>Aporte ARL</td><td>02-jun</td><td><span class="pill pill-warn">14 días</span></td></tr>
-          <tr><td>Cuadrilla mampostería</td><td>Examen periódico</td><td>11-jun</td><td><span class="pill pill-info">23 días</span></td></tr>
-          <tr><td>Aceros del Andes (sub)</td><td>Pólizas RC</td><td>29-may</td><td><span class="pill pill-warn">10 días</span></td></tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="auditorKpis">
+    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Facturas auditadas</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">Hallazgos críticos</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">Hallazgos altos</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Valor en riesgo</div><div class="val">—</div><div class="sub">cargando…</div></div>
   </div>
 
   <div class="panel">
-    <h3>Reportes ARL automáticos</h3>
-    <p class="text-sm text-slate-300 mb-3">Plantilla parametrizada por proyecto. Genera reporte mensual ARL Positiva con: trabajadores, jornales, riesgos, capacitaciones, incidentes. Reduce 10-15 horas/mes.</p>
-    <div class="flex gap-2 flex-wrap">
-      <button class="pill pill-info" style="border:none;cursor:pointer;padding:8px 14px">📄 Generar reporte mayo 2026</button>
-      <button class="pill" style="cursor:pointer;padding:8px 14px">Ver histórico</button>
-      <button class="pill" style="cursor:pointer;padding:8px 14px">Programar envío automático</button>
+    <h3>🔍 Hallazgos detectados</h3>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>Severidad</th><th>Tipo</th><th>Factura</th><th>Proveedor</th><th>Descripción</th><th class="num">Valor</th></tr></thead>
+      <tbody id="auditorBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">Cargando hallazgos…</td></tr></tbody>
+    </table>
     </div>
   </div>
 </section>
 
-<!-- ============ PESTAÑA SAFETY AI ============ -->
-<section id="t-safety" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(239,68,68,.05),rgba(34,211,238,.05))">
-    <div class="pill pill-evo mb-2">Pestaña 15 · Quick Win medio · Inspirado en Smartvid 'Vinnie'</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">👷 Safety AI · Detección de riesgos en fotos</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Claude vision analiza fotos del parte diario y detecta: falta de EPP, trabajo en altura sin protección, agua en piso, escaleras inseguras, soldadura sin pantalla. 30-50 reglas declarativas + corpus DAB.</p>
+<!-- ============ ACTIVIDADES ============ -->
+<section id="t-actividades" class="tab-content" style="display:none">
+  <div class="panel mb-4">
+    <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
+      <h3 style="margin:0;font-size:18px">📋 Actividades del corte <span id="indCorte" class="gradient-text">—</span></h3>
+      <div class="flex gap-2 items-center">
+        <select id="cortesSelect" class="pill" style="background:#1e2a4a;color:#fff;padding:6px 12px;border:1px solid rgba(255,255,255,.2)"></select>
+        <input id="actFilter" placeholder="Filtrar…" class="pill" style="background:rgba(255,255,255,.05);color:#fff;padding:6px 12px;min-width:180px;border:1px solid rgba(255,255,255,.1)">
+      </div>
+    </div>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="kpi" style="--acc:#22d3ee"><div class="lbl">Fotos analizadas</div><div class="val">847</div><div class="sub">últimos 30 días</div></div>
-    <div class="kpi" style="--acc:#f59e0b"><div class="lbl">Hallazgos seguridad</div><div class="val">23</div><div class="sub">2,7% de las fotos</div></div>
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">Corregidos</div><div class="val">20 / 23</div><div class="sub">tiempo medio 4 h</div></div>
-    <div class="kpi" style="--acc:#ef4444"><div class="lbl">Tendencia</div><div class="val">↘ 18%</div><div class="sub">vs mes anterior</div></div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="actKpis">
+    <div class="kpi kpi-loading" style="--acc:#3b82f6"><div class="lbl">Valor contractual total</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">% Avance ponderado</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Proy. al corte</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">Actividades con pérdida</div><div class="val">—</div><div class="sub">cargando…</div></div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <div class="panel">
-      <h3>Top 5 riesgos detectados (mes en curso)</h3>
-      <table>
-        <thead><tr><th>Riesgo</th><th class="num">#</th><th>Severidad</th></tr></thead>
-        <tbody>
-          <tr><td>Sin casco en zona obligatoria</td><td class="num">9</td><td><span class="pill pill-crit">Alta</span></td></tr>
-          <tr><td>Trabajo en altura sin arnés</td><td class="num">5</td><td><span class="pill pill-crit">Crítica</span></td></tr>
-          <tr><td>Acopio inseguro de materiales</td><td class="num">4</td><td><span class="pill pill-warn">Media</span></td></tr>
-          <tr><td>Cables expuestos sin canalizar</td><td class="num">3</td><td><span class="pill pill-warn">Media</span></td></tr>
-          <tr><td>Escalera sin amarre</td><td class="num">2</td><td><span class="pill pill-warn">Media</span></td></tr>
-        </tbody>
+  <div class="panel">
+    <h3>Detalle por actividad (todas las columnas)</h3>
+    <div class="scroll-x" style="max-height:600px">
+      <table id="actTable">
+        <thead><tr><th>Ítem</th><th>Actividad</th><th>Und</th><th class="num">Cant.Contr</th><th class="num">Costo Contr</th><th class="num">Total Contr</th><th class="num">Costo Real</th><th class="num">Cant.Ejec</th><th class="num">% Ejec</th><th class="num">May/Men</th><th class="num">Util/Pérd</th><th class="num">Margen</th><th class="num">Proy.Corte</th><th class="num">Proy.Final</th></tr></thead>
+        <tbody id="actBody"><tr><td colspan="14" style="text-align:center;padding:30px;color:#64748b">Cargando actividades…</td></tr></tbody>
       </table>
     </div>
-    <div class="panel">
-      <h3>Predictive Analytics</h3>
-      <p class="text-sm text-slate-300 mb-3">Modelo predice DÓNDE ocurrirán incidentes con base en patrones históricos. Alerta antes que ocurra.</p>
-      <div class="ms-row mb-2">
-        <span class="pill pill-crit">RIESGO ALTO</span>
-        <span class="text-sm">Cap. 3 día 6 jun · trabajo altura programado + 3 incidentes históricos similares</span>
-      </div>
-      <div class="ms-row mb-2">
-        <span class="pill pill-warn">RIESGO MEDIO</span>
-        <span class="text-sm">Cuadrilla AB · 2 hallazgos seguridad última semana</span>
-      </div>
-      <div class="ms-row">
-        <span class="pill pill-info">REVISAR</span>
-        <span class="text-sm">Frente patio · escalera sin amarre repetido 3 veces</span>
-      </div>
-    </div>
   </div>
 </section>
 
-<!-- ============ PESTAÑA EARNED SCHEDULE ============ -->
+<!-- ============ EARNED SCHEDULE ============ -->
 <section id="t-es" class="tab-content" style="display:none">
   <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.05),rgba(16,185,129,.05))">
-    <div class="pill pill-evo mb-2">Quick Win #1 · Esfuerzo 4 HORAS · Math conocida</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📈 Earned Schedule (ES) · detección 4-6 semanas antes que SPI tradicional</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">El SPI tradicional reporta atraso en horas-hombre, no en tiempo calendario. Earned Schedule traduce ese atraso a semanas. Una fórmula y una línea más en la curva S. Valor: COP 10-17M / contrato evitando correcciones tardías.</p>
+    <div class="pill pill-evo mb-2">CALCULADO EN VIVO desde cortes reales</div>
+    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📈 Earned Schedule (ES) · detección 4-6 semanas antes que SPI</h3>
+    <p class="text-sm text-slate-300 mt-2 max-w-3xl">SPI tradicional mide trabajo en COP. <b>ES traduce el atraso a tiempo calendario</b>. Computado desde los cortes reales del proyecto Comuneros con fórmula Walt Lipke 2003.</p>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="kpi" style="--acc:#22d3ee"><div class="lbl">SPI tradicional</div><div class="val">0,93</div><div class="sub">EV/PV</div></div>
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">SPI(t) Earned Schedule</div><div class="val">0,87</div><div class="sub">ES / AT</div></div>
-    <div class="kpi" style="--acc:#f59e0b"><div class="lbl">Atraso en tiempo</div><div class="val">2,8 sem</div><div class="sub">SV(t) = ES − AT</div></div>
-    <div class="kpi" style="--acc:#ef4444"><div class="lbl">EAC(t) proyectado</div><div class="val">35,2 sem</div><div class="sub">vs 32 contractuales</div></div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="esKpis">
+    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">SPI tradicional</div><div class="val">—</div><div class="sub">EV/PV</div></div>
+    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">SPI(t) Earned Schedule</div><div class="val">—</div><div class="sub">ES/AT</div></div>
+    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">Atraso (sem)</div><div class="val">—</div><div class="sub">SV(t)</div></div>
+    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">EAC(t) proyectado</div><div class="val">—</div><div class="sub">PD/SPI(t)</div></div>
   </div>
 
   <div class="panel mb-4">
-    <h3>Curva S con Earned Schedule sobreimpuesto</h3>
+    <h3>Curva S con Earned Schedule</h3>
     <div style="position:relative;height:340px"><canvas id="ch-es"></canvas></div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <div class="panel">
-      <h3>Por qué ES detecta antes que SPI</h3>
-      <ul class="bullets">
-        <li><b>SPI</b> mide trabajo en COP. Si gasto bien en lo planeado, SPI sube — aunque vaya atrasado calendario.</li>
-        <li><b>ES</b> mide cuánto tiempo del plan original se cumplió. Si EV de hoy iguala el PV de hace 3 semanas → atraso 3 semanas.</li>
-        <li>SPI converge a 1.0 al final por construcción (al cerrar EV=BAC=PV). ES no — sigue reflejando el atraso real.</li>
-        <li>Para proyectos &gt; 6 meses, ES detecta atraso <b>4-6 semanas antes</b> del aviso visible en SPI.</li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3>Fórmulas (Walt Lipke 2003)</h3>
-      <pre style="font-size:11.5px;background:rgba(0,0,0,.25);padding:14px;border-radius:8px;color:#cbd5e1;overflow-x:auto;line-height:1.6">
+  <div class="panel">
+    <h3>Fórmulas (Walt Lipke 2003)</h3>
+    <pre style="font-size:11.5px;background:rgba(0,0,0,.25);padding:14px;border-radius:8px;color:#cbd5e1;overflow-x:auto;line-height:1.6">
 ES = t_n + (EV − PV_n) / (PV_n+1 − PV_n)
-
 SV(t) = ES − AT     (positivo = adelanto)
-SPI(t) = ES / AT    (&gt;1 = adelanto)
-
-EAC(t) = PD / SPI(t)   (duración estimada)
-TSPI = (PD − AT) / (PD − ES)
-      </pre>
-      <p class="text-xs text-slate-400 mt-2">AT = actual time · PD = planned duration · t_n = periodo donde EV cae</p>
-    </div>
+SPI(t) = ES / AT    (>1 = adelanto)
+EAC(t) = PD / SPI(t)   (duración estimada)</pre>
   </div>
 </section>
 
-<!-- ============ PESTAÑA MONTE CARLO ============ -->
+<!-- ============ MONTE CARLO ============ -->
 <section id="t-montecarlo" class="tab-content" style="display:none">
   <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">Quick Win #14 · 200 LOC Python · 4-8 horas</div>
+    <div class="pill pill-evo mb-2">SIMULACIÓN EN VIVO · 5.000 escenarios desde actividades reales</div>
     <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🎲 Monte Carlo · P50 / P80 / P95</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Simulación 10.000 escenarios sobre duración y costo final del proyecto. Cada actividad con distribución triangular (optimista/probable/pesimista). Sale P50, P80, P95 del cronograma y del costo. Crítico para reportar incertidumbre a junta.</p>
+    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Cada actividad con distribución triangular (optimista 0.85, probable 1.0, pesimista 1.20). Cálculo en JavaScript sobre las cantidades y costos reales del proyecto.</p>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">P50 cronograma</div><div class="val">32,0 sem</div><div class="sub">duración mediana</div></div>
-    <div class="kpi" style="--acc:#f59e0b"><div class="lbl">P80 cronograma</div><div class="val">34,5 sem</div><div class="sub">+2,5 sem buffer</div></div>
-    <div class="kpi" style="--acc:#ef4444"><div class="lbl">P95 cronograma</div><div class="val">36,8 sem</div><div class="sub">peor escenario realista</div></div>
-    <div class="kpi" style="--acc:#22d3ee"><div class="lbl">Prob. cumplir plazo</div><div class="val">61%</div><div class="sub">vs fecha contractual</div></div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="mcKpis">
+    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">P50 costo</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">P80 costo</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">P95 costo</div><div class="val">—</div><div class="sub">cargando…</div></div>
+    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Prob cumplir presupuesto</div><div class="val">—</div><div class="sub">cargando…</div></div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-    <div class="panel">
-      <h3>Distribución duración · 10.000 simulaciones</h3>
-      <div style="position:relative;height:280px"><canvas id="ch-mc-time"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>Distribución costo total · 10.000 simulaciones</h3>
-      <div style="position:relative;height:280px"><canvas id="ch-mc-cost"></canvas></div>
-    </div>
+  <div class="panel mb-4">
+    <h3>Distribución de costo total proyectado</h3>
+    <div style="position:relative;height:300px"><canvas id="ch-mc-cost"></canvas></div>
   </div>
 
   <div class="panel">
     <h3>Decisiones que habilita</h3>
     <ul class="bullets">
-      <li><b>Buffer de cronograma:</b> reservar P80 − P50 = 2,5 semanas de holgura.</li>
-      <li><b>Reserva contingencia:</b> P95 − P50 en COP define el bolsillo seguro.</li>
-      <li><b>Comunicación a junta:</b> "61% probabilidad de cumplir plazo" mejor que "vamos bien".</li>
-      <li><b>Negociación con entidad:</b> ampliar plazo argumentado con distribución, no con narrativa.</li>
+      <li><b>Reserva contingencia:</b> P95 − P50 define el bolsillo seguro.</li>
+      <li><b>Comunicación a junta:</b> "X% probabilidad de cumplir presupuesto" mejor que "vamos bien".</li>
+      <li><b>Negociación entidad:</b> ampliación argumentada con distribución, no con narrativa.</li>
     </ul>
   </div>
 </section>
 
-<!-- ============ PESTAÑA PLIEGO SECOP II ============ -->
-<section id="t-pliego" class="tab-content" style="display:none">
-  <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">Quick Win #5 · Esfuerzo 1-2 semanas · Apuesta #4</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📑 Lectura pliego SECOP II + Semáforo viabilidad</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Subes el PDF del pliego. RAG conversacional + 8-12 reglas declarativas cruzan habilitantes vs perfil firma. Decisión Go/No-Go en 2 minutos vs 2-3 horas. Ahorro: 30-45 h/mes evaluando procesos.</p>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">Estado pliego INTV-ACT-2026-014</div><div class="val">VIABLE</div><div class="sub">cumple 8/8 habilitantes</div></div>
-    <div class="kpi" style="--acc:#22d3ee"><div class="lbl">Cierre del pliego</div><div class="val">28-may 14:00</div><div class="sub">9 días restantes</div></div>
-    <div class="kpi" style="--acc:#f59e0b"><div class="lbl">Presupuesto</div><div class="val">$847 M</div><div class="sub">interventoría 18 meses</div></div>
-  </div>
-
-  <div class="panel mb-4">
-    <h3>Checklist habilitantes — cruce automático vs perfil firma</h3>
-    <table>
-      <thead><tr><th>#</th><th>Habilitante</th><th>Pliego exige</th><th>Firma tiene</th><th>Estado</th></tr></thead>
-      <tbody>
-        <tr><td>1</td><td>RUP vigente</td><td>≥ 2 años</td><td>2,4 años</td><td><span class="pill pill-ok">✓</span></td></tr>
-        <tr><td>2</td><td>Experiencia gral interventoría</td><td>500 SMMLV</td><td>728 SMMLV</td><td><span class="pill pill-ok">✓</span></td></tr>
-        <tr><td>3</td><td>Experiencia específica obra deportiva</td><td>3 contratos</td><td>5 contratos</td><td><span class="pill pill-ok">✓</span></td></tr>
-        <tr><td>4</td><td>Capacidad financiera (K residual)</td><td>≥ $850M</td><td>$1.140M</td><td><span class="pill pill-ok">✓</span></td></tr>
-        <tr><td>5</td><td>Índice liquidez</td><td>≥ 1,3</td><td>1,67</td><td><span class="pill pill-ok">✓</span></td></tr>
-        <tr><td>6</td><td>Personal mínimo · Director</td><td>Ing. Civil + 10 años + MBA</td><td>Cumple</td><td><span class="pill pill-ok">✓</span></td></tr>
-        <tr><td>7</td><td>Personal mínimo · Residente</td><td>Ing. Civil + 5 años</td><td>Cumple</td><td><span class="pill pill-ok">✓</span></td></tr>
-        <tr><td>8</td><td>Documentos Tipo CCE versión</td><td>v2.0 vigente</td><td>v2.0 cargado</td><td><span class="pill pill-ok">✓</span></td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <div class="panel">
-      <h3>Chat conversacional con el pliego</h3>
-      <div style="background:rgba(0,0,0,.18);border-radius:10px;padding:12px;font-size:13px">
-        <div class="text-slate-400 text-xs mb-1">Tú:</div>
-        <div class="mb-3">¿cuántos parqueaderos exige el pliego para visitantes?</div>
-        <div class="text-slate-400 text-xs mb-1">Monaco Evo:</div>
-        <div style="background:rgba(34,211,238,.06);padding:10px;border-radius:8px;border-left:2px solid #22d3ee">
-          El pliego exige <b>1 parqueadero visitante por cada 80 m² de área administrativa</b>. Total estimado: <b>8 parqueaderos visitantes</b> para área de 640 m².
-          <div class="text-xs text-slate-400 mt-2">Cita: Sección 7.3 · página 47 · párrafo 3</div>
-        </div>
-      </div>
-      <div class="text-xs text-slate-400 mt-3">Hoy esto toma 15-30 min buscando manualmente. Con RAG: 5-10 segundos.</div>
-    </div>
-    <div class="panel">
-      <h3>Detección de cláusulas atípicas</h3>
-      <div class="ms-row mb-2"><span class="pill pill-warn">REVISAR</span><span class="text-sm">Cláusula 14.2: penalidad diaria 1,5% (estándar 0,5%)</span></div>
-      <div class="ms-row mb-2"><span class="pill pill-info">NORMAL</span><span class="text-sm">Garantía cumplimiento 20%</span></div>
-      <div class="ms-row mb-2"><span class="pill pill-crit">ALERTA</span><span class="text-sm">Cláusula 8.4: terminación unilateral sin previo aviso</span></div>
-      <div class="ms-row"><span class="pill pill-info">NORMAL</span><span class="text-sm">Anticipo 30% · garantizado con póliza</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ PESTAÑA QUICK WINS ============ -->
+<!-- ============ QUICK WINS ============ -->
 <section id="t-quickwins" class="tab-content" style="display:none">
   <div class="panel mb-4">
     <div class="pill pill-evo mb-2">Cuadrante I · 0-90 días · 15 wins · ROI 8-15× primer año</div>
     <h3 style="margin:0;font-size:20px;font-family:'Space Grotesk',sans-serif">⚡ Las 15 victorias rápidas</h3>
-    <p class="text-sm text-slate-300 mt-2">Esfuerzo agregado: ~12 semanas-persona. Valor anual estimado por contrato Comuneros-tipo: <b class="gradient-text">COP 80-180 M</b>. Suben Monaco del 8% al ~22% de cobertura sin tocar las apuestas grandes.</p>
+    <p class="text-sm text-slate-300 mt-2">Valor anual estimado: <b class="gradient-text">COP 80-180 M / contrato</b>. Suben Monaco del 8% al ~22% de cobertura sin tocar las apuestas grandes.</p>
   </div>
-
   <div id="qwList"></div>
 </section>
 
-<!-- ============ PESTAÑA APUESTAS ============ -->
+<!-- ============ APUESTAS ============ -->
 <section id="t-apuestas" class="tab-content" style="display:none">
   <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">Cuadrante II · 30-360 días · Transforman Monaco en plataforma comercial</div>
+    <div class="pill pill-evo mb-2">Cuadrante II · 30-360 días · Diferenciador comercial</div>
     <h3 style="margin:0;font-size:20px;font-family:'Space Grotesk',sans-serif">🎯 Las 5 apuestas estratégicas</h3>
-    <p class="text-sm text-slate-300 mt-2">Alto impacto + alto esfuerzo. Cada una abre un mercado SaaS validado a USD 50-500/usuario/mes en el norte.</p>
   </div>
-
   <div id="apuestasList"></div>
 </section>
 
-<!-- ============ PESTAÑA BRECHAS ============ -->
+<!-- ============ BRECHAS ============ -->
 <section id="t-brechas" class="tab-content" style="display:none">
   <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">Diagnóstico cuantitativo · 110 capacidades de referencia</div>
+    <div class="pill pill-evo mb-2">Diagnóstico · 110 capacidades de referencia</div>
     <h3 style="margin:0;font-size:20px;font-family:'Space Grotesk',sans-serif">🔍 Brechas Monaco vs Mercado</h3>
-    <p class="text-sm text-slate-300 mt-2">Cruce contra 30 plataformas (Procore, Autodesk ACC, Buildertrend, Bluebeam, Primavera, Togal, OpenSpace, Buildots, Smartvid, Doc Crunch, ALICE, Deltek Cobra, Hexagon EcoSys, InEight, Kahua, Archdesk, RIB, SmartPM, SINCO, OneMake, PresconIA, SAO, OPUS, CoPres, metroKUBIKO, Esfera AI).</p>
   </div>
-
   <div class="panel mb-4">
-    <h3>Mapa de cobertura por bloque (13 bloques × 110 capacidades)</h3>
+    <h3>Mapa de cobertura por bloque</h3>
     <div id="heatmapWrap"></div>
     <div class="flex gap-3 mt-4 text-xs text-slate-400">
-      <span class="flex items-center gap-2"><span class="cell cell-ok" style="width:14px;height:14px;border-radius:3px;display:inline-block"></span> Cubierto completo</span>
+      <span class="flex items-center gap-2"><span class="cell cell-ok" style="width:14px;height:14px;border-radius:3px;display:inline-block"></span> Cubierto</span>
       <span class="flex items-center gap-2"><span class="cell cell-partial" style="width:14px;height:14px;border-radius:3px;display:inline-block"></span> Parcial</span>
       <span class="flex items-center gap-2"><span class="cell cell-none" style="width:14px;height:14px;border-radius:3px;display:inline-block"></span> Falta</span>
     </div>
   </div>
-
   <div class="panel">
-    <h3>Matriz Monaco vs 30 plataformas — 10 dimensiones</h3>
+    <h3>Matriz Monaco vs 17 plataformas — 10 dimensiones</h3>
     <div class="scroll-x">
     <table style="font-size:11.5px">
-      <thead><tr><th>Plataforma</th><th>Pliego</th><th>Presup</th><th>Cron+EVM</th><th>Visual</th><th>Mobile</th><th>Safety</th><th>Dashboard</th><th>Financ.</th><th>Multi-U</th><th>Marketplace</th></tr></thead>
+      <thead><tr><th>Plataforma</th><th>Pliego</th><th>Presup</th><th>Cron+EVM</th><th>Visual</th><th>Mobile</th><th>Safety</th><th>Dashb</th><th>Financ</th><th>Multi-U</th><th>Market</th></tr></thead>
       <tbody id="matrixBody"></tbody>
     </table>
     </div>
   </div>
 </section>
 
-<!-- ============ PESTAÑA ROADMAP ============ -->
+<!-- ============ ROADMAP ============ -->
 <section id="t-roadmap" class="tab-content" style="display:none">
   <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">Roadmap 14 sprints · 104 semanas · PO + 1 dev junior</div>
+    <div class="pill pill-evo mb-2">14 sprints · 104 semanas</div>
     <h3 style="margin:0;font-size:20px;font-family:'Space Grotesk',sans-serif">🗓️ Roadmap 24 meses</h3>
-    <p class="text-sm text-slate-300 mt-2">Si solo cuenta Juan: multiplicar plazos × 1,8-2,0. Cada sprint cierra con demo grabada + HANDOFF + push al dashboard público.</p>
   </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="kpi" style="--acc:#22d3ee"><div class="lbl">Sprint actual</div><div class="val">0</div><div class="sub">Setup en curso</div></div>
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">Quick wins · Sprints 1-3</div><div class="val">15</div><div class="sub">Sem 3-14 · ROI inmediato</div></div>
-    <div class="kpi" style="--acc:#f59e0b"><div class="lbl">Apuestas · Sprints 4-8</div><div class="val">5</div><div class="sub">Sem 15-46 · diferenciador</div></div>
-    <div class="kpi" style="--acc:#67e8f9"><div class="lbl">Conversión SaaS</div><div class="val">S12</div><div class="sub">Sem 67 · 1er cliente externo</div></div>
-  </div>
-
-  <div class="panel mb-4">
-    <h3>Timeline 14 sprints</h3>
+  <div class="panel">
     <div id="roadmapList" class="timeline"></div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <div class="panel">
-      <h3>Hitos críticos no negociables</h3>
-      <ul class="bullets">
-        <li><b>Sprint 1</b> · Earned Schedule operando con datos reales Comuneros</li>
-        <li><b>Sprint 5</b> · 1er corte de obra auditado automáticamente</li>
-        <li><b>Sprint 7</b> · 10 razonamientos Motor IA aprobados por el lector</li>
-        <li><b>Sprint 9</b> · PWA en obra + 1 entidad piloto en Client Portal</li>
-        <li><b>Sprint 12</b> · 1er cliente externo pagando MRR</li>
-      </ul>
-    </div>
-    <div class="panel">
-      <h3>Riesgos del roadmap</h3>
-      <table style="font-size:11.5px">
-        <thead><tr><th>Riesgo</th><th>Prob</th><th>Mitigación</th></tr></thead>
-        <tbody>
-          <tr><td>Dependencia Cowork/Anthropic</td><td><span class="pill pill-crit">Alta</span></td><td>Portabilidad a Claude API direct &lt; 1 día</td></tr>
-          <tr><td>Volumen datos &gt; SQLite</td><td><span class="pill pill-warn">Media</span></td><td>Migrar Postgres en Sprint 12</td></tr>
-          <tr><td>Calidad Motor IA</td><td><span class="pill pill-crit">Alta</span></td><td>30+ casos validación Sprint 7</td></tr>
-          <tr><td>Adopción mobile baja</td><td><span class="pill pill-warn">Media</span></td><td>Excel queda como fallback</td></tr>
-          <tr><td>Velocidad subestimada</td><td><span class="pill pill-crit">Alta</span></td><td>Buffer 20% cada sprint</td></tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 </section>
 
 </div>
 
+<!-- MODAL DETALLE EVENTO -->
+<div id="evModal" class="modal" onclick="if(event.target===this)closeEvModal()">
+  <div class="modal-body" id="evModalBody"></div>
+</div>
+
 <!-- Footer -->
 <div style="border-top:1px solid rgba(255,255,255,.06);padding:24px;text-align:center;color:#64748b;font-size:11.5px;margin-top:32px">
-  Monaco EVO v0.1 · vista preview de capacidades propuestas en MEGA HANDOFF · 19-may-2026<br>
-  Datos demo · backend Apps Script v23 conectado · paleta INFRARED COMUNEROS · ES5 puro
+  Monaco EVO v0.2 · cockpit funcional · Apps Script v24 · datos reales del proyecto Comuneros
 </div>
 
 <script>
-/* =================== TABS =================== */
+/* ============ CONFIG ============ */
+const APPS_URL = 'https://script.google.com/macros/s/AKfycbxtP8Q6PQ0AGFDnU1UpGg40lZ6nuiYMf_-QqGlxCd2PMNXIiSBirkyKkU6q7h4IOOL-/exec';
+
+/* ============ UTILS ============ */
+function jsonp(url, params){
+  return new Promise(function(res,rej){
+    var cb = '_cb_' + Date.now() + '_' + Math.floor(Math.random()*99999);
+    var q = Object.assign({},params||{},{callback:cb});
+    var qs = Object.keys(q).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(q[k]);}).join('&');
+    var t = setTimeout(function(){cleanup();rej(new Error('Timeout 35s'));}, 35000);
+    window[cb] = function(data){clearTimeout(t);cleanup();res(data);};
+    function cleanup(){ delete window[cb]; if(s.parentNode) s.parentNode.removeChild(s); }
+    var s = document.createElement('script');
+    s.src = url + '?' + qs;
+    s.onerror = function(){ clearTimeout(t); cleanup(); rej(new Error('jsonp error')); };
+    document.body.appendChild(s);
+  });
+}
+const fmt0 = new Intl.NumberFormat('es-CO',{maximumFractionDigits:0});
+const fmt2 = new Intl.NumberFormat('es-CO',{maximumFractionDigits:2});
+function money(v){ return v==null||isNaN(v)?'—':'$'+fmt0.format(v); }
+function moneyShort(v){
+  if(v==null||isNaN(v))return '—';
+  var a=Math.abs(v);
+  if(a>=1e12) return '$'+(v/1e12).toLocaleString('es-CO',{maximumFractionDigits:2})+' B';
+  if(a>=1e6) return '$'+(v/1e6).toLocaleString('es-CO',{maximumFractionDigits:1})+' M';
+  if(a>=1e3) return '$'+(v/1e3).toLocaleString('es-CO',{maximumFractionDigits:0})+' K';
+  return '$'+fmt0.format(v);
+}
+function num(v){ return v==null||isNaN(v)?'—':fmt2.format(v); }
+function pct(v){ return v==null||isNaN(v)?'—':(v*100).toFixed(1)+'%'; }
+function escapeHTML(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+/* ============ TABS ============ */
 document.querySelectorAll('.tab').forEach(function(b){
   b.addEventListener('click', function(){
     document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
@@ -747,198 +461,529 @@ document.querySelectorAll('.tab').forEach(function(b){
     var el = document.getElementById('t-'+tab);
     if(el) el.style.display = 'block';
     window.scrollTo({top:0, behavior:'smooth'});
+    if(tab==='motorIA' && !window._motorLoaded) loadMotorIA();
+    if(tab==='auditor' && !window._auditorLoaded) loadAuditor();
+    if(tab==='actividades' && !window._actLoaded) loadActividades();
+    if(tab==='es' && !window._esLoaded) loadES();
+    if(tab==='montecarlo' && !window._mcLoaded) loadMonteCarlo();
   });
 });
 
-/* =================== CHART HELPERS =================== */
-const TXT='#cbd5e1', GRID='rgba(255,255,255,.06)', AXIS='#94a3b8';
-const CHART_DEFAULTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TXT,font:{size:11}}}},scales:{x:{ticks:{color:AXIS,font:{size:10}},grid:{color:GRID}},y:{ticks:{color:AXIS,font:{size:10}},grid:{color:GRID}}}};
-const moneyShort=v=>{if(v==null||isNaN(v))return '—';const a=Math.abs(v);if(a>=1e9)return '$'+(v/1e6).toLocaleString('es-CO',{maximumFractionDigits:0})+' M';if(a>=1e6)return '$'+(v/1e6).toLocaleString('es-CO',{maximumFractionDigits:1})+' M';if(a>=1e3)return '$'+(v/1e3).toLocaleString('es-CO',{maximumFractionDigits:0})+' K';return '$'+v};
+/* ============ STATE ============ */
+var IND_DATA = null, IND_LATEST = null;
+var EVO_RESUMEN = null;
 
-/* =================== CHART BLOQUES =================== */
-new Chart(document.getElementById('ch-bloques'),{
-  type:'bar',
-  data:{
-    labels:['A·Pre-contractual','B·Base APUs','C·Inteligencia','D·Visual','E·Financiero','F·Cronog/EVM','G·Safety/SST','H·Mobile/portal','I·Legal/pliego','J·Compras/RFI','K·Dashboard','L·Datos','M·Inventario'],
-    datasets:[
-      {label:'Cubierto',data:[0,0,0,0,1,1,0,0,0,0,5,1,1],backgroundColor:'#10b981',stack:'s'},
-      {label:'Parcial',data:[1,1,1,0,3,3,1,2,0,1,3,2,1],backgroundColor:'#f59e0b',stack:'s'},
-      {label:'Falta',data:[9,5,7,9,8,6,7,8,7,5,0,7,4],backgroundColor:'#ef4444',stack:'s'}
-    ]
-  },
-  options:Object.assign({},CHART_DEFAULTS,{indexAxis:'y',scales:{x:{stacked:true,ticks:{color:AXIS},grid:{color:GRID}},y:{stacked:true,ticks:{color:AXIS,font:{size:10}},grid:{color:GRID}}}})
-});
+/* ============ BOOT ============ */
+async function boot(){
+  try {
+    document.getElementById('bootMsg').textContent = 'Cargando resumen ejecutivo…';
+    EVO_RESUMEN = await jsonp(APPS_URL, {action:'monaco_evo_resumen'});
+    renderDiagKpis();
+    renderHero();
+    document.getElementById('bootMsg').textContent = 'Cargando cortes contractuales…';
+    var ind = await jsonp(APPS_URL, {action:'indicadores'});
+    IND_DATA = ind;
+    var cortes = Object.keys(ind||{}).filter(function(k){return !k.startsWith('_');});
+    cortes.sort(function(a,b){
+      var A=a.split('-').reverse().join('');
+      var B=b.split('-').reverse().join('');
+      return B.localeCompare(A);
+    });
+    IND_LATEST = cortes[0] || null;
+    populateCortesSelect(cortes);
+    renderBloquesChart();
+    renderQuickWins();
+    renderApuestas();
+    renderBrechas();
+    renderRoadmap();
+    document.getElementById('boot').style.display = 'none';
+  } catch(e){
+    document.getElementById('bootMsg').textContent = 'Error: ' + e.message + ' · refresh para reintentar';
+    console.error(e);
+  }
+}
 
-/* =================== CHART SST =================== */
-new Chart(document.getElementById('ch-sst'),{
-  type:'radar',
-  data:{
-    labels:['Planear','Hacer','Verificar','Actuar','Trabajadores','Documentación','Indicadores'],
-    datasets:[
-      {label:'Cumplimiento %',data:[98,95,87,82,100,93,96],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.2)',borderWidth:2.5,pointBackgroundColor:'#10b981'},
-      {label:'Mínimo Res. 0312',data:[80,80,80,80,80,80,80],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',borderWidth:1.5,borderDash:[4,4]}
-    ]
-  },
-  options:Object.assign({},CHART_DEFAULTS,{scales:{r:{angleLines:{color:'rgba(255,255,255,.08)'},grid:{color:'rgba(255,255,255,.08)'},pointLabels:{color:TXT,font:{size:10}},ticks:{display:false,backdropColor:'transparent'},suggestedMin:0,suggestedMax:100}}})
-});
+/* ============ DIAGNÓSTICO ============ */
+function renderDiagKpis(){
+  if(!EVO_RESUMEN) return;
+  var k = document.getElementById('diagKpis');
+  k.innerHTML =
+    '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">Items inventario</div><div class="val">'+fmt0.format(EVO_RESUMEN.items_inventario||0)+'</div><div class="sub">consolidado con M-XXX</div></div>' +
+    '<div class="kpi" style="--acc:#10b981"><div class="lbl">Valor inventario</div><div class="val">'+moneyShort(EVO_RESUMEN.valor_inventario||0)+'</div><div class="sub">stock × precio IVA</div></div>' +
+    '<div class="kpi" style="--acc:#f59e0b"><div class="lbl">Facturas DIAN</div><div class="val">'+fmt0.format(EVO_RESUMEN.facturas_dian||0)+'</div><div class="sub">parseadas con CUFE</div></div>' +
+    '<div class="kpi" style="--acc:#ef4444"><div class="lbl">Proveedores únicos</div><div class="val">'+fmt0.format(EVO_RESUMEN.proveedores||0)+'</div><div class="sub">por NIT</div></div>';
+}
+function renderHero(){
+  if(!EVO_RESUMEN) return;
+  var s = document.getElementById('heroStats');
+  s.innerHTML =
+    '<span class="pill pill-info">'+fmt0.format(EVO_RESUMEN.items_inventario||0)+' items inventario</span>' +
+    '<span class="pill pill-ok">'+moneyShort(EVO_RESUMEN.valor_facturado||0)+' facturado DIAN</span>' +
+    '<span class="pill pill-warn">'+fmt0.format(EVO_RESUMEN.apus||0)+' APUs · '+fmt0.format(EVO_RESUMEN.requisiciones||0)+' requisiciones</span>' +
+    '<span class="pill pill-evo">Cobertura 8% → 22% en 10 sem</span>';
+}
 
-/* =================== CHART ES (Earned Schedule) =================== */
-const labels=['Sem 0','Sem 4','Sem 8','Sem 12','Sem 16','Sem 20','Sem 24','Sem 28','Sem 32'];
-new Chart(document.getElementById('ch-es'),{
-  type:'line',
-  data:{
-    labels,
-    datasets:[
-      {label:'PV planeado',data:[0,8,18,32,48,62,76,88,100],borderColor:'#a5b4fc',borderDash:[5,5],pointRadius:0,borderWidth:2,fill:false,tension:.3},
-      {label:'EV real',data:[0,7,15,28,42,54,65,76,null],borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.15)',borderWidth:2.5,pointBackgroundColor:'#22d3ee',pointRadius:4,fill:true,tension:.35,spanGaps:true},
-      {label:'AC costo real',data:[0,9,19,34,50,67,82,95,null],borderColor:'#f59e0b',borderWidth:2,pointBackgroundColor:'#f59e0b',pointRadius:3,fill:false,tension:.3,spanGaps:true},
-      {label:'ES (Earned Schedule)',data:[null,null,null,null,null,null,null,25,null],borderColor:'#10b981',backgroundColor:'#10b981',pointRadius:8,pointStyle:'rectRot',type:'scatter',showLine:false}
-    ]
-  },
-  options:Object.assign({},CHART_DEFAULTS,{plugins:{legend:{labels:{color:TXT,font:{size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+'%'}}},scales:{x:{ticks:{color:AXIS,font:{size:10}},grid:{color:GRID}},y:{ticks:{color:AXIS,font:{size:10},callback:v=>v+'%'},grid:{color:GRID},min:0}}})
-});
+function renderBloquesChart(){
+  new Chart(document.getElementById('ch-bloques'),{
+    type:'bar',
+    data:{
+      labels:['A·Pre-contractual','B·Base APUs','C·Inteligencia','D·Visual','E·Financiero','F·Cronog/EVM','G·Safety/SST','H·Mobile/portal','I·Legal/pliego','J·Compras/RFI','K·Dashboard','L·Datos','M·Inventario'],
+      datasets:[
+        {label:'Cubierto',data:[0,0,0,0,1,1,0,0,0,0,5,1,1],backgroundColor:'#10b981',stack:'s'},
+        {label:'Parcial',data:[1,1,1,0,3,3,1,2,0,1,3,2,1],backgroundColor:'#f59e0b',stack:'s'},
+        {label:'Falta',data:[9,5,7,9,8,6,7,8,7,5,0,7,4],backgroundColor:'#ef4444',stack:'s'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#cbd5e1',font:{size:11}}}},scales:{x:{stacked:true,ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}},y:{stacked:true,ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}}}}
+  });
+}
 
-/* =================== CHART MONTE CARLO =================== */
-function gauss(mean,sd){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return mean+sd*Math.sqrt(-2.0*Math.log(u))*Math.cos(2.0*Math.PI*v)}
-function histogram(samples,bins){const min=Math.min(...samples),max=Math.max(...samples),step=(max-min)/bins;const counts=new Array(bins).fill(0);const labels=[];for(let i=0;i<bins;i++){labels.push((min+step*i).toFixed(1));}samples.forEach(s=>{let i=Math.min(bins-1,Math.floor((s-min)/step));counts[i]++;});return {labels,counts};}
-const samplesT=Array.from({length:3000},()=>gauss(32.5,2.2));
-const ht=histogram(samplesT,18);
-new Chart(document.getElementById('ch-mc-time'),{type:'bar',data:{labels:ht.labels,datasets:[{label:'Frecuencia',data:ht.counts,backgroundColor:ht.labels.map(l=>parseFloat(l)<32?'#10b981':parseFloat(l)<34.5?'#f59e0b':'#ef4444'),borderWidth:0}]},options:Object.assign({},CHART_DEFAULTS,{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' simulaciones'}}}})});
+/* ============ MOTOR IA ============ */
+async function loadMotorIA(force){
+  window._motorLoaded = true;
+  var ctn = document.getElementById('motorEventos');
+  ctn.innerHTML = '<div class="text-sm text-slate-400 text-center" style="padding:30px">⏳ Consultando backend...</div>';
+  try {
+    var data = await jsonp(APPS_URL, {action:'monaco_eventos'+(force?'&_t='+Date.now():'')});
+    var evs = data.eventos || [];
+    var crits = evs.filter(function(e){return e.severidad==='CRITICA';}).length;
+    var altas = evs.filter(function(e){return e.severidad==='ALTA';}).length;
+    var impacto = evs.reduce(function(s,e){return s+(Number(e.impactoCop)||0);},0);
+    document.getElementById('motorKpis').innerHTML =
+      '<div class="kpi" style="--acc:#ef4444"><div class="lbl">Eventos críticos</div><div class="val">'+crits+'</div><div class="sub">requieren acción inmediata</div></div>' +
+      '<div class="kpi" style="--acc:#f59e0b"><div class="lbl">Eventos altos</div><div class="val">'+altas+'</div><div class="sub">revisar hoy</div></div>' +
+      '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">Total eventos</div><div class="val">'+evs.length+'</div><div class="sub">detectados automáticamente</div></div>' +
+      '<div class="kpi" style="--acc:#10b981"><div class="lbl">Impacto $ estimado</div><div class="val">'+moneyShort(impacto)+'</div><div class="sub">si no se actúa</div></div>';
+    if(!evs.length){
+      ctn.innerHTML = '<div class="text-center" style="padding:40px"><div class="text-2xl mb-2">✓</div><div class="text-slate-300">Sin eventos críticos detectados en este momento. El Motor IA monitorea continuamente inventario, facturas y actividades.</div></div>';
+      return;
+    }
+    var colorMap = {CRITICA:'#ef4444', ALTA:'#f59e0b', MEDIA:'#22d3ee', INFO:'#a855f7'};
+    ctn.innerHTML = evs.map(function(ev, idx){
+      return '<div class="evento-card" style="--c:'+colorMap[ev.severidad]+'" onclick="showEvento('+idx+')">' +
+        '<div class="flex items-start justify-between gap-3 flex-wrap">' +
+          '<div style="flex:1;min-width:280px">' +
+            '<div class="flex items-center gap-2 mb-1">' +
+              '<span class="severity-badge sev-'+ev.severidad+'">'+ev.severidad+'</span>' +
+              '<span class="text-xs text-slate-400">'+ev.tipo+'</span>' +
+            '</div>' +
+            '<div class="font-bold text-white" style="font-size:14px">'+escapeHTML(ev.observacion)+'</div>' +
+            '<div class="text-sm text-slate-300 mt-1">'+escapeHTML(ev.causaRaiz.substring(0,180))+(ev.causaRaiz.length>180?'…':'')+'</div>' +
+          '</div>' +
+          '<div class="text-right">' +
+            (ev.impactoCop ? '<div class="font-bold gradient-text" style="font-size:15px;font-family:Space Grotesk">'+moneyShort(ev.impactoCop)+'</div>' : '') +
+            '<div class="text-xs text-slate-400 mt-1">click → razonamiento</div>' +
+          '</div>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+    window._motorEvs = evs;
+  } catch(e){
+    ctn.innerHTML = '<div class="text-center text-red-400" style="padding:30px">Error: '+e.message+'</div>';
+  }
+}
 
-const samplesC=Array.from({length:3000},()=>gauss(11500,750));
-const hc=histogram(samplesC,18);
-new Chart(document.getElementById('ch-mc-cost'),{type:'bar',data:{labels:hc.labels.map(v=>'$'+v+'M'),datasets:[{label:'Frecuencia',data:hc.counts,backgroundColor:hc.labels.map(v=>parseFloat(v)<11500?'#10b981':parseFloat(v)<12500?'#f59e0b':'#ef4444'),borderWidth:0}]},options:Object.assign({},CHART_DEFAULTS,{plugins:{legend:{display:false}}})});
+function showEvento(idx){
+  var ev = (window._motorEvs||[])[idx];
+  if(!ev) return;
+  var colorMap = {CRITICA:'#ef4444', ALTA:'#f59e0b', MEDIA:'#22d3ee', INFO:'#a855f7'};
+  var color = colorMap[ev.severidad];
+  var html = '<div class="flex items-start justify-between mb-4 flex-wrap gap-3">' +
+    '<div><div class="severity-badge sev-'+ev.severidad+'" style="font-size:11px">'+ev.severidad+'</div>' +
+    '<h3 style="font-family:Space Grotesk;margin:8px 0 0;font-size:18px;color:#fff">'+escapeHTML(ev.observacion)+'</h3></div>' +
+    '<button class="pill" style="cursor:pointer" onclick="closeEvModal()">✕ Cerrar</button></div>';
 
-/* =================== QUICK WINS LIST =================== */
-const QW=[
-  {n:1,id:'F1',t:'Earned Schedule (ES)',e:'4 horas',v:'COP 10-17M',d:'Una fórmula y una línea más en la curva S. Detección 4-6 semanas antes del SPI.'},
-  {n:2,id:'H6',t:'Push + WhatsApp Business',e:'3-5 días',v:'COP 5-15M',d:'API Twilio o Meta Business. Reduce 40-60% tiempo respuesta a eventos.'},
-  {n:3,id:'G3',t:'SST dashboard Res. 0312',e:'1 semana',v:'COP 3-8M',d:'Pestaña 13 + reglas de compliance. Multas evitadas.'},
-  {n:4,id:'I4',t:'datos.gov.co integración',e:'1 semana',v:'COP 8-20M',d:'Alertas procesos SECOP nuevos automáticas. +30% oportunidades evaluadas.'},
-  {n:5,id:'A2',t:'Semáforo viabilidad pliego',e:'1-2 sem',v:'COP 25-40M',d:'8-12 reglas declarativas. Go/no-go en 2 min vs 2-3 horas.'},
-  {n:6,id:'A9',t:'Estudios previos generator',e:'1 semana',v:'COP 5-12M',d:'Plantilla parametrizada. De 4-8 h a 15 min.'},
-  {n:7,id:'E4',t:'DIAN integration nativa',e:'1 semana',v:'Habilitador',d:'Endpoint oficial + validador CUFE. Habilita E1 y E2.'},
-  {n:8,id:'H7',t:'Punchlist nativa',e:'1 semana',v:'COP 3-8M',d:'Extensión del parte diario + foto + estado. Reduce 50% tiempo entrega obra.'},
-  {n:9,id:'I5',t:'Clasificación procesos IA',e:'3-5 días',v:'COP 6-15M',d:'Claude clasificador + reglas. Pre-filtrado, -70% volumen evaluar.'},
-  {n:10,id:'G4',t:'Reportes ARL automáticos',e:'3-5 días',v:'COP 4-10M',d:'Plantilla por proyecto + scheduler. Ahorro 10-15 h/mes.'},
-  {n:11,id:'J2',t:'Subcontractor compliance',e:'1 semana',v:'COP 5-20M',d:'Tabla vencimientos + alertas. Evita contratar sub sin pólizas.'},
-  {n:12,id:'B6',t:'Versionado APU',e:'2 días',v:'Habilitador',d:'Tabla apu_revisiones + 2 triggers SQLite. Habilita auditoría.'},
-  {n:13,id:'H8',t:'HANDOFF automático',e:'3-5 días',v:'COP 2-5M',d:'Procesa historial de sesión + plantilla 16 secciones.'},
-  {n:14,id:'F3',t:'Monte Carlo risk simple',e:'4-8 horas',v:'COP 5-15M',d:'scipy.stats + 200 LOC Python. P50/P80/P95.'},
-  {n:15,id:'B3',t:'Camacol + ICCU integración',e:'1 semana',v:'Habilitador',d:'Scraping + parser. Base raíz crece con ICC oficial.'}
-];
-document.getElementById('qwList').innerHTML=QW.map(q=>`
-  <div class="quickwin-row">
-    <div class="qw-num">${q.n}</div>
-    <div>
-      <div style="font-weight:600;color:#fff;font-size:13.5px">${q.t} <span class="pill pill-info" style="font-size:9.5px;margin-left:6px">${q.id}</span></div>
-      <div style="font-size:12px;color:#94a3b8;margin-top:2px">${q.d}</div>
-    </div>
-    <div><span class="pill">${q.e}</span></div>
-    <div style="font-family:'Space Grotesk';font-weight:700;color:#10b981;text-align:right;min-width:130px">${q.v}<div style="font-size:9.5px;color:#94a3b8;font-weight:400">/año</div></div>
-  </div>`).join('');
+  html += '<div class="step" style="--c:'+color+'"><div class="step-num">1</div><div class="step-body"><div class="step-label">OBSERVACIÓN</div><div class="step-text">'+escapeHTML(ev.observacion)+'</div></div></div>';
+  html += '<div class="step" style="--c:#f59e0b"><div class="step-num">2</div><div class="step-body"><div class="step-label">CAUSA RAÍZ DETECTADA</div><div class="step-text">'+escapeHTML(ev.causaRaiz)+'</div></div></div>';
+  html += '<div class="step" style="--c:#ef4444"><div class="step-num">3</div><div class="step-body"><div class="step-label">IMPACTO CUANTIFICADO</div><div class="step-text">' +
+    (ev.impactoCop ? 'Impacto monetario estimado: <b>'+money(ev.impactoCop)+'</b>' : '') +
+    (ev.impactoDias ? '<br>Impacto en plazo: <b>'+ev.impactoDias+' días</b>' : '') +
+    '</div></div></div>';
+  html += '<div class="step" style="--c:#10b981"><div class="step-num">4</div><div class="step-body"><div class="step-label">PROPUESTA ACCIONABLE</div><div class="step-text">'+escapeHTML(ev.propuesta)+'</div></div></div>';
 
-/* =================== APUESTAS =================== */
-const APU=[
-  {n:1,t:'Motor IA Analítica',e:'6-8 sem',v:'$30-100M / año',d:'Razonamiento causal cuantificado en COP. Procore lo cobra USD 200/usr/mes. Diferenciador absoluto.',c:'#22d3ee'},
-  {n:2,t:'Auditor automático facturas',e:'4-5 sem',v:'$25-75M / contrato',d:'Adaptive style. Match factura↔OC + overbilling + duplicados + retenciones + CUFE DIAN.',c:'#10b981'},
-  {n:3,t:'Reconciliación 3-way',e:'3-4 sem',v:'0.5-2% del contrato',d:'SubBase style. OC + Factura + Remisión. Captura overbilling, missing deliveries, scope creep.',c:'#f59e0b'},
-  {n:4,t:'Lectura PDF pliego SECOP II',e:'4-6 sem',v:'$25-40M / año',d:'Semáforo viabilidad + chat conversacional. Reduce 30-45 h/mes de evaluación.',c:'#06b6d4'},
-  {n:5,t:'PWA mobile offline-first',e:'6-8 sem',v:'2× adopción campo',d:'Residente registra avance + foto + asistencia sin internet. Reemplaza Excel oficina.',c:'#67e8f9'}
-];
-document.getElementById('apuestasList').innerHTML=APU.map(a=>`
-  <div class="panel mb-3" style="border-left:4px solid ${a.c}">
-    <div class="flex items-start justify-between gap-4 flex-wrap">
-      <div style="flex:1;min-width:280px">
-        <div class="flex items-center gap-2 mb-1">
-          <span class="qw-num" style="background:${a.c}30;color:${a.c}">${a.n}</span>
-          <div style="font-family:'Space Grotesk';font-weight:700;color:#fff;font-size:16px">${a.t}</div>
-        </div>
-        <div class="text-sm text-slate-300 mt-1" style="margin-left:48px">${a.d}</div>
-      </div>
-      <div style="text-align:right">
-        <span class="pill">${a.e}</span>
-        <div style="font-family:'Space Grotesk';font-weight:700;color:${a.c};font-size:18px;margin-top:4px">${a.v}</div>
-      </div>
-    </div>
-  </div>`).join('');
+  if(ev.items && ev.items.length){
+    html += '<div class="step" style="--c:#67e8f9"><div class="step-num">5</div><div class="step-body"><div class="step-label">ITEMS AFECTADOS · '+ev.items.length+'</div>';
+    html += '<div class="scroll-x mt-2"><table style="font-size:11.5px;width:100%">';
+    var first = ev.items[0];
+    var keys = Object.keys(first);
+    html += '<thead><tr>' + keys.map(function(k){return '<th>'+k+'</th>';}).join('') + '</tr></thead><tbody>';
+    ev.items.forEach(function(it){
+      html += '<tr>' + keys.map(function(k){
+        var v = it[k];
+        if(typeof v === 'number') return '<td class="num">'+(Math.abs(v)>=1000?moneyShort(v):num(v))+'</td>';
+        return '<td>'+escapeHTML(String(v||'—')).substring(0,40)+'</td>';
+      }).join('') + '</tr>';
+    });
+    html += '</tbody></table></div></div></div>';
+  }
+  document.getElementById('evModalBody').innerHTML = html;
+  document.getElementById('evModal').classList.add('show');
+}
+function closeEvModal(){ document.getElementById('evModal').classList.remove('show'); }
 
-/* =================== HEATMAP COBERTURA =================== */
-const BLOQUES=['A·Pre-contractual','B·Base APUs','C·Inteligencia','D·Visual','E·Financiero','F·Cronog/EVM','G·Safety/SST','H·Mobile/portal','I·Legal/pliego','J·Compras/RFI','K·Dashboard','L·Datos','M·Inventario'];
-const COBERTURA=[
-  // [completo, parcial, falta]
-  [0,1,9],[0,1,5],[0,1,7],[0,0,9],[1,3,8],[1,3,6],[0,1,7],[0,2,8],[0,0,7],[0,1,5],[5,3,0],[1,2,7],[1,1,4]
-];
-let hm='<div class="grid gap-3" style="grid-template-columns:200px 1fr">';
-COBERTURA.forEach((c,i)=>{
-  hm+=`<div style="font-size:12px;color:#cbd5e1;padding:4px 0">${BLOQUES[i]}</div>`;
-  hm+='<div class="heatmap" style="grid-template-columns:repeat(15,1fr)">';
-  const [ok,par,fal]=c;
-  for(let j=0;j<ok;j++) hm+='<div class="cell cell-ok">✓</div>';
-  for(let j=0;j<par;j++) hm+='<div class="cell cell-partial">~</div>';
-  for(let j=0;j<fal;j++) hm+='<div class="cell cell-none">×</div>';
-  hm+='</div>';
-});
-hm+='</div>';
-document.getElementById('heatmapWrap').innerHTML=hm;
+/* ============ AUDITOR ============ */
+async function loadAuditor(force){
+  window._auditorLoaded = true;
+  document.getElementById('auditorBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">⏳ Auditando facturas DIAN…</td></tr>';
+  try {
+    var data = await jsonp(APPS_URL, {action:'monaco_auditor'+(force?'&_t='+Date.now():'')});
+    var r = data.resumen || {};
+    document.getElementById('auditorKpis').innerHTML =
+      '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">Facturas auditadas</div><div class="val">'+fmt0.format(r.total||0)+'</div><div class="sub">corpus DIAN completo</div></div>' +
+      '<div class="kpi" style="--acc:#ef4444"><div class="lbl">Hallazgos críticos</div><div class="val">'+(r.criticas||0)+'</div><div class="sub">requieren acción</div></div>' +
+      '<div class="kpi" style="--acc:#f59e0b"><div class="lbl">Hallazgos altos</div><div class="val">'+(r.altas||0)+'</div><div class="sub">revisar</div></div>' +
+      '<div class="kpi" style="--acc:#10b981"><div class="lbl">Valor en riesgo</div><div class="val">'+moneyShort(r.valor_riesgo||0)+'</div><div class="sub">monto a validar</div></div>';
+    var hallazgos = data.hallazgos || [];
+    var orden = {CRITICA:0,ALTA:1,MEDIA:2,INFO:3};
+    hallazgos.sort(function(a,b){return (orden[a.severidad]||9)-(orden[b.severidad]||9);});
+    if(!hallazgos.length){
+      document.getElementById('auditorBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#10b981">✓ Sin hallazgos · facturas íntegras</td></tr>';
+      return;
+    }
+    document.getElementById('auditorBody').innerHTML = hallazgos.map(function(h){
+      return '<tr>' +
+        '<td><span class="severity-badge sev-'+h.severidad+'">'+h.severidad+'</span></td>' +
+        '<td>'+escapeHTML(h.tipo)+'</td>' +
+        '<td style="font-weight:600;color:#a5b4fc">'+escapeHTML(h.factura||'—')+'</td>' +
+        '<td>'+escapeHTML(h.proveedor||'—')+'</td>' +
+        '<td style="font-size:11.5px">'+escapeHTML(h.descripcion)+'</td>' +
+        '<td class="num">'+(h.valor?money(h.valor):'—')+'</td>' +
+      '</tr>';
+    }).join('');
+  } catch(e){
+    document.getElementById('auditorBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#ef4444">Error: '+e.message+'</td></tr>';
+  }
+}
 
-/* =================== MATRIZ 30 PLATAFORMAS =================== */
-const M=(s)=>s==='✅'?'<span class="pill pill-ok">✓</span>':s==='🟡'?'<span class="pill pill-warn">~</span>':'<span class="pill pill-crit">×</span>';
-const MATRIX=[
-  ['Procore','🟡','✅','❌','❌','✅','✅','✅','✅','✅','🟡'],
-  ['Autodesk ACC','🟡','🟡','✅','❌','✅','✅','✅','✅','🟡','🟡'],
-  ['Buildertrend','❌','✅','❌','❌','✅','✅','✅','🟡','✅','🟡'],
-  ['Bluebeam','✅','❌','❌','❌','❌','❌','❌','❌','❌','❌'],
-  ['Primavera P6','❌','❌','✅','❌','🟡','🟡','🟡','🟡','❌','❌'],
-  ['Fieldwire','❌','🟡','❌','❌','✅','🟡','✅','❌','❌','❌'],
-  ['Togal.AI','✅','✅','❌','❌','❌','❌','❌','❌','❌','❌'],
-  ['OpenSpace','❌','❌','❌','✅','✅','✅','❌','❌','❌','❌'],
-  ['Buildots','❌','❌','✅','✅','✅','✅','🟡','❌','❌','❌'],
-  ['Smartvid','❌','❌','❌','✅','✅','✅','🟡','❌','❌','❌'],
-  ['Doc Crunch','✅','❌','❌','❌','❌','❌','❌','❌','❌','❌'],
-  ['Deltek Cobra','❌','❌','✅','❌','❌','❌','✅','✅','✅','❌'],
-  ['SINCO','❌','✅','🟡','❌','🟡','🟡','✅','✅','✅','✅'],
-  ['OneMake','❌','✅','🟡','❌','✅','🟡','✅','🟡','✅','❌'],
-  ['PresconIA','❌','✅','❌','❌','🟡','❌','🟡','❌','❌','❌'],
-  ['Monaco hoy','❌','🟡','🟡','❌','❌','❌','✅','🟡','❌','❌'],
-  ['Monaco EVO (objetivo)','🟡','✅','✅','🟡','✅','✅','✅','✅','✅','🟡']
-];
-document.getElementById('matrixBody').innerHTML=MATRIX.map(r=>{
-  const isMonaco=r[0].indexOf('Monaco')>=0;
-  return `<tr${isMonaco?' style="background:rgba(34,211,238,.06)"':''}><td style="font-weight:${isMonaco?'700':'600'};color:${isMonaco?'#67e8f9':'#fff'}">${r[0]}</td>${r.slice(1).map(c=>'<td>'+M(c)+'</td>').join('')}</tr>`;
-}).join('');
+/* ============ ACTIVIDADES ============ */
+function populateCortesSelect(cortes){
+  var sel = document.getElementById('cortesSelect');
+  sel.innerHTML = cortes.map(function(c){return '<option value="'+c+'"'+(c===IND_LATEST?' selected':'')+'>'+c.replace(/-/g,'/')+'</option>';}).join('');
+  sel.onchange = function(e){ renderActividades(e.target.value); };
+}
 
-/* =================== ROADMAP =================== */
-const ROAD=[
-  {s:'Sprint 0',sem:'Sem 1-2',foco:'Setup',d:'Setup entorno desarrollo, repo monaco-toolkit, CI básico, validación Cowork.',c:'#94a3b8'},
-  {s:'Sprint 1',sem:'Sem 3-6',foco:'Quick wins financieros + EVM',d:'F1 ES, F3 Monte Carlo, E4 DIAN, B6 versionado, I4 datos.gov.co, I5 clasificación.',c:'#22d3ee'},
-  {s:'Sprint 2',sem:'Sem 7-10',foco:'Quick wins operativos',d:'A2 viabilidad, A9 estudios previos, G3 SST, G4 ARL, H6 WhatsApp, H7 punchlist, J2 sub compliance.',c:'#22d3ee'},
-  {s:'Sprint 3',sem:'Sem 11-14',foco:'Base raíz APUs',d:'B1 indexación históricos, B3 Camacol/ICCU, B4 SOP bucle virtuoso.',c:'#06b6d4'},
-  {s:'Sprint 4',sem:'Sem 15-20',foco:'Apuesta financiera (1/2)',d:'E3 sync Siigo/Alegra. Base para E1+E2.',c:'#10b981'},
-  {s:'Sprint 5',sem:'Sem 21-26',foco:'Apuesta financiera (2/2)',d:'E1 auditor facturas, E2 reconciliación 3-way. Pestaña 14 tablero.',c:'#10b981'},
-  {s:'Sprint 6',sem:'Sem 27-32',foco:'Apuesta inteligencia (1/2)',d:'C4 RAG conversacional, C6 AI contract review, I1 flag cláusulas.',c:'#10b981'},
-  {s:'Sprint 7',sem:'Sem 33-40',foco:'Motor IA Analítica',d:'C1 Motor IA, C2 Gerente PMP, C3 Interventor evolutivo. Pestaña 16.',c:'#f59e0b'},
-  {s:'Sprint 8',sem:'Sem 41-46',foco:'Pre-contractual',d:'A1 lectura pliego, A3 auditor pre, A5 generador APUs.',c:'#f59e0b'},
-  {s:'Sprint 9',sem:'Sem 47-52',foco:'Mobile + multi-usuario',d:'H1 PWA, H2 roles, H3 Client Portal Entidad.',c:'#f59e0b'},
-  {s:'Sprint 10',sem:'Sem 53-58',foco:'Cronograma IA + safety',d:'C7 schedule intelligence, C8 delay forecast, G1 safety AI EPP, G2 50 indicadores.',c:'#a5b4fc'},
-  {s:'Sprint 11',sem:'Sem 59-66',foco:'Visual + extensiones',d:'D1 walks 360°, D5 visual search, F2 rolling-wave EAC, F8 IPMDAR export.',c:'#a5b4fc'},
-  {s:'Sprint 12',sem:'Sem 67-78',foco:'Apuesta comercial',d:'Multi-tenant + onboarding + facturación + pricing. Conversión SaaS.',c:'#ec4899'},
-  {s:'Sprint 13',sem:'Sem 79-90',foco:'Pulido + diferimientos',d:'Resolver Q3, completar Q4 si justifica. Estabilización.',c:'#a855f7'},
-  {s:'Sprint 14',sem:'Sem 91-104',foco:'Escalamiento',d:'2do desarrollador, primeros 10 clientes externos, marketing.',c:'#a855f7'}
-];
-document.getElementById('roadmapList').innerHTML=ROAD.map((s,i)=>`
-  <div class="timeline-item">
-    <div class="flex items-start gap-3 flex-wrap" style="background:rgba(20,26,55,.4);border-radius:10px;padding:12px;border-left:3px solid ${s.c}">
-      <div style="flex:0 0 100px">
-        <div style="font-family:'Space Grotesk';font-weight:700;color:${s.c};font-size:13px">${s.s}</div>
-        <div style="font-size:11px;color:#94a3b8">${s.sem}</div>
-      </div>
-      <div style="flex:1;min-width:240px">
-        <div style="font-weight:700;color:#fff;font-size:13.5px">${s.foco}</div>
-        <div style="font-size:12px;color:#cbd5e1;margin-top:3px">${s.d}</div>
-      </div>
-    </div>
-  </div>`).join('');
+async function loadActividades(){
+  window._actLoaded = true;
+  if(IND_LATEST && IND_DATA && IND_DATA[IND_LATEST]) renderActividades(IND_LATEST);
+}
+
+function renderActividades(corte){
+  var d = IND_DATA && IND_DATA[corte];
+  if(!d || !d.actividades){
+    document.getElementById('actBody').innerHTML = '<tr><td colspan="14" style="text-align:center;padding:30px;color:#64748b">Sin datos para corte '+corte+'</td></tr>';
+    return;
+  }
+  document.getElementById('indCorte').textContent = corte.replace(/-/g,'/');
+  var acts = d.actividades;
+  var totalContr = acts.reduce(function(s,a){return s+(Number(a.total_contr)||0);},0);
+  var exec = 0, contr = 0;
+  acts.forEach(function(a){
+    var cu = Number(a.costo_contr_u)||0;
+    contr += (Number(a.cant_contr)||0)*cu;
+    exec += (Number(a.cant_ejec)||0)*cu;
+  });
+  var avance = contr>0 ? exec/contr : 0;
+  var totT = d.totales && d.totales['COSTO TOTAL'] || {};
+  var perdida = acts.filter(function(a){return (Number(a.util_perd)||0)<0 && (Number(a.porc_ejec)||0)>0;}).length;
+  document.getElementById('actKpis').innerHTML =
+    '<div class="kpi" style="--acc:#3b82f6"><div class="lbl">Valor contractual total</div><div class="val">'+moneyShort(totalContr)+'</div><div class="sub">'+acts.length+' actividades</div></div>' +
+    '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">% Avance ponderado</div><div class="val">'+(avance*100).toFixed(1)+'%</div><div class="sub">EV/PV del corte</div></div>' +
+    '<div class="kpi" style="--acc:#10b981"><div class="lbl">Proy. al corte</div><div class="val">'+moneyShort(totT.proy_corte||0)+'</div><div class="sub">utilidad/pérdida acum</div></div>' +
+    '<div class="kpi" style="--acc:#ef4444"><div class="lbl">Actividades con pérdida</div><div class="val">'+perdida+'</div><div class="sub">de '+acts.length+'</div></div>';
+
+  function row(a){
+    var totC = (a.total_contr!=null) ? a.total_contr : ((Number(a.cant_contr)||0)*(Number(a.costo_contr_u)||0));
+    var utilCls = (Number(a.util_perd)||0)<0?'color:#fca5a5':(Number(a.util_perd)||0)>0?'color:#86efac':'';
+    return '<tr>' +
+      '<td style="font-weight:600;color:#a5b4fc">'+escapeHTML(a.item||'')+'</td>' +
+      '<td style="font-size:11.5px">'+escapeHTML(a.actividad||'')+'</td>' +
+      '<td>'+escapeHTML(a.unidad||'')+'</td>' +
+      '<td class="num">'+num(a.cant_contr)+'</td>' +
+      '<td class="num">'+money(a.costo_contr_u)+'</td>' +
+      '<td class="num" style="color:#a5b4fc;font-weight:600">'+money(totC)+'</td>' +
+      '<td class="num">'+money(a.costo_real_u)+'</td>' +
+      '<td class="num">'+num(a.cant_ejec)+'</td>' +
+      '<td class="num">'+(a.porc_ejec!=null?(a.porc_ejec*100).toFixed(1)+'%':'—')+'</td>' +
+      '<td class="num">'+money(a.may_men)+'</td>' +
+      '<td class="num" style="'+utilCls+';font-weight:600">'+money(a.util_perd)+'</td>' +
+      '<td class="num">'+(a.margen!=null?(a.margen*100).toFixed(1)+'%':'—')+'</td>' +
+      '<td class="num">'+money(a.proy_corte)+'</td>' +
+      '<td class="num">'+money(a.proy_final)+'</td>' +
+    '</tr>';
+  }
+  document.getElementById('actBody').innerHTML = acts.map(row).join('');
+  // filtro
+  var fi = document.getElementById('actFilter');
+  fi.oninput = function(){
+    var f = fi.value.toLowerCase();
+    var rows = acts.filter(function(a){
+      return ((a.item||'')+' '+(a.actividad||'')).toLowerCase().indexOf(f)>=0;
+    });
+    document.getElementById('actBody').innerHTML = rows.map(row).join('');
+  };
+}
+
+/* ============ EARNED SCHEDULE ============ */
+function loadES(){
+  window._esLoaded = true;
+  if(!IND_DATA){ return; }
+  var cortes = Object.keys(IND_DATA).filter(function(k){return !k.startsWith('_');});
+  cortes.sort(function(a,b){
+    var A=a.split('-').reverse().join('');
+    var B=b.split('-').reverse().join('');
+    return A.localeCompare(B);
+  });
+  if(cortes.length<2){ return; }
+  // calcular curva acumulada PV y EV
+  var n = cortes.length;
+  var BAC = 0;
+  cortes.forEach(function(c){
+    var acts = IND_DATA[c].actividades||[];
+    var v = acts.reduce(function(s,a){return s + (Number(a.cant_contr)||0)*(Number(a.costo_contr_u)||0);}, 0);
+    if(v>BAC) BAC = v;
+  });
+  var pvAt = function(idx){ return BAC * (idx+1)/n; };
+  var evCorte = function(c){
+    var acts = IND_DATA[c].actividades||[];
+    return acts.reduce(function(s,a){return s + (Number(a.cant_ejec)||0)*(Number(a.costo_contr_u)||0);}, 0);
+  };
+  var labels = cortes.map(function(c){return c.substring(0,5);});
+  var pv = cortes.map(function(_,i){return pvAt(i);});
+  var ev = cortes.map(function(c){return evCorte(c);});
+  // SPI tradicional último corte
+  var lastEV = ev[ev.length-1];
+  var lastPV = pv[pv.length-1];
+  var spi = lastPV>0 ? lastEV/lastPV : 1;
+  // Earned Schedule: encontrar t donde PV(t) = EV actual
+  var ES = 0;
+  for(var i=0; i<n-1; i++){
+    if(pv[i] <= lastEV && pv[i+1] >= lastEV){
+      ES = i + (lastEV - pv[i])/(pv[i+1] - pv[i]);
+      break;
+    }
+  }
+  if(lastEV >= pv[n-1]) ES = n-1;
+  var AT = n - 1;
+  var SPI_t = AT>0 ? ES/AT : 1;
+  var SV_t = ES - AT;
+  var PD = n;
+  var EAC_t = SPI_t>0 ? PD/SPI_t : PD;
+
+  document.getElementById('esKpis').innerHTML =
+    '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">SPI tradicional</div><div class="val">'+spi.toFixed(2)+'</div><div class="sub">EV/PV · último corte</div></div>' +
+    '<div class="kpi" style="--acc:#10b981"><div class="lbl">SPI(t) Earned Schedule</div><div class="val">'+SPI_t.toFixed(2)+'</div><div class="sub">ES/AT · tiempo</div></div>' +
+    '<div class="kpi" style="--acc:'+(SV_t<0?'#ef4444':'#10b981')+'"><div class="lbl">Atraso (cortes)</div><div class="val">'+SV_t.toFixed(1)+'</div><div class="sub">SV(t) = ES − AT</div></div>' +
+    '<div class="kpi" style="--acc:#f59e0b"><div class="lbl">EAC(t) proyectado</div><div class="val">'+EAC_t.toFixed(1)+' cortes</div><div class="sub">vs '+PD+' planeados</div></div>';
+
+  if(window._esChart) window._esChart.destroy();
+  window._esChart = new Chart(document.getElementById('ch-es'),{
+    type:'line',
+    data:{
+      labels: labels,
+      datasets:[
+        {label:'PV (planeado)', data:pv.map(function(v){return v/1e6;}), borderColor:'#a5b4fc', borderDash:[5,5], pointRadius:0, borderWidth:2, fill:false, tension:.2},
+        {label:'EV (ejecutado)', data:ev.map(function(v){return v/1e6;}), borderColor:'#22d3ee', backgroundColor:'rgba(34,211,238,.15)', borderWidth:2.5, pointBackgroundColor:'#22d3ee', pointRadius:4, fill:true, tension:.3},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#cbd5e1'}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y.toFixed(0)+' M';}}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#94a3b8',callback:function(v){return '$'+v+' M';}},grid:{color:'rgba(255,255,255,.05)'},min:0}}}
+  });
+}
+
+/* ============ MONTE CARLO ============ */
+function loadMonteCarlo(){
+  window._mcLoaded = true;
+  if(!IND_DATA || !IND_LATEST) return;
+  var acts = (IND_DATA[IND_LATEST] && IND_DATA[IND_LATEST].actividades) || [];
+  if(!acts.length) return;
+
+  var N = 5000;
+  var totalsBAC = 0;
+  acts.forEach(function(a){ totalsBAC += (Number(a.cant_contr)||0)*(Number(a.costo_contr_u)||0); });
+
+  function gauss(){ var u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+  function triRand(min, mode, max){
+    var u = Math.random();
+    var f = (mode - min) / (max - min);
+    if(u < f) return min + Math.sqrt(u*(max-min)*(mode-min));
+    return max - Math.sqrt((1-u)*(max-min)*(max-mode));
+  }
+  var samples = new Array(N);
+  for(var s=0;s<N;s++){
+    var total = 0;
+    for(var i=0;i<acts.length;i++){
+      var a = acts[i];
+      var cant = (Number(a.cant_contr)||0);
+      var costo = (Number(a.costo_contr_u)||0);
+      // distribución triangular: optimista 0.85, probable 1.0, pesimista 1.20
+      var factor = triRand(0.85, 1.0, 1.20);
+      total += cant * costo * factor;
+    }
+    samples[s] = total;
+  }
+  samples.sort(function(a,b){return a-b;});
+  var P50 = samples[Math.floor(N*0.50)];
+  var P80 = samples[Math.floor(N*0.80)];
+  var P95 = samples[Math.floor(N*0.95)];
+  var bajoBAC = samples.filter(function(s){return s<=totalsBAC;}).length;
+  var probCumplir = bajoBAC/N;
+
+  document.getElementById('mcKpis').innerHTML =
+    '<div class="kpi" style="--acc:#10b981"><div class="lbl">P50 costo</div><div class="val">'+moneyShort(P50)+'</div><div class="sub">mediana</div></div>' +
+    '<div class="kpi" style="--acc:#f59e0b"><div class="lbl">P80 costo</div><div class="val">'+moneyShort(P80)+'</div><div class="sub">+'+moneyShort(P80-P50)+' buffer</div></div>' +
+    '<div class="kpi" style="--acc:#ef4444"><div class="lbl">P95 costo</div><div class="val">'+moneyShort(P95)+'</div><div class="sub">peor escenario realista</div></div>' +
+    '<div class="kpi" style="--acc:#22d3ee"><div class="lbl">Prob cumplir BAC</div><div class="val">'+(probCumplir*100).toFixed(0)+'%</div><div class="sub">vs '+moneyShort(totalsBAC)+'</div></div>';
+
+  // Histograma
+  var bins = 25;
+  var min = samples[0], max = samples[N-1];
+  var step = (max-min)/bins;
+  var counts = new Array(bins).fill(0);
+  var lbls = [];
+  for(var i=0;i<bins;i++){
+    var center = min + step*(i+0.5);
+    lbls.push(moneyShort(center));
+  }
+  samples.forEach(function(s){
+    var bi = Math.min(bins-1, Math.floor((s-min)/step));
+    counts[bi]++;
+  });
+  var colors = lbls.map(function(_,i){
+    var center = min + step*(i+0.5);
+    return center<P50 ? '#10b981' : center<P80 ? '#22d3ee' : center<P95 ? '#f59e0b' : '#ef4444';
+  });
+  if(window._mcChart) window._mcChart.destroy();
+  window._mcChart = new Chart(document.getElementById('ch-mc-cost'),{
+    type:'bar',
+    data:{labels:lbls,datasets:[{label:'Simulaciones',data:counts,backgroundColor:colors,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.05)'}}}}
+  });
+}
+
+/* ============ QUICK WINS ============ */
+function renderQuickWins(){
+  var QW = [
+    {n:1,id:'F1',t:'Earned Schedule (ES)',e:'4 horas',v:'COP 10-17M',d:'Detección 4-6 sem antes del SPI.'},
+    {n:2,id:'H6',t:'Push + WhatsApp Business',e:'3-5 días',v:'COP 5-15M',d:'API Twilio/Meta. Reduce 40-60% tiempo respuesta.'},
+    {n:3,id:'G3',t:'SST dashboard Res. 0312',e:'1 semana',v:'COP 3-8M',d:'Pestaña 13 + reglas compliance. Multas evitadas.'},
+    {n:4,id:'I4',t:'datos.gov.co integración',e:'1 semana',v:'COP 8-20M',d:'Alertas procesos SECOP nuevos. +30% oportunidades.'},
+    {n:5,id:'A2',t:'Semáforo viabilidad pliego',e:'1-2 sem',v:'COP 25-40M',d:'Go/no-go en 2 min vs 2-3 horas. 30-45 h/mes.'},
+    {n:6,id:'A9',t:'Estudios previos generator',e:'1 semana',v:'COP 5-12M',d:'Plantilla parametrizada. De 4-8 h a 15 min.'},
+    {n:7,id:'E4',t:'DIAN integration nativa',e:'1 semana',v:'Habilitador',d:'Endpoint oficial + validador CUFE.'},
+    {n:8,id:'H7',t:'Punchlist nativa',e:'1 semana',v:'COP 3-8M',d:'Extensión parte diario + foto + estado.'},
+    {n:9,id:'I5',t:'Clasificación procesos IA',e:'3-5 días',v:'COP 6-15M',d:'Claude clasificador. -70% volumen evaluar.'},
+    {n:10,id:'G4',t:'Reportes ARL automáticos',e:'3-5 días',v:'COP 4-10M',d:'Plantilla por proyecto + scheduler.'},
+    {n:11,id:'J2',t:'Subcontractor compliance',e:'1 semana',v:'COP 5-20M',d:'Tabla vencimientos + alertas.'},
+    {n:12,id:'B6',t:'Versionado APU',e:'2 días',v:'Habilitador',d:'apu_revisiones + 2 triggers SQLite.'},
+    {n:13,id:'H8',t:'HANDOFF automático',e:'3-5 días',v:'COP 2-5M',d:'Procesa historial + plantilla 16 secciones.'},
+    {n:14,id:'F3',t:'Monte Carlo risk simple',e:'4-8 horas',v:'COP 5-15M',d:'P50/P80/P95 cronograma y costo.'},
+    {n:15,id:'B3',t:'Camacol + ICCU integración',e:'1 semana',v:'Habilitador',d:'Scraping + parser. Base raíz crece.'}
+  ];
+  document.getElementById('qwList').innerHTML = QW.map(function(q){
+    return '<div class="quickwin-row">' +
+      '<div class="qw-num">'+q.n+'</div>' +
+      '<div>' +
+        '<div style="font-weight:600;color:#fff;font-size:13.5px">'+q.t+' <span class="pill pill-info" style="font-size:9.5px;margin-left:6px">'+q.id+'</span></div>' +
+        '<div style="font-size:12px;color:#94a3b8;margin-top:2px">'+q.d+'</div>' +
+      '</div>' +
+      '<div><span class="pill">'+q.e+'</span></div>' +
+      '<div style="font-family:Space Grotesk;font-weight:700;color:#10b981;text-align:right;min-width:130px">'+q.v+'<div style="font-size:9.5px;color:#94a3b8;font-weight:400">/año</div></div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderApuestas(){
+  var APU = [
+    {n:1,t:'Motor IA Analítica',e:'6-8 sem',v:'$30-100M/año',d:'Razonamiento causal cuantificado en COP. Procore lo cobra USD 200/usr/mes.',c:'#22d3ee'},
+    {n:2,t:'Auditor automático facturas',e:'4-5 sem',v:'$25-75M/contrato',d:'Adaptive style. Match factura↔OC + overbilling + duplicados + CUFE.',c:'#10b981'},
+    {n:3,t:'Reconciliación 3-way',e:'3-4 sem',v:'0.5-2% contrato',d:'OC + Factura + Remisión. Overbilling, missing deliveries.',c:'#f59e0b'},
+    {n:4,t:'Lectura PDF pliego SECOP II',e:'4-6 sem',v:'$25-40M/año',d:'Semáforo viabilidad + chat conversacional. -30-45 h/mes.',c:'#06b6d4'},
+    {n:5,t:'PWA mobile offline-first',e:'6-8 sem',v:'2× adopción campo',d:'Residente registra avance+foto+asistencia sin internet.',c:'#67e8f9'}
+  ];
+  document.getElementById('apuestasList').innerHTML = APU.map(function(a){
+    return '<div class="panel mb-3" style="border-left:4px solid '+a.c+'">' +
+      '<div class="flex items-start justify-between gap-4 flex-wrap">' +
+        '<div style="flex:1;min-width:280px">' +
+          '<div class="flex items-center gap-2 mb-1">' +
+            '<span class="qw-num" style="background:'+a.c+'30;color:'+a.c+'">'+a.n+'</span>' +
+            '<div style="font-family:Space Grotesk;font-weight:700;color:#fff;font-size:16px">'+a.t+'</div>' +
+          '</div>' +
+          '<div class="text-sm text-slate-300 mt-1" style="margin-left:48px">'+a.d+'</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<span class="pill">'+a.e+'</span>' +
+          '<div style="font-family:Space Grotesk;font-weight:700;color:'+a.c+';font-size:18px;margin-top:4px">'+a.v+'</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderBrechas(){
+  var BLOQUES = ['A·Pre-contractual','B·Base APUs','C·Inteligencia','D·Visual','E·Financiero','F·Cronog/EVM','G·Safety/SST','H·Mobile/portal','I·Legal/pliego','J·Compras/RFI','K·Dashboard','L·Datos','M·Inventario'];
+  var COBERTURA = [[0,1,9],[0,1,5],[0,1,7],[0,0,9],[1,3,8],[1,3,6],[0,1,7],[0,2,8],[0,0,7],[0,1,5],[5,3,0],[1,2,7],[1,1,4]];
+  var hm = '<div style="display:grid;grid-template-columns:200px 1fr;gap:8px">';
+  COBERTURA.forEach(function(c,i){
+    hm += '<div style="font-size:12px;color:#cbd5e1;padding:4px 0">'+BLOQUES[i]+'</div><div class="heatmap" style="grid-template-columns:repeat(15,1fr)">';
+    for(var j=0;j<c[0];j++) hm += '<div class="cell cell-ok">✓</div>';
+    for(var j=0;j<c[1];j++) hm += '<div class="cell cell-partial">~</div>';
+    for(var j=0;j<c[2];j++) hm += '<div class="cell cell-none">×</div>';
+    hm += '</div>';
+  });
+  hm += '</div>';
+  document.getElementById('heatmapWrap').innerHTML = hm;
+  var M = function(s){return s==='✅'?'<span class="pill pill-ok">✓</span>':s==='🟡'?'<span class="pill pill-warn">~</span>':'<span class="pill pill-crit">×</span>';};
+  var MATRIX = [
+    ['Procore','🟡','✅','❌','❌','✅','✅','✅','✅','✅','🟡'],
+    ['Autodesk ACC','🟡','🟡','✅','❌','✅','✅','✅','✅','🟡','🟡'],
+    ['Buildertrend','❌','✅','❌','❌','✅','✅','✅','🟡','✅','🟡'],
+    ['Bluebeam','✅','❌','❌','❌','❌','❌','❌','❌','❌','❌'],
+    ['Primavera P6','❌','❌','✅','❌','🟡','🟡','🟡','🟡','❌','❌'],
+    ['Togal.AI','✅','✅','❌','❌','❌','❌','❌','❌','❌','❌'],
+    ['OpenSpace','❌','❌','❌','✅','✅','✅','❌','❌','❌','❌'],
+    ['Buildots','❌','❌','✅','✅','✅','✅','🟡','❌','❌','❌'],
+    ['Smartvid','❌','❌','❌','✅','✅','✅','🟡','❌','❌','❌'],
+    ['Doc Crunch','✅','❌','❌','❌','❌','❌','❌','❌','❌','❌'],
+    ['Deltek Cobra','❌','❌','✅','❌','❌','❌','✅','✅','✅','❌'],
+    ['SINCO','❌','✅','🟡','❌','🟡','🟡','✅','✅','✅','✅'],
+    ['OneMake','❌','✅','🟡','❌','✅','🟡','✅','🟡','✅','❌'],
+    ['PresconIA','❌','✅','❌','❌','🟡','❌','🟡','❌','❌','❌'],
+    ['Monaco hoy','❌','🟡','🟡','❌','❌','❌','✅','🟡','❌','❌'],
+    ['Monaco EVO (objetivo)','🟡','✅','✅','🟡','✅','✅','✅','✅','✅','🟡']
+  ];
+  document.getElementById('matrixBody').innerHTML = MATRIX.map(function(r){
+    var isMonaco = r[0].indexOf('Monaco')>=0;
+    return '<tr'+(isMonaco?' style="background:rgba(34,211,238,.06)"':'')+'><td style="font-weight:'+(isMonaco?'700':'600')+';color:'+(isMonaco?'#67e8f9':'#fff')+'">'+r[0]+'</td>' + r.slice(1).map(function(c){return '<td>'+M(c)+'</td>';}).join('') + '</tr>';
+  }).join('');
+}
+
+function renderRoadmap(){
+  var ROAD = [
+    {s:'Sprint 0',sem:'Sem 1-2',foco:'Setup',d:'Setup entorno, repo, CI, validación Cowork.',c:'#94a3b8'},
+    {s:'Sprint 1',sem:'Sem 3-6',foco:'Quick wins financieros + EVM',d:'F1 ES, F3 MC, E4 DIAN, B6 versionado, I4 datos.gov.co, I5 IA.',c:'#22d3ee'},
+    {s:'Sprint 2',sem:'Sem 7-10',foco:'Quick wins operativos',d:'A2 viabilidad, A9 estudios, G3 SST, G4 ARL, H6 WhatsApp, H7 punchlist.',c:'#22d3ee'},
+    {s:'Sprint 3',sem:'Sem 11-14',foco:'Base raíz APUs',d:'B1 indexación, B3 Camacol/ICCU, B4 bucle virtuoso.',c:'#06b6d4'},
+    {s:'Sprint 4',sem:'Sem 15-20',foco:'Apuesta financiera (1/2)',d:'E3 sync Siigo/Alegra. Base E1+E2.',c:'#10b981'},
+    {s:'Sprint 5',sem:'Sem 21-26',foco:'Apuesta financiera (2/2)',d:'E1 auditor + E2 3-way. Pestaña 14.',c:'#10b981'},
+    {s:'Sprint 6',sem:'Sem 27-32',foco:'Apuesta inteligencia (1/2)',d:'C4 RAG, C6 AI contract, I1 cláusulas.',c:'#10b981'},
+    {s:'Sprint 7',sem:'Sem 33-40',foco:'Motor IA Analítica',d:'C1 Motor + C2 Gerente PMP + C3 Interventor. P16.',c:'#f59e0b'},
+    {s:'Sprint 8',sem:'Sem 41-46',foco:'Pre-contractual',d:'A1 pliego, A3 auditor, A5 generador APUs.',c:'#f59e0b'},
+    {s:'Sprint 9',sem:'Sem 47-52',foco:'Mobile + multi-usuario',d:'H1 PWA, H2 roles, H3 Client Portal Entidad.',c:'#f59e0b'},
+    {s:'Sprint 10',sem:'Sem 53-58',foco:'Cronograma IA + Safety',d:'C7 schedule intel, C8 delay forecast, G1+G2 safety.',c:'#a5b4fc'},
+    {s:'Sprint 11',sem:'Sem 59-66',foco:'Visual + extensiones',d:'D1 walks 360°, D5 visual search, F2 rolling EAC, F8 IPMDAR.',c:'#a5b4fc'},
+    {s:'Sprint 12',sem:'Sem 67-78',foco:'Apuesta comercial',d:'Multi-tenant + facturación. Conversión SaaS.',c:'#ec4899'},
+    {s:'Sprint 13',sem:'Sem 79-90',foco:'Pulido',d:'Resolver Q3, completar Q4 si justifica.',c:'#a855f7'},
+    {s:'Sprint 14',sem:'Sem 91-104',foco:'Escalamiento',d:'2do dev, primeros 10 clientes externos.',c:'#a855f7'}
+  ];
+  document.getElementById('roadmapList').innerHTML = ROAD.map(function(s){
+    return '<div class="timeline-item"><div class="flex items-start gap-3 flex-wrap" style="background:rgba(20,26,55,.4);border-radius:10px;padding:12px;border-left:3px solid '+s.c+'">' +
+      '<div style="flex:0 0 100px"><div style="font-family:Space Grotesk;font-weight:700;color:'+s.c+';font-size:13px">'+s.s+'</div><div style="font-size:11px;color:#94a3b8">'+s.sem+'</div></div>' +
+      '<div style="flex:1;min-width:240px"><div style="font-weight:700;color:#fff;font-size:13.5px">'+s.foco+'</div><div style="font-size:12px;color:#cbd5e1;margin-top:3px">'+s.d+'</div></div>' +
+    '</div></div>';
+  }).join('');
+}
+
+/* ============ INIT ============ */
+boot();
 </script>
 
 </body>
