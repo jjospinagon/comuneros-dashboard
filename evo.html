@@ -134,421 +134,6 @@
       <button class="tab" data-tab="apus">🧮 APUs Explorer<span class="badge-new">NUEVO</span></button>
       <button class="tab" data-tab="contrato">📑 Contrato<span class="badge-new">NUEVO</span></button>
       <button class="tab" data-tab="comunicaciones">📨 Comunicaciones<span class="badge-new">NUEVO</span></button>
-      <button class="tab" data-tab="quickwins">⚡ 15 Quick Wins</button>
-      <button class="tab" data-tab="apuestas">🎯 5 Apuestas</button>
-      <button class="tab" data-tab="brechas">🔍 Brechas Mercado</button>
-      <button class="tab" data-tab="roadmap">🗓️ Roadmap 24m</button>
-    </div>
-  </div>
-</div>
-
-<!-- HERO -->
-<div class="hero">
-  <div class="pill pill-evo" style="margin-bottom:14px">Cockpit funcional · cableado a backend Apps Script · datos reales</div>
-  <h1>De <span class="gradient-text">8 %</span> a <span class="gradient-text">22 %</span> de cobertura<br>en 8-10 semanas.</h1>
-  <p>Cada pestaña consume datos reales del proyecto Comuneros. Motor IA detecta eventos automáticamente. Auditor analiza las 320 facturas DIAN. Earned Schedule y Monte Carlo se computan desde los cortes reales.</p>
-  <div class="chip-row" id="heroStats">
-    <span class="pill pill-info skeleton" style="min-width:140px;height:22px"></span>
-    <span class="pill pill-ok skeleton" style="min-width:140px;height:22px"></span>
-    <span class="pill pill-warn skeleton" style="min-width:140px;height:22px"></span>
-  </div>
-</div>
-
-<div style="max-width:1400px;margin:0 auto;padding:24px">
-
-<!-- ============ DIAGNÓSTICO ============ -->
-<section id="t-diagnostico" class="tab-content">
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="diagKpis">
-    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Items inventario</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Valor inventario</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">Facturas DIAN</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">Proveedores únicos</div><div class="val">—</div><div class="sub">cargando…</div></div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-    <div class="panel">
-      <h3>Cobertura por bloque de capacidades · 110 referencias</h3>
-      <div style="position:relative;height:300px"><canvas id="ch-bloques"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>Lo que Monaco ya hace y se debe blindar</h3>
-      <ul class="bullets">
-        <li><b>Estructura 9 carpetas</b> · disciplina física + digital — único en segmento mediano CO</li>
-        <li><b>Tablero canónico 12 pestañas</b> · ES5 puro, paleta DAB fija</li>
-        <li><b>Parte diario obra</b> · ingesta SQLite + cálculo EV/AC + alertas cierre 19:00</li>
-        <li><b>EVA Control</b> · PV/EV/AC/SPI/CPI/BAC/EAC con reglas raíz inmutables</li>
-        <li><b>Inventario valorizado</b> · pipeline DIAN · sincro almacén físico</li>
-        <li><b>Dashboard JSONP sin login</b> · diferenciador absoluto LATAM</li>
-        <li><b>Protocolo HANDOFF 16 secciones</b> · motor de continuidad operativa</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h3>Tesis: 3 dimensiones donde Monaco está bajo el estado del arte</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div class="module-card">
-        <div class="ico">📑</div>
-        <div class="font-bold text-white mb-2">Capa pre-contractual vacía</div>
-        <div class="text-sm text-slate-300">Hoy no hay lectura pliegos SECOP II ni auditor presupuestos ni generador APUs/metrados/propuestas/ETs. EVA en Módulo 1 tiene 15 skills.</div>
-      </div>
-      <div class="module-card">
-        <div class="ico">🧠</div>
-        <div class="font-bold text-white mb-2">Reporting sin razonamiento</div>
-        <div class="text-sm text-slate-300">Monaco hace curva S, SPI, CPI, alertas. El mercado hace razonamiento causal: causa raíz + impacto COP + propuesta + simulación. Procore lo cobra USD 200/usr/mes.</div>
-      </div>
-      <div class="module-card">
-        <div class="ico">👁️</div>
-        <div class="font-bold text-white mb-2">Auditoría financiera 3-way</div>
-        <div class="text-sm text-slate-300">Falta auditor automático facturas (Adaptive) y reconciliación 3-way OC+Factura+Remisión (SubBase). Mercado SaaS USD 50-200M validado.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ BRIEFING ============ -->
-<section id="t-briefing" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(168,85,247,.06))">
-    <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
-      <div>
-        <div class="pill pill-evo mb-2">Auto-generado desde todos los endpoints · 30 segundos de lectura</div>
-        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📋 Briefing del Día · Comuneros</h3>
-      </div>
-      <button onclick="loadBriefing(true)" class="pill pill-info" style="cursor:pointer;border:none;padding:8px 14px">🔄 Regenerar</button>
-    </div>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Resumen ejecutivo automático cruzando inventario + facturas DIAN + cortes contractuales + eventos detectados por Motor IA. Diseñado para leer en 30 segundos antes de una reunión de junta o llamada con la entidad.</p>
-  </div>
-  <div id="briefingContent">
-    <div class="panel"><div class="text-center text-slate-400" style="padding:60px">⏳ Generando briefing...</div></div>
-  </div>
-</section>
-
-<!-- ============ MOTOR IA ============ -->
-<section id="t-motorIA" class="tab-content" style="display:none">
-  <div class="panel glow-card mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(16,185,129,.06))">
-    <div class="flex items-start justify-between gap-4 mb-2 flex-wrap">
-      <div>
-        <div class="pill pill-evo mb-2">EN VIVO · cruzando inventario + facturas + actividades</div>
-        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🧠 Motor IA · Eventos detectados ahora</h3>
-        <p class="text-sm text-slate-300 mt-2 max-w-3xl">Backend analiza la data real del proyecto cada 10 min: stocks agotados/negativos, duplicados de factura, concentración de proveedor, actividades con pérdida. Click en cada evento para razonamiento estructurado.</p>
-      </div>
-      <button onclick="loadMotorIA(true)" class="pill pill-info" style="cursor:pointer;border:none;padding:8px 14px">🔄 Recargar</button>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="motorKpis">
-    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">Eventos críticos</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">Eventos altos</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Total eventos</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Impacto $ estimado</div><div class="val">—</div><div class="sub">cargando…</div></div>
-  </div>
-
-  <div class="panel mb-4">
-    <h3>📍 Eventos detectados (ordenados por severidad)</h3>
-    <div id="motorEventos">
-      <div class="text-sm text-slate-400 text-center" style="padding:30px">Cargando eventos del backend…</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ AUDITOR ============ -->
-<section id="t-auditor" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(245,158,11,.05),rgba(239,68,68,.05))">
-    <div class="flex items-start justify-between gap-4 mb-2 flex-wrap">
-      <div>
-        <div class="pill pill-evo mb-2">EN VIVO · sobre las 320 facturas DIAN</div>
-        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">💰 Auditor de Facturas DIAN</h3>
-        <p class="text-sm text-slate-300 mt-2 max-w-3xl">Backend audita el corpus completo: detecta duplicados de número, mismo CUFE en diferentes registros, IVA inconsistente (esperado ~5% o ~19%), facturas sin items parseados, suma items ≠ subtotal.</p>
-      </div>
-      <button onclick="loadAuditor(true)" class="pill pill-info" style="cursor:pointer;border:none;padding:8px 14px">🔄 Recargar</button>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="auditorKpis">
-    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Facturas auditadas</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">Hallazgos críticos</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">Hallazgos altos</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Valor en riesgo</div><div class="val">—</div><div class="sub">cargando…</div></div>
-  </div>
-
-  <div class="panel">
-    <h3>🔍 Hallazgos detectados</h3>
-    <div class="scroll-x">
-    <table>
-      <thead><tr><th>Severidad</th><th>Tipo</th><th>Factura</th><th>Proveedor</th><th>Descripción</th><th class="num">Valor</th></tr></thead>
-      <tbody id="auditorBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">Cargando hallazgos…</td></tr></tbody>
-    </table>
-    </div>
-  </div>
-</section>
-
-<!-- ============ ACTIVIDADES ============ -->
-<section id="t-actividades" class="tab-content" style="display:none">
-  <div class="panel mb-4">
-    <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
-      <h3 style="margin:0;font-size:18px">📋 Actividades del corte <span id="indCorte" class="gradient-text">—</span></h3>
-      <div class="flex gap-2 items-center">
-        <select id="cortesSelect" class="pill" style="background:#1e2a4a;color:#fff;padding:6px 12px;border:1px solid rgba(255,255,255,.2)"></select>
-        <input id="actFilter" placeholder="Filtrar…" class="pill" style="background:rgba(255,255,255,.05);color:#fff;padding:6px 12px;min-width:180px;border:1px solid rgba(255,255,255,.1)">
-      </div>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="actKpis">
-    <div class="kpi kpi-loading" style="--acc:#3b82f6"><div class="lbl">Valor contractual total</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">% Avance ponderado</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Proy. al corte</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">Actividades con pérdida</div><div class="val">—</div><div class="sub">cargando…</div></div>
-  </div>
-
-  <div class="panel">
-    <h3>Detalle por actividad (todas las columnas)</h3>
-    <div class="scroll-x" style="max-height:600px">
-      <table id="actTable">
-        <thead><tr><th>Ítem</th><th>Actividad</th><th>Und</th><th class="num">Cant.Contr</th><th class="num">Costo Contr</th><th class="num">Total Contr</th><th class="num">Costo Real</th><th class="num">Cant.Ejec</th><th class="num">% Ejec</th><th class="num">May/Men</th><th class="num">Util/Pérd</th><th class="num">Margen</th><th class="num">Proy.Corte</th><th class="num">Proy.Final</th></tr></thead>
-        <tbody id="actBody"><tr><td colspan="14" style="text-align:center;padding:30px;color:#64748b">Cargando actividades…</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ============ EARNED SCHEDULE ============ -->
-<section id="t-es" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.05),rgba(16,185,129,.05))">
-    <div class="pill pill-evo mb-2">CALCULADO EN VIVO desde cortes reales</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📈 Earned Schedule (ES) · detección 4-6 semanas antes que SPI</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">SPI tradicional mide trabajo en COP. <b>ES traduce el atraso a tiempo calendario</b>. Computado desde los cortes reales del proyecto Comuneros con fórmula Walt Lipke 2003.</p>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="esKpis">
-    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">SPI tradicional</div><div class="val">—</div><div class="sub">EV/PV</div></div>
-    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">SPI(t) Earned Schedule</div><div class="val">—</div><div class="sub">ES/AT</div></div>
-    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">Atraso (sem)</div><div class="val">—</div><div class="sub">SV(t)</div></div>
-    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">EAC(t) proyectado</div><div class="val">—</div><div class="sub">PD/SPI(t)</div></div>
-  </div>
-
-  <div class="panel mb-4">
-    <h3>Curva S con Earned Schedule</h3>
-    <div style="position:relative;height:340px"><canvas id="ch-es"></canvas></div>
-  </div>
-
-  <div class="panel">
-    <h3>Fórmulas (Walt Lipke 2003)</h3>
-    <pre style="font-size:11.5px;background:rgba(0,0,0,.25);padding:14px;border-radius:8px;color:#cbd5e1;overflow-x:auto;line-height:1.6">
-ES = t_n + (EV − PV_n) / (PV_n+1 − PV_n)
-SV(t) = ES − AT     (positivo = adelanto)
-SPI(t) = ES / AT    (>1 = adelanto)
-EAC(t) = PD / SPI(t)   (duración estimada)</pre>
-  </div>
-</section>
-
-<!-- ============ MONTE CARLO ============ -->
-<section id="t-montecarlo" class="tab-content" style="display:none">
-  <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">SIMULACIÓN EN VIVO · 5.000 escenarios desde actividades reales</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🎲 Monte Carlo · P50 / P80 / P95</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Cada actividad con distribución triangular (optimista 0.85, probable 1.0, pesimista 1.20). Cálculo en JavaScript sobre las cantidades y costos reales del proyecto.</p>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="mcKpis">
-    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">P50 costo</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">P80 costo</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">P95 costo</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Prob cumplir presupuesto</div><div class="val">—</div><div class="sub">cargando…</div></div>
-  </div>
-
-  <div class="panel mb-4">
-    <h3>Distribución de costo total proyectado</h3>
-    <div style="position:relative;height:300px"><canvas id="ch-mc-cost"></canvas></div>
-  </div>
-
-  <div class="panel">
-    <h3>Decisiones que habilita</h3>
-    <ul class="bullets">
-      <li><b>Reserva contingencia:</b> P95 − P50 define el bolsillo seguro.</li>
-      <li><b>Comunicación a junta:</b> "X% probabilidad de cumplir presupuesto" mejor que "vamos bien".</li>
-      <li><b>Negociación entidad:</b> ampliación argumentada con distribución, no con narrativa.</li>
-    </ul>
-  </div>
-</section>
-
-<!-- ============ TENDENCIA MULTI-CORTE ============ -->
-<section id="t-tendencia" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.05),rgba(168,85,247,.05))">
-    <div class="pill pill-evo mb-2">CALCULADO EN VIVO · cruzando los 6 cortes</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📉 Tendencia Multi-Corte · Proyección de cierre</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Evolución cronológica de SPI, CPI, avance y costo entre los cortes del proyecto. Regresión lineal sobre los últimos 3 cortes proyecta cierre real. No existe en el dashboard estable — análisis predictivo nuevo.</p>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="tendKpis">
-    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">Cortes analizados</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">CPI tendencia</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">SPI tendencia</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">EAC proyectado</div><div class="val">—</div><div class="sub">cargando…</div></div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-    <div class="panel">
-      <h3>Evolución SPI · CPI · Margen por corte</h3>
-      <div style="position:relative;height:300px"><canvas id="ch-tend-ratios"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>Avance acumulado por corte (EV vs PV)</h3>
-      <div style="position:relative;height:300px"><canvas id="ch-tend-ev"></canvas></div>
-    </div>
-  </div>
-
-  <div class="panel mb-4">
-    <h3>Tabla comparativa entre cortes</h3>
-    <div class="scroll-x">
-    <table>
-      <thead><tr><th>Corte</th><th class="num">Valor contractual</th><th class="num">EV (ejec)</th><th class="num">% Avance</th><th class="num">Proy. corte</th><th class="num">Proy. final</th><th class="num">CPI estim</th><th class="num">Margen</th><th class="num">Actividades</th><th class="num">Con pérdida</th></tr></thead>
-      <tbody id="tendTable"><tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Cargando…</td></tr></tbody>
-    </table>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h3>🎯 Proyección de cierre del proyecto</h3>
-    <div id="tendProy" class="text-sm text-slate-300">
-      <div class="text-center" style="padding:30px;color:#64748b">Calculando proyección…</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ PARETO 80-20 ============ -->
-<section id="t-pareto" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(168,85,247,.05),rgba(236,72,153,.05))">
-    <div class="pill pill-evo mb-2">PARETO EN VIVO · cruza actividades + facturas + inventario</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🎯 Análisis Pareto 80-20</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">El 80% del costo se concentra en el 20% de los ítems. Aquí está el ranking real cruzando 4 dimensiones del proyecto: actividades, proveedores, ítems inventario y APUs por valor.</p>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-    <div class="panel">
-      <h3>Top 15 actividades por valor contractual</h3>
-      <div style="position:relative;height:380px"><canvas id="ch-pareto-act"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>Top 15 proveedores por facturación DIAN</h3>
-      <div style="position:relative;height:380px"><canvas id="ch-pareto-prov"></canvas></div>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-    <div class="panel">
-      <h3>Top 15 ítems del inventario por valor</h3>
-      <div class="scroll-x" style="max-height:400px">
-        <table id="paretoItems">
-          <thead><tr><th>#</th><th>Código</th><th>Descripción</th><th class="num">Stock</th><th class="num">Precio</th><th class="num">Valor</th><th class="num">% acum</th></tr></thead>
-          <tbody><tr><td colspan="7" style="text-align:center;padding:30px;color:#64748b">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="panel">
-      <h3>Categoría 80-20 · Curva de concentración</h3>
-      <div style="position:relative;height:380px"><canvas id="ch-pareto-curva"></canvas></div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ APUS EXPLORER ============ -->
-<section id="t-apus" class="tab-content" style="display:none">
-  <div class="panel mb-4">
-    <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
-      <div>
-        <div class="pill pill-evo mb-2">EN VIVO · 64 APUs parseados desde ANALISIS COMUNEROS.xlsx</div>
-        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🧮 Explorador de APUs</h3>
-      </div>
-      <input id="apuFilter" placeholder="Filtrar APU…" class="pill" style="background:rgba(255,255,255,.05);color:#fff;padding:6px 12px;min-width:220px;border:1px solid rgba(255,255,255,.1)">
-    </div>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="apusKpis">
-    <div class="kpi kpi-loading" style="--acc:#22d3ee"><div class="lbl">APUs analizados</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#10b981"><div class="lbl">Materiales únicos</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#f59e0b"><div class="lbl">APU promedio costo</div><div class="val">—</div><div class="sub">cargando…</div></div>
-    <div class="kpi kpi-loading" style="--acc:#ef4444"><div class="lbl">APU más caro</div><div class="val">—</div><div class="sub">cargando…</div></div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <div class="panel">
-      <h3>Lista APUs (ranking por costo)</h3>
-      <div class="scroll-x" style="max-height:600px">
-        <table id="apuTable">
-          <thead><tr><th>Ítem</th><th>Descripción</th><th class="num">Materiales</th><th class="num">Costo</th></tr></thead>
-          <tbody><tr><td colspan="4" style="text-align:center;padding:30px;color:#64748b">Cargando…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="panel">
-      <h3>Detalle del APU seleccionado · <span id="apuSelTitle" class="gradient-text" style="font-size:13px">— elegir uno de la lista —</span></h3>
-      <div id="apuDetail" class="text-sm text-slate-400" style="padding:20px;text-align:center">Click en cualquier APU de la lista para ver el desglose de materiales.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ CONTRATO ============ -->
-<section id="t-contrato" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(99,102,241,.06))">
-    <div class="pill pill-evo mb-2">Información oficial · Contrato 023 de 2025 · Comuneros</div>
-    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📑 Información del Contrato</h3>
-    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Datos de identificación, links a documentos oficiales (SECOP II, MGA, presupuesto) y a los balances vigentes con las modificaciones contractuales.</p>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-    <div class="kpi" style="--acc:#22d3ee"><div class="lbl">Contrato</div><div class="val" style="font-size:17px">023 de 2025</div><div class="sub">Contrato de obra</div></div>
-    <div class="kpi" style="--acc:#10b981"><div class="lbl">Entidad</div><div class="val" style="font-size:13px;line-height:1.25">EMPRESA PARA EL DESARROLLO TERRITORIAL</div><div class="sub">Quindío</div></div>
-    <div class="kpi" style="--acc:#f59e0b"><div class="lbl">Contratista</div><div class="val" style="font-size:13px;line-height:1.25">CONSORCIO INFRARED COMUNEROS 2025</div><div class="sub">UT obra</div></div>
-    <div class="kpi" style="--acc:#a855f7"><div class="lbl">Interventoría</div><div class="val" style="font-size:13px;line-height:1.25">UT INTERCOMUNEROS</div><div class="sub">interventoría</div></div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-    <div class="panel">
-      <h3>📋 Identificación contractual</h3>
-      <table style="width:100%;font-size:12.5px;margin-top:10px"><tbody>
-        <tr><td class="text-slate-400" style="padding:6px 0">Objeto</td><td style="font-weight:600">Construcción del sistema de alcantarillado y obras complementarias — Comuneros, Quindío</td></tr>
-        <tr><td class="text-slate-400" style="padding:6px 0">N° contrato</td><td style="font-weight:600">023 de 2025</td></tr>
-        <tr><td class="text-slate-400" style="padding:6px 0">Modalidad</td><td>Licitación pública SECOP II</td></tr>
-        <tr><td class="text-slate-400" style="padding:6px 0">Fecha inicio</td><td>02-09-2025</td></tr>
-        <tr><td class="text-slate-400" style="padding:6px 0">Fecha fin contractual</td><td>05-12-2026</td></tr>
-        <tr><td class="text-slate-400" style="padding:6px 0">Balance vigente</td><td><span class="pill pill-ok">002 · ADICIÓN 07-04-2026</span></td></tr>
-      </tbody></table>
-    </div>
-
-    <div class="panel">
-      <h3>🗂️ Documentos oficiales</h3>
-      <div class="text-xs text-slate-400 mb-3">Click para abrir en Google Drive · acceso restringido</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <a href="https://drive.google.com/file/d/1Ok8cp5YRdhcyEeIO_43OBNKcpl2-APMi/view" target="_blank" class="module-card" style="text-decoration:none;display:block"><div class="ico">📊</div><div class="font-bold text-white" style="font-size:13px">PPTO PTA 1 — INFRARED</div><div class="text-xs text-slate-400">Presupuesto oficial · xlsx · 7.95 MB</div></a>
-        <a href="https://drive.google.com/file/d/13xp6JAeFPhC0aCqOC1bVCBCmuLM5Zde-/view" target="_blank" class="module-card" style="text-decoration:none;display:block"><div class="ico">📄</div><div class="font-bold text-white" style="font-size:13px">MGA COMUNEROS</div><div class="text-xs text-slate-400">Metodología General Ajustada · pdf · 253 KB</div></a>
-        <a href="https://drive.google.com/drive/folders/1xVhSOVpAnb5YhAPMEzZS8cSdcNK6EA-a" target="_blank" class="module-card" style="text-decoration:none;display:block"><div class="ico">📁</div><div class="font-bold text-white" style="font-size:13px">SECOP II</div><div class="text-xs text-slate-400">Carpeta del proceso licitatorio</div></a>
-        <a href="https://drive.google.com/file/d/1yKTZUDa5U9uc4Ru9c8RMemtWgaerZBLQ/view" target="_blank" class="module-card" style="text-decoration:none;display:block"><div class="ico">📘</div><div class="font-bold text-white" style="font-size:13px">V3 — BALANCE 001</div><div class="text-xs text-slate-400">Balance inicial · 12 NPs · xlsx</div></a>
-        <a href="https://drive.google.com/file/d/1R1ixEcbNwjAnwAxDx8JCNIi6SJwoXL-r/view" target="_blank" class="module-card" style="text-decoration:none;display:block"><div class="ico">📗</div><div class="font-bold text-white" style="font-size:13px">V7 — BALANCE 002 + ADICIÓN 07-04-2026</div><div class="text-xs text-slate-400">Balance vigente · 29 NPs · xlsx · 4.6 MB</div></a>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h3>🔗 Partes y representantes</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-      <div class="module-card"><div class="ico">🏢</div><div class="font-bold text-white mb-1">Contratante</div><div class="text-xs text-slate-300">EMPRESA PARA EL DESARROLLO TERRITORIAL DEL QUINDÍO</div></div>
-      <div class="module-card"><div class="ico">🔧</div><div class="font-bold text-white mb-1">Contratista</div><div class="text-xs text-slate-300">CONSORCIO INFRARED COMUNEROS 2025</div></div>
-      <div class="module-card"><div class="ico">👁️</div><div class="font-bold text-white mb-1">Interventoría</div><div class="text-xs text-slate-300">UNIÓN TEMPORAL INTERCOMUNEROS 2025</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ COMUNICACIONES ============ -->
-<section id="t-comunicaciones" class="tab-content" style="display:none">
-  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(168,85,247,.06))">
-    <div class="flex items-start justify-between gap-3 flex-wrap mb-2">
-      <div>
-        <div class="pill pill-evo mb-2">Consolidado oficios · obra + interventoría · enviados y recibidos</div>
-        <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">📨 Comunicaciones Contractuales</h3>
-        <p class="text-sm text-slate-300 mt-2 max-w-3xl">Listado completo de oficios enviados y recibidos. Búsqueda por palabra clave, filtros por año/mes y vista de detalle con acceso a anexos en Drive.</p>
-      </div>
-      <button onclick="loadComunicaciones(true)" class="pill pill-info" style="cursor:pointer;border:none;padding:8px 14px">🔄 Recargar</button>
     </div>
   </div>
 
@@ -584,71 +169,6 @@ EAC(t) = PD / SPI(t)   (duración estimada)</pre>
 
 
 <!-- ============ QUICK WINS ============ -->
-<section id="t-quickwins" class="tab-content" style="display:none">
-  <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">Cuadrante I · 0-90 días · 15 wins · ROI 8-15× primer año</div>
-    <h3 style="margin:0;font-size:20px;font-family:'Space Grotesk',sans-serif">⚡ Las 15 victorias rápidas</h3>
-    <p class="text-sm text-slate-300 mt-2">Valor anual estimado: <b class="gradient-text">COP 80-180 M / contrato</b>. Suben Monaco del 8% al ~22% de cobertura sin tocar las apuestas grandes.</p>
-  </div>
-  <div id="qwList"></div>
-</section>
-
-<!-- ============ APUESTAS ============ -->
-<section id="t-apuestas" class="tab-content" style="display:none">
-  <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">Cuadrante II · 30-360 días · Diferenciador comercial</div>
-    <h3 style="margin:0;font-size:20px;font-family:'Space Grotesk',sans-serif">🎯 Las 5 apuestas estratégicas</h3>
-  </div>
-  <div id="apuestasList"></div>
-</section>
-
-<!-- ============ BRECHAS ============ -->
-<section id="t-brechas" class="tab-content" style="display:none">
-  <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">Diagnóstico · 110 capacidades de referencia</div>
-    <h3 style="margin:0;font-size:20px;font-family:'Space Grotesk',sans-serif">🔍 Brechas Monaco vs Mercado</h3>
-  </div>
-  <div class="panel mb-4">
-    <h3>Mapa de cobertura por bloque</h3>
-    <div id="heatmapWrap"></div>
-    <div class="flex gap-3 mt-4 text-xs text-slate-400">
-      <span class="flex items-center gap-2"><span class="cell cell-ok" style="width:14px;height:14px;border-radius:3px;display:inline-block"></span> Cubierto</span>
-      <span class="flex items-center gap-2"><span class="cell cell-partial" style="width:14px;height:14px;border-radius:3px;display:inline-block"></span> Parcial</span>
-      <span class="flex items-center gap-2"><span class="cell cell-none" style="width:14px;height:14px;border-radius:3px;display:inline-block"></span> Falta</span>
-    </div>
-  </div>
-  <div class="panel">
-    <h3>Matriz Monaco vs 17 plataformas — 10 dimensiones</h3>
-    <div class="scroll-x">
-    <table style="font-size:11.5px">
-      <thead><tr><th>Plataforma</th><th>Pliego</th><th>Presup</th><th>Cron+EVM</th><th>Visual</th><th>Mobile</th><th>Safety</th><th>Dashb</th><th>Financ</th><th>Multi-U</th><th>Market</th></tr></thead>
-      <tbody id="matrixBody"></tbody>
-    </table>
-    </div>
-  </div>
-</section>
-
-<!-- ============ ROADMAP ============ -->
-<section id="t-roadmap" class="tab-content" style="display:none">
-  <div class="panel mb-4">
-    <div class="pill pill-evo mb-2">14 sprints · 104 semanas</div>
-    <h3 style="margin:0;font-size:20px;font-family:'Space Grotesk',sans-serif">🗓️ Roadmap 24 meses</h3>
-  </div>
-  <div class="panel">
-    <div id="roadmapList" class="timeline"></div>
-  </div>
-</section>
-
-</div>
-
-<!-- MODAL DETALLE EVENTO -->
-<div id="evModal" class="modal" onclick="if(event.target===this)closeEvModal()">
-  <div class="modal-body" id="evModalBody"></div>
-</div>
-
-<!-- Footer -->
-<div style="border-top:1px solid rgba(255,255,255,.06);padding:24px;text-align:center;color:#64748b;font-size:11.5px;margin-top:32px">
-  Monaco EVO v0.2 · cockpit funcional · Apps Script v24 · datos reales del proyecto Comuneros
 </div>
 
 <script>
@@ -1858,31 +1378,66 @@ function cmShowOficio(id){
     '<span style="background:'+tc+'22;color:'+tc+';padding:3px 8px;border-radius:5px;font-size:11px;font-weight:700">'+escapeHTML(x.tipo.toUpperCase())+'</span>' +
   '</div>';
   if(x.anexos_folder_url){
-    html += '<div class="mt-3">'+
-      '<button onclick="cmCargarAnexos(\''+x.fuente+'\',\''+x.tipo+'\',\''+(x.consecutivo||'').replace(/\'/g,'')+'\')" class="pill pill-info" style="cursor:pointer;border:none;padding:6px 12px;margin-right:8px">📎 Ver anexos en Drive</button>' +
-      '<a href="'+x.anexos_folder_url+'" target="_blank" class="pill" style="text-decoration:none;padding:6px 12px;background:rgba(255,255,255,.06)">🗂️ Abrir carpeta '+x.fuente+'/'+x.tipo+'</a>' +
+    var consSafe = (x.consecutivo||'').replace(/'/g,'');
+    html += '<div class="mt-3 flex gap-2 flex-wrap">'+
+      '<button onclick="cmCargarAnexos(\''+x.fuente+'\',\''+x.tipo+'\',\''+consSafe+'\')" class="pill pill-info" style="cursor:pointer;border:none;padding:6px 12px">📎 Anexos relacionados</button>' +
+      '<a href="'+x.anexos_folder_url+'" target="_blank" class="pill" style="text-decoration:none;padding:6px 12px;background:rgba(255,255,255,.06)">🗂️ Carpeta '+x.fuente+'/'+x.tipo+'</a>' +
+    '</div>';
+    html += '<div class="mt-3">' +
+      '<div class="text-xs text-slate-400 mb-1" style="font-weight:600">📄 Transcripción del oficio</div>' +
+      '<div id="cmTranscripcion" style="background:#0f1428;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px 16px;max-height:420px;overflow:auto;font-size:12.5px;color:#cbd5e1;white-space:pre-wrap;line-height:1.45">' +
+        '<span class="text-slate-400" style="font-style:italic">⏳ Cargando transcripción del documento…</span>' +
+      '</div>' +
     '</div>';
     html += '<div id="cmAnexos" class="mt-3"></div>';
   }
   document.getElementById('cmDetail').innerHTML = html;
   document.getElementById('cmDetailPanel').style.display = 'block';
   document.getElementById('cmDetailPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  // Cargar transcripción automáticamente
+  if(x.anexos_folder_url && x.consecutivo){
+    var consSafe2 = (x.consecutivo||'').replace(/'/g,'');
+    cmCargarTranscripcion(x.fuente, x.tipo, consSafe2);
+  }
+}
+
+async function cmCargarTranscripcion(fuente, tipo, consecutivo){
+  var box = document.getElementById('cmTranscripcion');
+  if(!box) return;
+  try{
+    var d = await jsonp(APPS_URL, {action:'oficio_transcripcion', fuente:fuente, tipo:tipo, consecutivo:consecutivo});
+    if(!d){ box.innerHTML = '<span class="text-red-400">Sin respuesta del servidor</span>'; return; }
+    if(d.error){
+      box.innerHTML = '<span class="text-amber-400">⚠ '+escapeHTML(d.error)+'</span>' +
+        (d.folder_url ? '<br><a href="'+d.folder_url+'" target="_blank" style="color:#22d3ee;font-size:11.5px">→ Abrir carpeta en Drive</a>' : '');
+      return;
+    }
+    var titulo = d.titulo ? '<div class="text-xs text-slate-400 mb-2" style="border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:6px"><b>'+escapeHTML(d.titulo)+'</b> · <a href="'+d.viewUrl+'" target="_blank" style="color:#22d3ee;text-decoration:none">abrir original</a></div>' : '';
+    var texto = (d.texto || '').trim();
+    if(!texto){
+      box.innerHTML = titulo + '<span class="text-slate-400" style="font-style:italic">El documento está vacío o no se pudo extraer texto.</span>';
+      return;
+    }
+    box.innerHTML = titulo + escapeHTML(texto);
+  }catch(e){
+    box.innerHTML = '<span class="text-red-400">Error: '+escapeHTML(e.message||String(e))+'</span>';
+  }
 }
 
 async function cmCargarAnexos(fuente, tipo, consecutivo){
   var box = document.getElementById('cmAnexos');
   if(!box) return;
-  box.innerHTML = '<div class="text-xs text-slate-400" style="padding:8px">⏳ Buscando anexos en Drive…</div>';
+  box.innerHTML = '<div class="text-xs text-slate-400" style="padding:8px">Buscando anexos en Drive...</div>';
   try{
     var d = await jsonp(APPS_URL, {action:'anexos_oficio', fuente:fuente, tipo:tipo, consecutivo:consecutivo});
     if(!d || d.error){ box.innerHTML = '<div class="text-xs text-amber-400" style="padding:8px">No se encontraron anexos. '+(d&&d.error?d.error:'')+'</div>'; return; }
-    if(!d.archivos || !d.archivos.length){ box.innerHTML = '<div class="text-xs text-slate-400" style="padding:8px">Sin archivos vinculados al consecutivo <code>'+escapeHTML(consecutivo)+'</code>. Revisa directamente la <a href="'+d.folder_url+'" target="_blank" style="color:#22d3ee">carpeta '+escapeHTML(fuente)+'/'+escapeHTML(tipo)+'</a>.</div>'; return; }
+    if(!d.archivos || !d.archivos.length){ box.innerHTML = '<div class="text-xs text-slate-400" style="padding:8px">Sin archivos vinculados al consecutivo <code>'+escapeHTML(consecutivo)+'</code>. Revisa la <a href="'+d.folder_url+'" target="_blank" style="color:#22d3ee">carpeta '+escapeHTML(fuente)+'/'+escapeHTML(tipo)+'</a>.</div>'; return; }
     var iconos = {'application/pdf':'PDF','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'DOCX','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'XLSX','image/jpeg':'IMG','image/png':'IMG','application/vnd.google-apps.folder':'FOLDER'};
     var html = '<div class="text-xs text-slate-400 mb-2">'+d.archivos.length+' archivo(s) relacionado(s) al consecutivo '+escapeHTML(consecutivo)+'</div>';
     html += d.archivos.map(function(a){
       var ico = iconos[a.mimeType] || 'FILE';
-      return '<a href="'+a.viewUrl+'" target="_blank" class="module-card" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px">' +
-        '<div style="font-size:11px;font-weight:700;color:#22d3ee;width:46px;text-align:center">'+ico+'</div>' +
+      return '<a href="'+a.viewUrl+'" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:10px;margin-bottom:6px;color:#cbd5e1">' +
+        '<div style="font-size:10.5px;font-weight:700;color:#22d3ee;width:46px;text-align:center;background:rgba(34,211,238,.08);padding:3px 0;border-radius:4px">'+ico+'</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escapeHTML(a.title)+'</div><div style="font-size:10.5px;color:#94a3b8">'+escapeHTML(a.modifiedTime||'')+' . '+_humanSize(a.size)+'</div></div>' +
       '</a>';
     }).join('');
