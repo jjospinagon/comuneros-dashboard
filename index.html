@@ -962,14 +962,35 @@
       <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Navegación</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Año / Mes / Semana</div><div style="font-size:11px;color:#64748b;margin-top:2px">estructura nativa</div></div>
     </div>
 
-    <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:6px;overflow:hidden">
-      <iframe id="fotos-iframe" src="https://drive.google.com/embeddedfolderview?id=10sJhPWxeEvTFtLPquVp-UPrPJtq_vV6f#grid" style="width:100%;height:75vh;min-height:600px;border:0;border-radius:10px;background:#fff" loading="lazy"></iframe>
+    <!-- Visor de fotos propio (sin iframe) -->
+    <div class="grid" style="display:grid;gap:14px;grid-template-columns:260px 1fr">
+      <!-- Sidebar: navegación año/mes/semana -->
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;max-height:75vh;overflow:auto">
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 10px;color:#fff">🗓️ Navegación</h3>
+        <div id="fotos-arbol" style="font-size:12.5px;color:#cbd5e1">
+          <div style="color:#94a3b8;padding:14px;text-align:center">⏳ Cargando índice…</div>
+        </div>
+      </div>
+      <!-- Grid de fotos -->
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;max-height:75vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <h3 id="fotos-titulo" style="font-size:13px;font-weight:700;margin:0;color:#fff">📷 Selecciona un año/mes/semana</h3>
+          <span id="fotos-count" style="font-size:11px;color:#94a3b8"></span>
+        </div>
+        <div id="fotos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-content:start">
+          <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#64748b;font-size:13px">Elige un año/mes/semana en el panel de la izquierda para ver las fotos.</div>
+        </div>
+      </div>
     </div>
 
-    <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 18px;margin-top:14px">
-      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-        <span style="background:rgba(34,211,238,.15);color:#22d3ee;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700">TIP</span>
-        <span style="color:#cbd5e1;font-size:12.5px">Doble clic sobre una carpeta para entrar · clic sobre una foto abre vista previa con zoom · usa el botón "Abrir en Drive" para descargas o compartir.</span>
+    <!-- Lightbox modal -->
+    <div id="fotos-lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cerrarLightbox()">
+      <button onclick="cerrarLightbox()" style="position:absolute;top:18px;right:24px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;z-index:1">✕ Cerrar</button>
+      <button onclick="navFoto(-1)" style="position:absolute;top:50%;left:18px;transform:translateY(-50%);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:12px 18px;border-radius:8px;font-size:18px;cursor:pointer">‹</button>
+      <button onclick="navFoto(1)" style="position:absolute;top:50%;right:18px;transform:translateY(-50%);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:12px 18px;border-radius:8px;font-size:18px;cursor:pointer">›</button>
+      <div style="max-width:95vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:10px">
+        <img id="fotos-lb-img" src="" style="max-width:100%;max-height:80vh;object-fit:contain;border-radius:6px;background:#111">
+        <div id="fotos-lb-caption" style="color:#cbd5e1;font-size:12.5px;text-align:center"></div>
       </div>
     </div>
   </div>
@@ -1062,6 +1083,7 @@ function goTo(name){
   window.scrollTo({top:0,behavior:'smooth'});
   if(name==='inventario' && !INV_LOADED){ invLoadData(); }
   if(name==='comunicaciones' && !CMS_LOADED){ cmsLoadData(); }
+  if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
 }
 
 /* ====================== DATA SHARED ====================== */
@@ -2413,6 +2435,142 @@ async function cmsCargarAnexos(fuente, tipo, consecutivo){
 }
 
 function cmsHumanSize(b){ b = Number(b)||0; if(b < 1024) return b+' B'; if(b < 1048576) return (b/1024).toFixed(1)+' KB'; if(b < 1073741824) return (b/1048576).toFixed(1)+' MB'; return (b/1073741824).toFixed(2)+' GB'; }
+
+
+/* ====================== REGISTRO FOTOGRÁFICO ====================== */
+let FOTOS_LOADED = false;
+const FOTOS_STATE = { indice: null, totales: null, anioActual: null, items: [], filtroMes: null, filtroSemana: null, viewIdx: 0, viewArr: [] };
+
+async function fotosCargarIndice(){
+  FOTOS_LOADED = true;
+  const arbol = document.getElementById('fotos-arbol');
+  try{
+    const d = await jsonp(APPS_URL, {action:'fotos'});
+    if(!d || d.error){ arbol.innerHTML = `<div style="color:#ef4444;padding:10px;font-size:12px">${(d&&d.error)||'Error cargando índice'}</div>`; return; }
+    FOTOS_STATE.indice = d.indice || {};
+    FOTOS_STATE.totales = d.totales || {};
+    fotosRenderArbol();
+  }catch(e){ arbol.innerHTML = `<div style="color:#ef4444;padding:10px;font-size:12px">Error: ${e.message||e}</div>`; }
+}
+
+function fotosRenderArbol(){
+  const arbol = document.getElementById('fotos-arbol');
+  const idx = FOTOS_STATE.indice || {};
+  const nm = {'01':'enero','02':'febrero','03':'marzo','04':'abril','05':'mayo','06':'junio','07':'julio','08':'agosto','09':'septiembre','10':'octubre','11':'noviembre','12':'diciembre'};
+  const anios = Object.keys(idx).sort().reverse();
+  if(!anios.length){ arbol.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:14px">— sin fotos —</div>'; return; }
+  let html = '';
+  anios.forEach(a => {
+    const meses = Object.keys(idx[a].meses || {}).sort().reverse();
+    const totalAnio = FOTOS_STATE.totales.anios[a] || 0;
+    const expanded = FOTOS_STATE.anioActual === a;
+    html += `<div style="margin-bottom:10px"><div onclick="fotosSeleccionarAnio('${a}')" style="font-weight:700;color:${expanded?'#22d3ee':'#cbd5e1'};cursor:pointer;padding:5px 0">📅 ${a} <span style="color:#64748b;font-weight:400">(${totalAnio})</span></div>`;
+    if(expanded){
+      meses.forEach(m => {
+        let totalMes = 0;
+        const dias = idx[a].meses[m] || {};
+        Object.keys(dias).forEach(d => { totalMes += dias[d]; });
+        const activeMes = FOTOS_STATE.filtroMes === m;
+        html += `<div onclick="fotosFiltrarMes('${m}')" style="padding:3px 0 3px 14px;color:${activeMes?'#10b981':'#cbd5e1'};cursor:pointer;font-size:11.5px">└ ${m} · ${nm[m]||''} <span style="color:#64748b">(${totalMes})</span></div>`;
+      });
+      // Semanas del año
+      const semanas = Object.keys(idx[a].semanas || {}).sort();
+      if(semanas.length){
+        html += `<div style="margin-top:6px;padding:3px 0 3px 14px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px">Por semana ISO</div>`;
+        semanas.forEach(w => {
+          const total = idx[a].semanas[w] || 0;
+          const activeSem = FOTOS_STATE.filtroSemana === w;
+          html += `<div onclick="fotosFiltrarSemana('${w}')" style="padding:2px 0 2px 14px;color:${activeSem?'#f59e0b':'#cbd5e1'};cursor:pointer;font-size:11px">└ Sem ${w} <span style="color:#64748b">(${total})</span></div>`;
+        });
+      }
+    }
+    html += '</div>';
+  });
+  arbol.innerHTML = html;
+}
+
+async function fotosSeleccionarAnio(a){
+  FOTOS_STATE.anioActual = (FOTOS_STATE.anioActual === a) ? null : a;
+  FOTOS_STATE.filtroMes = null;
+  FOTOS_STATE.filtroSemana = null;
+  fotosRenderArbol();
+  if(!FOTOS_STATE.anioActual){ fotosLimpiarGrid(); return; }
+  // Cargar items de ese año
+  const grid = document.getElementById('fotos-grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8">⏳ Cargando fotos del año…</div>';
+  try{
+    const d = await jsonp(APPS_URL, {action:'fotos', anio: a});
+    FOTOS_STATE.items = d.items || [];
+    fotosRenderGrid();
+  }catch(e){ grid.innerHTML = `<div style="grid-column:1/-1;color:#ef4444;padding:20px">Error: ${e.message||e}</div>`; }
+}
+
+function fotosFiltrarMes(m){
+  FOTOS_STATE.filtroMes = (FOTOS_STATE.filtroMes === m) ? null : m;
+  FOTOS_STATE.filtroSemana = null;
+  fotosRenderArbol();
+  fotosRenderGrid();
+}
+
+function fotosFiltrarSemana(w){
+  FOTOS_STATE.filtroSemana = (FOTOS_STATE.filtroSemana === w) ? null : w;
+  FOTOS_STATE.filtroMes = null;
+  fotosRenderArbol();
+  fotosRenderGrid();
+}
+
+function fotosLimpiarGrid(){
+  document.getElementById('fotos-titulo').textContent = '📷 Selecciona un año/mes/semana';
+  document.getElementById('fotos-count').textContent = '';
+  document.getElementById('fotos-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#64748b;font-size:13px">Elige un año/mes/semana en el panel de la izquierda para ver las fotos.</div>';
+}
+
+function fotosRenderGrid(){
+  let arr = FOTOS_STATE.items.slice();
+  if(FOTOS_STATE.filtroMes) arr = arr.filter(x => x.m === FOTOS_STATE.filtroMes);
+  if(FOTOS_STATE.filtroSemana) arr = arr.filter(x => x.w === FOTOS_STATE.filtroSemana);
+  FOTOS_STATE.viewArr = arr;
+  const titulo = '📷 ' + FOTOS_STATE.anioActual + (FOTOS_STATE.filtroMes ? ' · mes ' + FOTOS_STATE.filtroMes : '') + (FOTOS_STATE.filtroSemana ? ' · semana ' + FOTOS_STATE.filtroSemana : '');
+  document.getElementById('fotos-titulo').textContent = titulo;
+  document.getElementById('fotos-count').textContent = arr.length + ' fotos';
+  const grid = document.getElementById('fotos-grid');
+  if(!arr.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#64748b">Sin fotos en este rango.</div>'; return; }
+  const LIMIT = 200;
+  const slice = arr.slice(0, LIMIT);
+  grid.innerHTML = slice.map((x,i) => {
+    const thumb = 'https://lh3.googleusercontent.com/d/' + x.i + '=w320-h240';
+    return `<div onclick="abrirLightbox(${i})" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">
+      <img src="${thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\'padding:20px;text-align:center;color:#64748b;font-size:10.5px\'>📷<br>${x.t.substring(0,20)}</div>';">
+      <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">${x.f}</div>
+    </div>`;
+  }).join('');
+  if(arr.length > LIMIT){
+    grid.innerHTML += `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#94a3b8;font-size:12px">Mostrando ${LIMIT} de ${arr.length} fotos. Filtra por mes o semana para ver más específicas.</div>`;
+  }
+}
+
+function abrirLightbox(i){
+  FOTOS_STATE.viewIdx = i;
+  const x = FOTOS_STATE.viewArr[i];
+  if(!x) return;
+  document.getElementById('fotos-lb-img').src = 'https://lh3.googleusercontent.com/d/' + x.i + '=w1600';
+  document.getElementById('fotos-lb-caption').textContent = x.t + ' · ' + x.f + ' · ' + (i+1) + '/' + FOTOS_STATE.viewArr.length;
+  document.getElementById('fotos-lightbox').style.display = 'flex';
+}
+function cerrarLightbox(){ document.getElementById('fotos-lightbox').style.display = 'none'; }
+function navFoto(delta){
+  const n = FOTOS_STATE.viewArr.length;
+  if(!n) return;
+  FOTOS_STATE.viewIdx = (FOTOS_STATE.viewIdx + delta + n) % n;
+  abrirLightbox(FOTOS_STATE.viewIdx);
+}
+document.addEventListener('keydown', e => {
+  if(document.getElementById('fotos-lightbox') && document.getElementById('fotos-lightbox').style.display === 'flex'){
+    if(e.key === 'ArrowLeft') navFoto(-1);
+    if(e.key === 'ArrowRight') navFoto(1);
+    if(e.key === 'Escape') cerrarLightbox();
+  }
+});
 
 </script>
 
