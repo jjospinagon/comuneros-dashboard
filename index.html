@@ -2574,4 +2574,17 @@ function navFoto(delta){
   const n = FOTOS_STATE.viewArr.length;
   if(!n) return;
   FOTOS_STATE.viewIdx = (FOTOS_STATE.viewIdx + delta + n) % n;
-  abrirLightbox(FO
+  abrirLightbox(FOTOS_STATE.viewIdx);
+}
+document.addEventListener('keydown', e => {
+  if(document.getElementById('fotos-lightbox') && document.getElementById('fotos-lightbox').style.display === 'flex'){
+    if(e.key === 'ArrowLeft') navFoto(-1);
+    if(e.key === 'ArrowRight') navFoto(1);
+    if(e.key === 'Escape') cerrarLightbox();
+  }
+});
+
+</script>
+
+</body>
+</html>
