@@ -1,4 +1,4 @@
-<!DOCTYPE
+<!DOCTYPE html>
 
 <!-- ============ FOTOS ============ -->
 <section id="t-fotos" class="tab-content" style="display:none">
@@ -56,7 +56,7 @@
   <div id="obraEvoSecciones" class="grid grid-cols-1 gap-4">
     <div class="panel"><div class="text-slate-400" style="text-align:center;padding:60px 20px">⏳ Cargando dashboard de obra…</div></div>
   </div>
-</section> html>
+</section>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1554,10 +1554,12 @@ function fotosRenderArbolEvo(){
         var caret = expandedMes ? '▼' : '▶';
         html += '<div onclick="fotosFiltrarMesEvo(\''+m+'\')" style="padding:3px 0 3px 14px;color:'+(activeMes?'#10b981':'#cbd5e1')+';cursor:pointer;font-size:11.5px">'+caret+' '+m+' · '+(nm[m]||'')+' <span style="color:#64748b">('+totalMes+')</span></div>';
         if(expandedMes){
-          var semanasMes = {};
-          (FOTOS_ST.items||[]).forEach(function(x){
-            if(x.m === m && x.w){ semanasMes[x.w] = (semanasMes[x.w]||0) + 1; }
-          });
+          var semanasMes = (mesObj && mesObj.semanas && typeof mesObj.semanas==='object') ? Object.assign({}, mesObj.semanas) : {};
+          if (Object.keys(semanasMes).length === 0) {
+            (FOTOS_ST.items||[]).forEach(function(x){
+              if(x.m === m && x.w){ semanasMes[x.w] = (semanasMes[x.w]||0) + 1; }
+            });
+          }
           var semanas = Object.keys(semanasMes).sort();
           semanas.forEach(function(w){
             var activeSem = FOTOS_ST.filtroSemana === w;
@@ -1677,14 +1679,22 @@ function obraRenderEvo(rows){
     if(/VALOR TOTAL FILTRADO/i.test(t) && /SPI/i.test(t)){ kpiLI = i; kpiVI = i+1; break; }
   }
   if(kpiLI >= 0 && kpiVI < rows.length){
-    var labels = rows[kpiLI].filter(function(c){return c!==''&&c!==null&&c!==undefined;});
-    var values = rows[kpiVI].filter(function(c){return c!==''&&c!==null&&c!==undefined;});
+    var labelRow = rows[kpiLI];
+    var valueRow = rows[kpiVI];
     var colors = ['#22c55e','#0ea5e9','#f59e0b','#a855f7','#ef4444','#22d3ee'];
-    labels.forEach(function(lb,i){
-      if(i>=values.length) return;
-      var c = colors[i%colors.length];
-      kpis.innerHTML += '<div class="kpi" style="--acc:'+c+'"><div class="lbl">'+escapeHTML(String(lb))+'</div><div class="val" style="font-size:18px">'+escapeHTML(obraFmtEvo(values[i]))+'</div></div>';
-    });
+    var maxCol = Math.max(labelRow.length, valueRow.length);
+    var kpiPos = 0;
+    for(var col=0; col<maxCol; col++){
+      var lb = labelRow[col]; var v = valueRow[col];
+      if(lb==='' || lb===null || lb===undefined || /^\s*$/.test(String(lb))) continue;
+      if(v==='' || v===null || v===undefined) continue;
+      var lbStr = String(lb).trim();
+      if(lbStr.length > 60) continue;
+      if(/^[\d.,\-]+$/.test(lbStr)) continue;
+      var c = colors[kpiPos % colors.length];
+      kpiPos++;
+      kpis.innerHTML += '<div class="kpi" style="--acc:'+c+'"><div class="lbl">'+escapeHTML(lbStr)+'</div><div class="val" style="font-size:18px">'+escapeHTML(obraFmtEvo(v))+'</div></div>';
+    }
   }
 
   function buscarTabla(headerRe, colsRe){
