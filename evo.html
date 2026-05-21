@@ -1608,4 +1608,9 @@ function abrirLightboxEvo(i){
 }
 function cerrarLightboxEvo(){ document.getElementById('fotosLightbox').style.display = 'none'; }
 function navFotoEvo(delta){ var n = FOTOS_ST.viewArr.length; if(!n) return; FOTOS_ST.viewIdx = (FOTOS_ST.viewIdx + delta + n) % n; abrirLightboxEvo(FOTOS_ST.viewIdx); }
-document.addEventListener('keydown', function(e){ if(document.getElementById('fotosLightbox') && document.getElementById('fotosLight
+document.addEventListener('keydown', function(e){ if(document.getElementById('fotosLightbox') && document.getElementById('fotosLightbox').style.display === 'flex'){ if(e.key === 'ArrowLeft') navFotoEvo(-1); if(e.key === 'ArrowRight') navFotoEvo(1); if(e.key === 'Escape') cerrarLightboxEvo(); } });
+
+</script>
+
+</body>
+</html>
