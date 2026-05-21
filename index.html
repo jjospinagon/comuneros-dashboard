@@ -451,6 +451,19 @@
         <div class="cta">Ir al consolidado <span class="arrow">→</span></div>
       </div>
 
+      <!-- CARD FOTOS -->
+      <div class="menu-card ind" onclick="goTo('fotos')" style="background:linear-gradient(180deg,rgba(245,158,11,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">📷</div>
+        <h2>Registro Fotográfico</h2>
+        <p class="desc">Galería de fotos de obra organizada por años / meses / semanas. Navegación directa con vista previa y zoom desde Drive.</p>
+        <div class="kpis">
+          <div class="kpi"><div class="v">3,995</div><div class="l">Fotos</div></div>
+          <div class="kpi"><div class="v">2</div><div class="l">Años</div></div>
+          <div class="kpi"><div class="v">DRIVE</div><div class="l">Fuente</div></div>
+        </div>
+        <div class="cta">Abrir galería <span class="arrow">→</span></div>
+      </div>
+
     </div>
 
     <!-- Panel Hoy debes hacer · FASE B -->
@@ -929,6 +942,38 @@
   </div>
 </div>
 
+
+<!-- ============ VISTA REGISTRO FOTOGRÁFICO ============ -->
+<div class="screen" id="screen-fotos">
+  <div style="padding:18px;max-width:1500px;margin:0 auto">
+    <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+    <header style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 18px;gap:12px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:20px;color:#fff">📷 Registro Fotográfico</h1>
+        <h2 style="margin:0;font-size:13px;color:#94a3b8;font-weight:400">Galería de obra · navegación por años / meses / semanas (estructura nativa de Drive)</h2>
+      </div>
+      <a href="https://drive.google.com/drive/folders/10sJhPWxeEvTFtLPquVp-UPrPJtq_vV6f" target="_blank" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);color:#fbbf24;padding:6px 12px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600">🗂️ Abrir en Drive</a>
+    </header>
+
+    <div class="grid" style="display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px">
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #f59e0b"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Total fotos</div><div style="font-size:24px;font-weight:700;color:#fff;margin-top:4px">3,995</div><div style="font-size:11px;color:#64748b;margin-top:2px">indexadas</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #ef4444"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Años</div><div style="font-size:24px;font-weight:700;color:#fff;margin-top:4px">2</div><div style="font-size:11px;color:#64748b;margin-top:2px">2025 - 2026</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #22d3ee"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Fuente</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Google Drive</div><div style="font-size:11px;color:#64748b;margin-top:2px">sincronización directa</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Navegación</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Año / Mes / Semana</div><div style="font-size:11px;color:#64748b;margin-top:2px">estructura nativa</div></div>
+    </div>
+
+    <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:6px;overflow:hidden">
+      <iframe id="fotos-iframe" src="https://drive.google.com/embeddedfolderview?id=10sJhPWxeEvTFtLPquVp-UPrPJtq_vV6f#grid" style="width:100%;height:75vh;min-height:600px;border:0;border-radius:10px;background:#fff" loading="lazy"></iframe>
+    </div>
+
+    <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 18px;margin-top:14px">
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <span style="background:rgba(34,211,238,.15);color:#22d3ee;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700">TIP</span>
+        <span style="color:#cbd5e1;font-size:12.5px">Doble clic sobre una carpeta para entrar · clic sobre una foto abre vista previa con zoom · usa el botón "Abrir en Drive" para descargas o compartir.</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ============ MODAL DETALLE ALERTA ============ -->
 <div id="alert-modal" style="display:none;position:fixed;inset:0;background:rgba(10,15,30,.85);backdrop-filter:blur(8px);z-index:9500;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeAlertDetail()">
