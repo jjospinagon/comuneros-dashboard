@@ -2467,9 +2467,14 @@ function fotosRenderArbol(){
     html += `<div style="margin-bottom:10px"><div onclick="fotosSeleccionarAnio('${a}')" style="font-weight:700;color:${expanded?'#22d3ee':'#cbd5e1'};cursor:pointer;padding:5px 0">📅 ${a} <span style="color:#64748b;font-weight:400">(${totalAnio})</span></div>`;
     if(expanded){
       meses.forEach(m => {
+        const mesObj = idx[a].meses[m] || {};
+        // Compatibilidad: backend v3 envía {semanas:{}, total:N}; v2 enviaba {dia: count}
         let totalMes = 0;
-        const dias = idx[a].meses[m] || {};
-        Object.keys(dias).forEach(d => { totalMes += dias[d]; });
+        if (typeof mesObj.total === 'number') {
+          totalMes = mesObj.total;
+        } else {
+          Object.keys(mesObj).forEach(k => { if(typeof mesObj[k]==='number') totalMes += mesObj[k]; });
+        }
         const activeMes = FOTOS_STATE.filtroMes === m;
         const expandedMes = FOTOS_STATE.mesActual === m;
         const caret = expandedMes ? '▼' : '▶';
