@@ -2672,17 +2672,31 @@ function obraRender(rows){
     if(/VALOR TOTAL FILTRADO/i.test(txt) && /SPI/i.test(txt)){ kpiLabelIdx = i; kpiValueIdx = i+1; break; }
   }
   if(kpiLabelIdx >= 0 && kpiValueIdx < rows.length){
-    const labels = rows[kpiLabelIdx].filter(c => c !== '' && c !== null && c !== undefined);
-    const values = rows[kpiValueIdx].filter(c => c !== '' && c !== null && c !== undefined);
+    const labelRow = rows[kpiLabelIdx];
+    const valueRow = rows[kpiValueIdx];
     const colors = ['#22c55e','#0ea5e9','#f59e0b','#a855f7','#ef4444','#22d3ee','#ec4899'];
-    labels.forEach((lb, i) => {
-      if(i >= values.length) return;
-      const c = colors[i % colors.length];
+    // Iterar por POSICIÓN para mantener alineamiento label↔value de la misma columna
+    const maxCol = Math.max(labelRow.length, valueRow.length);
+    let kpiPos = 0;
+    for(let col = 0; col < maxCol; col++){
+      const lb = labelRow[col];
+      const v = valueRow[col];
+      // descartar columnas sin label
+      if(lb === '' || lb === null || lb === undefined || /^\s*$/.test(String(lb))) continue;
+      // descartar columnas sin value
+      if(v === '' || v === null || v === undefined) continue;
+      // descartar labels que claramente NO son KPIs (texto largo descriptivo de actividad)
+      const lbStr = String(lb).trim();
+      if(lbStr.length > 60) continue;
+      // descartar labels que son números (no son títulos de KPI)
+      if(/^[\d.,\-]+$/.test(lbStr)) continue;
+      const c = colors[kpiPos % colors.length];
+      kpiPos++;
       kpis.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;border-left:3px solid '+c+'">'
-        + '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">'+escapeHTML(String(lb))+'</div>'
-        + '<div style="font-size:20px;font-weight:700;color:#fff;margin-top:4px">'+escapeHTML(obraFmt(values[i]))+'</div>'
+        + '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">'+escapeHTML(lbStr)+'</div>'
+        + '<div style="font-size:20px;font-weight:700;color:#fff;margin-top:4px">'+escapeHTML(obraFmt(v))+'</div>'
         + '</div>';
-    });
+    }
   }
 
   function buscarTabla(headerRegex, headerColsRegex){
