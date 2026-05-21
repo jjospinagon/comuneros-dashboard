@@ -2517,10 +2517,14 @@ function fotosRenderArbol(){
         html += `<div onclick="fotosFiltrarMes('${m}')" style="padding:3px 0 3px 14px;color:${activeMes?'#10b981':'#cbd5e1'};cursor:pointer;font-size:11.5px">${caret} ${m} · ${nm[m]||''} <span style="color:#64748b">(${totalMes})</span></div>`;
         // Semanas anidadas DEL MES (calculadas desde items cargados)
         if(expandedMes){
-          const semanasMes = {};
-          (FOTOS_STATE.items||[]).forEach(x => {
-            if(x.m === m && x.w){ semanasMes[x.w] = (semanasMes[x.w]||0) + 1; }
-          });
+          // Prioridad: usar idx[a].meses[m].semanas del índice (siempre disponible).
+          // Fallback: derivar de items cargados (cuando el cache está corrupto).
+          let semanasMes = (mesObj && mesObj.semanas && typeof mesObj.semanas === 'object') ? Object.assign({}, mesObj.semanas) : {};
+          if (Object.keys(semanasMes).length === 0) {
+            (FOTOS_STATE.items||[]).forEach(x => {
+              if(x.m === m && x.w){ semanasMes[x.w] = (semanasMes[x.w]||0) + 1; }
+            });
+          }
           const semanas = Object.keys(semanasMes).sort();
           semanas.forEach(w => {
             const activeSem = FOTOS_STATE.filtroSemana === w;
@@ -2579,6 +2583,13 @@ function fotosLimpiarGrid(){
 }
 
 function fotosRenderGrid(){
+  // Si items está vacío (cache backend desincronizado), mostrar mensaje claro
+  if (!FOTOS_STATE.items || FOTOS_STATE.items.length === 0) {
+    document.getElementById('fotos-titulo').textContent = '📷 ' + (FOTOS_STATE.anioActual||'') + (FOTOS_STATE.filtroMes ? ' · mes ' + FOTOS_STATE.filtroMes : '');
+    document.getElementById('fotos-count').textContent = '0 fotos';
+    document.getElementById('fotos-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#fde68a;font-size:13px;line-height:1.6">⚠️ El backend no está devolviendo las fotos. El índice y semanas vienen bien pero los items del año están vacíos.<br><br>Ejecutar <code style="background:rgba(245,158,11,.15);padding:2px 6px;border-radius:4px;color:#fde68a">refrescarCacheFotos()</code> en Apps Script + redeploy WebApp.<br><br><a href="https://drive.google.com/drive/folders/10sJhPWxeEvTFtLPquVp-UPrPJtq_vV6f" target="_blank" style="color:#67e8f9;text-decoration:underline">Abrir carpeta directa en Drive →</a></div>';
+    return;
+  }
   let arr = FOTOS_STATE.items.slice();
   if(FOTOS_STATE.filtroMes) arr = arr.filter(x => x.m === FOTOS_STATE.filtroMes);
   if(FOTOS_STATE.filtroSemana) arr = arr.filter(x => x.w === FOTOS_STATE.filtroSemana);
