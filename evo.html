@@ -38,6 +38,24 @@
       <div id="fotosLbCaption" class="text-sm text-slate-300"></div>
     </div>
   </div>
+</section>
+
+<!-- ============ EJECUCIÓN DE OBRA ============ -->
+<section id="t-obra" class="tab-content" style="display:none">
+  <div class="panel mb-4" style="background:linear-gradient(135deg,rgba(34,197,94,.06),rgba(14,165,233,.06))">
+    <div class="pill pill-evo mb-2">Lectura directa del XLSX maestro · hoja DASHBOARD</div>
+    <h3 style="margin:0;font-size:22px;font-family:'Space Grotesk',sans-serif">🏗️ Dashboard de Ejecución de Obra</h3>
+    <p class="text-sm text-slate-300 mt-2 max-w-3xl">Indicadores ejecutivos · avance por capítulo / responsable · curva S semanal. Fuente: hoja <code>DASHBOARD</code> del XLSX maestro.</p>
+    <div class="flex gap-2 mt-3 flex-wrap items-center">
+      <span id="obraEvoGen" class="text-xs text-slate-400">—</span>
+      <button onclick="obraCargarEvo(true)" class="pill pill-info" style="cursor:pointer;border:none">🔄 Refrescar</button>
+      <a href="https://docs.google.com/spreadsheets/d/1KCl2nQ8M3h50282sLXIKqMmTlGbdJzv2/edit" target="_blank" class="pill" style="text-decoration:none">📊 Abrir XLSX</a>
+    </div>
+  </div>
+  <div id="obraEvoKpis" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4"></div>
+  <div id="obraEvoSecciones" class="grid grid-cols-1 gap-4">
+    <div class="panel"><div class="text-slate-400" style="text-align:center;padding:60px 20px">⏳ Cargando dashboard de obra…</div></div>
+  </div>
 </section> html>
 <html lang="es">
 <head>
@@ -175,6 +193,7 @@
       <button class="tab" data-tab="contrato">📑 Contrato<span class="badge-new">NUEVO</span></button>
       <button class="tab" data-tab="comunicaciones">📨 Comunicaciones<span class="badge-new">NUEVO</span></button>
       <button class="tab" data-tab="fotos">📷 Registro Fotográfico<span class="badge-new">NUEVO</span></button>
+      <button class="tab" data-tab="obra">🏗️ Ejecución de Obra<span class="badge-new">NUEVO</span></button>
     </div>
   </div>
 
@@ -267,6 +286,7 @@ function _switchToTab(tabName){
   if(tabName==='apus' && !window._apusLoaded) loadAPUs();
   if(tabName==='comunicaciones' && !window._comunLoaded) loadComunicaciones();
   if(tabName==='fotos' && !window._fotosLoaded) fotosCargarIndiceEvo();
+  if(tabName==='obra' && !window._obraLoaded) obraCargarEvo();
 }
 // Permite enlazar desde index.html con #contrato o #comunicaciones
 window.addEventListener('DOMContentLoaded', function(){
@@ -1613,6 +1633,126 @@ function abrirLightboxEvo(i){
 function cerrarLightboxEvo(){ document.getElementById('fotosLightbox').style.display = 'none'; }
 function navFotoEvo(delta){ var n = FOTOS_ST.viewArr.length; if(!n) return; FOTOS_ST.viewIdx = (FOTOS_ST.viewIdx + delta + n) % n; abrirLightboxEvo(FOTOS_ST.viewIdx); }
 document.addEventListener('keydown', function(e){ if(document.getElementById('fotosLightbox') && document.getElementById('fotosLightbox').style.display === 'flex'){ if(e.key === 'ArrowLeft') navFotoEvo(-1); if(e.key === 'ArrowRight') navFotoEvo(1); if(e.key === 'Escape') cerrarLightboxEvo(); } });
+
+
+/* ============ EJECUCIÓN DE OBRA EVO ============ */
+async function obraCargarEvo(force){
+  if(window._obraLoaded && !force) return;
+  var cont = document.getElementById('obraEvoSecciones');
+  cont.innerHTML = '<div class="panel"><div class="text-slate-400" style="text-align:center;padding:60px 20px">⏳ Cargando dashboard de obra…</div></div>';
+  try{
+    var params = force ? {action:'dashboard_obra', _ts: Date.now()} : {action:'dashboard_obra'};
+    var d = await jsonp(APPS_URL, params);
+    if(d.error){
+      cont.innerHTML = '<div class="panel" style="color:#fca5a5">❌ '+escapeHTML(d.error)+'</div>';
+      return;
+    }
+    window._obraLoaded = true;
+    document.getElementById('obraEvoGen').textContent = 'gen ' + (d._generado || '');
+    obraRenderEvo(d.rows || []);
+  }catch(e){
+    cont.innerHTML = '<div class="panel" style="color:#fca5a5">❌ Error: '+escapeHTML(e.message||String(e))+'</div>';
+  }
+}
+
+function obraFmtEvo(v){
+  if(v===null || v===undefined || v==='') return '';
+  if(typeof v==='number'){
+    if(Math.abs(v) >= 1000) return v.toLocaleString('es-CO',{maximumFractionDigits:0});
+    if(v===Math.round(v)) return String(v);
+    return v.toLocaleString('es-CO',{maximumFractionDigits:2});
+  }
+  return String(v);
+}
+
+function obraRenderEvo(rows){
+  var kpis = document.getElementById('obraEvoKpis');
+  var sec = document.getElementById('obraEvoSecciones');
+  kpis.innerHTML = '';
+  sec.innerHTML = '';
+
+  var kpiLI = -1, kpiVI = -1;
+  for(var i=0;i<rows.length;i++){
+    var t = rows[i].join('|');
+    if(/VALOR TOTAL FILTRADO/i.test(t) && /SPI/i.test(t)){ kpiLI = i; kpiVI = i+1; break; }
+  }
+  if(kpiLI >= 0 && kpiVI < rows.length){
+    var labels = rows[kpiLI].filter(function(c){return c!==''&&c!==null&&c!==undefined;});
+    var values = rows[kpiVI].filter(function(c){return c!==''&&c!==null&&c!==undefined;});
+    var colors = ['#22c55e','#0ea5e9','#f59e0b','#a855f7','#ef4444','#22d3ee'];
+    labels.forEach(function(lb,i){
+      if(i>=values.length) return;
+      var c = colors[i%colors.length];
+      kpis.innerHTML += '<div class="kpi" style="--acc:'+c+'"><div class="lbl">'+escapeHTML(String(lb))+'</div><div class="val" style="font-size:18px">'+escapeHTML(obraFmtEvo(values[i]))+'</div></div>';
+    });
+  }
+
+  function buscarTabla(headerRe, colsRe){
+    for(var i=0;i<rows.length;i++){
+      if(headerRe.test(rows[i].join('|'))){
+        for(var j=i+1;j<Math.min(i+5, rows.length);j++){
+          if(colsRe.test(rows[j].join('|'))) return j;
+        }
+      }
+    }
+    return -1;
+  }
+
+  function renderTabla(titulo, headerIdx, maxRows){
+    if(headerIdx < 0 || headerIdx >= rows.length) return;
+    var hdr = rows[headerIdx];
+    var colsAct = [];
+    hdr.forEach(function(c,i){ if(c!==''&&c!==null&&c!==undefined) colsAct.push(i); });
+    if(!colsAct.length) return;
+    var data = [];
+    for(var i=headerIdx+1; i<rows.length && data.length < (maxRows||50); i++){
+      var r = rows[i];
+      var hay = colsAct.some(function(ci){ return r[ci]!==''&&r[ci]!==null&&r[ci]!==undefined; });
+      if(!hay){ if(data.length>0) break; continue; }
+      data.push(r);
+    }
+    if(!data.length) return;
+    var html = '<div class="panel"><h3>'+escapeHTML(titulo)+'</h3>';
+    html += '<div class="scroll-x" style="max-height:50vh;overflow:auto"><table>';
+    html += '<thead><tr>';
+    colsAct.forEach(function(ci){ html += '<th style="white-space:nowrap;position:sticky;top:0;background:rgba(10,14,39,.95)">'+escapeHTML(String(hdr[ci]||''))+'</th>'; });
+    html += '</tr></thead><tbody>';
+    data.forEach(function(r){
+      html += '<tr>';
+      colsAct.forEach(function(ci){
+        var v = r[ci];
+        var isNum = typeof v==='number';
+        html += '<td style="white-space:nowrap;text-align:'+(isNum?'right':'left')+';font-variant-numeric:tabular-nums">'+escapeHTML(obraFmtEvo(v))+'</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+    sec.innerHTML += html;
+  }
+
+  renderTabla('🧱 Avance por capítulo',
+    buscarTabla(/AVANCE POR CAP[IÍ]TULO|AN[AÁ]LISIS POR CAP[IÍ]TULO/i, /CAP[IÍ]TULO.*VR\.?\s*TOTAL|CAP[IÍ]TULO.*VR\.?\s*EJEC/i), 30);
+  renderTabla('👥 Avance por responsable',
+    buscarTabla(/AVANCE POR RESPONSABLE|AN[AÁ]LISIS POR RESPONSABLE/i, /RESPONSABLE.*ACT|RESPONSABLE.*VR\.?\s*TOTAL/i), 30);
+
+  var actHdr = -1;
+  for(var i=0;i<rows.length;i++){
+    var t = rows[i].map(function(c){return String(c||'').toUpperCase();}).join('|');
+    if(/\bFILA\b/.test(t) && /CAPITULO|CAP[IÍ]TULO/.test(t) && /RESPONSABLE/.test(t) && /DESCRIPCION|DESCRIPCI[OÓ]N/.test(t)){ actHdr = i; break; }
+  }
+  if(actHdr >= 0) renderTabla('📋 Actividades filtradas', actHdr, 100);
+
+  var csHdr = -1;
+  for(var i=0;i<rows.length;i++){
+    var t = rows[i].map(function(c){return String(c||'').toUpperCase();}).join('|');
+    if(/FECHA/.test(t) && /%\s*PROGRAMADO/i.test(t) && /%\s*REAL/i.test(t)){ csHdr = i; break; }
+  }
+  if(csHdr >= 0) renderTabla('📈 Curva S semanal', csHdr, 60);
+
+  if(!sec.innerHTML.trim()){
+    sec.innerHTML = '<div class="panel"><div style="text-align:center;padding:40px;color:#94a3b8">⚠️ No se detectaron secciones reconocibles en la hoja DASHBOARD.</div></div>';
+  }
+}
 
 </script>
 
