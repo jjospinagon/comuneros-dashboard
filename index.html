@@ -2439,7 +2439,7 @@ function cmsHumanSize(b){ b = Number(b)||0; if(b < 1024) return b+' B'; if(b < 1
 
 /* ====================== REGISTRO FOTOGRÁFICO ====================== */
 let FOTOS_LOADED = false;
-const FOTOS_STATE = { indice: null, totales: null, anioActual: null, items: [], filtroMes: null, filtroSemana: null, viewIdx: 0, viewArr: [] };
+const FOTOS_STATE = { indice: null, totales: null, anioActual: null, mesActual: null, items: [], filtroMes: null, filtroSemana: null, viewIdx: 0, viewArr: [] };
 
 async function fotosCargarIndice(){
   FOTOS_LOADED = true;
@@ -2471,18 +2471,22 @@ function fotosRenderArbol(){
         const dias = idx[a].meses[m] || {};
         Object.keys(dias).forEach(d => { totalMes += dias[d]; });
         const activeMes = FOTOS_STATE.filtroMes === m;
-        html += `<div onclick="fotosFiltrarMes('${m}')" style="padding:3px 0 3px 14px;color:${activeMes?'#10b981':'#cbd5e1'};cursor:pointer;font-size:11.5px">└ ${m} · ${nm[m]||''} <span style="color:#64748b">(${totalMes})</span></div>`;
+        const expandedMes = FOTOS_STATE.mesActual === m;
+        const caret = expandedMes ? '▼' : '▶';
+        html += `<div onclick="fotosFiltrarMes('${m}')" style="padding:3px 0 3px 14px;color:${activeMes?'#10b981':'#cbd5e1'};cursor:pointer;font-size:11.5px">${caret} ${m} · ${nm[m]||''} <span style="color:#64748b">(${totalMes})</span></div>`;
+        // Semanas anidadas DEL MES (calculadas desde items cargados)
+        if(expandedMes){
+          const semanasMes = {};
+          (FOTOS_STATE.items||[]).forEach(x => {
+            if(x.m === m && x.w){ semanasMes[x.w] = (semanasMes[x.w]||0) + 1; }
+          });
+          const semanas = Object.keys(semanasMes).sort();
+          semanas.forEach(w => {
+            const activeSem = FOTOS_STATE.filtroSemana === w;
+            html += `<div onclick="fotosFiltrarSemana('${w}')" style="padding:2px 0 2px 30px;color:${activeSem?'#f59e0b':'#cbd5e1'};cursor:pointer;font-size:11px">└ Sem ${w} <span style="color:#64748b">(${semanasMes[w]})</span></div>`;
+          });
+        }
       });
-      // Semanas del año
-      const semanas = Object.keys(idx[a].semanas || {}).sort();
-      if(semanas.length){
-        html += `<div style="margin-top:6px;padding:3px 0 3px 14px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px">Por semana ISO</div>`;
-        semanas.forEach(w => {
-          const total = idx[a].semanas[w] || 0;
-          const activeSem = FOTOS_STATE.filtroSemana === w;
-          html += `<div onclick="fotosFiltrarSemana('${w}')" style="padding:2px 0 2px 14px;color:${activeSem?'#f59e0b':'#cbd5e1'};cursor:pointer;font-size:11px">└ Sem ${w} <span style="color:#64748b">(${total})</span></div>`;
-        });
-      }
     }
     html += '</div>';
   });
@@ -2491,6 +2495,7 @@ function fotosRenderArbol(){
 
 async function fotosSeleccionarAnio(a){
   FOTOS_STATE.anioActual = (FOTOS_STATE.anioActual === a) ? null : a;
+  FOTOS_STATE.mesActual = null;
   FOTOS_STATE.filtroMes = null;
   FOTOS_STATE.filtroSemana = null;
   fotosRenderArbol();
@@ -2506,15 +2511,22 @@ async function fotosSeleccionarAnio(a){
 }
 
 function fotosFiltrarMes(m){
-  FOTOS_STATE.filtroMes = (FOTOS_STATE.filtroMes === m) ? null : m;
+  // Toggle expandir/contraer + filtro
+  if(FOTOS_STATE.mesActual === m){
+    FOTOS_STATE.mesActual = null;
+    FOTOS_STATE.filtroMes = null;
+  } else {
+    FOTOS_STATE.mesActual = m;
+    FOTOS_STATE.filtroMes = m;
+  }
   FOTOS_STATE.filtroSemana = null;
   fotosRenderArbol();
   fotosRenderGrid();
 }
 
 function fotosFiltrarSemana(w){
+  // Semana dentro del mes activo · NO resetea el mes
   FOTOS_STATE.filtroSemana = (FOTOS_STATE.filtroSemana === w) ? null : w;
-  FOTOS_STATE.filtroMes = null;
   fotosRenderArbol();
   fotosRenderGrid();
 }
@@ -2562,17 +2574,4 @@ function navFoto(delta){
   const n = FOTOS_STATE.viewArr.length;
   if(!n) return;
   FOTOS_STATE.viewIdx = (FOTOS_STATE.viewIdx + delta + n) % n;
-  abrirLightbox(FOTOS_STATE.viewIdx);
-}
-document.addEventListener('keydown', e => {
-  if(document.getElementById('fotos-lightbox') && document.getElementById('fotos-lightbox').style.display === 'flex'){
-    if(e.key === 'ArrowLeft') navFoto(-1);
-    if(e.key === 'ArrowRight') navFoto(1);
-    if(e.key === 'Escape') cerrarLightbox();
-  }
-});
-
-</script>
-
-</body>
-</html>
+  abrirLightbox(FO

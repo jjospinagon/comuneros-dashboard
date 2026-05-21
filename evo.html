@@ -1494,7 +1494,7 @@ function _humanSize(b){ b = Number(b)||0; if(b < 1024) return b+' B'; if(b < 104
 boot();
 
 /* ============ REGISTRO FOTOGRÁFICO ============ */
-var FOTOS_ST = { indice:null, totales:null, anioActual:null, items:[], filtroMes:null, filtroSemana:null, viewIdx:0, viewArr:[] };
+var FOTOS_ST = { indice:null, totales:null, anioActual:null, mesActual:null, items:[], filtroMes:null, filtroSemana:null, viewIdx:0, viewArr:[] };
 
 async function fotosCargarIndiceEvo(){
   window._fotosLoaded = true;
@@ -1526,17 +1526,21 @@ function fotosRenderArbolEvo(){
         var dias = idx[a].meses[m] || {};
         Object.keys(dias).forEach(function(d){ totalMes += dias[d]; });
         var activeMes = FOTOS_ST.filtroMes === m;
-        html += '<div onclick="fotosFiltrarMesEvo(\''+m+'\')" style="padding:3px 0 3px 14px;color:'+(activeMes?'#10b981':'#cbd5e1')+';cursor:pointer;font-size:11.5px">└ '+m+' · '+(nm[m]||'')+' <span style="color:#64748b">('+totalMes+')</span></div>';
+        var expandedMes = FOTOS_ST.mesActual === m;
+        var caret = expandedMes ? '▼' : '▶';
+        html += '<div onclick="fotosFiltrarMesEvo(\''+m+'\')" style="padding:3px 0 3px 14px;color:'+(activeMes?'#10b981':'#cbd5e1')+';cursor:pointer;font-size:11.5px">'+caret+' '+m+' · '+(nm[m]||'')+' <span style="color:#64748b">('+totalMes+')</span></div>';
+        if(expandedMes){
+          var semanasMes = {};
+          (FOTOS_ST.items||[]).forEach(function(x){
+            if(x.m === m && x.w){ semanasMes[x.w] = (semanasMes[x.w]||0) + 1; }
+          });
+          var semanas = Object.keys(semanasMes).sort();
+          semanas.forEach(function(w){
+            var activeSem = FOTOS_ST.filtroSemana === w;
+            html += '<div onclick="fotosFiltrarSemanaEvo(\''+w+'\')" style="padding:2px 0 2px 30px;color:'+(activeSem?'#f59e0b':'#cbd5e1')+';cursor:pointer;font-size:11px">└ Sem '+w+' <span style="color:#64748b">('+semanasMes[w]+')</span></div>';
+          });
+        }
       });
-      var semanas = Object.keys(idx[a].semanas || {}).sort();
-      if(semanas.length){
-        html += '<div style="margin-top:6px;padding:3px 0 3px 14px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px">Por semana ISO</div>';
-        semanas.forEach(function(w){
-          var total = idx[a].semanas[w] || 0;
-          var activeSem = FOTOS_ST.filtroSemana === w;
-          html += '<div onclick="fotosFiltrarSemanaEvo(\''+w+'\')" style="padding:2px 0 2px 14px;color:'+(activeSem?'#f59e0b':'#cbd5e1')+';cursor:pointer;font-size:11px">└ Sem '+w+' <span style="color:#64748b">('+total+')</span></div>';
-        });
-      }
     }
     html += '</div>';
   });
@@ -1545,6 +1549,7 @@ function fotosRenderArbolEvo(){
 
 async function fotosSeleccionarAnioEvo(a){
   FOTOS_ST.anioActual = (FOTOS_ST.anioActual === a) ? null : a;
+  FOTOS_ST.mesActual = null;
   FOTOS_ST.filtroMes = null;
   FOTOS_ST.filtroSemana = null;
   fotosRenderArbolEvo();
@@ -1558,8 +1563,16 @@ async function fotosSeleccionarAnioEvo(a){
   }catch(e){ grid.innerHTML = '<div style="grid-column:1/-1;color:#ef4444;padding:20px">Error: '+escapeHTML(e.message||String(e))+'</div>'; }
 }
 
-function fotosFiltrarMesEvo(m){ FOTOS_ST.filtroMes = (FOTOS_ST.filtroMes === m) ? null : m; FOTOS_ST.filtroSemana = null; fotosRenderArbolEvo(); fotosRenderGridEvo(); }
-function fotosFiltrarSemanaEvo(w){ FOTOS_ST.filtroSemana = (FOTOS_ST.filtroSemana === w) ? null : w; FOTOS_ST.filtroMes = null; fotosRenderArbolEvo(); fotosRenderGridEvo(); }
+function fotosFiltrarMesEvo(m){
+  if(FOTOS_ST.mesActual === m){ FOTOS_ST.mesActual = null; FOTOS_ST.filtroMes = null; }
+  else { FOTOS_ST.mesActual = m; FOTOS_ST.filtroMes = m; }
+  FOTOS_ST.filtroSemana = null;
+  fotosRenderArbolEvo(); fotosRenderGridEvo();
+}
+function fotosFiltrarSemanaEvo(w){
+  FOTOS_ST.filtroSemana = (FOTOS_ST.filtroSemana === w) ? null : w;
+  fotosRenderArbolEvo(); fotosRenderGridEvo();
+}
 function fotosLimpiarGridEvo(){ document.getElementById('fotosTitulo').textContent = '📷 Selecciona un año/mes/semana'; document.getElementById('fotosCount').textContent = ''; document.getElementById('fotosGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#64748b;font-size:13px">Elige un año/mes/semana en el panel izquierdo.</div>'; }
 
 function fotosRenderGridEvo(){
@@ -1595,9 +1608,4 @@ function abrirLightboxEvo(i){
 }
 function cerrarLightboxEvo(){ document.getElementById('fotosLightbox').style.display = 'none'; }
 function navFotoEvo(delta){ var n = FOTOS_ST.viewArr.length; if(!n) return; FOTOS_ST.viewIdx = (FOTOS_ST.viewIdx + delta + n) % n; abrirLightboxEvo(FOTOS_ST.viewIdx); }
-document.addEventListener('keydown', function(e){ if(document.getElementById('fotosLightbox') && document.getElementById('fotosLightbox').style.display === 'flex'){ if(e.key === 'ArrowLeft') navFotoEvo(-1); if(e.key === 'ArrowRight') navFotoEvo(1); if(e.key === 'Escape') cerrarLightboxEvo(); } });
-
-</script>
-
-</body>
-</html>
+document.addEventListener('keydown', function(e){ if(document.getElementById('fotosLightbox') && document.getElementById('fotosLight
