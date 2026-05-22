@@ -2874,5 +2874,347 @@ function obraInicializarFiltros(data){
   selCap.innerHTML = caps.map(c => '<option value="'+escapeHTML(c)+'">'+escapeHTML(c)+'</option>').join('');
   selResp.innerHTML = resps.map(r => '<option value="'+escapeHTML(r)+'">'+escapeHTML(r)+'</option>').join('');
   // Fecha de corte: default = hoy
-  const today = new Date().toISOString().slice(0,10);
-  document.getElementById('obra-f-corte').value = toda
+  document.getElementById('obra-f-corte').value = today;
+}
+
+function obraExcelSerialToDate(s){
+  if (typeof s !== 'number' || s < 25000) return null;
+  return new Date(Math.round((s - 25569) * 86400 * 1000));
+}
+function obraToDate(v){
+  if (v instanceof Date) return v;
+  if (typeof v === 'number') return obraExcelSerialToDate(v);
+  if (typeof v === 'string'){ const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+  return null;
+}
+function obraFmtFecha(v){
+  const d = obraToDate(v);
+  return d ? d.toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+}
+function obraMoney(n){
+  // Escala colombiana: NUNCA usar "B" (en EN es billion=mil millones, en ES es millón de millones)
+  // Siempre en M (millones) para valores >= 1M
+  if (typeof n !== 'number' || isNaN(n)) return '—';
+  var abs = Math.abs(n);
+  if (abs >= 1e6) {
+    var m = n / 1e6;
+    var dec = abs >= 1e9 ? 0 : 1; // mil millones: enteros; millones: 1 decimal
+    return '$' + m.toLocaleString('es-CO', {maximumFractionDigits: dec, minimumFractionDigits: 0}) + ' M';
+  }
+  if (abs >= 1e3) return '$' + Math.round(n).toLocaleString('es-CO');
+  return '$' + Math.round(n).toLocaleString('es-CO');
+}
+
+function obraAplicarFiltros(){
+  if (!OBRA_DATA) return;
+  const fCap = document.getElementById('obra-f-cap').value;
+  const fResp = document.getElementById('obra-f-resp').value;
+  const fCorte = document.getElementById('obra-f-corte').value;
+  const topN = parseInt(document.getElementById('obra-f-topn').value, 10) || 20;
+  
+  const all = OBRA_DATA.actividades || [];
+  const filtradas = all.filter(a => {
+    if (fCap !== 'TODOS' && a.cap !== fCap) return false;
+    if (fResp !== 'TODOS' && a.resp !== fResp) return false;
+    return true;
+  });
+  
+  // Semana actual basada en fCorte y proyecto.inicio
+  const inicio = obraToDate(OBRA_DATA.proyecto.inicio);
+  const corte = fCorte ? new Date(fCorte) : new Date();
+  let semanaActual = 0;
+  if (inicio && corte > inicio){
+    const dias = Math.floor((corte - inicio) / 86400000);
+    semanaActual = Math.floor(dias / 7) + 1;
+  }
+  
+  // KPIs
+  const vrTotal = filtradas.reduce((s,a) => s + (a.vrTotal||0), 0);
+  const vrEjecActividades = filtradas.reduce((s,a) => s + (a.vrEjec||0), 0);
+  // Cuando filtros = TODOS/TODOS, usar el ejecutado global (AVANCE DIARIO!K108)
+  // para alinearnos con el Excel (22.68% vs sumatoria por actividad 22.53%)
+  const usarEjecGlobal = (fCap === 'TODOS' && fResp === 'TODOS' && typeof OBRA_DATA.ejecutadoGlobal === 'number' && OBRA_DATA.ejecutadoGlobal > 0);
+  const vrEjec = usarEjecGlobal ? OBRA_DATA.ejecutadoGlobal : vrEjecActividades;
+  const pctReal = vrTotal > 0 ? vrEjec / vrTotal : 0;
+
+  // % Programado PONDERADO por fechas reales de cada actividad filtrada
+  // (en vez de usar la curva global del proyecto, que no respeta el filtro)
+  function pctProgramadoActividad(a, corteDate){
+    // Si la actividad tiene fechas múltiples (S/T son strings con coma), usamos solo la primera
+    function primeraFecha(v){
+      if (v instanceof Date) return v;
+      if (typeof v === 'number') return obraExcelSerialToDate(v);
+      if (typeof v === 'string'){
+        const partes = v.split(',').map(s => s.trim()).filter(Boolean);
+        const d = new Date(partes[0]);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    }
+    function ultimaFecha(v){
+      if (v instanceof Date) return v;
+      if (typeof v === 'number') return obraExcelSerialToDate(v);
+      if (typeof v === 'string'){
+        const partes = v.split(',').map(s => s.trim()).filter(Boolean);
+        const d = new Date(partes[partes.length-1]);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    }
+    const ini = primeraFecha(a.fIni);
+    const fin = ultimaFecha(a.fFin);
+    if (!ini || !fin || isNaN(ini.getTime()) || isNaN(fin.getTime())) return 0;
+    if (corteDate <= ini) return 0;
+    if (corteDate >= fin) return 1;
+    return (corteDate - ini) / (fin - ini);
+  }
+
+  // Suma ponderada del valor programado por actividad filtrada
+  const vrProg = filtradas.reduce((s, a) => {
+    const pa = pctProgramadoActividad(a, corte);
+    return s + (a.vrTotal || 0) * pa;
+  }, 0);
+
+  // % Programado del subset filtrado (no del proyecto global)
+  const pctProg = vrTotal > 0 ? vrProg / vrTotal : 0;
+  const spi = vrProg > 0 ? vrEjec / vrProg : 0;
+
+  // Curva S: normalizar % programado si vinieron como valores absolutos del backend.
+  // (Bug detectado: la fila 115 de FLUJO DE CAJA_INTER son valores ABSOLUTOS, no %.
+  //  Los % reales sí vienen normalizados en cs.real.)
+  let cs = OBRA_DATA.curvaS || {programado:[], real:[], semanas:[], fechas:[]};
+  const _prog = cs.programado || [];
+  let _maxProg = 0;
+  for (let i = 0; i < _prog.length; i++) { if (_prog[i] > _maxProg) _maxProg = _prog[i]; }
+  if (_maxProg > 1.5 && _maxProg > 0) {
+    cs = {
+      semanas: cs.semanas || [],
+      fechas:  cs.fechas  || [],
+      real:    cs.real    || [],
+      programado: _prog.map(v => v / _maxProg)
+    };
+  }
+  
+  const completadas = filtradas.filter(a => (a.pctAcum||0) >= 0.999).length;
+  const enCurso = filtradas.filter(a => (a.pctAcum||0) > 0 && (a.pctAcum||0) < 0.999).length;
+  const pendientes = filtradas.filter(a => (a.pctAcum||0) <= 0).length;
+  const vrPendiente = vrTotal - vrEjec;
+  const pctCompletitud = filtradas.length > 0 ? completadas / filtradas.length : 0;
+  
+  document.getElementById('obra-filtros-info').textContent = filtradas.length + ' de ' + all.length + ' actividades · Semana ' + semanaActual + ' · ' + obraFmtFecha(OBRA_DATA.proyecto.inicio) + ' → ' + obraFmtFecha(OBRA_DATA.proyecto.fin);
+  
+  // === KPIs cards ===
+  const kpis = document.getElementById('obra-kpis');
+  const kpisHTML = [
+    {label:'VALOR TOTAL FILTRADO', value: obraMoney(vrTotal), color:'#22c55e'},
+    {label:'VALOR EJECUTADO', value: obraMoney(vrEjec), color:'#0ea5e9'},
+    {label:'VALOR PROGRAMADO S'+semanaActual, value: obraMoney(vrProg), color:'#f59e0b'},
+    {label:'% AVANCE REAL', value: (pctReal*100).toFixed(2)+'%', color:(pctReal>=pctProg?'#22c55e':'#ef4444')},
+    {label:'% AVANCE PROGRAMADO S'+semanaActual, value: (pctProg*100).toFixed(2)+'%', color:'#a855f7'},
+    {label:'SPI (DESVIACIÓN)', value: spi.toFixed(2)+'x', color:(spi>=0.95?'#22c55e':spi>=0.85?'#f59e0b':'#ef4444')}
+  ];
+  kpis.innerHTML = kpisHTML.map(k => '<div class="panel" style="background:rgba(20,26,55,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;border-left:4px solid '+k.color+'"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;line-height:1.3">'+escapeHTML(k.label)+'</div><div style="font-size:20px;font-weight:700;color:#fff;margin-top:6px;font-family:\'Space Grotesk\',sans-serif">'+escapeHTML(k.value)+'</div></div>').join('');
+  
+  // === Secciones ===
+  const sec = document.getElementById('obra-secciones');
+  sec.innerHTML = '';
+  
+  // KPIs Operativos
+  const opHTML = '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:6px">' + [
+    {label:'ACT. FILTRADAS', value: filtradas.length, color:'#94a3b8'},
+    {label:'COMPLETADAS (100%)', value: completadas, color:'#22c55e'},
+    {label:'EN CURSO', value: enCurso, color:'#0ea5e9'},
+    {label:'PENDIENTES', value: pendientes, color:'#f59e0b'},
+    {label:'VALOR PENDIENTE', value: obraMoney(vrPendiente), color:'#ef4444'},
+    {label:'% COMPLETITUD', value: (pctCompletitud*100).toFixed(1)+'%', color:'#a855f7'}
+  ].map(k => '<div class="panel" style="background:rgba(20,26,55,.5);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:12px;border-left:3px solid '+k.color+'"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">'+escapeHTML(k.label)+'</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px;font-family:\'Space Grotesk\',sans-serif">'+escapeHTML(String(k.value))+'</div></div>').join('') + '</div>';
+  sec.innerHTML += opHTML;
+  
+  // Avance por Capítulo
+  const porCap = {};
+  all.forEach(a => {
+    if (!a.cap) return;
+    if (fResp !== 'TODOS' && a.resp !== fResp) return;
+    if (!porCap[a.cap]) porCap[a.cap] = {vrTotal:0, vrEjec:0};
+    porCap[a.cap].vrTotal += a.vrTotal || 0;
+    porCap[a.cap].vrEjec += a.vrEjec || 0;
+  });
+  const capRows = Object.keys(porCap).sort().map(cap => {
+    const c = porCap[cap];
+    const p = c.vrTotal > 0 ? c.vrEjec/c.vrTotal : 0;
+    return {cap, vrTotal:c.vrTotal, vrEjec:c.vrEjec, pct:p};
+  });
+  let capHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #22c55e"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🧱 Avance por capítulo</h3><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Capítulo</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Total</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Ejecutado</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;min-width:140px">% Avance</th></tr></thead><tbody>';
+  capRows.forEach(r => {
+    const bar = Math.min(100, Math.max(0, r.pct*100));
+    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
+    capHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#e2e8f0;font-weight:600">'+escapeHTML(r.cap)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrEjec)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:48px;text-align:right;color:#fff">'+(r.pct*100).toFixed(1)+'%</span></div></td></tr>';
+  });
+  capHTML += '</tbody></table></div></div>';
+  sec.innerHTML += capHTML;
+  
+  // Avance por Responsable
+  const porResp = {};
+  all.forEach(a => {
+    if (!a.resp) return;
+    if (fCap !== 'TODOS' && a.cap !== fCap) return;
+    if (!porResp[a.resp]) porResp[a.resp] = {n:0, vrTotal:0, vrEjec:0};
+    porResp[a.resp].n++;
+    porResp[a.resp].vrTotal += a.vrTotal || 0;
+    porResp[a.resp].vrEjec += a.vrEjec || 0;
+  });
+  const respRows = Object.keys(porResp).sort().map(re => {
+    const r = porResp[re];
+    return {resp:re, n:r.n, vrTotal:r.vrTotal, vrEjec:r.vrEjec, pct: r.vrTotal>0?r.vrEjec/r.vrTotal:0};
+  });
+  let respHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">👥 Avance por responsable</h3><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Responsable</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Act</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Total</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Ejec</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;min-width:140px">% Avance</th></tr></thead><tbody>';
+  respRows.forEach(r => {
+    const bar = Math.min(100, Math.max(0, r.pct*100));
+    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
+    respHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#e2e8f0;font-weight:600">'+escapeHTML(r.resp)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right">'+r.n+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrEjec)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:48px;text-align:right;color:#fff">'+(r.pct*100).toFixed(1)+'%</span></div></td></tr>';
+  });
+  respHTML += '</tbody></table></div></div>';
+  sec.innerHTML += respHTML;
+  
+  // Top N actividades — SOLO capitulos 1-5 (excluye 0. ETAPA DE PRE-CONSTRUCCION y 6+ posteriores)
+  const topRows = filtradas
+    .filter(a => { var m = String(a.cap||'').match(/^\s*(\d+)/); return m && parseInt(m[1],10) >= 1 && parseInt(m[1],10) <= 5; })
+    .sort((a,b) => (b.vrTotal||0) - (a.vrTotal||0))
+    .slice(0, topN);
+  let topHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #f59e0b"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🏆 Top '+topN+' Actividades · mayor valor</h3><div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">#</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Capítulo</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Descripción</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Responsable</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Vr Total</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95);min-width:120px">% Avance</th></tr></thead><tbody>';
+  topRows.forEach((a, i) => {
+    const p = a.pctAcum || 0;
+    const bar = Math.min(100, Math.max(0, p*100));
+    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
+    topHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#94a3b8">'+(i+1)+'</td><td style="padding:6px 10px;color:#e2e8f0;font-size:11px">'+escapeHTML(a.cap)+'</td><td style="padding:6px 10px;color:#e2e8f0;max-width:300px">'+escapeHTML((a.desc||'').slice(0,80))+'</td><td style="padding:6px 10px;color:#e2e8f0;font-size:11px">'+escapeHTML(a.resp)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(a.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:5px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:42px;text-align:right;color:#fff;font-size:11px">'+(p*100).toFixed(1)+'%</span></div></td></tr>';
+  });
+  topHTML += '</tbody></table></div></div>';
+  sec.innerHTML += topHTML;
+  
+  // Curva S
+  if (cs.semanas && cs.semanas.length && typeof Chart !== 'undefined'){
+    const cId = 'curvaS_' + Date.now();
+    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #a855f7"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">📈 Curva S · % avance acumulado por semana</h3><div style="position:relative;height:360px"><canvas id="'+cId+'"></canvas></div></div>';
+    setTimeout(() => {
+      const ctx = document.getElementById(cId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: cs.semanas,
+          datasets: [
+            {label:'% Programado', data: cs.programado.map(p => p == null ? null : (p*100).toFixed(2)), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', tension:.3, borderWidth:2, pointRadius:2, spanGaps:false},
+            {label:'% Real', data: cs.real.map(p => p == null ? null : (p*100).toFixed(2)), borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.1)', tension:.3, borderWidth:2, pointRadius:2, spanGaps:false}
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color:'#cbd5e1' } }, tooltip: { callbacks: { afterLabel: function(ctx){ return cs.fechas[ctx.dataIndex] || ''; } } } },
+          scales: {
+            x: { ticks: { color:'#94a3b8', maxRotation:60, minRotation:45, font:{size:9} }, grid:{color:'rgba(255,255,255,.04)'} },
+            y: { ticks: { color:'#94a3b8', callback: v => v+'%' }, grid:{color:'rgba(255,255,255,.04)'}, beginAtZero:true }
+          }
+        }
+      });
+    }, 100);
+
+    // Curva S — ZOOM (2 sem atras / 1 ultima con real / 6 sem adelante)
+    // Detectar el ultimo indice con cs.real no nulo
+    let idxUlt = -1;
+    for (let k = 0; k < cs.real.length; k++) if (cs.real[k] != null) idxUlt = k;
+    if (idxUlt >= 0) {
+      const desde = Math.max(0, idxUlt - 2);
+      const hasta = Math.min(cs.semanas.length, idxUlt + 7); // +7 = idx+6 inclusive
+      const labelsZ = cs.semanas.slice(desde, hasta);
+      const fechasZ = cs.fechas ? cs.fechas.slice(desde, hasta) : [];
+      const progZ = cs.programado.slice(desde, hasta).map(p => p == null ? null : (p*100).toFixed(2));
+      const realZ = cs.real.slice(desde, hasta).map(p => p == null ? null : (p*100).toFixed(2));
+      const idxUltRel = idxUlt - desde; // indice del recuadro en el rango del zoom
+
+      const cIdZ = 'curvaSzoom_' + Date.now();
+      sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #22d3ee;margin-top:14px"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🔍 Curva S · ZOOM (2 sem atras / ultima con avance / 6 sem adelante)</h3><div style="position:relative;height:340px"><canvas id="'+cIdZ+'"></canvas></div></div>';
+
+      setTimeout(() => {
+        const ctxZ = document.getElementById(cIdZ);
+        if (!ctxZ) return;
+        // Plugin custom para dibujar recuadro celeste sobre la ultima semana con real
+        const boxPlugin = {
+          id: 'boxHighlight',
+          afterDraw(chart) {
+            const ctx2 = chart.ctx;
+            const xs = chart.scales.x;
+            const ys = chart.scales.y;
+            if (!xs || !ys) return;
+            const xCenter = xs.getPixelForValue(idxUltRel);
+            const dx = labelsZ.length > 1 ? (xs.getPixelForValue(1) - xs.getPixelForValue(0)) * 0.55 : 40;
+            ctx2.save();
+            ctx2.strokeStyle = '#22d3ee';
+            ctx2.lineWidth = 3;
+            ctx2.lineJoin = 'round';
+            ctx2.strokeRect(xCenter - dx/2, ys.top + 6, dx, ys.bottom - ys.top - 12);
+            ctx2.restore();
+          }
+        };
+        new Chart(ctxZ, {
+          type: 'line',
+          data: {
+            labels: labelsZ,
+            datasets: [
+              {label:'% Programado', data: progZ, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', tension:.3, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#f59e0b', spanGaps:false, datalabels:{display:true}},
+              {label:'% Real', data: realZ, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.1)', tension:.3, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#22c55e', spanGaps:false, datalabels:{display:true}}
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color:'#cbd5e1' } },
+              tooltip: { callbacks: { afterLabel: function(ctx){ return fechasZ[ctx.dataIndex] || ''; } } }
+            },
+            scales: {
+              x: { ticks: { color:'#cbd5e1', maxRotation:30, minRotation:0, font:{size:11} }, grid:{color:'rgba(255,255,255,.04)'} },
+              y: { ticks: { color:'#cbd5e1', callback: v => v+'%' }, grid:{color:'rgba(255,255,255,.04)'}, beginAtZero:true, max:100 }
+            },
+            animation:{ onComplete: function(){
+              // Dibujar etiquetas con valor sobre cada punto
+              const ch = this;
+              const ctx2 = ch.ctx;
+              ctx2.save();
+              ctx2.fillStyle = '#cbd5e1';
+              ctx2.font = 'bold 10px sans-serif';
+              ctx2.textAlign = 'center';
+              ch.data.datasets.forEach((ds, di) => {
+                const meta = ch.getDatasetMeta(di);
+                meta.data.forEach((pt, pi) => {
+                  const v = ds.data[pi];
+                  if (v != null) ctx2.fillText(v + '%', pt.x, pt.y - 8);
+                });
+              });
+              ctx2.restore();
+            }}
+          },
+          plugins: [boxPlugin]
+        });
+      }, 150);
+    }
+  }
+
+  // Donut por responsable
+  if (respRows.length && typeof Chart !== 'undefined'){
+    const dId = 'donut_' + Date.now();
+    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🍩 Distribución por responsable (Vr Total)</h3><div style="position:relative;height:320px;max-width:500px;margin:0 auto"><canvas id="'+dId+'"></canvas></div></div>';
+    setTimeout(() => {
+      const ctx = document.getElementById(dId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: respRows.map(r => r.resp), datasets: [{ data: respRows.map(r => r.vrTotal), backgroundColor: ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a855f7','#22d3ee','#ec4899','#8b5cf6'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position:'right', labels: { color:'#cbd5e1', font:{size:11} } } } }
+      });
+    }, 100);
+  }
+}
+
+</script>
+
+</body>
+</html>
