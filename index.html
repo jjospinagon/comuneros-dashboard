@@ -1833,48 +1833,71 @@ function calcAvanceCorte(corteData){
 }
 
 async function renderCurvaS(){
+  const ctx = document.getElementById('ind-chart-curvas');
+  if(!ctx) return;
+
+  // PRIORIDAD: usar la curva S del dashboard de obra (calibrada con AVANCE DIARIO + FLUJO INTER,
+  // cortada al ultimo domingo cerrado). Si OBRA_DATA aun no cargo, cargar y reintentar.
+  let obraCs = (typeof OBRA_DATA !== 'undefined' && OBRA_DATA && OBRA_DATA.curvaS) ? OBRA_DATA.curvaS : null;
+  if (!obraCs) {
+    try {
+      const d = await jsonp(APPS_URL, {action:'dashboard_obra_v2'});
+      if (d && d.curvaS) { OBRA_DATA = d; obraCs = d.curvaS; }
+    } catch(e) { /* sin red, seguimos con fallback */ }
+  }
+
+  if (obraCs && obraCs.semanas && obraCs.semanas.length && obraCs.programado && obraCs.real) {
+    const labels = obraCs.semanas;
+    const realData = obraCs.real.map(v => v == null ? null : (v * 100));
+    const progData = obraCs.programado.map(v => v == null ? null : (v * 100));
+    const fechas = obraCs.fechas || [];
+    if (CHART_CURVAS) CHART_CURVAS.destroy();
+    CHART_CURVAS = new Chart(ctx, {
+      type:'line',
+      data:{ labels: labels, datasets:[
+        { label:'Avance real %', data: realData, borderColor:'#22d3ee', backgroundColor:'rgba(34,211,238,.15)', borderWidth:2.5, tension:.35, fill:true, pointRadius:2, pointBackgroundColor:'#22d3ee', spanGaps:false },
+        { label:'Avance programado % (FLUJO INTER)', data: progData, borderColor:'#10b981', borderWidth:2, borderDash:[5,5], tension:.2, fill:false, pointRadius:0, spanGaps:false }
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:'#cbd5e1', font:{size:11}}},
+          tooltip:{ callbacks:{ afterLabel: function(c){ return fechas[c.dataIndex] || ''; } } }
+        },
+        scales:{
+          x:{ ticks:{color:'#94a3b8', font:{size:9}, maxRotation:60, minRotation:45}, grid:{color:'rgba(255,255,255,.04)'} },
+          y:{ ticks:{color:'#94a3b8', font:{size:10}, callback:v=>v+'%'}, grid:{color:'rgba(255,255,255,.06)'}, min:0, max:100 }
+        }
+      }
+    });
+    return;
+  }
+
+  // FALLBACK: comportamiento previo (multi-cortes INDICADORES)
   if(!IND_DATA || !IND_CORTES.length) return;
-  // Ordenar cortes cronológicamente (DD-MM-YYYY)
   const cortes = IND_CORTES.slice().sort((a,b)=>{
     const A = a.split('-').reverse().join('');
     const B = b.split('-').reverse().join('');
     return A.localeCompare(B);
   });
-  const labels = cortes.map(c => c.substring(0,5));  // dd-mm
+  const labels = cortes.map(c => c.substring(0,5));
   const valores = cortes.map(c => calcAvanceCorte(IND_DATA[c]) * 100);
-  // Cargar curva programada real (FLUJO DE CAJA_INTER fila 116). Fallback: lineal.
   const prog = await loadCurvaSProgramada();
   let planeada, planLabels = labels, planMix = false;
   if(prog && prog.values && prog.values.length){
-    // Si el número de periodos no coincide con cortes, mostramos AMBAS series en su eje X propio.
-    if(prog.values.length === cortes.length){
-      planeada = prog.values;
-    }else{
-      planeada = prog.values;
-      planLabels = prog.periodos;
-      planMix = true;
-    }
-  }else{
-    planeada = cortes.map((_,i) => ((i+1)/cortes.length)*100);
-  }
-
-  const ctx = document.getElementById('ind-chart-curvas');
-  if(!ctx) return;
+    if(prog.values.length === cortes.length){ planeada = prog.values; }
+    else { planeada = prog.values; planLabels = prog.periodos; planMix = true; }
+  } else { planeada = cortes.map((_,i) => ((i+1)/cortes.length)*100); }
   if(CHART_CURVAS) CHART_CURVAS.destroy();
-
-  // Cuando los periodos difieren, usamos labels del cronograma como eje X
   const xLabels = planMix ? planLabels : labels;
-  // Alinear "valores" reales al cronograma cuando difieren: cada corte se asigna al periodo más cercano por orden cronológico
   let realesAlineado = valores;
   if(planMix){
     realesAlineado = new Array(xLabels.length).fill(null);
-    // Distribuir cortes uniformemente en el cronograma
     cortes.forEach((c, idx) => {
       const pos = Math.round((idx / Math.max(1, cortes.length - 1)) * (xLabels.length - 1));
       realesAlineado[pos] = valores[idx];
     });
   }
-
   CHART_CURVAS = new Chart(ctx, {
     type:'line',
     data:{ labels: xLabels, datasets:[
