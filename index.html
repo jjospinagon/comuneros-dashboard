@@ -459,7 +459,7 @@
           <p>Acceso autorizado</p>
         </div>
       </div>
-      <form id="login-form" onsubmit="event.preventDefault();handleLogin();">
+      <form id="login-form" onsubmit="return false;">
         <label class="f-l" for="login-nombre">Nombre</label>
         <input type="text" id="login-nombre" class="f-i" required maxlength="100" autocomplete="given-name" placeholder="Tu nombre">
         <label class="f-l" for="login-apellidos">Apellidos</label>
@@ -467,7 +467,7 @@
         <label class="f-l" for="login-correo">Correo electrónico</label>
         <input type="email" id="login-correo" class="f-i" required maxlength="100" autocomplete="email" placeholder="nombre@dominio.com">
         <div id="login-error" style="display:none;color:#fca5a5;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30);border-radius:8px;padding:8px 12px;font-size:11.5px;margin-top:12px"></div>
-        <button id="login-btn" type="submit">Entrar al Cockpit →</button>
+        <button id="login-btn" type="button" onclick="handleLogin();">Entrar al Cockpit →</button>
       </form>
       <p class="v3-foot">Tu registro queda almacenado en bitácora institucional<br>para trazabilidad de visitas al sistema.</p>
     </div>
