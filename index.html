@@ -246,444 +246,232 @@
 </head>
 <body>
 
-<!-- ============ LOGIN GATE (REDESIGN v2 — COCKPIT IMPACT) ============ -->
-<div id="login-overlay" style="position:fixed;inset:0;background:radial-gradient(ellipse at center top,#1a1b3a 0%,#0a0e27 60%,#000000 100%);z-index:99999;overflow-y:auto;padding:18px 16px">
+<!-- ============ LOGIN GATE (v3 — HUD CONSTELACIÓN) ============ -->
+<div id="login-overlay" style="position:fixed;inset:0;background:radial-gradient(ellipse at center,#0f1430 0%,#070b1f 55%,#020410 100%);z-index:99999;overflow-y:auto;padding:20px 16px;font-family:'Inter',system-ui,sans-serif">
   <style>
-    @keyframes mGlow {0%,100%{filter:drop-shadow(0 0 12px rgba(34,211,238,.6)) drop-shadow(0 0 24px rgba(168,85,247,.3))}50%{filter:drop-shadow(0 0 20px rgba(34,211,238,.85)) drop-shadow(0 0 40px rgba(236,72,153,.45))}}
-    @keyframes pulseStar {0%,100%{opacity:.3}50%{opacity:1}}
-    @keyframes gradientShift {0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-    @keyframes orbitSpin {0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
-    @keyframes orbitSpinRev {0%{transform:translate(-50%,-50%) rotate(360deg)}100%{transform:translate(-50%,-50%) rotate(0deg)}}
-    @keyframes lineFlow {0%{stroke-dashoffset:300}100%{stroke-dashoffset:0}}
-    @keyframes floatUp {0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-    @keyframes statShine {0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-    @keyframes shimmer {0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-    #login-overlay .lg-grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;align-items:center;min-height:calc(100vh - 48px)}
-    @media(max-width:1100px){#login-overlay .lg-grid{grid-template-columns:1fr;gap:18px}#login-overlay .lg-side{display:none}}
-    #login-overlay .lg-side{background:linear-gradient(160deg,rgba(20,26,55,.85),rgba(15,20,40,.7));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:22px 20px;box-shadow:0 24px 60px -20px rgba(0,0,0,.6)}
-    #login-overlay .lg-side .ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px;box-shadow:0 6px 18px -4px rgba(0,0,0,.5)}
-    /* HERO + módulos rediseñados */
-    #login-overlay .lg-hero{max-width:1280px;margin:0 auto;text-align:center;padding:14px 20px 6px;position:relative}
-    #login-overlay .lg-hero-logo-wrap{position:relative;width:220px;height:220px;margin:0 auto}
-    #login-overlay .lg-hero-logo-wrap .orbit{position:absolute;top:50%;left:50%;border-radius:50%;pointer-events:none}
-    #login-overlay .lg-hero-logo-wrap .orbit.o1{width:260px;height:260px;border:1px dashed rgba(34,211,238,.18);animation:orbitSpin 32s linear infinite}
-    #login-overlay .lg-hero-logo-wrap .orbit.o2{width:330px;height:330px;border:1px dashed rgba(168,85,247,.10);animation:orbitSpinRev 60s linear infinite}
-    #login-overlay .lg-hero-logo-wrap .orbit-dot{position:absolute;width:6px;height:6px;border-radius:50%;box-shadow:0 0 12px rgba(34,211,238,.8)}
-    #login-overlay .m-logo{width:170px;height:170px;animation:mGlow 3s ease-in-out infinite;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-    #login-overlay .lg-hero-title{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:800;color:#fff;letter-spacing:-1px;margin:18px 0 6px;background:linear-gradient(135deg,#fff 30%,#67e8f9 70%,#a855f7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-    #login-overlay .lg-hero-sub{color:rgba(255,255,255,.6);font-size:13px;letter-spacing:.05em;max-width:680px;margin:0 auto 8px;line-height:1.55}
-    #login-overlay .lg-hero-badge{display:inline-block;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);color:#67e8f9;font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;padding:5px 14px;border-radius:999px;margin-bottom:6px}
-    #login-overlay .lg-stats{max-width:1180px;margin:18px auto 0;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 20px}
-    @media(max-width:760px){#login-overlay .lg-stats{grid-template-columns:repeat(2,1fr)}}
-    #login-overlay .lg-stat{position:relative;background:linear-gradient(160deg,rgba(20,26,55,.7),rgba(15,20,40,.45));backdrop-filter:blur(12px);border:1px solid rgba(34,211,238,.14);border-radius:16px;padding:16px 14px;text-align:center;overflow:hidden;transition:all .3s}
-    #login-overlay .lg-stat::after{content:"";position:absolute;top:0;left:0;width:30%;height:100%;background:linear-gradient(90deg,transparent,rgba(34,211,238,.1),transparent);animation:shimmer 5s linear infinite}
-    #login-overlay .lg-stat:hover{border-color:rgba(34,211,238,.35);transform:translateY(-3px);box-shadow:0 18px 40px -16px rgba(34,211,238,.3)}
-    #login-overlay .lg-stat .v{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,#67e8f9,#22d3ee 50%,#10b981);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-1px;line-height:1}
-    #login-overlay .lg-stat .l{color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-top:6px}
-    #login-overlay .lg-mods{max-width:1180px;margin:16px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 20px}
-    @media(max-width:920px){#login-overlay .lg-mods{grid-template-columns:1fr 1fr}}
-    @media(max-width:580px){#login-overlay .lg-mods{grid-template-columns:1fr}}
-    #login-overlay .lg-mod{background:linear-gradient(160deg,rgba(20,26,55,.6),rgba(15,20,40,.35));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;transition:all .3s;position:relative;overflow:hidden}
-    #login-overlay .lg-mod::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:var(--mod-color,#22d3ee);opacity:.6}
-    #login-overlay .lg-mod:hover{border-color:var(--mod-color,rgba(34,211,238,.4));transform:translateY(-3px);box-shadow:0 18px 40px -16px var(--mod-shadow,rgba(34,211,238,.3))}
-    #login-overlay .lg-mod-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-    #login-overlay .lg-mod-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 6px 16px -4px rgba(0,0,0,.5)}
-    #login-overlay .lg-mod h4{font-family:'Space Grotesk',sans-serif;color:#fff;font-size:14px;font-weight:700;margin:0;letter-spacing:-.2px}
-    #login-overlay .lg-mod p.s{color:#94a3b8;font-size:11px;line-height:1.5;margin:0 0 8px}
-    #login-overlay .lg-mod-stats{display:flex;gap:10px;margin:6px 0 8px;padding:6px 8px;background:rgba(0,0,0,.2);border-radius:8px}
-    #login-overlay .lg-mod-stat{flex:1;text-align:center}
-    #login-overlay .lg-mod-stat .v{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:#fff;letter-spacing:-.3px}
-    #login-overlay .lg-mod-stat .l{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-top:1px}
-    #login-overlay .lg-mod-chips{display:flex;flex-wrap:wrap;gap:4px}
-    #login-overlay .lg-mod-chips span{font-size:9.5px;padding:2.5px 7px;border-radius:999px;font-weight:600;letter-spacing:.02em}
-    #login-overlay .lg-form-wrap{max-width:430px;margin:22px auto 18px;padding:0 20px}
-    #login-overlay .lg-side h4{font-family:'Space Grotesk',sans-serif;color:#fff;font-size:18px;font-weight:700;margin:0 0 6px;letter-spacing:-.3px}
-    #login-overlay .lg-side p.s{color:#94a3b8;font-size:12px;line-height:1.5;margin:0 0 16px}
-    #login-overlay .lg-spark{width:100%;height:60px;border-radius:8px;margin-bottom:14px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.02));overflow:hidden;position:relative}
-    #login-overlay .lg-kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07)}
-    #login-overlay .lg-kpi .v{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#fff;letter-spacing:-.5px}
-    #login-overlay .lg-kpi .l{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-top:2px}
-    #login-overlay .lg-center{display:flex;flex-direction:column;align-items:center;gap:20px}
-    #login-overlay .m-logo{width:200px;height:200px;animation:mGlow 3s ease-in-out infinite}
-    #login-overlay .stars{position:absolute;inset:0;pointer-events:none;z-index:0}
-    #login-overlay .stars span{position:absolute;background:#fff;border-radius:50%;animation:pulseStar 3s ease-in-out infinite}
-    #login-overlay .lg-card{background:linear-gradient(160deg,rgba(15,20,40,.85),rgba(10,14,30,.95));backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(34,211,238,.2);border-radius:24px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 80px -30px rgba(34,211,238,.3);position:relative;z-index:2}
-    #login-overlay .lg-card .m-mini{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(34,211,238,.4);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -6px rgba(34,211,238,.4)}
-    #login-overlay label.f-l{display:block;color:rgba(255,255,255,.7);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px}
-    #login-overlay input.f-i{width:100%;padding:13px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:12px;color:#fff;font-size:14px;outline:none;font-family:inherit;transition:all .2s}
-    #login-overlay input.f-i:focus{border-color:rgba(34,211,238,.6);background:rgba(34,211,238,.05);box-shadow:0 0 0 3px rgba(34,211,238,.1)}
-    #login-overlay input.f-i::placeholder{color:rgba(255,255,255,.3)}
-    #login-overlay #login-btn{width:100%;padding:14px;margin-top:22px;background:linear-gradient(90deg,#06b6d4,#10b981,#22d3ee);background-size:200% 100%;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.02em;box-shadow:0 12px 32px -8px rgba(16,185,129,.55),0 0 0 1px rgba(255,255,255,.05) inset;animation:gradientShift 5s ease infinite;font-family:inherit}
-    #login-overlay #login-btn:hover{transform:translateY(-1px);box-shadow:0 16px 36px -8px rgba(168,85,247,.8),0 0 0 1px rgba(255,255,255,.1) inset}
+    @keyframes v3MGlow {0%,100%{filter:drop-shadow(0 0 14px rgba(34,211,238,.6)) drop-shadow(0 0 28px rgba(168,85,247,.3))}50%{filter:drop-shadow(0 0 22px rgba(34,211,238,.85)) drop-shadow(0 0 44px rgba(236,72,153,.45))}}
+    @keyframes v3OrbitFwd {0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
+    @keyframes v3OrbitRev {0%{transform:translate(-50%,-50%) rotate(360deg)}100%{transform:translate(-50%,-50%) rotate(0deg)}}
+    @keyframes v3PulseRing {0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.45}50%{transform:translate(-50%,-50%) scale(1.04);opacity:.85}}
+    @keyframes v3NodePulse {0%,100%{box-shadow:0 8px 24px -6px rgba(0,0,0,.6),0 0 0 0 rgba(34,211,238,0)}50%{box-shadow:0 8px 24px -6px rgba(0,0,0,.6),0 0 0 6px rgba(34,211,238,.12)}}
+    @keyframes v3GridShift {0%{background-position:0 0}100%{background-position:64px 64px}}
+    @keyframes v3StarPulse {0%,100%{opacity:.25}50%{opacity:.95}}
+    @keyframes v3Shimmer {0%{background-position:-200% 50%}100%{background-position:200% 50%}}
+    @keyframes v3ScanLine {0%{transform:translateY(-110%)}100%{transform:translateY(110%)}}
+    @keyframes v3GradShift {0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    @keyframes v3LineFlow {0%{stroke-dashoffset:120}100%{stroke-dashoffset:0}}
+
+    /* Blueprint grid background animado */
+    #login-overlay::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(34,211,238,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.04) 1px,transparent 1px);background-size:64px 64px;animation:v3GridShift 22s linear infinite;pointer-events:none;z-index:1}
+    #login-overlay::after{content:"";position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at center,transparent 0%,rgba(7,11,31,.6) 100%);pointer-events:none;z-index:1}
+
+    /* Stars layer */
+    #login-overlay .v3-stars{position:fixed;inset:0;pointer-events:none;z-index:1}
+    #login-overlay .v3-stars span{position:absolute;background:#fff;border-radius:50%;animation:v3StarPulse 4s ease-in-out infinite}
+
+    /* Wrap principal */
+    #login-overlay .v3-wrap{max-width:680px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:22px;min-height:calc(100vh - 40px);justify-content:center;position:relative;z-index:5}
+
+    /* Badge superior */
+    #login-overlay .v3-badge{display:inline-flex;align-items:center;gap:10px;padding:7px 18px;border-radius:999px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.28);color:#67e8f9;font-size:11px;letter-spacing:.24em;text-transform:uppercase;font-weight:700;backdrop-filter:blur(12px)}
+    #login-overlay .v3-badge .dot{width:7px;height:7px;border-radius:50%;background:#22d3ee;box-shadow:0 0 14px #22d3ee;animation:v3StarPulse 1.6s ease-in-out infinite}
+
+    /* HUD circular */
+    #login-overlay .v3-hud{position:relative;width:380px;height:380px;margin:0 auto;flex-shrink:0}
+    @media(max-width:480px){#login-overlay .v3-hud{width:320px;height:320px}}
+    #login-overlay .v3-hud .v3-ring{position:absolute;top:50%;left:50%;border-radius:50%;pointer-events:none}
+    #login-overlay .v3-hud .v3-ring.r1{width:100%;height:100%;border:1px solid rgba(34,211,238,.22);animation:v3PulseRing 4s ease-in-out infinite}
+    #login-overlay .v3-hud .v3-ring.r2{width:78%;height:78%;border:1px dashed rgba(34,211,238,.18);animation:v3OrbitFwd 32s linear infinite}
+    #login-overlay .v3-hud .v3-ring.r3{width:54%;height:54%;border:1px dashed rgba(168,85,247,.20);animation:v3OrbitRev 48s linear infinite}
+    #login-overlay .v3-hud .v3-ring.r4{width:124%;height:124%;border:1px dashed rgba(168,85,247,.10);animation:v3OrbitFwd 72s linear infinite}
+
+    /* SVG líneas centro→nodos */
+    #login-overlay .v3-hud svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+    #login-overlay .v3-hud svg.lines line{stroke:rgba(34,211,238,.32);stroke-width:1;stroke-dasharray:5 5;animation:v3LineFlow 18s linear infinite}
+
+    /* Centro: logo M */
+    #login-overlay .v3-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;display:flex;align-items:center;justify-content:center;animation:v3MGlow 3s ease-in-out infinite;z-index:3}
+    #login-overlay .v3-center::before{content:"";position:absolute;inset:-12px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.15) 0%,transparent 70%);z-index:-1}
+
+    /* 6 nodos orbitales */
+    #login-overlay .v3-node{position:absolute;width:62px;height:62px;display:flex;align-items:center;justify-content:center;border-radius:18px;backdrop-filter:blur(10px);transition:transform .35s cubic-bezier(.4,2,.5,1),filter .25s;cursor:default;font-size:24px;animation:v3NodePulse 3s ease-in-out infinite;z-index:4}
+    @media(max-width:480px){#login-overlay .v3-node{width:52px;height:52px;font-size:21px;border-radius:15px}}
+    #login-overlay .v3-node::after{content:attr(data-label);position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9.5px;font-weight:700;letter-spacing:.14em;color:#cbd5e1;opacity:0;transition:opacity .25s;pointer-events:none;text-transform:uppercase;background:rgba(7,11,31,.85);padding:3px 8px;border-radius:6px;border:1px solid rgba(34,211,238,.2)}
+    #login-overlay .v3-node:hover{transform:scale(1.18);filter:brightness(1.25)}
+    #login-overlay .v3-node:hover::after{opacity:1}
+
+    /* Posición de los 6 nodos en círculo (radio ~158 desde centro 190,190) */
+    /* 0° → contrato (E), 60° SE → obra, 120° NE → kpis, 180° NW → inventario, 240° SW → comunicaciones, 300° W → fotos */
+    #login-overlay .v3-node.n1{top:159px;right:-12px;background:linear-gradient(135deg,#6366f1,#22d3ee)}
+    #login-overlay .v3-node.n2{top:30px;right:39px;background:linear-gradient(135deg,#22c55e,#0ea5e9)}
+    #login-overlay .v3-node.n3{top:30px;left:39px;background:linear-gradient(135deg,#3b82f6,#22d3ee)}
+    #login-overlay .v3-node.n4{top:159px;left:-12px;background:linear-gradient(135deg,#10b981,#22d3ee)}
+    #login-overlay .v3-node.n5{bottom:30px;left:39px;background:linear-gradient(135deg,#a855f7,#ef4444)}
+    #login-overlay .v3-node.n6{bottom:30px;right:39px;background:linear-gradient(135deg,#f59e0b,#ef4444)}
+    @media(max-width:480px){
+      #login-overlay .v3-node.n1{top:134px;right:-8px}
+      #login-overlay .v3-node.n2{top:24px;right:34px}
+      #login-overlay .v3-node.n3{top:24px;left:34px}
+      #login-overlay .v3-node.n4{top:134px;left:-8px}
+      #login-overlay .v3-node.n5{bottom:24px;left:34px}
+      #login-overlay .v3-node.n6{bottom:24px;right:34px}
+    }
+
+    /* Title block */
+    #login-overlay .v3-title{text-align:center;max-width:540px}
+    #login-overlay .v3-title h1{font-family:'Space Grotesk','Inter',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:-.8px;margin:0 0 8px;background:linear-gradient(120deg,#fff 0%,#a5f3fc 45%,#c4b5fd 100%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:v3GradShift 8s ease-in-out infinite}
+    #login-overlay .v3-title p{color:rgba(255,255,255,.58);font-size:13px;letter-spacing:.04em;line-height:1.6;margin:0}
+
+    /* Form card minimalista */
+    #login-overlay .v3-form{position:relative;background:linear-gradient(160deg,rgba(15,20,40,.88),rgba(10,14,30,.94));backdrop-filter:blur(24px);border:1px solid rgba(34,211,238,.22);border-radius:20px;padding:26px 24px 22px;width:100%;max-width:380px;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 60px -30px rgba(34,211,238,.35);overflow:hidden}
+    #login-overlay .v3-form::before{content:"";position:absolute;top:0;left:-50%;width:50%;height:2px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);animation:v3ScanLine 4s ease-in-out infinite;animation-name:none}
+    #login-overlay .v3-form::after{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(34,211,238,.6) 50%,transparent 100%)}
+    #login-overlay .v3-form-head{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)}
+    #login-overlay .v3-form-head .v3-mini-m{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid rgba(34,211,238,.4);display:flex;align-items:center;justify-content:center}
+    #login-overlay .v3-form-head h2{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff;margin:0;letter-spacing:-.3px}
+    #login-overlay .v3-form-head p{font-size:10px;color:#94a3b8;margin:2px 0 0;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+
+    #login-overlay label.f-l{display:block;color:rgba(255,255,255,.6);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin:14px 0 6px}
+    #login-overlay input.f-i{width:100%;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#fff;font-size:13.5px;outline:none;font-family:inherit;transition:all .2s}
+    #login-overlay input.f-i:focus{border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.05);box-shadow:0 0 0 3px rgba(34,211,238,.08)}
+    #login-overlay input.f-i::placeholder{color:rgba(255,255,255,.25)}
+    #login-overlay #login-btn{width:100%;padding:13px;margin-top:20px;background:linear-gradient(90deg,#06b6d4,#10b981,#22d3ee);background-size:200% 100%;color:#fff;border:none;border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 14px 36px -8px rgba(16,185,129,.55),0 0 0 1px rgba(255,255,255,.05) inset;animation:v3GradShift 5s ease infinite;font-family:inherit;transition:transform .15s}
+    #login-overlay #login-btn:hover{transform:translateY(-1px);box-shadow:0 18px 44px -8px rgba(168,85,247,.7),0 0 0 1px rgba(255,255,255,.1) inset}
     #login-overlay #login-btn:disabled{opacity:.6;cursor:not-allowed}
-    #login-overlay .lg-tagline{color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;text-align:center;margin-bottom:4px}
-    #login-overlay .lg-foot{text-align:center;color:rgba(255,255,255,.4);font-size:11px;margin-top:18px;line-height:1.5}
+    #login-overlay .v3-foot{text-align:center;color:rgba(255,255,255,.35);font-size:10.5px;margin-top:14px;line-height:1.5;letter-spacing:.04em}
+
+    /* Capacidades chips abajo (genéricos, sin números) */
+    #login-overlay .v3-caps{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:540px;margin:-2px auto 0}
+    #login-overlay .v3-caps span{font-size:10px;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.55);letter-spacing:.08em;font-weight:600;text-transform:uppercase}
   </style>
-  <div class="stars">
-    <span style="left:8%;top:12%;width:2px;height:2px;animation-delay:0s"></span>
-    <span style="left:18%;top:32%;width:1.5px;height:1.5px;animation-delay:.6s"></span>
-    <span style="left:82%;top:18%;width:2px;height:2px;animation-delay:1.2s"></span>
-    <span style="left:92%;top:42%;width:1px;height:1px;animation-delay:.3s"></span>
-    <span style="left:25%;top:62%;width:1.5px;height:1.5px;animation-delay:1.8s"></span>
-    <span style="left:75%;top:78%;width:2px;height:2px;animation-delay:.9s"></span>
-    <span style="left:50%;top:8%;width:1.5px;height:1.5px;animation-delay:1.5s"></span>
-    <span style="left:15%;top:75%;width:1.5px;height:1.5px;animation-delay:.4s"></span>
-    <span style="left:88%;top:65%;width:2px;height:2px;animation-delay:1.1s"></span>
-    <span style="left:38%;top:25%;width:1px;height:1px;animation-delay:1.7s"></span>
-    <span style="left:62%;top:88%;width:1.5px;height:1.5px;animation-delay:.2s"></span>
+
+  <!-- Stars layer -->
+  <div class="v3-stars">
+    <span style="left:6%;top:14%;width:2px;height:2px;animation-delay:0s"></span>
+    <span style="left:14%;top:38%;width:1.5px;height:1.5px;animation-delay:.7s"></span>
+    <span style="left:88%;top:22%;width:2px;height:2px;animation-delay:1.4s"></span>
+    <span style="left:94%;top:48%;width:1px;height:1px;animation-delay:.3s"></span>
+    <span style="left:22%;top:72%;width:1.5px;height:1.5px;animation-delay:2.1s"></span>
+    <span style="left:78%;top:82%;width:2px;height:2px;animation-delay:1s"></span>
+    <span style="left:48%;top:6%;width:1.5px;height:1.5px;animation-delay:1.6s"></span>
+    <span style="left:12%;top:85%;width:1.5px;height:1.5px;animation-delay:.4s"></span>
+    <span style="left:92%;top:72%;width:2px;height:2px;animation-delay:1.2s"></span>
+    <span style="left:36%;top:28%;width:1px;height:1px;animation-delay:1.9s"></span>
+    <span style="left:68%;top:32%;width:1.5px;height:1.5px;animation-delay:.6s"></span>
+    <span style="left:5%;top:60%;width:1px;height:1px;animation-delay:2.4s"></span>
   </div>
 
-  <!-- ===== HERO ===== -->
-  <div class="lg-hero">
-    <div class="lg-hero-logo-wrap">
-      <div class="orbit o1"></div>
-      <div class="orbit o2"></div>
-      <svg class="m-logo" viewBox="0 0 260 240" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="mStrokeHero" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#67e8f9"/>
-            <stop offset=".45" stop-color="#22d3ee"/>
-            <stop offset="1" stop-color="#10b981"/>
-          </linearGradient>
-          <radialGradient id="dotCoreHero" cx=".5" cy=".5" r=".5">
-            <stop offset="0" stop-color="#ecfeff"/>
-            <stop offset=".25" stop-color="#67e8f9"/>
-            <stop offset=".7" stop-color="#22d3ee"/>
-            <stop offset="1" stop-color="#0891b2" stop-opacity=".3"/>
-          </radialGradient>
-          <radialGradient id="dotGlowHero" cx=".5" cy=".5" r=".5">
-            <stop offset="0" stop-color="#22d3ee" stop-opacity=".75"/>
-            <stop offset=".4" stop-color="#22d3ee" stop-opacity=".25"/>
-            <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
-          </radialGradient>
-          <filter id="mGlowHero" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2.5" result="blur1"/>
-            <feMerge><feMergeNode in="blur1"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        <g stroke="url(#mStrokeHero)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#mGlowHero)">
-          <line x1="45" y1="210" x2="45" y2="30"/>
-          <line x1="45" y1="30" x2="130" y2="135"/>
-          <line x1="130" y1="135" x2="215" y2="30"/>
-          <line x1="215" y1="30" x2="215" y2="210"/>
-        </g>
-        <g fill="url(#dotGlowHero)">
-          <circle cx="45" cy="30" r="22"/>
-          <circle cx="215" cy="30" r="22"/>
-          <circle cx="45" cy="210" r="18"/>
-          <circle cx="215" cy="210" r="18"/>
-          <circle cx="130" cy="135" r="20"/>
-        </g>
-        <g stroke="#ecfeff" stroke-width="1.5">
-          <circle cx="45" cy="30" r="8" fill="url(#dotCoreHero)"/>
-          <circle cx="215" cy="30" r="8" fill="url(#dotCoreHero)"/>
-          <circle cx="45" cy="210" r="7" fill="url(#dotCoreHero)"/>
-          <circle cx="215" cy="210" r="7" fill="url(#dotCoreHero)"/>
-          <circle cx="130" cy="135" r="8" fill="url(#dotCoreHero)"/>
+  <div class="v3-wrap">
+
+    <!-- Badge -->
+    <div class="v3-badge">
+      <span class="dot"></span>
+      <span>Cockpit Contractual</span>
+    </div>
+
+    <!-- HUD circular: anillos + logo M centrado + 6 nodos orbitales -->
+    <div class="v3-hud">
+      <div class="v3-ring r4"></div>
+      <div class="v3-ring r1"></div>
+      <div class="v3-ring r2"></div>
+      <div class="v3-ring r3"></div>
+
+      <svg class="lines" viewBox="0 0 380 380" preserveAspectRatio="xMidYMid meet">
+        <g>
+          <line x1="190" y1="190" x2="350" y2="190"/>
+          <line x1="190" y1="190" x2="270" y2="51"/>
+          <line x1="190" y1="190" x2="110" y2="51"/>
+          <line x1="190" y1="190" x2="30" y2="190"/>
+          <line x1="190" y1="190" x2="110" y2="329"/>
+          <line x1="190" y1="190" x2="270" y2="329"/>
         </g>
       </svg>
-    </div>
-    <div class="lg-hero-badge">CONSORCIO INFRARED COMUNEROS · CONTRATO 023/2025</div>
-    <h1 class="lg-hero-title">Cockpit Gerencial · Reposición de Redes</h1>
-    <p class="lg-hero-sub">Earned Value Management en vivo · 93 actividades · multi-corte semanal · curva S calibrada con AVANCE DIARIO · inventario valorizado por facturas DIAN · 3 995 fotos georreferenciadas</p>
-  </div>
 
-  <!-- ===== STATS row ===== -->
-  <div class="lg-stats">
-    <div class="lg-stat"><div class="v">$9 922 M</div><div class="l">Valor del Contrato</div></div>
-    <div class="lg-stat"><div class="v">22,3%</div><div class="l">Avance al último corte</div></div>
-    <div class="lg-stat"><div class="v">93</div><div class="l">Actividades · 5 capítulos</div></div>
-    <div class="lg-stat"><div class="v">57</div><div class="l">Semanas de control</div></div>
-  </div>
-
-  <!-- ===== 6 módulos del sistema ===== -->
-  <div class="lg-mods">
-    <!-- Contrato -->
-    <div class="lg-mod" style="--mod-color:#6366f1;--mod-shadow:rgba(99,102,241,.3)">
-      <div class="lg-mod-head">
-        <div class="lg-mod-ico" style="background:linear-gradient(135deg,#6366f1,#22d3ee)">📑</div>
-        <h4>Información del Contrato</h4>
-      </div>
-      <p class="s">Identificación contractual · SECOP II · MGA · balances vigentes con modificaciones · NPs.</p>
-      <div class="lg-mod-stats">
-        <div class="lg-mod-stat"><div class="v">023/25</div><div class="l">Contrato</div></div>
-        <div class="lg-mod-stat"><div class="v">V7</div><div class="l">Balance</div></div>
-        <div class="lg-mod-stat"><div class="v">29</div><div class="l">NPs</div></div>
-      </div>
-      <div class="lg-mod-chips">
-        <span style="background:rgba(99,102,241,.14);color:#a5b4fc;border:1px solid rgba(99,102,241,.3)">SECOP II</span>
-        <span style="background:rgba(99,102,241,.14);color:#a5b4fc;border:1px solid rgba(99,102,241,.3)">MGA</span>
-        <span style="background:rgba(99,102,241,.14);color:#a5b4fc;border:1px solid rgba(99,102,241,.3)">APUs</span>
-      </div>
-    </div>
-
-    <!-- Ejecución de Obra -->
-    <div class="lg-mod" style="--mod-color:#22c55e;--mod-shadow:rgba(34,197,94,.3)">
-      <div class="lg-mod-head">
-        <div class="lg-mod-ico" style="background:linear-gradient(135deg,#22c55e,#0ea5e9)">🏗️</div>
-        <h4>Ejecución de Obra</h4>
-      </div>
-      <p class="s">EVM en vivo desde XLSX maestro · capítulos · responsables · curva S semanal con cortes dominicales.</p>
-      <div class="lg-mod-stats">
-        <div class="lg-mod-stat"><div class="v">EVM</div><div class="l">Control</div></div>
-        <div class="lg-mod-stat"><div class="v">SPI</div><div class="l">KPI</div></div>
-        <div class="lg-mod-stat"><div class="v">28</div><div class="l">Sem corte</div></div>
-      </div>
-      <div class="lg-mod-chips">
-        <span style="background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.3)">Avance diario</span>
-        <span style="background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.3)">Multi-corte</span>
-        <span style="background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.3)">Zoom Curva S</span>
-      </div>
-    </div>
-
-    <!-- Indicadores -->
-    <div class="lg-mod" style="--mod-color:#22d3ee;--mod-shadow:rgba(34,211,238,.3)">
-      <div class="lg-mod-head">
-        <div class="lg-mod-ico" style="background:linear-gradient(135deg,#3b82f6,#22d3ee)">📊</div>
-        <h4>Indicadores Contractuales</h4>
-      </div>
-      <p class="s">Avance económico multi-corte · 93 actividades · Earned Value · hitos · proyecciones financieras.</p>
-      <div class="lg-mod-stats">
-        <div class="lg-mod-stat"><div class="v">5</div><div class="l">Cortes</div></div>
-        <div class="lg-mod-stat"><div class="v">CPI</div><div class="l">Costo</div></div>
-        <div class="lg-mod-stat"><div class="v">EAC</div><div class="l">Proy.</div></div>
-      </div>
-      <div class="lg-mod-chips">
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.3)">Pareto 80-20</span>
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.3)">SPI / CPI</span>
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.3)">Hitos</span>
-      </div>
-    </div>
-
-    <!-- Inventario -->
-    <div class="lg-mod" style="--mod-color:#ec4899;--mod-shadow:rgba(236,72,153,.3)">
-      <div class="lg-mod-head">
-        <div class="lg-mod-ico" style="background:linear-gradient(135deg,#10b981,#22d3ee)">📦</div>
-        <h4>Inventario Valorizado</h4>
-      </div>
-      <p class="s">225 ítems únicos · stock consolidado · valorizado por facturas DIAN · F-ALM-04 cruzado.</p>
-      <div class="lg-mod-stats">
-        <div class="lg-mod-stat"><div class="v">225</div><div class="l">Ítems</div></div>
-        <div class="lg-mod-stat"><div class="v">$360M</div><div class="l">Valor</div></div>
-        <div class="lg-mod-stat"><div class="v">132</div><div class="l">Restock</div></div>
-      </div>
-      <div class="lg-mod-chips">
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.3)">DIAN</span>
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.3)">F-ALM-04</span>
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.3)">Lead time</span>
-      </div>
-    </div>
-
-    <!-- Comunicaciones -->
-    <div class="lg-mod" style="--mod-color:#a855f7;--mod-shadow:rgba(168,85,247,.3)">
-      <div class="lg-mod-head">
-        <div class="lg-mod-ico" style="background:linear-gradient(135deg,#a855f7,#ef4444)">📨</div>
-        <h4>Comunicaciones</h4>
-      </div>
-      <p class="s">147 oficios obra + interventoría · OCR automático · búsqueda por palabra clave · anexos Drive.</p>
-      <div class="lg-mod-stats">
-        <div class="lg-mod-stat"><div class="v">147</div><div class="l">Total</div></div>
-        <div class="lg-mod-stat"><div class="v">100</div><div class="l">Enviados</div></div>
-        <div class="lg-mod-stat"><div class="v">47</div><div class="l">Recibidos</div></div>
-      </div>
-      <div class="lg-mod-chips">
-        <span style="background:rgba(168,85,247,.14);color:#d8b4fe;border:1px solid rgba(168,85,247,.3)">OCR auto</span>
-        <span style="background:rgba(168,85,247,.14);color:#d8b4fe;border:1px solid rgba(168,85,247,.3)">Filtros año/mes</span>
-        <span style="background:rgba(168,85,247,.14);color:#d8b4fe;border:1px solid rgba(168,85,247,.3)">Drive sync</span>
-      </div>
-    </div>
-
-    <!-- Fotos -->
-    <div class="lg-mod" style="--mod-color:#f59e0b;--mod-shadow:rgba(245,158,11,.3)">
-      <div class="lg-mod-head">
-        <div class="lg-mod-ico" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">📷</div>
-        <h4>Registro Fotográfico</h4>
-      </div>
-      <p class="s">3 995 fotos · organizadas por años / meses / semanas · vista previa y zoom directo desde Drive.</p>
-      <div class="lg-mod-stats">
-        <div class="lg-mod-stat"><div class="v">3 995</div><div class="l">Fotos</div></div>
-        <div class="lg-mod-stat"><div class="v">2</div><div class="l">Años</div></div>
-        <div class="lg-mod-stat"><div class="v">28</div><div class="l">Semanas</div></div>
-      </div>
-      <div class="lg-mod-chips">
-        <span style="background:rgba(245,158,11,.14);color:#fcd34d;border:1px solid rgba(245,158,11,.3)">Lightbox</span>
-        <span style="background:rgba(245,158,11,.14);color:#fcd34d;border:1px solid rgba(245,158,11,.3)">Drive thumb</span>
-        <span style="background:rgba(245,158,11,.14);color:#fcd34d;border:1px solid rgba(245,158,11,.3)">Mobile OK</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== FORM ===== -->
-  <div class="lg-form-wrap">
-    <div class="lg-card">
-      <div class="m-mini">
-        <svg width="42" height="40" viewBox="0 0 260 240">
-          <g stroke="#22d3ee" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Centro: logo M -->
+      <div class="v3-center">
+        <svg viewBox="0 0 260 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="v3MStroke" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#67e8f9"/>
+              <stop offset=".5" stop-color="#22d3ee"/>
+              <stop offset="1" stop-color="#10b981"/>
+            </linearGradient>
+            <radialGradient id="v3DotCore" cx=".5" cy=".5" r=".5">
+              <stop offset="0" stop-color="#ecfeff"/>
+              <stop offset=".3" stop-color="#67e8f9"/>
+              <stop offset="1" stop-color="#0891b2" stop-opacity=".4"/>
+            </radialGradient>
+          </defs>
+          <g stroke="url(#v3MStroke)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <line x1="45" y1="210" x2="45" y2="30"/>
             <line x1="45" y1="30" x2="130" y2="135"/>
             <line x1="130" y1="135" x2="215" y2="30"/>
             <line x1="215" y1="30" x2="215" y2="210"/>
           </g>
-          <g fill="#67e8f9">
-            <circle cx="45" cy="30" r="11"/>
-            <circle cx="215" cy="30" r="11"/>
-            <circle cx="130" cy="135" r="10"/>
+          <g stroke="#ecfeff" stroke-width="1.5">
+            <circle cx="45" cy="30" r="9" fill="url(#v3DotCore)"/>
+            <circle cx="215" cy="30" r="9" fill="url(#v3DotCore)"/>
+            <circle cx="130" cy="135" r="9" fill="url(#v3DotCore)"/>
           </g>
         </svg>
       </div>
-      <div class="lg-tagline">Acceso al Cockpit</div>
-      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#fff;text-align:center;margin:8px 0 22px;letter-spacing:-.4px">Identifícate para entrar</h2>
-      <form id="login-form" onsubmit="event.preventDefault();handleLogin();">
-        <label class="f-l" for="login-nombre">NOMBRE</label>
-        <input type="text" id="login-nombre" class="f-i" required maxlength="100" autocomplete="given-name" placeholder="Tu nombre">
-        <label class="f-l" for="login-apellidos">APELLIDOS</label>
-        <input type="text" id="login-apellidos" class="f-i" required maxlength="100" autocomplete="family-name" placeholder="Tus apellidos">
-        <label class="f-l" for="login-correo">CORREO ELECTRÓNICO</label>
-        <input type="email" id="login-correo" class="f-i" required maxlength="100" autocomplete="email" placeholder="nombre@dominio.com">
-        <div id="login-error" style="display:none;color:#fca5a5;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30);border-radius:10px;padding:9px 13px;font-size:12px;margin-top:14px"></div>
-        <button id="login-btn" type="submit">Entrar al Cockpit &nbsp;→</button>
-      </form>
-      <p class="lg-foot">Tu registro queda almacenado en bitácora<br>para trazabilidad institucional de visitas.</p>
-    </div>
-  </div>
 
-  <!-- (Layout 3-columnas original conservado oculto por compatibilidad) -->
-  <div class="lg-grid" style="display:none">
-    <!-- Panel izquierdo: Indicadores Contractuales -->
-    <div class="lg-side">
-      <div class="ico" style="background:linear-gradient(135deg,#3b82f6,#22d3ee)">📊</div>
-      <h4>Indicadores Contractuales</h4>
-      <p class="s">Avance económico multi-corte, Earned Value Management, hitos contractuales y proyecciones financieras.</p>
-      <div class="lg-spark">
-        <svg viewBox="0 0 200 60" preserveAspectRatio="none" style="width:100%;height:100%">
-          <defs><linearGradient id="lgGr1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".4"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></linearGradient></defs>
-          <path d="M0,50 L20,46 L40,42 L60,38 L80,32 L100,30 L120,24 L140,18 L160,15 L180,12 L200,8 L200,60 L0,60 Z" fill="url(#lgGr1)"/>
-          <path d="M0,50 L20,46 L40,42 L60,38 L80,32 L100,30 L120,24 L140,18 L160,15 L180,12 L200,8" stroke="#22d3ee" stroke-width="2" fill="none"/>
-        </svg>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07)">
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">EVM en vivo</span>
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Multi-corte</span>
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Curva S</span>
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Pareto 80-20</span>
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">SPI / CPI</span>
-        <span style="background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Proyección EAC</span>
-      </div>
+      <!-- 6 nodos orbitales (módulos del sistema) -->
+      <div class="v3-node n1" data-label="Contrato">📑</div>
+      <div class="v3-node n2" data-label="Obra">🏗️</div>
+      <div class="v3-node n3" data-label="Indicadores">📊</div>
+      <div class="v3-node n4" data-label="Inventario">📦</div>
+      <div class="v3-node n5" data-label="Comunicaciones">📨</div>
+      <div class="v3-node n6" data-label="Fotografías">📷</div>
     </div>
 
-    <!-- Centro: Logo M + Form -->
-    <div class="lg-center">
-      <svg class="m-logo" viewBox="0 0 260 240" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="mStroke" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#67e8f9"/>
-            <stop offset=".45" stop-color="#22d3ee"/>
-            <stop offset="1" stop-color="#10b981"/>
-          </linearGradient>
-          <radialGradient id="dotCore" cx=".5" cy=".5" r=".5">
-            <stop offset="0" stop-color="#ecfeff"/>
-            <stop offset=".25" stop-color="#67e8f9"/>
-            <stop offset=".7" stop-color="#22d3ee"/>
-            <stop offset="1" stop-color="#0891b2" stop-opacity=".3"/>
-          </radialGradient>
-          <radialGradient id="dotGlow" cx=".5" cy=".5" r=".5">
-            <stop offset="0" stop-color="#22d3ee" stop-opacity=".75"/>
-            <stop offset=".4" stop-color="#22d3ee" stop-opacity=".25"/>
-            <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
-          </radialGradient>
-          <filter id="mGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2.5" result="blur1"/>
-            <feMerge><feMergeNode in="blur1"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        <!-- Trazado principal de la M: 4 líneas que forman 2 pies verticales + 2 diagonales del valle -->
-        <g stroke="url(#mStroke)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#mGlow)">
-          <line x1="45" y1="210" x2="45" y2="30"/>
-          <line x1="45" y1="30" x2="130" y2="135"/>
-          <line x1="130" y1="135" x2="215" y2="30"/>
-          <line x1="215" y1="30" x2="215" y2="210"/>
-        </g>
-        <!-- Halos de glow detrás de cada vértice principal -->
-        <g fill="url(#dotGlow)">
-          <circle cx="45" cy="30" r="22"/>
-          <circle cx="215" cy="30" r="22"/>
-          <circle cx="45" cy="210" r="18"/>
-          <circle cx="215" cy="210" r="18"/>
-          <circle cx="130" cy="135" r="20"/>
-        </g>
-        <!-- Núcleos principales (5 vértices) -->
-        <g stroke="#ecfeff" stroke-width="1.5">
-          <circle cx="45" cy="30" r="8" fill="url(#dotCore)"/>
-          <circle cx="215" cy="30" r="8" fill="url(#dotCore)"/>
-          <circle cx="45" cy="210" r="7" fill="url(#dotCore)"/>
-          <circle cx="215" cy="210" r="7" fill="url(#dotCore)"/>
-          <circle cx="130" cy="135" r="8" fill="url(#dotCore)"/>
-        </g>
-        <!-- Puntos secundarios en los recorridos (estilo blueprint, como en la imagen) -->
-        <g fill="#67e8f9" stroke="#ecfeff" stroke-width=".8">
-          <!-- Punto medio del pie izquierdo -->
-          <circle cx="45" cy="120" r="4"/>
-          <!-- Punto medio del pie derecho -->
-          <circle cx="215" cy="120" r="4"/>
-          <!-- Punto medio diagonal izquierda -->
-          <circle cx="87" cy="82" r="4"/>
-          <!-- Punto medio diagonal derecha -->
-          <circle cx="173" cy="82" r="4"/>
-        </g>
-      </svg>
-      <div class="lg-card">
-        <div class="m-mini">
-          <svg width="42" height="40" viewBox="0 0 260 240">
-            <g stroke="#22d3ee" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Title -->
+    <div class="v3-title">
+      <h1>Sistema integral de control de obra</h1>
+      <p>Plataforma gerencial para seguimiento contractual en tiempo real · acceso restringido a personal autorizado</p>
+    </div>
+
+    <!-- Capacidades genéricas (sin números reales) -->
+    <div class="v3-caps">
+      <span>Earned Value Management</span>
+      <span>Multi-corte semanal</span>
+      <span>Curva S calibrada</span>
+      <span>OCR de oficios</span>
+      <span>Inventario valorizado</span>
+      <span>Registro fotográfico</span>
+    </div>
+
+    <!-- Form -->
+    <div class="v3-form">
+      <div class="v3-form-head">
+        <div class="v3-mini-m">
+          <svg width="20" height="18" viewBox="0 0 260 240">
+            <g stroke="#22d3ee" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <line x1="45" y1="210" x2="45" y2="30"/>
               <line x1="45" y1="30" x2="130" y2="135"/>
               <line x1="130" y1="135" x2="215" y2="30"/>
               <line x1="215" y1="30" x2="215" y2="210"/>
             </g>
-            <g fill="#67e8f9">
-              <circle cx="45" cy="30" r="11"/>
-              <circle cx="215" cy="30" r="11"/>
-              <circle cx="130" cy="135" r="10"/>
-            </g>
           </svg>
         </div>
-        <div class="lg-tagline">Consorcio Infrared Comuneros 2025</div>
-        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#fff;text-align:center;margin:8px 0 24px;letter-spacing:-.4px">Bienvenido al Cockpit</h2>
-        <form id="login-form" onsubmit="event.preventDefault();handleLogin();">
-          <label class="f-l" for="login-nombre">NOMBRE</label>
-          <input type="text" id="login-nombre" class="f-i" required maxlength="100" autocomplete="given-name" placeholder="Tu nombre">
-          <label class="f-l" for="login-apellidos">APELLIDOS</label>
-          <input type="text" id="login-apellidos" class="f-i" required maxlength="100" autocomplete="family-name" placeholder="Tus apellidos">
-          <label class="f-l" for="login-correo">CORREO ELECTRÓNICO</label>
-          <input type="email" id="login-correo" class="f-i" required maxlength="100" autocomplete="email" placeholder="nombre@dominio.com">
-          <div id="login-error" style="display:none;color:#fca5a5;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30);border-radius:10px;padding:9px 13px;font-size:12px;margin-top:14px"></div>
-          <button id="login-btn" type="submit">Sign In &nbsp;→</button>
-        </form>
-        <p class="lg-foot">Tu registro queda almacenado en bitácora<br>para trazabilidad institucional de visitas.</p>
+        <div>
+          <h2>Identifícate</h2>
+          <p>Acceso autorizado</p>
+        </div>
       </div>
+      <form id="login-form" onsubmit="event.preventDefault();handleLogin();">
+        <label class="f-l" for="login-nombre">Nombre</label>
+        <input type="text" id="login-nombre" class="f-i" required maxlength="100" autocomplete="given-name" placeholder="Tu nombre">
+        <label class="f-l" for="login-apellidos">Apellidos</label>
+        <input type="text" id="login-apellidos" class="f-i" required maxlength="100" autocomplete="family-name" placeholder="Tus apellidos">
+        <label class="f-l" for="login-correo">Correo electrónico</label>
+        <input type="email" id="login-correo" class="f-i" required maxlength="100" autocomplete="email" placeholder="nombre@dominio.com">
+        <div id="login-error" style="display:none;color:#fca5a5;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30);border-radius:8px;padding:8px 12px;font-size:11.5px;margin-top:12px"></div>
+        <button id="login-btn" type="submit">Entrar al Cockpit →</button>
+      </form>
+      <p class="v3-foot">Tu registro queda almacenado en bitácora institucional<br>para trazabilidad de visitas al sistema.</p>
     </div>
 
-    <!-- Panel derecho: Inventario Valorizado -->
-    <div class="lg-side">
-      <div class="ico" style="background:linear-gradient(135deg,#10b981,#22d3ee)">📦</div>
-      <h4>Inventario Valorizado</h4>
-      <p class="s">Stock consolidado del almacén, valoración por facturas DIAN, F-ALM-04 y comparación cruzada entre fuentes de inventario.</p>
-      <div class="lg-spark">
-        <svg viewBox="0 0 200 60" preserveAspectRatio="none" style="width:100%;height:100%">
-          <defs><linearGradient id="lgGr2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#10b981" stop-opacity=".4"/><stop offset="1" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
-          <path d="M0,40 L20,38 L40,30 L60,32 L80,22 L100,20 L120,14 L140,16 L160,10 L180,8 L200,6 L200,60 L0,60 Z" fill="url(#lgGr2)"/>
-          <path d="M0,40 L20,38 L40,30 L60,32 L80,22 L100,20 L120,14 L140,16 L160,10 L180,8 L200,6" stroke="#10b981" stroke-width="2" fill="none"/>
-        </svg>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07)">
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Facturas DIAN</span>
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">F-ALM-04 sync</span>
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Stock dinámico</span>
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Alertas auto</span>
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Requisiciones</span>
-        <span style="background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.25);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em">Lead time real</span>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -3087,347 +2875,4 @@ function obraInicializarFiltros(data){
   selResp.innerHTML = resps.map(r => '<option value="'+escapeHTML(r)+'">'+escapeHTML(r)+'</option>').join('');
   // Fecha de corte: default = hoy
   const today = new Date().toISOString().slice(0,10);
-  document.getElementById('obra-f-corte').value = today;
-}
-
-function obraExcelSerialToDate(s){
-  if (typeof s !== 'number' || s < 25000) return null;
-  return new Date(Math.round((s - 25569) * 86400 * 1000));
-}
-function obraToDate(v){
-  if (v instanceof Date) return v;
-  if (typeof v === 'number') return obraExcelSerialToDate(v);
-  if (typeof v === 'string'){ const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
-  return null;
-}
-function obraFmtFecha(v){
-  const d = obraToDate(v);
-  return d ? d.toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric'}) : '—';
-}
-function obraMoney(n){
-  // Escala colombiana: NUNCA usar "B" (en EN es billion=mil millones, en ES es millón de millones)
-  // Siempre en M (millones) para valores >= 1M
-  if (typeof n !== 'number' || isNaN(n)) return '—';
-  var abs = Math.abs(n);
-  if (abs >= 1e6) {
-    var m = n / 1e6;
-    var dec = abs >= 1e9 ? 0 : 1; // mil millones: enteros; millones: 1 decimal
-    return '$' + m.toLocaleString('es-CO', {maximumFractionDigits: dec, minimumFractionDigits: 0}) + ' M';
-  }
-  if (abs >= 1e3) return '$' + Math.round(n).toLocaleString('es-CO');
-  return '$' + Math.round(n).toLocaleString('es-CO');
-}
-
-function obraAplicarFiltros(){
-  if (!OBRA_DATA) return;
-  const fCap = document.getElementById('obra-f-cap').value;
-  const fResp = document.getElementById('obra-f-resp').value;
-  const fCorte = document.getElementById('obra-f-corte').value;
-  const topN = parseInt(document.getElementById('obra-f-topn').value, 10) || 20;
-  
-  const all = OBRA_DATA.actividades || [];
-  const filtradas = all.filter(a => {
-    if (fCap !== 'TODOS' && a.cap !== fCap) return false;
-    if (fResp !== 'TODOS' && a.resp !== fResp) return false;
-    return true;
-  });
-  
-  // Semana actual basada en fCorte y proyecto.inicio
-  const inicio = obraToDate(OBRA_DATA.proyecto.inicio);
-  const corte = fCorte ? new Date(fCorte) : new Date();
-  let semanaActual = 0;
-  if (inicio && corte > inicio){
-    const dias = Math.floor((corte - inicio) / 86400000);
-    semanaActual = Math.floor(dias / 7) + 1;
-  }
-  
-  // KPIs
-  const vrTotal = filtradas.reduce((s,a) => s + (a.vrTotal||0), 0);
-  const vrEjecActividades = filtradas.reduce((s,a) => s + (a.vrEjec||0), 0);
-  // Cuando filtros = TODOS/TODOS, usar el ejecutado global (AVANCE DIARIO!K108)
-  // para alinearnos con el Excel (22.68% vs sumatoria por actividad 22.53%)
-  const usarEjecGlobal = (fCap === 'TODOS' && fResp === 'TODOS' && typeof OBRA_DATA.ejecutadoGlobal === 'number' && OBRA_DATA.ejecutadoGlobal > 0);
-  const vrEjec = usarEjecGlobal ? OBRA_DATA.ejecutadoGlobal : vrEjecActividades;
-  const pctReal = vrTotal > 0 ? vrEjec / vrTotal : 0;
-
-  // % Programado PONDERADO por fechas reales de cada actividad filtrada
-  // (en vez de usar la curva global del proyecto, que no respeta el filtro)
-  function pctProgramadoActividad(a, corteDate){
-    // Si la actividad tiene fechas múltiples (S/T son strings con coma), usamos solo la primera
-    function primeraFecha(v){
-      if (v instanceof Date) return v;
-      if (typeof v === 'number') return obraExcelSerialToDate(v);
-      if (typeof v === 'string'){
-        const partes = v.split(',').map(s => s.trim()).filter(Boolean);
-        const d = new Date(partes[0]);
-        return isNaN(d.getTime()) ? null : d;
-      }
-      return null;
-    }
-    function ultimaFecha(v){
-      if (v instanceof Date) return v;
-      if (typeof v === 'number') return obraExcelSerialToDate(v);
-      if (typeof v === 'string'){
-        const partes = v.split(',').map(s => s.trim()).filter(Boolean);
-        const d = new Date(partes[partes.length-1]);
-        return isNaN(d.getTime()) ? null : d;
-      }
-      return null;
-    }
-    const ini = primeraFecha(a.fIni);
-    const fin = ultimaFecha(a.fFin);
-    if (!ini || !fin || isNaN(ini.getTime()) || isNaN(fin.getTime())) return 0;
-    if (corteDate <= ini) return 0;
-    if (corteDate >= fin) return 1;
-    return (corteDate - ini) / (fin - ini);
-  }
-
-  // Suma ponderada del valor programado por actividad filtrada
-  const vrProg = filtradas.reduce((s, a) => {
-    const pa = pctProgramadoActividad(a, corte);
-    return s + (a.vrTotal || 0) * pa;
-  }, 0);
-
-  // % Programado del subset filtrado (no del proyecto global)
-  const pctProg = vrTotal > 0 ? vrProg / vrTotal : 0;
-  const spi = vrProg > 0 ? vrEjec / vrProg : 0;
-
-  // Curva S: normalizar % programado si vinieron como valores absolutos del backend.
-  // (Bug detectado: la fila 115 de FLUJO DE CAJA_INTER son valores ABSOLUTOS, no %.
-  //  Los % reales sí vienen normalizados en cs.real.)
-  let cs = OBRA_DATA.curvaS || {programado:[], real:[], semanas:[], fechas:[]};
-  const _prog = cs.programado || [];
-  let _maxProg = 0;
-  for (let i = 0; i < _prog.length; i++) { if (_prog[i] > _maxProg) _maxProg = _prog[i]; }
-  if (_maxProg > 1.5 && _maxProg > 0) {
-    cs = {
-      semanas: cs.semanas || [],
-      fechas:  cs.fechas  || [],
-      real:    cs.real    || [],
-      programado: _prog.map(v => v / _maxProg)
-    };
-  }
-  
-  const completadas = filtradas.filter(a => (a.pctAcum||0) >= 0.999).length;
-  const enCurso = filtradas.filter(a => (a.pctAcum||0) > 0 && (a.pctAcum||0) < 0.999).length;
-  const pendientes = filtradas.filter(a => (a.pctAcum||0) <= 0).length;
-  const vrPendiente = vrTotal - vrEjec;
-  const pctCompletitud = filtradas.length > 0 ? completadas / filtradas.length : 0;
-  
-  document.getElementById('obra-filtros-info').textContent = filtradas.length + ' de ' + all.length + ' actividades · Semana ' + semanaActual + ' · ' + obraFmtFecha(OBRA_DATA.proyecto.inicio) + ' → ' + obraFmtFecha(OBRA_DATA.proyecto.fin);
-  
-  // === KPIs cards ===
-  const kpis = document.getElementById('obra-kpis');
-  const kpisHTML = [
-    {label:'VALOR TOTAL FILTRADO', value: obraMoney(vrTotal), color:'#22c55e'},
-    {label:'VALOR EJECUTADO', value: obraMoney(vrEjec), color:'#0ea5e9'},
-    {label:'VALOR PROGRAMADO S'+semanaActual, value: obraMoney(vrProg), color:'#f59e0b'},
-    {label:'% AVANCE REAL', value: (pctReal*100).toFixed(2)+'%', color:(pctReal>=pctProg?'#22c55e':'#ef4444')},
-    {label:'% AVANCE PROGRAMADO S'+semanaActual, value: (pctProg*100).toFixed(2)+'%', color:'#a855f7'},
-    {label:'SPI (DESVIACIÓN)', value: spi.toFixed(2)+'x', color:(spi>=0.95?'#22c55e':spi>=0.85?'#f59e0b':'#ef4444')}
-  ];
-  kpis.innerHTML = kpisHTML.map(k => '<div class="panel" style="background:rgba(20,26,55,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;border-left:4px solid '+k.color+'"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;line-height:1.3">'+escapeHTML(k.label)+'</div><div style="font-size:20px;font-weight:700;color:#fff;margin-top:6px;font-family:\'Space Grotesk\',sans-serif">'+escapeHTML(k.value)+'</div></div>').join('');
-  
-  // === Secciones ===
-  const sec = document.getElementById('obra-secciones');
-  sec.innerHTML = '';
-  
-  // KPIs Operativos
-  const opHTML = '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:6px">' + [
-    {label:'ACT. FILTRADAS', value: filtradas.length, color:'#94a3b8'},
-    {label:'COMPLETADAS (100%)', value: completadas, color:'#22c55e'},
-    {label:'EN CURSO', value: enCurso, color:'#0ea5e9'},
-    {label:'PENDIENTES', value: pendientes, color:'#f59e0b'},
-    {label:'VALOR PENDIENTE', value: obraMoney(vrPendiente), color:'#ef4444'},
-    {label:'% COMPLETITUD', value: (pctCompletitud*100).toFixed(1)+'%', color:'#a855f7'}
-  ].map(k => '<div class="panel" style="background:rgba(20,26,55,.5);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:12px;border-left:3px solid '+k.color+'"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">'+escapeHTML(k.label)+'</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px;font-family:\'Space Grotesk\',sans-serif">'+escapeHTML(String(k.value))+'</div></div>').join('') + '</div>';
-  sec.innerHTML += opHTML;
-  
-  // Avance por Capítulo
-  const porCap = {};
-  all.forEach(a => {
-    if (!a.cap) return;
-    if (fResp !== 'TODOS' && a.resp !== fResp) return;
-    if (!porCap[a.cap]) porCap[a.cap] = {vrTotal:0, vrEjec:0};
-    porCap[a.cap].vrTotal += a.vrTotal || 0;
-    porCap[a.cap].vrEjec += a.vrEjec || 0;
-  });
-  const capRows = Object.keys(porCap).sort().map(cap => {
-    const c = porCap[cap];
-    const p = c.vrTotal > 0 ? c.vrEjec/c.vrTotal : 0;
-    return {cap, vrTotal:c.vrTotal, vrEjec:c.vrEjec, pct:p};
-  });
-  let capHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #22c55e"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🧱 Avance por capítulo</h3><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Capítulo</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Total</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Ejecutado</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;min-width:140px">% Avance</th></tr></thead><tbody>';
-  capRows.forEach(r => {
-    const bar = Math.min(100, Math.max(0, r.pct*100));
-    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
-    capHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#e2e8f0;font-weight:600">'+escapeHTML(r.cap)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrEjec)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:48px;text-align:right;color:#fff">'+(r.pct*100).toFixed(1)+'%</span></div></td></tr>';
-  });
-  capHTML += '</tbody></table></div></div>';
-  sec.innerHTML += capHTML;
-  
-  // Avance por Responsable
-  const porResp = {};
-  all.forEach(a => {
-    if (!a.resp) return;
-    if (fCap !== 'TODOS' && a.cap !== fCap) return;
-    if (!porResp[a.resp]) porResp[a.resp] = {n:0, vrTotal:0, vrEjec:0};
-    porResp[a.resp].n++;
-    porResp[a.resp].vrTotal += a.vrTotal || 0;
-    porResp[a.resp].vrEjec += a.vrEjec || 0;
-  });
-  const respRows = Object.keys(porResp).sort().map(re => {
-    const r = porResp[re];
-    return {resp:re, n:r.n, vrTotal:r.vrTotal, vrEjec:r.vrEjec, pct: r.vrTotal>0?r.vrEjec/r.vrTotal:0};
-  });
-  let respHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">👥 Avance por responsable</h3><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Responsable</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Act</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Total</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Ejec</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;min-width:140px">% Avance</th></tr></thead><tbody>';
-  respRows.forEach(r => {
-    const bar = Math.min(100, Math.max(0, r.pct*100));
-    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
-    respHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#e2e8f0;font-weight:600">'+escapeHTML(r.resp)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right">'+r.n+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrEjec)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:48px;text-align:right;color:#fff">'+(r.pct*100).toFixed(1)+'%</span></div></td></tr>';
-  });
-  respHTML += '</tbody></table></div></div>';
-  sec.innerHTML += respHTML;
-  
-  // Top N actividades — SOLO capitulos 1-5 (excluye 0. ETAPA DE PRE-CONSTRUCCION y 6+ posteriores)
-  const topRows = filtradas
-    .filter(a => { var m = String(a.cap||'').match(/^\s*(\d+)/); return m && parseInt(m[1],10) >= 1 && parseInt(m[1],10) <= 5; })
-    .sort((a,b) => (b.vrTotal||0) - (a.vrTotal||0))
-    .slice(0, topN);
-  let topHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #f59e0b"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🏆 Top '+topN+' Actividades · mayor valor</h3><div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">#</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Capítulo</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Descripción</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Responsable</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Vr Total</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95);min-width:120px">% Avance</th></tr></thead><tbody>';
-  topRows.forEach((a, i) => {
-    const p = a.pctAcum || 0;
-    const bar = Math.min(100, Math.max(0, p*100));
-    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
-    topHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#94a3b8">'+(i+1)+'</td><td style="padding:6px 10px;color:#e2e8f0;font-size:11px">'+escapeHTML(a.cap)+'</td><td style="padding:6px 10px;color:#e2e8f0;max-width:300px">'+escapeHTML((a.desc||'').slice(0,80))+'</td><td style="padding:6px 10px;color:#e2e8f0;font-size:11px">'+escapeHTML(a.resp)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(a.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:5px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:42px;text-align:right;color:#fff;font-size:11px">'+(p*100).toFixed(1)+'%</span></div></td></tr>';
-  });
-  topHTML += '</tbody></table></div></div>';
-  sec.innerHTML += topHTML;
-  
-  // Curva S
-  if (cs.semanas && cs.semanas.length && typeof Chart !== 'undefined'){
-    const cId = 'curvaS_' + Date.now();
-    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #a855f7"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">📈 Curva S · % avance acumulado por semana</h3><div style="position:relative;height:360px"><canvas id="'+cId+'"></canvas></div></div>';
-    setTimeout(() => {
-      const ctx = document.getElementById(cId);
-      if (!ctx) return;
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: cs.semanas,
-          datasets: [
-            {label:'% Programado', data: cs.programado.map(p => p == null ? null : (p*100).toFixed(2)), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', tension:.3, borderWidth:2, pointRadius:2, spanGaps:false},
-            {label:'% Real', data: cs.real.map(p => p == null ? null : (p*100).toFixed(2)), borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.1)', tension:.3, borderWidth:2, pointRadius:2, spanGaps:false}
-          ]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { labels: { color:'#cbd5e1' } }, tooltip: { callbacks: { afterLabel: function(ctx){ return cs.fechas[ctx.dataIndex] || ''; } } } },
-          scales: {
-            x: { ticks: { color:'#94a3b8', maxRotation:60, minRotation:45, font:{size:9} }, grid:{color:'rgba(255,255,255,.04)'} },
-            y: { ticks: { color:'#94a3b8', callback: v => v+'%' }, grid:{color:'rgba(255,255,255,.04)'}, beginAtZero:true }
-          }
-        }
-      });
-    }, 100);
-
-    // Curva S — ZOOM (2 sem atras / 1 ultima con real / 6 sem adelante)
-    // Detectar el ultimo indice con cs.real no nulo
-    let idxUlt = -1;
-    for (let k = 0; k < cs.real.length; k++) if (cs.real[k] != null) idxUlt = k;
-    if (idxUlt >= 0) {
-      const desde = Math.max(0, idxUlt - 2);
-      const hasta = Math.min(cs.semanas.length, idxUlt + 7); // +7 = idx+6 inclusive
-      const labelsZ = cs.semanas.slice(desde, hasta);
-      const fechasZ = cs.fechas ? cs.fechas.slice(desde, hasta) : [];
-      const progZ = cs.programado.slice(desde, hasta).map(p => p == null ? null : (p*100).toFixed(2));
-      const realZ = cs.real.slice(desde, hasta).map(p => p == null ? null : (p*100).toFixed(2));
-      const idxUltRel = idxUlt - desde; // indice del recuadro en el rango del zoom
-
-      const cIdZ = 'curvaSzoom_' + Date.now();
-      sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #22d3ee;margin-top:14px"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🔍 Curva S · ZOOM (2 sem atras / ultima con avance / 6 sem adelante)</h3><div style="position:relative;height:340px"><canvas id="'+cIdZ+'"></canvas></div></div>';
-
-      setTimeout(() => {
-        const ctxZ = document.getElementById(cIdZ);
-        if (!ctxZ) return;
-        // Plugin custom para dibujar recuadro celeste sobre la ultima semana con real
-        const boxPlugin = {
-          id: 'boxHighlight',
-          afterDraw(chart) {
-            const ctx2 = chart.ctx;
-            const xs = chart.scales.x;
-            const ys = chart.scales.y;
-            if (!xs || !ys) return;
-            const xCenter = xs.getPixelForValue(idxUltRel);
-            const dx = labelsZ.length > 1 ? (xs.getPixelForValue(1) - xs.getPixelForValue(0)) * 0.55 : 40;
-            ctx2.save();
-            ctx2.strokeStyle = '#22d3ee';
-            ctx2.lineWidth = 3;
-            ctx2.lineJoin = 'round';
-            ctx2.strokeRect(xCenter - dx/2, ys.top + 6, dx, ys.bottom - ys.top - 12);
-            ctx2.restore();
-          }
-        };
-        new Chart(ctxZ, {
-          type: 'line',
-          data: {
-            labels: labelsZ,
-            datasets: [
-              {label:'% Programado', data: progZ, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', tension:.3, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#f59e0b', spanGaps:false, datalabels:{display:true}},
-              {label:'% Real', data: realZ, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.1)', tension:.3, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#22c55e', spanGaps:false, datalabels:{display:true}}
-            ]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-              legend: { labels: { color:'#cbd5e1' } },
-              tooltip: { callbacks: { afterLabel: function(ctx){ return fechasZ[ctx.dataIndex] || ''; } } }
-            },
-            scales: {
-              x: { ticks: { color:'#cbd5e1', maxRotation:30, minRotation:0, font:{size:11} }, grid:{color:'rgba(255,255,255,.04)'} },
-              y: { ticks: { color:'#cbd5e1', callback: v => v+'%' }, grid:{color:'rgba(255,255,255,.04)'}, beginAtZero:true, max:100 }
-            },
-            animation:{ onComplete: function(){
-              // Dibujar etiquetas con valor sobre cada punto
-              const ch = this;
-              const ctx2 = ch.ctx;
-              ctx2.save();
-              ctx2.fillStyle = '#cbd5e1';
-              ctx2.font = 'bold 10px sans-serif';
-              ctx2.textAlign = 'center';
-              ch.data.datasets.forEach((ds, di) => {
-                const meta = ch.getDatasetMeta(di);
-                meta.data.forEach((pt, pi) => {
-                  const v = ds.data[pi];
-                  if (v != null) ctx2.fillText(v + '%', pt.x, pt.y - 8);
-                });
-              });
-              ctx2.restore();
-            }}
-          },
-          plugins: [boxPlugin]
-        });
-      }, 150);
-    }
-  }
-
-  // Donut por responsable
-  if (respRows.length && typeof Chart !== 'undefined'){
-    const dId = 'donut_' + Date.now();
-    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🍩 Distribución por responsable (Vr Total)</h3><div style="position:relative;height:320px;max-width:500px;margin:0 auto"><canvas id="'+dId+'"></canvas></div></div>';
-    setTimeout(() => {
-      const ctx = document.getElementById(dId);
-      if (!ctx) return;
-      new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: respRows.map(r => r.resp), datasets: [{ data: respRows.map(r => r.vrTotal), backgroundColor: ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a855f7','#22d3ee','#ec4899','#8b5cf6'] }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position:'right', labels: { color:'#cbd5e1', font:{size:11} } } } }
-      });
-    }, 100);
-  }
-}
-
-</script>
-
-</body>
-</html>
+  document.getElementById('obra-f-corte').value = toda
