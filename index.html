@@ -2767,25 +2767,61 @@ function obraRender(rows){
     return '$'+Math.round(n).toLocaleString('es-CO');
   }
 
-  // ============ FILTROS (chips desde row 5 aprox) ============
-  // Buscar fila "Capítulo, Responsable, Fecha de Corte, Top N, Fecha Inicio, Fecha Fin"
+  // ============ FILTROS (chips de los 6 filtros conocidos, alineados por columna) ============
+  function excelSerialToDate(serial){
+    if (typeof serial !== 'number' || serial < 25000) return null;
+    return new Date(Math.round((serial - 25569) * 86400 * 1000));
+  }
+  function fmtFecha(v){
+    const d = (typeof v === 'number') ? excelSerialToDate(v) : (v ? new Date(v) : null);
+    if (!d || isNaN(d.getTime())) return String(v||'—');
+    return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'});
+  }
+  const FILTROS_KNOWN = [
+    {match: /^CAP[IÍ]TULO$/i,             label: 'Capítulo',          icon: '📚', color: '#0ea5e9'},
+    {match: /^RESPONSABLE$/i,              label: 'Responsable',       icon: '👤', color: '#22c55e'},
+    {match: /^FECHA DE CORTE$/i,           label: 'Fecha de Corte',    icon: '📅', color: '#f59e0b', date: true},
+    {match: /^TOP N$/i,                    label: 'Top N',             icon: '🔢', color: '#a855f7'},
+    {match: /^FECHA INICIO PROYECTO$/i,    label: 'Inicio Proyecto',   icon: '🟢', color: '#10b981', date: true},
+    {match: /^FECHA FIN PROYECTO$/i,       label: 'Fin Proyecto',      icon: '🔴', color: '#ef4444', date: true}
+  ];
   let filtroH = -1;
   for (let i=0;i<rows.length;i++){
     const t = rows[i].map(c=>String(c||'').toUpperCase()).join('|');
     if (/CAP[IÍ]TULO/.test(t) && /RESPONSABLE/.test(t) && /FECHA DE CORTE/.test(t) && /TOP N/.test(t)){ filtroH = i; break; }
   }
   if (filtroH >= 0 && filtroH+1 < rows.length){
-    const lbls = rows[filtroH].filter(c => c && String(c).trim());
-    const vals = rows[filtroH+1].filter(c => c !== '' && c !== null && c !== undefined);
-    let chipsHtml = '<div class="panel" style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(20,26,55,.4));border-left:3px solid #f59e0b;padding:14px 18px;margin-bottom:14px">';
-    chipsHtml += '<div style="font-size:11px;color:#fbbf24;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:10px">⚙️ Panel de filtros activos</div>';
-    chipsHtml += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
-    lbls.forEach((lb,i)=>{
-      const v = vals[i] !== undefined ? vals[i] : '';
-      chipsHtml += `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 12px;font-size:11.5px"><span style="color:#94a3b8">${escapeHTML(String(lb))}: </span><span style="color:#fff;font-weight:600">${escapeHTML(obraFmt(v))}</span></div>`;
+    const labelRow = rows[filtroH];
+    const valueRow = rows[filtroH+1];
+    const chips = [];
+    // Iterar SOLO buscando los 6 filtros conocidos por posición de columna
+    FILTROS_KNOWN.forEach(cfg => {
+      for (let col = 0; col < labelRow.length; col++){
+        const lb = String(labelRow[col]||'').trim();
+        if (cfg.match.test(lb)){
+          let v = valueRow[col];
+          let display;
+          if (cfg.date) display = fmtFecha(v);
+          else if (v === null || v === undefined || v === '') display = '—';
+          else display = String(v);
+          chips.push({cfg: cfg, value: display});
+          break;
+        }
+      }
     });
-    chipsHtml += '</div></div>';
-    sec.innerHTML += chipsHtml;
+    if (chips.length){
+      let chipsHtml = '<div class="panel" style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(20,26,55,.55));border:1px solid rgba(245,158,11,.18);border-radius:14px;padding:16px 18px;margin-bottom:14px">';
+      chipsHtml += '<div style="font-size:11px;color:#fbbf24;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px">⚙️ Panel de Filtros Activos <span style="background:rgba(34,197,94,.15);color:#6ee7b7;padding:2px 8px;border-radius:999px;font-size:9.5px;text-transform:none;letter-spacing:0">' + chips.length + ' filtros aplicados</span></div>';
+      chipsHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">';
+      chips.forEach(ch => {
+        chipsHtml += '<div style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-left:3px solid ' + ch.cfg.color + ';border-radius:10px;padding:10px 12px;transition:all .2s">'
+          + '<div style="font-size:9.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:4px">' + ch.cfg.icon + ' ' + escapeHTML(ch.cfg.label) + '</div>'
+          + '<div style="font-size:14px;color:#fff;font-weight:700;font-family:\'Space Grotesk\',sans-serif">' + escapeHTML(ch.value) + '</div>'
+          + '</div>';
+      });
+      chipsHtml += '</div></div>';
+      sec.innerHTML += chipsHtml;
+    }
   }
 
   // ============ KPIs EJECUTIVOS ============
