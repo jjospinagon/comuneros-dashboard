@@ -2874,6 +2874,7 @@ function obraInicializarFiltros(data){
   selCap.innerHTML = caps.map(c => '<option value="'+escapeHTML(c)+'">'+escapeHTML(c)+'</option>').join('');
   selResp.innerHTML = resps.map(r => '<option value="'+escapeHTML(r)+'">'+escapeHTML(r)+'</option>').join('');
   // Fecha de corte: default = hoy
+  const today = new Date().toISOString().slice(0,10);
   document.getElementById('obra-f-corte').value = today;
 }
 
@@ -3209,6 +3210,15 @@ function obraAplicarFiltros(){
         type: 'doughnut',
         data: { labels: respRows.map(r => r.resp), datasets: [{ data: respRows.map(r => r.vrTotal), backgroundColor: ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a855f7','#22d3ee','#ec4899','#8b5cf6'] }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position:'right', labels: { color:'#cbd5e1', font:{size:11} } } } }
+      });
+    }, 100);
+  }
+}
+
+</script>
+
+</body>
+</html>
       });
     }, 100);
   }
