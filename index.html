@@ -2649,14 +2649,42 @@ function fotosRenderGrid(){
   if(!arr.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#64748b">Sin fotos en este rango.</div>'; return; }
   const LIMIT = 200;
   const slice = arr.slice(0, LIMIT);
+  // Detectar móvil: en móvil sin login Google, lh3.googleusercontent.com/d/{id} no carga formatos exóticos (HEIC, etc)
+  // así que pasamos directo al proxy de Apps Script que devuelve thumbnailLink JPEG público
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   grid.innerHTML = slice.map((x,i) => {
-    // Preferir thumbnailLink de Drive (JPEG público sin importar formato original)
+    // En móvil: usar placeholder + lazy load via proxy
+    // En desktop: usar lh3 directo + fallback
+    if (isMobile) {
+      return `<div onclick="abrirLightbox(${i})" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">
+        <img data-id="${x.i}" data-fb="0" data-needsproxy="1" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;background:#0a0e27" onerror="fotoFallback(this)">
+        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">${x.f}</div>
+      </div>`;
+    }
     const thumb = x.tl ? x.tl.replace(/=s\d+(-\w+)?$/, '=s320') : ('https://lh3.googleusercontent.com/d/' + x.i + '=w320-h240');
     return `<div onclick="abrirLightbox(${i})" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">
       <img data-id="${x.i}" data-fb="0" src="${thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="fotoFallback(this)">
       <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">${x.f}</div>
     </div>`;
   }).join('');
+  // En móvil, hacer lazy load via IntersectionObserver para no abusar del WebApp
+  if (isMobile) {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const img = e.target;
+        if (img.dataset.loaded === '1') { obs.unobserve(img); return; }
+        img.dataset.loaded = '1';
+        obs.unobserve(img);
+        const fid = img.dataset.id;
+        if (_fotoProxyCache[fid]) { img.src = _fotoProxyCache[fid]; return; }
+        jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'small'})
+          .then(d => { if(d && d.thumbnailLink){ _fotoProxyCache[fid] = d.thumbnailLink; img.src = d.thumbnailLink; } else { fotoFallback(img); } })
+          .catch(() => { fotoFallback(img); });
+      });
+    }, {rootMargin:'200px'});
+    document.querySelectorAll('#fotos-grid img[data-needsproxy="1"]').forEach(img => obs.observe(img));
+  }
   if(arr.length > LIMIT){
     grid.innerHTML += `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#94a3b8;font-size:12px">Mostrando ${LIMIT} de ${arr.length} fotos. Filtra por mes o semana para ver más específicas.</div>`;
   }
@@ -2670,7 +2698,17 @@ function abrirLightbox(i){
   lbImg.dataset.id = x.i;
   lbImg.dataset.fb = '0';
   lbImg.onerror = function(){ fotoFallback(lbImg, true); };
-  lbImg.src = x.tl ? x.tl.replace(/=s\d+(-\w+)?$/, '=s1600') : ('https://lh3.googleusercontent.com/d/' + x.i + '=w1600');
+  const isMob = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMob && _fotoProxyCache[x.i]) {
+    lbImg.src = _fotoProxyCache[x.i].replace(/=s\d+(-\w+)?$/, '=s1600');
+  } else if (isMob) {
+    lbImg.src = '';
+    jsonp(APPS_URL, {action:'foto_proxy', id: x.i, size:'large'})
+      .then(d => { if(d && d.thumbnailLink){ lbImg.src = d.thumbnailLink; } else { fotoFallback(lbImg, true); } })
+      .catch(() => { fotoFallback(lbImg, true); });
+  } else {
+    lbImg.src = x.tl ? x.tl.replace(/=s\d+(-\w+)?$/, '=s1600') : ('https://lh3.googleusercontent.com/d/' + x.i + '=w1600');
+  }
   document.getElementById('fotos-lb-caption').textContent = x.t + ' · ' + x.f + ' · ' + (i+1) + '/' + FOTOS_STATE.viewArr.length;
   document.getElementById('fotos-lightbox').style.display = 'flex';
 }
@@ -2776,11 +2814,17 @@ function obraFmtFecha(v){
   return d ? d.toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric'}) : '—';
 }
 function obraMoney(n){
+  // Escala colombiana: NUNCA usar "B" (en EN es billion=mil millones, en ES es millón de millones)
+  // Siempre en M (millones) para valores >= 1M
   if (typeof n !== 'number' || isNaN(n)) return '—';
-  if (Math.abs(n) >= 1e9) return '$'+(n/1e9).toFixed(2)+' B';
-  if (Math.abs(n) >= 1e6) return '$'+(n/1e6).toFixed(1)+' M';
-  if (Math.abs(n) >= 1e3) return '$'+(n/1e3).toFixed(0)+' K';
-  return '$'+Math.round(n).toLocaleString('es-CO');
+  var abs = Math.abs(n);
+  if (abs >= 1e6) {
+    var m = n / 1e6;
+    var dec = abs >= 1e9 ? 0 : 1; // mil millones: enteros; millones: 1 decimal
+    return '$' + m.toLocaleString('es-CO', {maximumFractionDigits: dec, minimumFractionDigits: 0}) + ' M';
+  }
+  if (abs >= 1e3) return '$' + Math.round(n).toLocaleString('es-CO');
+  return '$' + Math.round(n).toLocaleString('es-CO');
 }
 
 function obraAplicarFiltros(){
@@ -2808,7 +2852,11 @@ function obraAplicarFiltros(){
   
   // KPIs
   const vrTotal = filtradas.reduce((s,a) => s + (a.vrTotal||0), 0);
-  const vrEjec = filtradas.reduce((s,a) => s + (a.vrEjec||0), 0);
+  const vrEjecActividades = filtradas.reduce((s,a) => s + (a.vrEjec||0), 0);
+  // Cuando filtros = TODOS/TODOS, usar el ejecutado global (AVANCE DIARIO!K108)
+  // para alinearnos con el Excel (22.68% vs sumatoria por actividad 22.53%)
+  const usarEjecGlobal = (fCap === 'TODOS' && fResp === 'TODOS' && typeof OBRA_DATA.ejecutadoGlobal === 'number' && OBRA_DATA.ejecutadoGlobal > 0);
+  const vrEjec = usarEjecGlobal ? OBRA_DATA.ejecutadoGlobal : vrEjecActividades;
   const pctReal = vrTotal > 0 ? vrEjec / vrTotal : 0;
 
   // % Programado PONDERADO por fechas reales de cada actividad filtrada
@@ -2853,7 +2901,21 @@ function obraAplicarFiltros(){
   const pctProg = vrTotal > 0 ? vrProg / vrTotal : 0;
   const spi = vrProg > 0 ? vrEjec / vrProg : 0;
 
-  const cs = OBRA_DATA.curvaS || {programado:[], real:[]};
+  // Curva S: normalizar % programado si vinieron como valores absolutos del backend.
+  // (Bug detectado: la fila 115 de FLUJO DE CAJA_INTER son valores ABSOLUTOS, no %.
+  //  Los % reales sí vienen normalizados en cs.real.)
+  let cs = OBRA_DATA.curvaS || {programado:[], real:[], semanas:[], fechas:[]};
+  const _prog = cs.programado || [];
+  let _maxProg = 0;
+  for (let i = 0; i < _prog.length; i++) { if (_prog[i] > _maxProg) _maxProg = _prog[i]; }
+  if (_maxProg > 1.5 && _maxProg > 0) {
+    cs = {
+      semanas: cs.semanas || [],
+      fechas:  cs.fechas  || [],
+      real:    cs.real    || [],
+      programado: _prog.map(v => v / _maxProg)
+    };
+  }
   
   const completadas = filtradas.filter(a => (a.pctAcum||0) >= 0.999).length;
   const enCurso = filtradas.filter(a => (a.pctAcum||0) > 0 && (a.pctAcum||0) < 0.999).length;
