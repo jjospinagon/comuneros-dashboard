@@ -1636,13 +1636,40 @@ function fotosRenderGridEvo(){
   if(!arr.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#64748b">Sin fotos.</div>'; return; }
   var LIMIT = 200;
   var slice = arr.slice(0, LIMIT);
+  // En movil sin login Google, lh3.googleusercontent.com/d/{id} no carga formatos exoticos (HEIC etc).
+  // Pasamos directo al proxy de Apps Script que devuelve thumbnailLink JPEG publico.
+  var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   grid.innerHTML = slice.map(function(x,i){
+    if (isMobile) {
+      return '<div onclick="abrirLightboxEvo('+(i)+')" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">' +
+        '<img data-id="'+x.i+'" data-fb="0" data-needsproxy="1" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;background:#0a0e27" onerror="fotoFallbackEvo(this)">' +
+        '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">'+escapeHTML(x.f)+'</div>' +
+      '</div>';
+    }
     var thumb = x.tl ? x.tl.replace(/=s\d+(-\w+)?$/, '=s320') : ('https://lh3.googleusercontent.com/d/' + x.i + '=w320-h240');
     return '<div onclick="abrirLightboxEvo('+(i)+')" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">' +
       '<img data-id="'+x.i+'" data-fb="0" src="'+thumb+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="fotoFallbackEvo(this)">' +
       '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">'+escapeHTML(x.f)+'</div>' +
     '</div>';
-  }).join(''));
+  }).join('');
+  // En movil: lazy load via IntersectionObserver con foto_proxy
+  if (isMobile) {
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (!e.isIntersecting) return;
+        var img = e.target;
+        if (img.dataset.loaded === '1') { obs.unobserve(img); return; }
+        img.dataset.loaded = '1';
+        obs.unobserve(img);
+        var fid = img.dataset.id;
+        if (_fotoProxyCacheEvo[fid]) { img.src = _fotoProxyCacheEvo[fid]; return; }
+        jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'small'})
+          .then(function(d){ if(d && d.thumbnailLink){ _fotoProxyCacheEvo[fid] = d.thumbnailLink; img.src = d.thumbnailLink; } else { fotoFallbackEvo(img); } })
+          .catch(function(){ fotoFallbackEvo(img); });
+      });
+    }, {rootMargin:'200px'});
+    document.querySelectorAll('#fotosGrid img[data-needsproxy="1"]').forEach(function(img){ obs.observe(img); });
+  }
   if(arr.length > LIMIT){
     grid.innerHTML += '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#94a3b8;font-size:12px">Mostrando '+LIMIT+' de '+arr.length+'. Filtra por mes o semana.</div>';
   }
@@ -1656,7 +1683,17 @@ function abrirLightboxEvo(i){
   lbImg.dataset.id = x.i;
   lbImg.dataset.fb = '0';
   lbImg.onerror = function(){ fotoFallbackEvo(lbImg, true); };
-  lbImg.src = x.tl ? x.tl.replace(/=s\d+(-\w+)?$/, '=s1600') : ('https://lh3.googleusercontent.com/d/' + x.i + '=w1600');
+  var isMob = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMob && _fotoProxyCacheEvo[x.i]) {
+    lbImg.src = _fotoProxyCacheEvo[x.i].replace(/=s\d+(-\w+)?$/, '=s1600');
+  } else if (isMob) {
+    lbImg.src = '';
+    jsonp(APPS_URL, {action:'foto_proxy', id: x.i, size:'large'})
+      .then(function(d){ if(d && d.thumbnailLink){ lbImg.src = d.thumbnailLink; } else { fotoFallbackEvo(lbImg, true); } })
+      .catch(function(){ fotoFallbackEvo(lbImg, true); });
+  } else {
+    lbImg.src = x.tl ? x.tl.replace(/=s\d+(-\w+)?$/, '=s1600') : ('https://lh3.googleusercontent.com/d/' + x.i + '=w1600');
+  }
   document.getElementById('fotosLbCaption').textContent = x.t + ' · ' + x.f + ' · ' + (i+1) + '/' + FOTOS_ST.viewArr.length;
   document.getElementById('fotosLightbox').style.display = 'flex';
 }
