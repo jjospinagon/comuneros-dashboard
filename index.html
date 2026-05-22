@@ -1008,6 +1008,17 @@
         <a href="https://docs.google.com/spreadsheets/d/1KCl2nQ8M3h50282sLXIKqMmTlGbdJzv2/edit" target="_blank" style="background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.35);color:#38bdf8;padding:6px 12px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600">📊 Abrir XLSX</a>
       </div>
     </header>
+    <!-- Panel de filtros INTERACTIVOS -->
+    <div id="obra-filtros" class="panel" style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(20,26,55,.55));border:1px solid rgba(245,158,11,.18);border-radius:14px;padding:16px 18px;margin-bottom:14px;display:none">
+      <div style="font-size:11px;color:#fbbf24;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:12px">⚙️ Filtros Interactivos</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end">
+        <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">📚 Capítulo</label><select id="obra-f-cap" onchange="obraAplicarFiltros()" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></select></div>
+        <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">👤 Responsable</label><select id="obra-f-resp" onchange="obraAplicarFiltros()" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></select></div>
+        <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">📅 Fecha de Corte</label><input type="date" id="obra-f-corte" onchange="obraAplicarFiltros()" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></div>
+        <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">🔢 Top N</label><input type="number" id="obra-f-topn" value="20" min="1" max="98" onchange="obraAplicarFiltros()" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:#94a3b8" id="obra-filtros-info">—</div>
+    </div>
     <div id="obra-kpis" style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:16px"></div>
     <div id="obra-secciones" style="display:flex;flex-direction:column;gap:18px">
       <div style="color:#94a3b8;text-align:center;padding:60px 20px">⏳ Cargando dashboard de obra…</div>
@@ -2719,7 +2730,7 @@ async function obraCargar(force){
   const cont = document.getElementById('obra-secciones');
   cont.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:60px 20px">⏳ Cargando dashboard de obra…</div>';
   try{
-    const params = force ? {action:'dashboard_obra', _ts: Date.now()} : {action:'dashboard_obra'};
+    const params = force ? {action:'dashboard_obra_v2', _ts: Date.now()} : {action:'dashboard_obra_v2'};
     const d = await jsonp(APPS_URL, params);
     if(d.error){
       cont.innerHTML = '<div style="color:#ef4444;padding:20px">❌ '+escapeHTML(d.error)+'</div>';
@@ -2728,350 +2739,256 @@ async function obraCargar(force){
     OBRA_DATA = d;
     OBRA_LOADED = true;
     document.getElementById('obra-gen').textContent = 'gen ' + (d._generado || '');
-    obraRender(d.rows || []);
+    obraInicializarFiltros(d);
+    obraAplicarFiltros();
   }catch(e){
     cont.innerHTML = '<div style="color:#ef4444;padding:20px">❌ Error: '+escapeHTML(e.message||String(e))+'</div>';
   }
 }
 
-function obraRender(rows){
+function obraInicializarFiltros(data){
+  document.getElementById('obra-filtros').style.display = 'block';
+  const acts = data.actividades || [];
+  // Capítulos únicos
+  const caps = ['TODOS', ...Array.from(new Set(acts.map(a => a.cap).filter(c => c))).sort()];
+  const resps = ['TODOS', ...Array.from(new Set(acts.map(a => a.resp).filter(r => r))).sort()];
+  const selCap = document.getElementById('obra-f-cap');
+  const selResp = document.getElementById('obra-f-resp');
+  selCap.innerHTML = caps.map(c => '<option value="'+escapeHTML(c)+'">'+escapeHTML(c)+'</option>').join('');
+  selResp.innerHTML = resps.map(r => '<option value="'+escapeHTML(r)+'">'+escapeHTML(r)+'</option>').join('');
+  // Fecha de corte: default = hoy
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('obra-f-corte').value = today;
+}
+
+function obraExcelSerialToDate(s){
+  if (typeof s !== 'number' || s < 25000) return null;
+  return new Date(Math.round((s - 25569) * 86400 * 1000));
+}
+function obraToDate(v){
+  if (v instanceof Date) return v;
+  if (typeof v === 'number') return obraExcelSerialToDate(v);
+  if (typeof v === 'string'){ const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+  return null;
+}
+function obraFmtFecha(v){
+  const d = obraToDate(v);
+  return d ? d.toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+}
+function obraMoney(n){
+  if (typeof n !== 'number' || isNaN(n)) return '—';
+  if (Math.abs(n) >= 1e9) return '$'+(n/1e9).toFixed(2)+' B';
+  if (Math.abs(n) >= 1e6) return '$'+(n/1e6).toFixed(1)+' M';
+  if (Math.abs(n) >= 1e3) return '$'+(n/1e3).toFixed(0)+' K';
+  return '$'+Math.round(n).toLocaleString('es-CO');
+}
+
+function obraAplicarFiltros(){
+  if (!OBRA_DATA) return;
+  const fCap = document.getElementById('obra-f-cap').value;
+  const fResp = document.getElementById('obra-f-resp').value;
+  const fCorte = document.getElementById('obra-f-corte').value;
+  const topN = parseInt(document.getElementById('obra-f-topn').value, 10) || 20;
+  
+  const all = OBRA_DATA.actividades || [];
+  const filtradas = all.filter(a => {
+    if (fCap !== 'TODOS' && a.cap !== fCap) return false;
+    if (fResp !== 'TODOS' && a.resp !== fResp) return false;
+    return true;
+  });
+  
+  // Semana actual basada en fCorte y proyecto.inicio
+  const inicio = obraToDate(OBRA_DATA.proyecto.inicio);
+  const corte = fCorte ? new Date(fCorte) : new Date();
+  let semanaActual = 0;
+  if (inicio && corte > inicio){
+    const dias = Math.floor((corte - inicio) / 86400000);
+    semanaActual = Math.floor(dias / 7) + 1;
+  }
+  
+  // KPIs
+  const vrTotal = filtradas.reduce((s,a) => s + (a.vrTotal||0), 0);
+  const vrEjec = filtradas.reduce((s,a) => s + (a.vrEjec||0), 0);
+  const pctReal = vrTotal > 0 ? vrEjec / vrTotal : 0;
+
+  // % Programado PONDERADO por fechas reales de cada actividad filtrada
+  // (en vez de usar la curva global del proyecto, que no respeta el filtro)
+  function pctProgramadoActividad(a, corteDate){
+    // Si la actividad tiene fechas múltiples (S/T son strings con coma), usamos solo la primera
+    function primeraFecha(v){
+      if (v instanceof Date) return v;
+      if (typeof v === 'number') return obraExcelSerialToDate(v);
+      if (typeof v === 'string'){
+        const partes = v.split(',').map(s => s.trim()).filter(Boolean);
+        const d = new Date(partes[0]);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    }
+    function ultimaFecha(v){
+      if (v instanceof Date) return v;
+      if (typeof v === 'number') return obraExcelSerialToDate(v);
+      if (typeof v === 'string'){
+        const partes = v.split(',').map(s => s.trim()).filter(Boolean);
+        const d = new Date(partes[partes.length-1]);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    }
+    const ini = primeraFecha(a.fIni);
+    const fin = ultimaFecha(a.fFin);
+    if (!ini || !fin || isNaN(ini.getTime()) || isNaN(fin.getTime())) return 0;
+    if (corteDate <= ini) return 0;
+    if (corteDate >= fin) return 1;
+    return (corteDate - ini) / (fin - ini);
+  }
+
+  // Suma ponderada del valor programado por actividad filtrada
+  const vrProg = filtradas.reduce((s, a) => {
+    const pa = pctProgramadoActividad(a, corte);
+    return s + (a.vrTotal || 0) * pa;
+  }, 0);
+
+  // % Programado del subset filtrado (no del proyecto global)
+  const pctProg = vrTotal > 0 ? vrProg / vrTotal : 0;
+  const spi = vrProg > 0 ? vrEjec / vrProg : 0;
+
+  const cs = OBRA_DATA.curvaS || {programado:[], real:[]};
+  
+  const completadas = filtradas.filter(a => (a.pctAcum||0) >= 0.999).length;
+  const enCurso = filtradas.filter(a => (a.pctAcum||0) > 0 && (a.pctAcum||0) < 0.999).length;
+  const pendientes = filtradas.filter(a => (a.pctAcum||0) <= 0).length;
+  const vrPendiente = vrTotal - vrEjec;
+  const pctCompletitud = filtradas.length > 0 ? completadas / filtradas.length : 0;
+  
+  document.getElementById('obra-filtros-info').textContent = filtradas.length + ' de ' + all.length + ' actividades · Semana ' + semanaActual + ' · ' + obraFmtFecha(OBRA_DATA.proyecto.inicio) + ' → ' + obraFmtFecha(OBRA_DATA.proyecto.fin);
+  
+  // === KPIs cards ===
   const kpis = document.getElementById('obra-kpis');
-  const sec = document.getElementById('obra-secciones');
-  kpis.innerHTML = '';
-  sec.innerHTML = '';
-
-  // ============ HELPER: parseo de números desde celda Excel ============
-  function num(v){
-    if (typeof v === 'number') return v;
-    if (typeof v !== 'string') return null;
-    const m = v.replace(/[\$\s,]/g,'').match(/-?[\d.]+/);
-    if (!m) return null;
-    const n = parseFloat(m[0]);
-    return isNaN(n) ? null : n;
-  }
-  function pct(v){
-    if (typeof v === 'number') return v < 1 ? v*100 : v;
-    if (typeof v !== 'string') return null;
-    const m = v.match(/-?[\d.]+/);
-    if (!m) return null;
-    let n = parseFloat(m[0]);
-    if (v.indexOf('%') >= 0) return n;
-    return n < 1 ? n*100 : n;
-  }
-  function money(v){
-    const n = (typeof v === 'number') ? v : num(v);
-    if (n === null || n === undefined) return '—';
-    if (Math.abs(n) >= 1e9) return '$'+(n/1e9).toFixed(2)+' B';
-    if (Math.abs(n) >= 1e6) return '$'+(n/1e6).toFixed(1)+' M';
-    if (Math.abs(n) >= 1e3) return '$'+(n/1e3).toFixed(0)+' K';
-    return '$'+Math.round(n).toLocaleString('es-CO');
-  }
-
-  // ============ FILTROS (chips de los 6 filtros conocidos, alineados por columna) ============
-  function excelSerialToDate(serial){
-    if (typeof serial !== 'number' || serial < 25000) return null;
-    return new Date(Math.round((serial - 25569) * 86400 * 1000));
-  }
-  function fmtFecha(v){
-    const d = (typeof v === 'number') ? excelSerialToDate(v) : (v ? new Date(v) : null);
-    if (!d || isNaN(d.getTime())) return String(v||'—');
-    return d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'});
-  }
-  const FILTROS_KNOWN = [
-    {match: /^CAP[IÍ]TULO$/i,             label: 'Capítulo',          icon: '📚', color: '#0ea5e9'},
-    {match: /^RESPONSABLE$/i,              label: 'Responsable',       icon: '👤', color: '#22c55e'},
-    {match: /^FECHA DE CORTE$/i,           label: 'Fecha de Corte',    icon: '📅', color: '#f59e0b', date: true},
-    {match: /^TOP N$/i,                    label: 'Top N',             icon: '🔢', color: '#a855f7'},
-    {match: /^FECHA INICIO PROYECTO$/i,    label: 'Inicio Proyecto',   icon: '🟢', color: '#10b981', date: true},
-    {match: /^FECHA FIN PROYECTO$/i,       label: 'Fin Proyecto',      icon: '🔴', color: '#ef4444', date: true}
+  const kpisHTML = [
+    {label:'VALOR TOTAL FILTRADO', value: obraMoney(vrTotal), color:'#22c55e'},
+    {label:'VALOR EJECUTADO', value: obraMoney(vrEjec), color:'#0ea5e9'},
+    {label:'VALOR PROGRAMADO S'+semanaActual, value: obraMoney(vrProg), color:'#f59e0b'},
+    {label:'% AVANCE REAL', value: (pctReal*100).toFixed(2)+'%', color:(pctReal>=pctProg?'#22c55e':'#ef4444')},
+    {label:'% AVANCE PROGRAMADO S'+semanaActual, value: (pctProg*100).toFixed(2)+'%', color:'#a855f7'},
+    {label:'SPI (DESVIACIÓN)', value: spi.toFixed(2)+'x', color:(spi>=0.95?'#22c55e':spi>=0.85?'#f59e0b':'#ef4444')}
   ];
-  let filtroH = -1;
-  for (let i=0;i<rows.length;i++){
-    const t = rows[i].map(c=>String(c||'').toUpperCase()).join('|');
-    if (/CAP[IÍ]TULO/.test(t) && /RESPONSABLE/.test(t) && /FECHA DE CORTE/.test(t) && /TOP N/.test(t)){ filtroH = i; break; }
-  }
-  if (filtroH >= 0 && filtroH+1 < rows.length){
-    const labelRow = rows[filtroH];
-    const valueRow = rows[filtroH+1];
-    const chips = [];
-    // Iterar SOLO buscando los 6 filtros conocidos por posición de columna
-    FILTROS_KNOWN.forEach(cfg => {
-      for (let col = 0; col < labelRow.length; col++){
-        const lb = String(labelRow[col]||'').trim();
-        if (cfg.match.test(lb)){
-          let v = valueRow[col];
-          let display;
-          if (cfg.date) display = fmtFecha(v);
-          else if (v === null || v === undefined || v === '') display = '—';
-          else display = String(v);
-          chips.push({cfg: cfg, value: display});
-          break;
-        }
-      }
-    });
-    if (chips.length){
-      let chipsHtml = '<div class="panel" style="background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(20,26,55,.55));border:1px solid rgba(245,158,11,.18);border-radius:14px;padding:16px 18px;margin-bottom:14px">';
-      chipsHtml += '<div style="font-size:11px;color:#fbbf24;text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px">⚙️ Panel de Filtros Activos <span style="background:rgba(34,197,94,.15);color:#6ee7b7;padding:2px 8px;border-radius:999px;font-size:9.5px;text-transform:none;letter-spacing:0">' + chips.length + ' filtros aplicados</span></div>';
-      chipsHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">';
-      chips.forEach(ch => {
-        chipsHtml += '<div style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-left:3px solid ' + ch.cfg.color + ';border-radius:10px;padding:10px 12px;transition:all .2s">'
-          + '<div style="font-size:9.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:4px">' + ch.cfg.icon + ' ' + escapeHTML(ch.cfg.label) + '</div>'
-          + '<div style="font-size:14px;color:#fff;font-weight:700;font-family:\'Space Grotesk\',sans-serif">' + escapeHTML(ch.value) + '</div>'
-          + '</div>';
-      });
-      chipsHtml += '</div></div>';
-      sec.innerHTML += chipsHtml;
-    }
-  }
-
-  // ============ KPIs EJECUTIVOS ============
-  let kpiLI = -1, kpiVI = -1;
-  for (let i=0;i<rows.length;i++){
-    const t = rows[i].join('|');
-    if (/VALOR TOTAL FILTRADO/i.test(t) && /SPI/i.test(t)){ kpiLI = i; kpiVI = i+1; break; }
-  }
-  if (kpiLI >= 0 && kpiVI < rows.length){
-    sec.innerHTML += '<div style="font-size:13px;font-weight:700;color:#22d3ee;margin:6px 0 4px;text-transform:uppercase;letter-spacing:.5px">📊 Indicadores Ejecutivos</div>';
-    const labelRow = rows[kpiLI];
-    const valueRow = rows[kpiVI];
-    const colors = ['#22c55e','#0ea5e9','#f59e0b','#a855f7','#ef4444','#22d3ee'];
-    const maxCol = Math.max(labelRow.length, valueRow.length);
-    let kpiPos = 0;
-    let kpiHTML = '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:14px">';
-    for (let col=0; col<maxCol; col++){
-      const lb = labelRow[col]; const v = valueRow[col];
-      if (lb==='' || lb==null || /^\s*$/.test(String(lb))) continue;
-      if (v==='' || v==null) continue;
-      const lbStr = String(lb).trim();
-      if (lbStr.length > 60) continue;
-      if (/^[\d.,\-]+$/.test(lbStr)) continue;
-      const c = colors[kpiPos % colors.length];
-      kpiPos++;
-      // Coloración semántica por tipo de KPI
-      let displayV = obraFmt(v);
-      if (/% AVANCE REAL/i.test(lbStr) || /% AVANCE PROGRAMADO/i.test(lbStr) || /% COMPLET/i.test(lbStr)){
-        const p = pct(v);
-        if (p !== null) displayV = p.toFixed(2) + '%';
-      } else if (/VALOR|PENDIENTE/i.test(lbStr)){
-        displayV = money(v);
-      } else if (/SPI/i.test(lbStr)){
-        const n = num(v);
-        if (n !== null) displayV = n.toFixed(2) + 'x';
-      }
-      kpiHTML += `<div class="panel" style="background:rgba(20,26,55,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;border-left:4px solid ${c}">`
-        + `<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;line-height:1.3">${escapeHTML(lbStr)}</div>`
-        + `<div style="font-size:20px;font-weight:700;color:#fff;margin-top:6px;font-family:'Space Grotesk',sans-serif">${escapeHTML(displayV)}</div>`
-        + `</div>`;
-    }
-    kpiHTML += '</div>';
-    sec.innerHTML += kpiHTML;
-  }
-
-  // ============ KPIs OPERATIVOS ============
-  let opLI = -1;
-  for (let i=0;i<rows.length;i++){
-    const t = rows[i].join('|');
-    if (/ACTIVIDADES FILTRADAS/i.test(t) && /COMPLETADAS/i.test(t)){ opLI = i; break; }
-  }
-  if (opLI >= 0 && opLI+1 < rows.length){
-    sec.innerHTML += '<div style="font-size:13px;font-weight:700;color:#22d3ee;margin:6px 0 4px;text-transform:uppercase;letter-spacing:.5px">🔧 Indicadores Operativos</div>';
-    const labelRow = rows[opLI];
-    const valueRow = rows[opLI+1];
-    const colors = ['#94a3b8','#22c55e','#0ea5e9','#f59e0b','#ef4444','#a855f7'];
-    let kpiPos = 0;
-    let opHTML = '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:14px">';
-    for (let col=0; col<Math.max(labelRow.length, valueRow.length); col++){
-      const lb = labelRow[col]; const v = valueRow[col];
-      if (lb==='' || lb==null || /^\s*$/.test(String(lb))) continue;
-      if (v==='' || v==null) continue;
-      const lbStr = String(lb).trim();
-      if (lbStr.length > 60) continue;
-      if (/^[\d.,\-]+$/.test(lbStr)) continue;
-      const c = colors[kpiPos % colors.length];
-      kpiPos++;
-      let displayV = obraFmt(v);
-      if (/%/i.test(lbStr)){ const p = pct(v); if(p!==null) displayV = p.toFixed(1)+'%'; }
-      else if (/VALOR/i.test(lbStr)){ displayV = money(v); }
-      opHTML += `<div class="panel" style="background:rgba(20,26,55,.5);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:12px;border-left:3px solid ${c}">`
-        + `<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">${escapeHTML(lbStr)}</div>`
-        + `<div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px;font-family:'Space Grotesk',sans-serif">${escapeHTML(displayV)}</div>`
-        + `</div>`;
-    }
-    opHTML += '</div>';
-    sec.innerHTML += opHTML;
-  }
-
-  // ============ TABLA AVANCE POR CAPÍTULO con barras ============
-  function buscarHeader(headerRe, colsRe){
-    for (let i=0;i<rows.length;i++){
-      if (headerRe.test(rows[i].join('|'))){
-        for (let j=i+1; j<Math.min(i+5, rows.length); j++){
-          if (colsRe.test(rows[j].join('|'))) return j;
-        }
-      }
-    }
-    return -1;
-  }
-
-  function renderTablaConBarras(titulo, icon, headerIdx, color, maxRows){
-    if (headerIdx < 0) return;
-    const hdr = rows[headerIdx];
-    const cols = []; hdr.forEach((c,i) => { if(c!=null && c!=='') cols.push({i:i, name:String(c).trim()}); });
-    if (!cols.length) return;
-    // Detectar columna de % avance
-    let pctCol = -1;
-    cols.forEach((c, idx) => { if (/% ?AVANCE|PCT/i.test(c.name) && pctCol < 0) pctCol = c.i; });
-    const data = [];
-    for (let i=headerIdx+1; i<rows.length && data.length<(maxRows||30); i++){
-      const r = rows[i];
-      const hay = cols.some(c => r[c.i]!=null && r[c.i]!=='');
-      if (!hay){ if(data.length>0) break; continue; }
-      // Detener si "TOTAL GENERAL"
-      if (cols.some(c => /TOTAL GENERAL|^TOTAL$/i.test(String(r[c.i]||'')))) { data.push(r); break; }
-      data.push(r);
-    }
-    if (!data.length) return;
-    let html = `<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-bottom:14px;border-top:3px solid ${color}">`;
-    html += `<h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">${icon} ${escapeHTML(titulo)}</h3>`;
-    html += '<div style="overflow:auto;max-height:50vh"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)">';
-    cols.forEach(c => {
-      html += `<th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10.5px;letter-spacing:.5px;white-space:nowrap;position:sticky;top:0;background:rgba(20,26,55,.95)">${escapeHTML(c.name)}</th>`;
-    });
-    html += '</tr></thead><tbody>';
-    data.forEach(r => {
-      const isTotal = cols.some(c => /TOTAL GENERAL|^TOTAL$/i.test(String(r[c.i]||'')));
-      html += `<tr style="border-bottom:1px solid rgba(255,255,255,.04)${isTotal?';background:rgba(34,197,94,.08);font-weight:700':''}">`;
-      cols.forEach(c => {
-        const v = r[c.i];
-        const isNum = typeof v === 'number' || (typeof v === 'string' && /^[\$\s\d.,\-%]+$/.test(v));
-        if (c.i === pctCol){
-          const p = pct(v);
-          const bar = p !== null ? Math.min(100, Math.max(0, p)) : 0;
-          const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
-          html += `<td style="padding:6px 10px;color:#e2e8f0;white-space:nowrap;min-width:120px">`;
-          if (p !== null) {
-            html += `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:${bar}%;background:${barColor};border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:42px;text-align:right">${p.toFixed(1)}%</span></div>`;
-          } else {
-            html += escapeHTML(String(v||''));
+  kpis.innerHTML = kpisHTML.map(k => '<div class="panel" style="background:rgba(20,26,55,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;border-left:4px solid '+k.color+'"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;line-height:1.3">'+escapeHTML(k.label)+'</div><div style="font-size:20px;font-weight:700;color:#fff;margin-top:6px;font-family:\'Space Grotesk\',sans-serif">'+escapeHTML(k.value)+'</div></div>').join('');
+  
+  // === Secciones ===
+  const sec = document.getElementById('obra-secciones');
+  sec.innerHTML = '';
+  
+  // KPIs Operativos
+  const opHTML = '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:6px">' + [
+    {label:'ACT. FILTRADAS', value: filtradas.length, color:'#94a3b8'},
+    {label:'COMPLETADAS (100%)', value: completadas, color:'#22c55e'},
+    {label:'EN CURSO', value: enCurso, color:'#0ea5e9'},
+    {label:'PENDIENTES', value: pendientes, color:'#f59e0b'},
+    {label:'VALOR PENDIENTE', value: obraMoney(vrPendiente), color:'#ef4444'},
+    {label:'% COMPLETITUD', value: (pctCompletitud*100).toFixed(1)+'%', color:'#a855f7'}
+  ].map(k => '<div class="panel" style="background:rgba(20,26,55,.5);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:12px;border-left:3px solid '+k.color+'"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">'+escapeHTML(k.label)+'</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px;font-family:\'Space Grotesk\',sans-serif">'+escapeHTML(String(k.value))+'</div></div>').join('') + '</div>';
+  sec.innerHTML += opHTML;
+  
+  // Avance por Capítulo
+  const porCap = {};
+  all.forEach(a => {
+    if (!a.cap) return;
+    if (fResp !== 'TODOS' && a.resp !== fResp) return;
+    if (!porCap[a.cap]) porCap[a.cap] = {vrTotal:0, vrEjec:0};
+    porCap[a.cap].vrTotal += a.vrTotal || 0;
+    porCap[a.cap].vrEjec += a.vrEjec || 0;
+  });
+  const capRows = Object.keys(porCap).sort().map(cap => {
+    const c = porCap[cap];
+    const p = c.vrTotal > 0 ? c.vrEjec/c.vrTotal : 0;
+    return {cap, vrTotal:c.vrTotal, vrEjec:c.vrEjec, pct:p};
+  });
+  let capHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #22c55e"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🧱 Avance por capítulo</h3><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Capítulo</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Total</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Ejecutado</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;min-width:140px">% Avance</th></tr></thead><tbody>';
+  capRows.forEach(r => {
+    const bar = Math.min(100, Math.max(0, r.pct*100));
+    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
+    capHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#e2e8f0;font-weight:600">'+escapeHTML(r.cap)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrEjec)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:48px;text-align:right;color:#fff">'+(r.pct*100).toFixed(1)+'%</span></div></td></tr>';
+  });
+  capHTML += '</tbody></table></div></div>';
+  sec.innerHTML += capHTML;
+  
+  // Avance por Responsable
+  const porResp = {};
+  all.forEach(a => {
+    if (!a.resp) return;
+    if (fCap !== 'TODOS' && a.cap !== fCap) return;
+    if (!porResp[a.resp]) porResp[a.resp] = {n:0, vrTotal:0, vrEjec:0};
+    porResp[a.resp].n++;
+    porResp[a.resp].vrTotal += a.vrTotal || 0;
+    porResp[a.resp].vrEjec += a.vrEjec || 0;
+  });
+  const respRows = Object.keys(porResp).sort().map(re => {
+    const r = porResp[re];
+    return {resp:re, n:r.n, vrTotal:r.vrTotal, vrEjec:r.vrEjec, pct: r.vrTotal>0?r.vrEjec/r.vrTotal:0};
+  });
+  let respHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">👥 Avance por responsable</h3><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Responsable</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Act</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Total</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Ejec</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;min-width:140px">% Avance</th></tr></thead><tbody>';
+  respRows.forEach(r => {
+    const bar = Math.min(100, Math.max(0, r.pct*100));
+    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
+    respHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#e2e8f0;font-weight:600">'+escapeHTML(r.resp)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right">'+r.n+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(r.vrEjec)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:6px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:48px;text-align:right;color:#fff">'+(r.pct*100).toFixed(1)+'%</span></div></td></tr>';
+  });
+  respHTML += '</tbody></table></div></div>';
+  sec.innerHTML += respHTML;
+  
+  // Top N actividades
+  const topRows = filtradas.slice().sort((a,b) => (b.vrTotal||0) - (a.vrTotal||0)).slice(0, topN);
+  let topHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #f59e0b"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🏆 Top '+topN+' Actividades · mayor valor</h3><div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">#</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Capítulo</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Descripción</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Responsable</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95)">Vr Total</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;position:sticky;top:0;background:rgba(20,26,55,.95);min-width:120px">% Avance</th></tr></thead><tbody>';
+  topRows.forEach((a, i) => {
+    const p = a.pctAcum || 0;
+    const bar = Math.min(100, Math.max(0, p*100));
+    const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
+    topHTML += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="padding:6px 10px;color:#94a3b8">'+(i+1)+'</td><td style="padding:6px 10px;color:#e2e8f0;font-size:11px">'+escapeHTML(a.cap)+'</td><td style="padding:6px 10px;color:#e2e8f0;max-width:300px">'+escapeHTML((a.desc||'').slice(0,80))+'</td><td style="padding:6px 10px;color:#e2e8f0;font-size:11px">'+escapeHTML(a.resp)+'</td><td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums">'+obraMoney(a.vrTotal)+'</td><td style="padding:6px 10px;color:#e2e8f0"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:rgba(255,255,255,.05);border-radius:3px;height:5px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:'+bar+'%;background:'+barColor+';border-radius:3px"></div></div><span style="font-variant-numeric:tabular-nums;min-width:42px;text-align:right;color:#fff;font-size:11px">'+(p*100).toFixed(1)+'%</span></div></td></tr>';
+  });
+  topHTML += '</tbody></table></div></div>';
+  sec.innerHTML += topHTML;
+  
+  // Curva S
+  if (cs.semanas && cs.semanas.length && typeof Chart !== 'undefined'){
+    const cId = 'curvaS_' + Date.now();
+    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #a855f7"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">📈 Curva S · % avance acumulado por semana</h3><div style="position:relative;height:360px"><canvas id="'+cId+'"></canvas></div></div>';
+    setTimeout(() => {
+      const ctx = document.getElementById(cId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: cs.semanas,
+          datasets: [
+            {label:'% Programado', data: cs.programado.map(p => (p*100).toFixed(2)), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', tension:.3, borderWidth:2, pointRadius:2},
+            {label:'% Real', data: cs.real.map(p => (p*100).toFixed(2)), borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.1)', tension:.3, borderWidth:2, pointRadius:2}
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color:'#cbd5e1' } }, tooltip: { callbacks: { afterLabel: function(ctx){ return cs.fechas[ctx.dataIndex] || ''; } } } },
+          scales: {
+            x: { ticks: { color:'#94a3b8', maxRotation:60, minRotation:45, font:{size:9} }, grid:{color:'rgba(255,255,255,.04)'} },
+            y: { ticks: { color:'#94a3b8', callback: v => v+'%' }, grid:{color:'rgba(255,255,255,.04)'}, beginAtZero:true }
           }
-          html += '</td>';
-        } else if (typeof v === 'number') {
-          html += `<td style="padding:6px 10px;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${escapeHTML(/VR/i.test(c.name)||/VALOR/i.test(c.name)||/EJEC/i.test(c.name)||/PROG/i.test(c.name)?money(v):obraFmt(v))}</td>`;
-        } else {
-          html += `<td style="padding:6px 10px;color:#e2e8f0;white-space:nowrap">${escapeHTML(obraFmt(v))}</td>`;
         }
       });
-      html += '</tr>';
-    });
-    html += '</tbody></table></div></div>';
-    sec.innerHTML += html;
+    }, 100);
   }
-
-  const capH = buscarHeader(/AVANCE POR CAP[IÍ]TULO|AN[AÁ]LISIS POR CAP[IÍ]TULO/i, /CAP[IÍ]TULO.*VR\.?\s*TOTAL|CAP[IÍ]TULO.*VR\.?\s*EJEC/i);
-  renderTablaConBarras('Avance por capítulo', '🧱', capH, '#22c55e', 30);
-  const respH = buscarHeader(/AVANCE POR RESPONSABLE|AN[AÁ]LISIS POR RESPONSABLE/i, /RESPONSABLE.*ACT|RESPONSABLE.*VR\.?\s*TOTAL/i);
-  renderTablaConBarras('Avance por responsable', '👥', respH, '#0ea5e9', 30);
-
-  // ============ TOP N ACTIVIDADES ============
-  let actHdr = -1;
-  for (let i=0;i<rows.length;i++){
-    const t = rows[i].map(c=>String(c||'').toUpperCase()).join('|');
-    if (/\bFILA\b/.test(t) && /CAPITULO|CAP[IÍ]TULO/.test(t) && /RESPONSABLE/.test(t) && /DESCRIPCION|DESCRIPCI[OÓ]N/.test(t)){
-      actHdr = i; break;
-    }
-  }
-  renderTablaConBarras('Top N actividades · mayor valor total', '🏆', actHdr, '#f59e0b', 25);
-
-  // ============ CURVA S CHART ============
-  let csHdr = -1;
-  for (let i=0;i<rows.length;i++){
-    const t = rows[i].map(c=>String(c||'').toUpperCase()).join('|');
-    if (/FECHA/.test(t) && /%\s*PROGRAMADO/i.test(t) && /%\s*REAL/i.test(t)){ csHdr = i; break; }
-  }
-  if (csHdr >= 0 && typeof Chart !== 'undefined'){
-    const hdr = rows[csHdr];
-    const cols = []; hdr.forEach((c,i)=>{ if(c!=null && c!=='') cols.push({i:i, name:String(c).trim()}); });
-    const fechaCol = cols.find(c => /FECHA/i.test(c.name));
-    const progCol = cols.find(c => /%\s*PROGRAMADO/i.test(c.name));
-    const realCol = cols.find(c => /%\s*REAL/i.test(c.name));
-    if (fechaCol && progCol && realCol){
-      const labels = [], prog = [], real = [];
-      for (let i=csHdr+1; i<rows.length; i++){
-        const r = rows[i];
-        const f = r[fechaCol.i]; const p = r[progCol.i]; const re = r[realCol.i];
-        if (!f && p==null && re==null) break;
-        labels.push(String(f||'').slice(0,10));
-        const pp = pct(p); const rp = pct(re);
-        prog.push(pp !== null ? pp : null);
-        real.push(rp !== null ? rp : null);
-      }
-      if (labels.length){
-        const cId = 'curvaS_' + Date.now();
-        sec.innerHTML += `<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-bottom:14px;border-top:3px solid #a855f7"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">📈 Curva S · % avance acumulado por semana</h3><div style="position:relative;height:340px"><canvas id="${cId}"></canvas></div></div>`;
-        setTimeout(() => {
-          const ctx = document.getElementById(cId);
-          if (!ctx) return;
-          new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: labels,
-              datasets: [
-                {label: '% Programado', data: prog, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.1)', tension: .3, borderWidth: 2, pointRadius: 3},
-                {label: '% Real', data: real, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.1)', tension: .3, borderWidth: 2, pointRadius: 3}
-              ]
-            },
-            options: {
-              responsive: true, maintainAspectRatio: false,
-              plugins: { legend: { labels: { color: '#cbd5e1' } } },
-              scales: {
-                x: { ticks: { color: '#94a3b8', maxRotation: 60, minRotation: 45, font:{size:10} }, grid: { color: 'rgba(255,255,255,.04)' } },
-                y: { ticks: { color: '#94a3b8', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,.04)' }, beginAtZero: true }
-              }
-            }
-          });
-        }, 100);
-      }
-    }
-  }
-
-  // ============ DONUT DISTRIBUCIÓN POR RESPONSABLE ============
-  if (respH >= 0 && typeof Chart !== 'undefined'){
-    const hdr = rows[respH];
-    const cols = []; hdr.forEach((c,i)=>{ if(c!=null && c!=='') cols.push({i:i, name:String(c).trim()}); });
-    const nombreCol = cols.find(c => /RESPONSABLE/i.test(c.name));
-    const valorCol = cols.find(c => /VR.*TOTAL|VALOR.*TOTAL/i.test(c.name)) || cols.find(c => /EJEC/i.test(c.name));
-    if (nombreCol && valorCol){
-      const lbls = [], vals = [];
-      for (let i=respH+1; i<rows.length; i++){
-        const r = rows[i];
-        const n = r[nombreCol.i]; const v = num(r[valorCol.i]);
-        if (!n && !v) break;
-        if (n && v && v > 0){ lbls.push(String(n)); vals.push(v); }
-      }
-      if (lbls.length){
-        const dId = 'donut_' + Date.now();
-        sec.innerHTML += `<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-bottom:14px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🍩 Distribución por responsable</h3><div style="position:relative;height:300px;max-width:500px;margin:0 auto"><canvas id="${dId}"></canvas></div></div>`;
-        setTimeout(() => {
-          const ctx = document.getElementById(dId);
-          if (!ctx) return;
-          new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-              labels: lbls,
-              datasets: [{ data: vals, backgroundColor: ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a855f7','#22d3ee','#ec4899','#8b5cf6'] }]
-            },
-            options: {
-              responsive: true, maintainAspectRatio: false,
-              plugins: { legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 11 } } } }
-            }
-          });
-        }, 100);
-      }
-    }
-  }
-
-  if (!sec.innerHTML.trim()){
-    sec.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:40px">⚠️ No se detectaron secciones reconocibles en la hoja DASHBOARD.</div>';
+  
+  // Donut por responsable
+  if (respRows.length && typeof Chart !== 'undefined'){
+    const dId = 'donut_' + Date.now();
+    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🍩 Distribución por responsable (Vr Total)</h3><div style="position:relative;height:320px;max-width:500px;margin:0 auto"><canvas id="'+dId+'"></canvas></div></div>';
+    setTimeout(() => {
+      const ctx = document.getElementById(dId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: respRows.map(r => r.resp), datasets: [{ data: respRows.map(r => r.vrTotal), backgroundColor: ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a855f7','#22d3ee','#ec4899','#8b5cf6'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position:'right', labels: { color:'#cbd5e1', font:{size:11} } } } }
+      });
+    }, 100);
   }
 }
 
