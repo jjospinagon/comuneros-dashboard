@@ -1848,8 +1848,14 @@ async function renderCurvaS(){
 
   if (obraCs && obraCs.semanas && obraCs.semanas.length && obraCs.programado && obraCs.real) {
     const labels = obraCs.semanas;
+    // Normalizar programado si vienen valores absolutos (FLUJO INTER fila 115 = pesos COP).
+    // Si el max > 1.5 (es decir > 150%), se asume absoluto y se divide por max.
+    const progRaw = obraCs.programado;
+    let maxProg = 0;
+    for (let k = 0; k < progRaw.length; k++) { if (typeof progRaw[k] === 'number' && progRaw[k] > maxProg) maxProg = progRaw[k]; }
+    const progFracs = (maxProg > 1.5) ? progRaw.map(v => (typeof v === 'number') ? v / maxProg : v) : progRaw;
+    const progData = progFracs.map(v => v == null ? null : (v * 100));
     const realData = obraCs.real.map(v => v == null ? null : (v * 100));
-    const progData = obraCs.programado.map(v => v == null ? null : (v * 100));
     const fechas = obraCs.fechas || [];
     if (CHART_CURVAS) CHART_CURVAS.destroy();
     CHART_CURVAS = new Chart(ctx, {
