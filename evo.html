@@ -1646,7 +1646,7 @@ function fotosRenderGridEvo(){
         '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">'+escapeHTML(x.f)+'</div>' +
       '</div>';
     }
-    var thumb = x.tl ? x.tl.replace(/=s\d+(-\w+)?$/, '=s320') : ('https://lh3.googleusercontent.com/d/' + x.i + '=w320-h240');
+    var thumb = 'https://drive.google.com/thumbnail?id=' + x.i + '&sz=w320';
     return '<div onclick="abrirLightboxEvo('+(i)+')" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">' +
       '<img data-id="'+x.i+'" data-fb="0" src="'+thumb+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="fotoFallbackEvo(this)">' +
       '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">'+escapeHTML(x.f)+'</div>' +
@@ -1692,7 +1692,7 @@ function abrirLightboxEvo(i){
       .then(function(d){ if(d && d.thumbnailLink){ lbImg.src = d.thumbnailLink; } else { fotoFallbackEvo(lbImg, true); } })
       .catch(function(){ fotoFallbackEvo(lbImg, true); });
   } else {
-    lbImg.src = x.tl ? x.tl.replace(/=s\d+(-\w+)?$/, '=s1600') : ('https://lh3.googleusercontent.com/d/' + x.i + '=w1600');
+    lbImg.src = 'https://drive.google.com/thumbnail?id=' + x.i + '&sz=w1600';
   }
   document.getElementById('fotosLbCaption').textContent = x.t + ' · ' + x.f + ' · ' + (i+1) + '/' + FOTOS_ST.viewArr.length;
   document.getElementById('fotosLightbox').style.display = 'flex';
@@ -1893,3 +1893,4 @@ function obraRenderEvo(rows){
 
 </body>
 </html>
+                                                                                                
