@@ -591,7 +591,7 @@
       <div class="topbar-title">Indicadores Contractuales</div>
       <div class="topbar-meta">Corte <span id="topbar-corte-ind">—</span></div>
     </div>
-    <button class="back-btn" onclick="indRefrescarConSync()" id="ind-refresh-btn">↻ Refrescar</button>
+    <button class="back-btn" onclick="indRefrescarConSync()" id="ind-refresh-btn">Refrescar</button>
   </div>
 
   <div class="wrap">
@@ -719,7 +719,7 @@
       <div class="topbar-title">Inventario Valorizado</div>
       <div class="topbar-meta">Actualizado <span id="inv-timestamp">—</span></div>
     </div>
-    <button class="back-btn" onclick="invRefrescarConSync()" id="inv-refresh-btn">↻ Refrescar</button>
+    <button class="back-btn" onclick="invRefrescarConSync()" id="inv-refresh-btn">Refrescar</button>
   </div>
 
   <div class="inv-wrap">
@@ -1053,7 +1053,7 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <span id="obra-gen" style="font-size:11px;color:#64748b">—</span>
-        <button onclick="obraRefrescarConSync()" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#34d399;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">🔄 Refrescar</button>
+        <button onclick="obraRefrescarConSync()" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#34d399;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">Refrescar</button>
         <a href="https://docs.google.com/spreadsheets/d/1KCl2nQ8M3h50282sLXIKqMmTlGbdJzv2/edit" target="_blank" style="background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.35);color:#38bdf8;padding:6px 12px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600">📊 Abrir XLSX</a>
       </div>
     </header>
@@ -2842,68 +2842,6 @@ function obraFmt(v){
   return String(v);
 }
 
-/* ====================== REFRESH MANUAL CON SYNC FORZADO ======================
-   Cada botón "Refrescar" dispara primero un sync en background (trigger one-shot)
-   contra el XLSX maestro, luego refresca el cache y recarga los datos del cliente.
-   Como el sync corre en background (Apps Script), el JSONP retorna en <1s y el
-   usuario ve "Sincronización iniciada…" en el spinner. */
-async function _dispararSyncBackground(action, label){
-  try{
-    const r = await jsonp(APPS_URL, {action: action, _ts: Date.now()});
-    if(r && r.error) console.warn('['+label+'] sync err:', r.error);
-    return r;
-  }catch(e){
-    console.warn('['+label+'] sync excepción:', e.message||e);
-    return null;
-  }
-}
-
-async function obraRefrescarConSync(){
-  const cont = document.getElementById('obra-secciones');
-  if(cont) cont.innerHTML = '<div style="color:#34d399;text-align:center;padding:60px 20px">🔄 Sincronizando con Excel maestro… <br><span style="font-size:12px;color:#94a3b8">(esto puede tardar hasta 5 min la primera vez; el cache después se refresca al instante)</span></div>';
-  await _dispararSyncBackground('force_sync_obra', 'obra');
-  // Espera 4s para dar tiempo a que el trigger arranque y procese al menos algo
-  await new Promise(r => setTimeout(r, 4000));
-  OBRA_LOADED = false;
-  OBRA_DATA = null;
-  obraCargar(true);
-}
-
-async function invRefrescarConSync(){
-  const btn = document.getElementById('inv-refresh-btn');
-  if(btn){ btn.disabled = true; btn.textContent = '🔄 Sincronizando…'; }
-  await _dispararSyncBackground('force_sync_inv', 'inv');
-  await new Promise(r => setTimeout(r, 2000));
-  INV_LOADED = false;
-  INV_DATA = null;
-  INV_CONS = null;
-  if(btn){ btn.disabled = false; btn.textContent = '↻ Refrescar'; }
-  invLoadData();
-}
-
-async function indRefrescarConSync(){
-  const btn = document.getElementById('ind-refresh-btn');
-  if(btn){ btn.disabled = true; btn.textContent = '🔄 Sincronizando…'; }
-  await _dispararSyncBackground('force_sync_ind', 'ind');
-  await new Promise(r => setTimeout(r, 2500));
-  try{
-    const ind = await jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()});
-    if(ind && !ind._error){
-      IND_DATA = ind;
-      IND_CORTES = Object.keys(ind).sort(function(a,b){
-        const A=a.split('-').reverse().join('-'), B=b.split('-').reverse().join('-');
-        return B.localeCompare(A);
-      });
-      IND_LATEST = IND_CORTES[0];
-      IND_CURRENT = IND_LATEST;
-      renderIndCorteSelect();
-      renderIndCorte();
-      fillMenuKPIsInd();
-    }
-  }catch(e){ console.warn('refresh ind:', e); }
-  if(btn){ btn.disabled = false; btn.textContent = '↻ Refrescar'; }
-}
-
 async function obraCargar(force){
   if(OBRA_LOADED && !force) return;
   const cont = document.getElementById('obra-secciones');
@@ -3223,4 +3161,126 @@ function obraAplicarFiltros(){
           data: {
             labels: labelsZ,
             datasets: [
-              {label:'% Programado', data: progZ, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', tension:.3, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#f59e0b', spanGaps:false, datal
+              {label:'% Programado', data: progZ, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)', tension:.3, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#f59e0b', spanGaps:false, datalabels:{display:true}},
+              {label:'% Real', data: realZ, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.1)', tension:.3, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#22c55e', spanGaps:false, datalabels:{display:true}}
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color:'#cbd5e1' } },
+              tooltip: { callbacks: { afterLabel: function(ctx){ return fechasZ[ctx.dataIndex] || ''; } } }
+            },
+            scales: {
+              x: { ticks: { color:'#cbd5e1', maxRotation:30, minRotation:0, font:{size:11} }, grid:{color:'rgba(255,255,255,.04)'} },
+              y: { ticks: { color:'#cbd5e1', callback: v => v+'%' }, grid:{color:'rgba(255,255,255,.04)'}, beginAtZero:true, max:100 }
+            },
+            animation:{ onComplete: function(){
+              // Dibujar etiquetas con valor sobre cada punto
+              const ch = this;
+              const ctx2 = ch.ctx;
+              ctx2.save();
+              ctx2.fillStyle = '#cbd5e1';
+              ctx2.font = 'bold 10px sans-serif';
+              ctx2.textAlign = 'center';
+              ch.data.datasets.forEach((ds, di) => {
+                const meta = ch.getDatasetMeta(di);
+                meta.data.forEach((pt, pi) => {
+                  const v = ds.data[pi];
+                  if (v != null) ctx2.fillText(v + '%', pt.x, pt.y - 8);
+                });
+              });
+              ctx2.restore();
+            }}
+          },
+          plugins: [boxPlugin]
+        });
+      }, 150);
+    }
+  }
+
+  // Donut por responsable
+  if (respRows.length && typeof Chart !== 'undefined'){
+    const dId = 'donut_' + Date.now();
+    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🍩 Distribución por responsable (Vr Total)</h3><div style="position:relative;height:320px;max-width:500px;margin:0 auto"><canvas id="'+dId+'"></canvas></div></div>';
+    setTimeout(() => {
+      const ctx = document.getElementById(dId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: respRows.map(r => r.resp), datasets: [{ data: respRows.map(r => r.vrTotal), backgroundColor: ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a855f7','#22d3ee','#ec4899','#8b5cf6'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position:'right', labels: { color:'#cbd5e1', font:{size:11} } } } }
+      });
+    }, 100);
+  }
+}
+
+</script>
+
+</body>
+</html>
+      });
+    }, 100);
+  }
+}
+
+
+/* ====== REFRESH MANUAL CON SYNC FORZADO (v45) ====== */
+async function _dispararSyncBackground(action, label){
+  try {
+    var r = await jsonp(APPS_URL, {action: action, _ts: Date.now()});
+    if (r && r.error) console.warn('['+label+'] sync err:', r.error);
+    return r;
+  } catch(e) {
+    console.warn('['+label+'] sync exc:', e.message||e);
+    return null;
+  }
+}
+async function obraRefrescarConSync(){
+  var cont = document.getElementById('obra-secciones');
+  if (cont) cont.innerHTML = '<div style="color:#34d399;text-align:center;padding:60px 20px">Sincronizando con Excel maestro... <br><span style="font-size:12px;color:#94a3b8">(puede tardar hasta 5 min la primera vez)</span></div>';
+  await _dispararSyncBackground('force_sync_obra', 'obra');
+  await new Promise(function(r){ setTimeout(r, 4000); });
+  OBRA_LOADED = false;
+  OBRA_DATA = null;
+  obraCargar(true);
+}
+async function invRefrescarConSync(){
+  var btn = document.getElementById('inv-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
+  await _dispararSyncBackground('force_sync_inv', 'inv');
+  await new Promise(function(r){ setTimeout(r, 2000); });
+  INV_LOADED = false;
+  INV_DATA = null;
+  INV_CONS = null;
+  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+  invLoadData();
+}
+async function indRefrescarConSync(){
+  var btn = document.getElementById('ind-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
+  await _dispararSyncBackground('force_sync_ind', 'ind');
+  await new Promise(function(r){ setTimeout(r, 2500); });
+  try {
+    var ind = await jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()});
+    if (ind && !ind._error){
+      IND_DATA = ind;
+      IND_CORTES = Object.keys(ind).sort(function(a,b){
+        var A = a.split('-').reverse().join('-');
+        var B = b.split('-').reverse().join('-');
+        return B.localeCompare(A);
+      });
+      IND_LATEST = IND_CORTES[0];
+      IND_CURRENT = IND_LATEST;
+      renderIndCorteSelect();
+      renderIndCorte();
+      fillMenuKPIsInd();
+    }
+  } catch(e) { console.warn('refresh ind:', e); }
+  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+}
+
+</script>
+
+</body>
+</h
