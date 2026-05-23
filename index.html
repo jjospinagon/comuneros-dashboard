@@ -2791,43 +2791,15 @@ function fotosRenderGrid(){
   if(!arr.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#64748b">Sin fotos en este rango.</div>'; return; }
   const LIMIT = 200;
   const slice = arr.slice(0, LIMIT);
-  // Detectar móvil: en móvil sin login Google, lh3.googleusercontent.com/d/{id} no carga formatos exóticos (HEIC, etc)
-  // así que pasamos directo al proxy de Apps Script que devuelve thumbnailLink JPEG público
-  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // drive.google.com/thumbnail funciona igual en movil y desktop sin login Google
+  // (siempre que la carpeta este compartida como "Cualquiera con link")
   grid.innerHTML = slice.map((x,i) => {
-    // En móvil: usar placeholder + lazy load via proxy
-    // En desktop: usar lh3 directo + fallback
-    if (isMobile) {
-      return `<div onclick="abrirLightbox(${i})" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">
-        <img data-id="${x.i}" data-fb="0" data-needsproxy="1" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;background:#0a0e27" onerror="fotoFallback(this)">
-        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">${x.f}</div>
-      </div>`;
-    }
-    // URL pública estable (funciona móvil + desktop sin login Google, soporta HEIC/exóticos)
     const thumb = 'https://drive.google.com/thumbnail?id=' + x.i + '&sz=w320';
     return `<div onclick="abrirLightbox(${i})" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">
-      <img data-id="${x.i}" data-fb="0" src="${thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="fotoFallback(this)">
+      <img data-id="${x.i}" data-fb="0" src="${thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;background:#0a0e27" onerror="fotoFallback(this)">
       <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">${x.f}</div>
     </div>`;
   }).join('');
-  // En móvil, hacer lazy load via IntersectionObserver para no abusar del WebApp
-  if (isMobile) {
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        const img = e.target;
-        if (img.dataset.loaded === '1') { obs.unobserve(img); return; }
-        img.dataset.loaded = '1';
-        obs.unobserve(img);
-        const fid = img.dataset.id;
-        if (_fotoProxyCache[fid]) { img.src = _fotoProxyCache[fid]; return; }
-        jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'small'})
-          .then(d => { if(d && d.thumbnailLink){ _fotoProxyCache[fid] = d.thumbnailLink; img.src = d.thumbnailLink; } else { fotoFallback(img); } })
-          .catch(() => { fotoFallback(img); });
-      });
-    }, {rootMargin:'200px'});
-    document.querySelectorAll('#fotos-grid img[data-needsproxy="1"]').forEach(img => obs.observe(img));
-  }
   if(arr.length > LIMIT){
     grid.innerHTML += `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#94a3b8;font-size:12px">Mostrando ${LIMIT} de ${arr.length} fotos. Filtra por mes o semana para ver más específicas.</div>`;
   }
@@ -2841,17 +2813,8 @@ function abrirLightbox(i){
   lbImg.dataset.id = x.i;
   lbImg.dataset.fb = '0';
   lbImg.onerror = function(){ fotoFallback(lbImg, true); };
-  const isMob = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if (isMob && _fotoProxyCache[x.i]) {
-    lbImg.src = _fotoProxyCache[x.i].replace(/=s\d+(-\w+)?$/, '=s1600');
-  } else if (isMob) {
-    lbImg.src = '';
-    jsonp(APPS_URL, {action:'foto_proxy', id: x.i, size:'large'})
-      .then(d => { if(d && d.thumbnailLink){ lbImg.src = d.thumbnailLink; } else { fotoFallback(lbImg, true); } })
-      .catch(() => { fotoFallback(lbImg, true); });
-  } else {
-    lbImg.src = 'https://drive.google.com/thumbnail?id=' + x.i + '&sz=w1600';
-  }
+  // drive.google.com/thumbnail al tamaño grande funciona igual en movil y desktop
+  lbImg.src = 'https://drive.google.com/thumbnail?id=' + x.i + '&sz=w1600';
   document.getElementById('fotos-lb-caption').textContent = x.t + ' · ' + x.f + ' · ' + (i+1) + '/' + FOTOS_STATE.viewArr.length;
   document.getElementById('fotos-lightbox').style.display = 'flex';
 }
