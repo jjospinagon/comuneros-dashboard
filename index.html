@@ -2800,7 +2800,7 @@ function fotosRenderGrid(){
   grid.innerHTML = slice.map((x,i) => {
     const thumb = 'https://drive.google.com/thumbnail?id=' + x.i + '&sz=w320';
     return `<div onclick="abrirLightbox(${i})" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">
-      <img data-id="${x.i}" data-try="0" src="${thumb}" loading="lazy" referrerpolicy="no-referrer" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;display:block;background:#0a0e27" onerror="fotoTryNext(this)">
+      <img data-id="${x.i}" data-try="0" src="${thumb}" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;display:block;background:#0a0e27" onerror="fotoTryNext(this)">
       <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">${x.f}</div>
     </div>`;
   }).join('');
