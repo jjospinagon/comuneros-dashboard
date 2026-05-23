@@ -953,28 +953,36 @@
 
 <!-- ============ VISTA CONTRATO ============ -->
 <style>
-  /* === CONTRATO responsive === */
-  #screen-contrato .contrato-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
-  #screen-contrato .contrato-cols2{grid-template-columns:1fr 1fr}
-  @media(max-width:1000px){
-    #screen-contrato .contrato-kpis{grid-template-columns:repeat(2,1fr)}
-    #screen-contrato .contrato-cols2{grid-template-columns:1fr}
+  /* === CONTRATO responsive (BREAKPOINTS AGRESIVOS) === */
+  #screen-contrato .contrato-kpis{display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr)) !important;gap:14px !important}
+  #screen-contrato .contrato-cols2{display:grid !important;grid-template-columns:1fr 1fr !important;gap:14px !important}
+  @media(max-width:1100px){
+    #screen-contrato .contrato-kpis{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+    #screen-contrato .contrato-cols2{grid-template-columns:1fr !important}
   }
-  @media(max-width:600px){
-    #screen-contrato .contrato-kpis{grid-template-columns:1fr}
+  @media(max-width:768px){
+    #screen-contrato .contrato-kpis{grid-template-columns:1fr !important}
+    #screen-contrato .contrato-kpis .panel{padding:14px !important}
+    #screen-contrato table{font-size:13px !important}
+    #screen-contrato table td{padding:8px 0 !important;line-height:1.4 !important}
   }
-  /* === COMUNICACIONES responsive === */
-  #screen-comunicaciones .cms-filtros-grid{grid-template-columns:repeat(5,1fr)}
-  #screen-comunicaciones .cms-main-grid{grid-template-columns:280px 1fr}
-  @media(max-width:1000px){
-    #screen-comunicaciones .cms-filtros-grid{grid-template-columns:repeat(3,1fr)}
-    #screen-comunicaciones .cms-main-grid{grid-template-columns:1fr}
-    #screen-comunicaciones .cms-main-grid .panel:first-child{max-height:280px !important}
+  /* === COMUNICACIONES responsive (BREAKPOINTS AGRESIVOS) === */
+  #screen-comunicaciones .cms-filtros-grid{display:grid !important;grid-template-columns:repeat(5,1fr) !important;gap:10px !important}
+  #screen-comunicaciones .cms-main-grid{display:grid !important;grid-template-columns:280px 1fr !important;gap:14px !important}
+  @media(max-width:1100px){
+    #screen-comunicaciones .cms-filtros-grid{grid-template-columns:repeat(3,1fr) !important}
+    #screen-comunicaciones .cms-main-grid{grid-template-columns:1fr !important}
+    #screen-comunicaciones .cms-main-grid > .panel:first-child{max-height:300px !important}
   }
-  @media(max-width:600px){
-    #screen-comunicaciones .cms-filtros-grid{grid-template-columns:repeat(2,1fr)}
-    #screen-comunicaciones table{font-size:11px}
-    #screen-comunicaciones th, #screen-comunicaciones td{padding:6px 6px;white-space:nowrap}
+  @media(max-width:768px){
+    #screen-comunicaciones .cms-filtros-grid{grid-template-columns:repeat(2,1fr) !important}
+    #screen-comunicaciones .cms-main-grid > .panel{max-height:none !important;overflow:visible !important}
+    #screen-comunicaciones table{font-size:11px !important;display:block;overflow-x:auto !important}
+    #screen-comunicaciones th, #screen-comunicaciones td{padding:6px 8px !important;white-space:nowrap !important}
+    #screen-comunicaciones .wrap{padding:12px !important}
+  }
+  @media(max-width:480px){
+    #screen-comunicaciones .cms-filtros-grid{grid-template-columns:1fr !important}
   }
 </style>
 <div class="screen" id="screen-contrato">
