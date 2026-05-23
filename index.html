@@ -2842,13 +2842,14 @@ function fotoTryNext(imgEl){
     // drive.usercontent.google.com (URL nueva)
     imgEl.src = 'https://drive.usercontent.google.com/download?id=' + fid + '&export=view';
   } else if (tryN === 4) {
-    // Ultimo recurso: pedir base64 al backend
+    // Ultimo recurso: pedir dataURL base64 al backend (garantizado en cualquier dispositivo)
     if (_fotoProxyCache[fid]) { imgEl.src = _fotoProxyCache[fid]; return; }
-    jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'small'})
+    jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'small', format:'base64'})
       .then(d => {
-        if (d && d.thumbnailLink) {
-          _fotoProxyCache[fid] = d.thumbnailLink;
-          imgEl.src = d.thumbnailLink;
+        var url = (d && (d.dataURL || d.thumbnailLink));
+        if (url) {
+          _fotoProxyCache[fid] = url;
+          imgEl.src = url;
         } else {
           fotoMarcarFallido(imgEl);
         }
@@ -2877,8 +2878,8 @@ function fotoFallback(imgEl, fullSize){
     else if (tryN === 2) imgEl.src = 'https://drive.google.com/uc?export=view&id=' + fid;
     else if (tryN === 3) imgEl.src = 'https://drive.usercontent.google.com/download?id=' + fid + '&export=view';
     else {
-      jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'large'})
-        .then(d => { if(d && d.thumbnailLink){ imgEl.src = d.thumbnailLink; } })
+      jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'large', format:'base64'})
+        .then(d => { var url = (d && (d.dataURL || d.thumbnailLink)); if(url){ imgEl.src = url; } })
         .catch(() => {});
     }
     return;
