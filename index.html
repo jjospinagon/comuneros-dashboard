@@ -1084,7 +1084,10 @@
         <h1 style="margin:0;font-size:20px;color:#fff">📷 Registro Fotográfico</h1>
         <h2 style="margin:0;font-size:13px;color:#94a3b8;font-weight:400">Galería de obra · navegación por años / meses / semanas (estructura nativa de Drive)</h2>
       </div>
-      <a href="https://drive.google.com/drive/folders/10sJhPWxeEvTFtLPquVp-UPrPJtq_vV6f" target="_blank" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);color:#fbbf24;padding:6px 12px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600">🗂️ Abrir en Drive</a>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button onclick="fotosRefrescarConSync()" id="fotos-refresh-btn" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#34d399;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">Refrescar</button>
+        <a href="https://drive.google.com/drive/folders/10sJhPWxeEvTFtLPquVp-UPrPJtq_vV6f" target="_blank" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);color:#fbbf24;padding:6px 12px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600">Abrir en Drive</a>
+      </div>
     </header>
 
     <div class="grid" style="display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px">
@@ -3269,6 +3272,22 @@ async function indRefrescarConSync(){
     }
   } catch(e) { console.warn('refresh ind:', e); }
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+}
+
+
+async function fotosRefrescarConSync(){
+  var btn = document.getElementById('fotos-refresh-btn');
+  var arbol = document.getElementById('fotos-arbol');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
+  if (arbol) arbol.innerHTML = '<div style="color:#34d399;text-align:center;padding:14px;font-size:12px">Sincronizando con Drive...</div>';
+  await _dispararSyncBackground('force_sync_fotos', 'fotos');
+  await new Promise(function(r){ setTimeout(r, 3500); });
+  FOTOS_LOADED = false;
+  FOTOS_STATE.indice = null;
+  FOTOS_STATE.totales = null;
+  FOTOS_STATE.items = [];
+  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+  fotosCargarIndice();
 }
 
 </script>
