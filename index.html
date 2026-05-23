@@ -952,6 +952,31 @@
 </div>
 
 <!-- ============ VISTA CONTRATO ============ -->
+<style>
+  /* === CONTRATO responsive === */
+  #screen-contrato .contrato-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #screen-contrato .contrato-cols2{grid-template-columns:1fr 1fr}
+  @media(max-width:1000px){
+    #screen-contrato .contrato-kpis{grid-template-columns:repeat(2,1fr)}
+    #screen-contrato .contrato-cols2{grid-template-columns:1fr}
+  }
+  @media(max-width:600px){
+    #screen-contrato .contrato-kpis{grid-template-columns:1fr}
+  }
+  /* === COMUNICACIONES responsive === */
+  #screen-comunicaciones .cms-filtros-grid{grid-template-columns:repeat(5,1fr)}
+  #screen-comunicaciones .cms-main-grid{grid-template-columns:280px 1fr}
+  @media(max-width:1000px){
+    #screen-comunicaciones .cms-filtros-grid{grid-template-columns:repeat(3,1fr)}
+    #screen-comunicaciones .cms-main-grid{grid-template-columns:1fr}
+    #screen-comunicaciones .cms-main-grid .panel:first-child{max-height:280px !important}
+  }
+  @media(max-width:600px){
+    #screen-comunicaciones .cms-filtros-grid{grid-template-columns:repeat(2,1fr)}
+    #screen-comunicaciones table{font-size:11px}
+    #screen-comunicaciones th, #screen-comunicaciones td{padding:6px 6px;white-space:nowrap}
+  }
+</style>
 <div class="screen" id="screen-contrato">
   <div style="padding:18px;max-width:1280px;margin:0 auto">
     <button class="back-btn" onclick="goTo('menu')">← Menú</button>
@@ -963,14 +988,14 @@
       <span class="badge" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:6px 10px;border-radius:8px;color:#94a3b8;font-size:12px">Balance vigente: V7 — Adición 07-04-2026</span>
     </header>
 
-    <div class="grid" style="display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr))">
+    <div class="grid contrato-kpis" style="display:grid;gap:14px">
       <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #22d3ee"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Contrato</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">023 de 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Obra civil</div></div>
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Entidad</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">EMPRESA PARA EL DESARROLLO TERRITORIAL</div><div style="font-size:11px;color:#64748b;margin-top:2px">Quindío</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Entidad</div><div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px;line-height:1.25">EMPRESA PARA EL DESARROLLO TERRITORIAL</div><div style="font-size:11px;color:#64748b;margin-top:2px">Quindío</div></div>
       <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #f59e0b"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Contratista</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">CONSORCIO INFRARED COMUNEROS 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Consorcio de obra</div></div>
       <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #a855f7"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Interventoría</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">UT INTERCOMUNEROS 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Interventoría externa</div></div>
     </div>
 
-    <div class="grid" style="display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-top:14px">
+    <div class="grid contrato-cols2" style="display:grid;gap:14px;margin-top:14px">
       <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px">
         <h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">📋 Identificación contractual</h3>
         <table style="width:100%;font-size:12.5px"><tbody>
@@ -1044,7 +1069,7 @@
     </div>
 
     <div class="panel" style="margin-bottom:12px">
-      <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:10px">
+      <div class="grid cms-filtros-grid" style="display:grid;gap:10px">
         <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Búsqueda libre</div><input id="cms-search" type="text" class="filter-input" placeholder="palabra, consecutivo, asunto…"></div>
         <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Fuente</div><select id="cms-fuente" class="filter-input"><option value="">Todas</option><option value="obra">Obra</option><option value="interventoria">Interventoría</option></select></div>
         <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Tipo</div><select id="cms-tipo" class="filter-input"><option value="">Todos</option><option value="enviado">Enviados</option><option value="recibido">Recibidos</option></select></div>
@@ -1054,7 +1079,7 @@
       <div style="font-size:11px;color:#64748b;margin-top:8px"><span id="cms-count">—</span> resultados</div>
     </div>
 
-    <div class="grid" style="grid-template-columns:280px 1fr;gap:14px">
+    <div class="grid cms-main-grid" style="display:grid;gap:14px">
       <div class="panel" style="max-height:580px;overflow:auto">
         <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#fff">🗓️ Calendario</h3>
         <div id="cms-arbol"><div style="color:#94a3b8;padding:14px;text-align:center;font-size:12px">⏳ Cargando…</div></div>
