@@ -21,28 +21,21 @@
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;color:#e6ecff;overflow-x:hidden}
   body{
-    background: #0a0e27;
+    background: #000000;
     min-height:100vh;
     position:relative;
   }
-  /* Mesh gradient animado */
+  /* Cuadricula muy translucida sobre fondo negro */
   body::before{
     content:'';
     position:fixed;
     inset:0;
-    background:
-      radial-gradient(at 20% 25%, hsla(217,98%,55%,.35) 0px, transparent 50%),
-      radial-gradient(at 75% 20%, hsla(280,90%,55%,.25) 0px, transparent 50%),
-      radial-gradient(at 50% 80%, hsla(190,100%,50%,.25) 0px, transparent 50%),
-      radial-gradient(at 90% 75%, hsla(330,80%,55%,.18) 0px, transparent 50%);
-    animation: meshMove 18s ease-in-out infinite alternate;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 48px 48px;
     z-index:0;
     pointer-events:none;
-  }
-  @keyframes meshMove{
-    0%{filter:hue-rotate(0deg) brightness(1)}
-    50%{filter:hue-rotate(15deg) brightness(1.1)}
-    100%{filter:hue-rotate(-10deg) brightness(.95)}
   }
 
   /* ============ SCREENS ============ */
@@ -3361,3 +3354,4 @@ async function fotosRefrescarConSync(){
 
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                            
