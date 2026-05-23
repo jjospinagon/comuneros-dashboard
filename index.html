@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=5.0">
+<meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#0a0e27">
 <title>Comuneros · Cockpit Ejecutivo</title>
 <link rel="manifest" href="manifest.json">
@@ -2791,12 +2792,15 @@ function fotosRenderGrid(){
   if(!arr.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#64748b">Sin fotos en este rango.</div>'; return; }
   const LIMIT = 200;
   const slice = arr.slice(0, LIMIT);
-  // drive.google.com/thumbnail funciona igual en movil y desktop sin login Google
-  // (siempre que la carpeta este compartida como "Cualquiera con link")
+  // Cascada de URLs alternativas - si una falla, intenta la siguiente
+  // data-try=0: drive.google.com/thumbnail (la mas confiable)
+  // data-try=1: lh3.googleusercontent.com
+  // data-try=2: drive.google.com/uc?export=view
+  // data-try=3: backend foto_proxy (ultimo recurso)
   grid.innerHTML = slice.map((x,i) => {
     const thumb = 'https://drive.google.com/thumbnail?id=' + x.i + '&sz=w320';
     return `<div onclick="abrirLightbox(${i})" style="cursor:pointer;background:#0f1428;border:1px solid rgba(255,255,255,.06);border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative">
-      <img data-id="${x.i}" data-fb="0" src="${thumb}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;background:#0a0e27" onerror="fotoFallback(this)">
+      <img data-id="${x.i}" data-try="0" src="${thumb}" loading="lazy" referrerpolicy="no-referrer" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;display:block;background:#0a0e27" onerror="fotoTryNext(this)">
       <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:14px 8px 6px;color:#fff;font-size:10.5px;font-weight:600">${x.f}</div>
     </div>`;
   }).join('');
@@ -2811,7 +2815,8 @@ function abrirLightbox(i){
   if(!x) return;
   const lbImg = document.getElementById('fotos-lb-img');
   lbImg.dataset.id = x.i;
-  lbImg.dataset.fb = '0';
+  lbImg.dataset.try = '0';
+  lbImg.setAttribute('referrerpolicy', 'no-referrer');
   lbImg.onerror = function(){ fotoFallback(lbImg, true); };
   // drive.google.com/thumbnail al tamaño grande funciona igual en movil y desktop
   lbImg.src = 'https://drive.google.com/thumbnail?id=' + x.i + '&sz=w1600';
@@ -2819,25 +2824,66 @@ function abrirLightbox(i){
   document.getElementById('fotos-lightbox').style.display = 'flex';
 }
 
-/* Cuando falla la URL pública (móvil sin login Google), intenta el proxy del WebApp */
+/* Cascada de URLs alternativas para fotos de Drive en movil */
 const _fotoProxyCache = {};
+function fotoTryNext(imgEl){
+  const fid = imgEl.dataset.id;
+  if (!fid) return;
+  let tryN = parseInt(imgEl.dataset.try || '0', 10);
+  tryN++;
+  imgEl.dataset.try = String(tryN);
+  if (tryN === 1) {
+    // lh3.googleusercontent.com
+    imgEl.src = 'https://lh3.googleusercontent.com/d/' + fid + '=w320-h240';
+  } else if (tryN === 2) {
+    // drive.google.com/uc export view
+    imgEl.src = 'https://drive.google.com/uc?export=view&id=' + fid;
+  } else if (tryN === 3) {
+    // drive.usercontent.google.com (URL nueva)
+    imgEl.src = 'https://drive.usercontent.google.com/download?id=' + fid + '&export=view';
+  } else if (tryN === 4) {
+    // Ultimo recurso: pedir base64 al backend
+    if (_fotoProxyCache[fid]) { imgEl.src = _fotoProxyCache[fid]; return; }
+    jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'small'})
+      .then(d => {
+        if (d && d.thumbnailLink) {
+          _fotoProxyCache[fid] = d.thumbnailLink;
+          imgEl.src = d.thumbnailLink;
+        } else {
+          fotoMarcarFallido(imgEl);
+        }
+      })
+      .catch(() => fotoMarcarFallido(imgEl));
+  } else {
+    fotoMarcarFallido(imgEl);
+  }
+}
+function fotoMarcarFallido(imgEl){
+  imgEl.style.display = 'none';
+  if (imgEl.parentElement) {
+    imgEl.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-size:10.5px;height:100%;display:flex;align-items:center;justify-content:center">no disponible</div>';
+  }
+}
+/* Compatibilidad con codigo viejo - redirige a fotoTryNext */
 function fotoFallback(imgEl, fullSize){
-  if (imgEl.dataset.fb === '1') {
-    // Ya hicimos fallback; mostrar placeholder visual
-    imgEl.style.display = 'none';
-    if (!fullSize && imgEl.parentElement) {
-      imgEl.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-size:10.5px;height:100%;display:flex;align-items:center;justify-content:center">📷 sin previsualización</div>';
+  if (fullSize) {
+    // Lightbox - usar cascada similar pero al elemento del lightbox
+    let tryN = parseInt(imgEl.dataset.try || '0', 10);
+    tryN++;
+    imgEl.dataset.try = String(tryN);
+    const fid = imgEl.dataset.id;
+    if (!fid) return;
+    if (tryN === 1) imgEl.src = 'https://lh3.googleusercontent.com/d/' + fid + '=w1600';
+    else if (tryN === 2) imgEl.src = 'https://drive.google.com/uc?export=view&id=' + fid;
+    else if (tryN === 3) imgEl.src = 'https://drive.usercontent.google.com/download?id=' + fid + '&export=view';
+    else {
+      jsonp(APPS_URL, {action:'foto_proxy', id: fid, size:'large'})
+        .then(d => { if(d && d.thumbnailLink){ imgEl.src = d.thumbnailLink; } })
+        .catch(() => {});
     }
     return;
   }
-  imgEl.dataset.fb = '1';
-  const fid = imgEl.dataset.id;
-  if (!fid) return;
-  if (_fotoProxyCache[fid]) { imgEl.src = _fotoProxyCache[fid]; return; }
-  const size = fullSize ? 'large' : 'small';
-  jsonp(APPS_URL, {action:'foto_proxy', id: fid, size: size})
-    .then(d => { if(d && d.thumbnailLink){ _fotoProxyCache[fid] = d.thumbnailLink; imgEl.src = d.thumbnailLink; } else { fotoFallback(imgEl, fullSize); } })
-    .catch(() => { fotoFallback(imgEl, fullSize); });
+  fotoTryNext(imgEl);
 }
 function cerrarLightbox(){ document.getElementById('fotos-lightbox').style.display = 'none'; }
 function navFoto(delta){
