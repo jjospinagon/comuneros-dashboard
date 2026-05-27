@@ -1188,13 +1188,20 @@
         <div class="topbar-title">📅 Ejecución Diaria</div>
         <div class="topbar-meta">Corte <span id="ed-fecha">—</span></div>
       </div>
-      <button class="back-btn" onclick="ejecDiariaRefrescar()" id="ed-refresh-btn">Refrescar</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#94a3b8;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px">
+          <span>📆</span>
+          <input type="date" id="ed-fecha-picker" onchange="ejecDiariaCambiarFecha(this.value)" style="background:transparent;border:0;color:#fff;font-size:12px;font-family:inherit;outline:none;cursor:pointer;color-scheme:dark">
+        </label>
+        <button class="back-btn" onclick="ejecDiariaIrAyer()" id="ed-ayer-btn" title="Volver al día de ayer">Ayer</button>
+        <button class="back-btn" onclick="ejecDiariaRefrescar()" id="ed-refresh-btn">Refrescar</button>
+      </div>
     </div>
 
     <header>
       <div>
-        <h1>Avance del último día reportado</h1>
-        <h2>Solo actividades con avance &gt; 0 · datos de la hoja AVANCE DIARIO</h2>
+        <h1 id="ed-h1">Avance diario</h1>
+        <h2>Solo actividades con avance &gt; 0 · datos de la hoja AVANCE DIARIO · valores en pesos colombianos</h2>
       </div>
       <span id="ed-gen" style="font-size:11px;color:#64748b">—</span>
     </header>
@@ -3455,19 +3462,43 @@ async function fotosRefrescarConSync(){
 /* ====================== EJECUCIÓN DIARIA ====================== */
 let EJEC_DIARIA_LOADED = false;
 let EJEC_DIARIA_DATA = null;
+let EJEC_DIARIA_FECHA = null; // YYYY-MM-DD seleccionada
 
-async function ejecDiariaCargar(force){
-  if (EJEC_DIARIA_LOADED && !force) return;
+function ejecDiariaAyerStr(){
+  const d = new Date(Date.now() - 86400000);
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return y + '-' + m + '-' + dd;
+}
+
+async function ejecDiariaCargar(force, fechaOverride){
   const tbody = document.querySelector('#ed-tabla tbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando avance del día…</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando avance…</td></tr>';
+  // Determinar fecha: override > picker > ayer
+  let fecha = fechaOverride || EJEC_DIARIA_FECHA || ejecDiariaAyerStr();
+  EJEC_DIARIA_FECHA = fecha;
   try {
-    const d = await jsonp(APPS_URL, force ? {action:'avance_diario', _ts:Date.now()} : {action:'avance_diario'});
-    if (!d || d.error) {
-      tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
+    const params = {action:'avance_diario', fecha: fecha};
+    if (force) params._ts = Date.now();
+    const d = await jsonp(APPS_URL, params);
+    if (!d || (d.error && !d.items)) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
       return;
     }
     EJEC_DIARIA_DATA = d;
     EJEC_DIARIA_LOADED = true;
+    // Sincronizar picker con la fecha realmente usada
+    const picker = document.getElementById('ed-fecha-picker');
+    if (picker) {
+      picker.value = d.fechaUsada || d.fecha || fecha;
+      // Limitar rango del picker a fechas disponibles
+      if (d.fechasDisponibles && d.fechasDisponibles.length) {
+        const sorted = d.fechasDisponibles.slice().sort();
+        picker.min = sorted[0];
+        picker.max = sorted[sorted.length-1];
+      }
+    }
     ejecDiariaRender();
   } catch(e){
     if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ Error: ' + escapeHTML(e.message||String(e)) + '</td></tr>';
@@ -3477,49 +3508,79 @@ async function ejecDiariaCargar(force){
 function ejecDiariaRender(){
   const d = EJEC_DIARIA_DATA;
   if (!d) return;
-  // Fecha
-  const fechaFmt = d.fecha ? formatFechaED(d.fecha) : '—';
+  const fechaSolicitada = d.fecha || '';
+  const fechaUsada = d.fechaUsada || fechaSolicitada;
+  const fechaFmt = fechaUsada ? formatFechaED(fechaUsada) : '—';
   document.getElementById('ed-fecha').textContent = fechaFmt;
   document.getElementById('ed-k-fecha').textContent = fechaFmt;
   document.getElementById('ed-gen').textContent = 'gen ' + (d._generado || '');
-  // Calcular valor real (cant × vrUnit) ya que en la hoja J/L son porcentajes
+
+  // Aviso si la fecha solicitada no tiene datos y se sustituyó por la anterior con avance
+  const h1 = document.getElementById('ed-h1');
+  if (h1) {
+    if (fechaSolicitada && fechaUsada && fechaSolicitada !== fechaUsada) {
+      h1.innerHTML = 'Avance del día ' + escapeHTML(formatFechaED(fechaUsada)) +
+        ' <span style="font-size:12px;color:#fbbf24;font-weight:400">· sin datos para ' +
+        escapeHTML(formatFechaED(fechaSolicitada)) + ', usando el último disponible</span>';
+    } else {
+      h1.textContent = 'Avance del día ' + (fechaFmt || '');
+    }
+  }
+
+  // El backend ya devuelve vrDia y vrAcum en COP (cantidad × vrUnit)
+  const items = (d.items||[]).slice();
   let vrDiaCop = 0, vrAcumCop = 0;
-  (d.items||[]).forEach(it => {
-    it._vrDiaCop = (it.cantDia||0) * (it.vrUnit||0);
-    it._vrAcumCop = (it.cantAcum||0) * (it.vrUnit||0);
-    vrDiaCop += it._vrDiaCop;
-    vrAcumCop += it._vrAcumCop;
+  items.forEach(it => {
+    // Fallback defensivo: si el backend no calculó vrDia, hacerlo aquí
+    if (typeof it.vrDia !== 'number') it.vrDia = (it.cantDia||0) * (it.vrUnit||0);
+    if (typeof it.vrAcum !== 'number') it.vrAcum = (it.cantAcum||0) * (it.vrUnit||0);
+    vrDiaCop += it.vrDia;
+    vrAcumCop += it.vrAcum;
   });
-  document.getElementById('ed-k-num').textContent = (d.items||[]).length.toString();
+  document.getElementById('ed-k-num').textContent = items.length.toString();
   document.getElementById('ed-k-vrdia').textContent = moneyShort(vrDiaCop);
   document.getElementById('ed-k-vracum').textContent = moneyShort(vrAcumCop);
-  // Tabla
-  const items = (d.items||[]).slice().sort((a,b) => (b._vrDiaCop||0) - (a._vrDiaCop||0));
+
+  items.sort((a,b) => (b.vrDia||0) - (a.vrDia||0));
   const tbody = document.querySelector('#ed-tabla tbody');
   if (!items.length) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">Sin actividades con avance en este día.</td></tr>';
     return;
   }
   tbody.innerHTML = items.map(it => {
-    const pctAcum = (it.vrAcum||0) * 100;
+    const pctAcum = (it.pctAcum||0) * 100;
     return '<tr>' +
       '<td><span class="badge-cap">' + escapeHTML(it.item||'') + '</span></td>' +
       '<td>' + escapeHTML(it.desc||'') + '</td>' +
       '<td>' + escapeHTML(it.und||'') + '</td>' +
       '<td class="num"><span class="num-strong">' + fmt2.format(it.cantDia||0) + '</span></td>' +
-      '<td class="num"><span class="num-strong">' + money(it._vrDiaCop) + '</span></td>' +
+      '<td class="num"><span class="num-strong">' + money(it.vrDia||0) + '</span></td>' +
       '<td class="num">' + fmt2.format(it.cantAcum||0) + '</td>' +
-      '<td class="num">' + money(it._vrAcumCop) + '</td>' +
+      '<td class="num">' + money(it.vrAcum||0) + '</td>' +
       '<td class="num">' + pctAcum.toFixed(1) + '%</td>' +
     '</tr>';
   }).join('');
+}
+
+function ejecDiariaCambiarFecha(fecha){
+  if (!fecha) return;
+  EJEC_DIARIA_FECHA = fecha;
+  ejecDiariaCargar(false, fecha);
+}
+
+function ejecDiariaIrAyer(){
+  const ayer = ejecDiariaAyerStr();
+  EJEC_DIARIA_FECHA = ayer;
+  const picker = document.getElementById('ed-fecha-picker');
+  if (picker) picker.value = ayer;
+  ejecDiariaCargar(false, ayer);
 }
 
 async function ejecDiariaRefrescar(){
   const btn = document.getElementById('ed-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
   EJEC_DIARIA_LOADED = false;
-  await ejecDiariaCargar(true);
+  await ejecDiariaCargar(true, EJEC_DIARIA_FECHA);
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
 }
 
