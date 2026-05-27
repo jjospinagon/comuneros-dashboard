@@ -529,6 +529,37 @@
         <div class="cta">Ver ejecución del día <span class="arrow">→</span></div>
       </div>
 
+      <!-- CARD MANO DE OBRA -->
+      <div class="menu-card ind" onclick="goTo('mo')" style="background:linear-gradient(180deg,rgba(168,85,247,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">👷</div>
+        <h2>Mano de Obra</h2>
+        <p class="desc">Asistencia diaria del personal: ingresos, salidas, ausencias, horas trabajadas y horas extras. Distribución por frente y cargo.</p>
+        <div class="illust">
+          <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
+            <!-- 3 personas -->
+            <g transform="translate(40,18)">
+              <circle cx="0" cy="8" r="7" fill="rgba(168,85,247,.85)"/>
+              <path d="M-10 30 Q0 18 10 30 L10 42 L-10 42 Z" fill="rgba(168,85,247,.6)"/>
+            </g>
+            <g transform="translate(80,14)">
+              <circle cx="0" cy="8" r="9" fill="rgba(34,211,238,.85)"/>
+              <path d="M-12 34 Q0 20 12 34 L12 50 L-12 50 Z" fill="rgba(34,211,238,.6)"/>
+            </g>
+            <g transform="translate(120,18)">
+              <circle cx="0" cy="8" r="7" fill="rgba(251,191,36,.85)"/>
+              <path d="M-10 30 Q0 18 10 30 L10 42 L-10 42 Z" fill="rgba(251,191,36,.6)"/>
+            </g>
+            <g transform="translate(160,16)">
+              <circle cx="0" cy="8" r="8" fill="rgba(34,197,94,.85)"/>
+              <path d="M-11 32 Q0 19 11 32 L11 46 L-11 46 Z" fill="rgba(34,197,94,.6)"/>
+            </g>
+            <!-- Línea base -->
+            <line x1="20" y1="70" x2="180" y2="70" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="cta">Ver personal en obra <span class="arrow">→</span></div>
+      </div>
+
       <!-- CARD INDICADORES -->
       <div class="menu-card ind" onclick="goTo('indicadores')">
         <div class="icon">📊</div>
@@ -1238,6 +1269,127 @@
   </div>
 </div>
 
+<!-- ============ VISTA MANO DE OBRA ============ -->
+<style>
+  #screen-mo .wrap{max-width:1500px;margin:0 auto;padding:18px}
+  #screen-mo header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 18px;gap:12px;flex-wrap:wrap}
+  #screen-mo h1{margin:0;font-size:20px;color:#fff}
+  #screen-mo h2{margin:0;font-size:13px;color:#94a3b8;font-weight:400}
+  #screen-mo .mo-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px}
+  @media(max-width:1100px){#screen-mo .mo-kpis{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:600px){#screen-mo .mo-kpis{grid-template-columns:repeat(2,1fr)}}
+  #screen-mo .mo-kpi{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px 14px;border-left:3px solid var(--acc,#a855f7)}
+  #screen-mo .mo-kpi .l{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  #screen-mo .mo-kpi .v{font-size:22px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;margin-top:4px}
+  #screen-mo .mo-kpi .s{font-size:10.5px;color:#64748b;margin-top:2px}
+  #screen-mo .mo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:900px){#screen-mo .mo-grid{grid-template-columns:1fr}}
+  #screen-mo .mo-panel{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;overflow:hidden}
+  #screen-mo .mo-panel h3{font-size:13px;font-weight:700;margin:0 0 12px;color:#fff}
+  #screen-mo .mo-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px}
+  #screen-mo .mo-bar .lbl{flex:0 0 130px;color:#cbd5e1;font-weight:600}
+  #screen-mo .mo-bar .barwrap{flex:1;height:18px;background:rgba(255,255,255,.04);border-radius:6px;overflow:hidden;position:relative}
+  #screen-mo .mo-bar .barfill{height:100%;border-radius:6px;background:linear-gradient(90deg,#a855f7,#22d3ee)}
+  #screen-mo .mo-bar .val{flex:0 0 80px;text-align:right;color:#cbd5e1;font-variant-numeric:tabular-nums}
+  #screen-mo .mo-tbl-wrap{overflow-x:auto}
+  #screen-mo table{width:100%;border-collapse:collapse;font-size:12px;min-width:980px}
+  #screen-mo th{text-align:left;padding:9px 10px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.85);position:sticky;top:0}
+  #screen-mo th.num,#screen-mo td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #screen-mo td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:#cbd5e1;vertical-align:middle}
+  #screen-mo tr:hover td{background:rgba(255,255,255,.03)}
+  #screen-mo .badge-fr{padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:700;display:inline-block}
+  #screen-mo .badge-fr.obra{background:rgba(34,211,238,.15);color:#22d3ee}
+  #screen-mo .badge-fr.mo{background:rgba(168,85,247,.15);color:#a855f7}
+  #screen-mo .badge-fr.inter{background:rgba(251,191,36,.15);color:#fbbf24}
+  #screen-mo .pill-rango{padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;display:inline-block}
+  #screen-mo .pill-rango.ok{background:rgba(34,197,94,.15);color:#34d399}
+  #screen-mo .pill-rango.fuera{background:rgba(239,68,68,.15);color:#ef4444}
+  #screen-mo .foto-thumb{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid rgba(168,85,247,.3);background:#222}
+  #screen-mo .he-tag{background:rgba(34,197,94,.18);color:#34d399;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:700;display:inline-block}
+  #screen-mo .tardanza{color:#fbbf24;font-size:10.5px}
+  @media(max-width:600px){
+    #screen-mo table{font-size:11px;min-width:760px}
+    #screen-mo th,#screen-mo td{padding:6px 8px}
+  }
+</style>
+<div class="screen" id="screen-mo">
+  <div class="wrap">
+    <div class="topbar">
+      <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+      <div>
+        <div class="topbar-title">👷 Mano de Obra</div>
+        <div class="topbar-meta">Corte <span id="mo-fecha">—</span> · <span id="mo-dia-semana">—</span></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#94a3b8;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px">
+          <span>📆</span>
+          <input type="date" id="mo-fecha-picker" onchange="moCambiarFecha(this.value)" style="background:transparent;border:0;color:#fff;font-size:12px;font-family:inherit;outline:none;cursor:pointer;color-scheme:dark">
+        </label>
+        <button class="back-btn" onclick="moIrHoy()" title="Volver al día actual">Hoy</button>
+        <button class="back-btn" onclick="moRefrescar()" id="mo-refresh-btn">Refrescar</button>
+      </div>
+    </div>
+
+    <header>
+      <div>
+        <h1 id="mo-h1">Asistencia y horas trabajadas</h1>
+        <h2>Jornada base L-V 8h (7:30-12:00 + 1:00-4:30) · Sáb 4h (7:30-11:30) · Dom: descanso</h2>
+      </div>
+      <span id="mo-gen" style="font-size:11px;color:#64748b">—</span>
+    </header>
+
+    <div class="mo-kpis">
+      <div class="mo-kpi" style="--acc:#22d3ee"><div class="l">En obra</div><div class="v" id="mo-k-enobra">—</div><div class="s">ingresaron sin salida</div></div>
+      <div class="mo-kpi" style="--acc:#34d399"><div class="l">Con ingreso</div><div class="v" id="mo-k-ingreso">—</div><div class="s">del día</div></div>
+      <div class="mo-kpi" style="--acc:#fbbf24"><div class="l">Con salida</div><div class="v" id="mo-k-salida">—</div><div class="s">cerraron jornada</div></div>
+      <div class="mo-kpi" style="--acc:#ef4444"><div class="l">Ausencias</div><div class="v" id="mo-k-ausencias">—</div><div class="s">no se reportaron</div></div>
+      <div class="mo-kpi" style="--acc:#a855f7"><div class="l">Horas día</div><div class="v" id="mo-k-horas">—</div><div class="s">netas trabajadas</div></div>
+      <div class="mo-kpi" style="--acc:#f59e0b"><div class="l">Horas extras</div><div class="v" id="mo-k-extras">—</div><div class="s">sobre jornada base</div></div>
+    </div>
+
+    <div class="mo-grid">
+      <div class="mo-panel">
+        <h3>👷 Distribución por frente</h3>
+        <div id="mo-por-frente">—</div>
+      </div>
+      <div class="mo-panel">
+        <h3>🛠️ Distribución por cargo</h3>
+        <div id="mo-por-cargo">—</div>
+      </div>
+    </div>
+
+    <div class="mo-panel" style="margin-bottom:14px">
+      <h3>📋 Personal del día <span id="mo-total-personas" style="color:#94a3b8;font-weight:400;font-size:11px"></span></h3>
+      <div class="mo-tbl-wrap">
+        <table id="mo-tabla">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th>Nombre</th>
+              <th>Frente</th>
+              <th>Cargo</th>
+              <th class="num">Ingreso</th>
+              <th class="num">Salida</th>
+              <th class="num">Horas</th>
+              <th class="num">H. extras</th>
+              <th>Rango</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando personal…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mo-panel">
+      <h3>📈 Asistencia por día (histórico)</h3>
+      <div id="mo-diaria" style="overflow-x:auto;padding:6px 0">—</div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ VISTA REGISTRO FOTOGRÁFICO ============ -->
 <div class="screen" id="screen-fotos">
   <div style="padding:18px;max-width:1500px;margin:0 auto">
@@ -1384,6 +1536,7 @@ function goTo(name){
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
   if(name==='ejecdiaria' && !EJEC_DIARIA_LOADED){ ejecDiariaCargar(); }
+  if(name==='mo' && !MO_LOADED){ moCargar(); }
 }
 
 /* ====================== DATA SHARED ====================== */
@@ -3592,6 +3745,169 @@ function formatFechaED(s){
   const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const m = parseInt(parts[1],10) - 1;
   return parts[2] + ' ' + (meses[m]||parts[1]) + ' ' + parts[0];
+}
+
+/* ====================== MANO DE OBRA ====================== */
+let MO_LOADED = false;
+let MO_DATA = null;
+let MO_FECHA = null;
+
+function moHoyStr(){
+  const d = new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  return y + '-' + m + '-' + dd;
+}
+
+async function moCargar(force, fechaOverride){
+  const tbody = document.querySelector('#mo-tabla tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando personal…</td></tr>';
+  let fecha = fechaOverride || MO_FECHA || moHoyStr();
+  MO_FECHA = fecha;
+  try {
+    const params = {action:'mano_obra', fecha: fecha};
+    if (force) params._ts = Date.now();
+    const d = await jsonp(APPS_URL, params);
+    if (!d || (d.error && !d.personas)) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
+      return;
+    }
+    MO_DATA = d;
+    MO_LOADED = true;
+    const picker = document.getElementById('mo-fecha-picker');
+    if (picker) {
+      picker.value = d.fechaUsada || d.fecha || fecha;
+      if (d.fechasDisponibles && d.fechasDisponibles.length) {
+        const sorted = d.fechasDisponibles.slice().sort();
+        picker.min = sorted[0];
+        // max: hoy o última fecha disponible (lo mayor)
+        const hoy = moHoyStr();
+        picker.max = hoy > sorted[sorted.length-1] ? hoy : sorted[sorted.length-1];
+      }
+    }
+    moRender();
+  } catch(e){
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="color:#ef4444;padding:20px;text-align:center">❌ Error: ' + escapeHTML(e.message||String(e)) + '</td></tr>';
+  }
+}
+
+function moRender(){
+  const d = MO_DATA;
+  if (!d) return;
+  const fechaSolicitada = d.fecha || '';
+  const fechaUsada = d.fechaUsada || fechaSolicitada;
+  const fechaFmt = fechaUsada ? formatFechaED(fechaUsada) : '—';
+  document.getElementById('mo-fecha').textContent = fechaFmt;
+  const dia = (d.jornada && d.jornada.diaSemana) || '';
+  document.getElementById('mo-dia-semana').textContent = dia + (d.jornada ? ' · jornada ' + d.jornada.jornadaBaseH + 'h' : '');
+  document.getElementById('mo-gen').textContent = 'gen ' + (d._generado || '');
+
+  const h1 = document.getElementById('mo-h1');
+  if (h1) {
+    if (fechaSolicitada && fechaUsada && fechaSolicitada !== fechaUsada) {
+      h1.innerHTML = 'Personal del día ' + escapeHTML(formatFechaED(fechaUsada)) +
+        ' <span style="font-size:12px;color:#fbbf24;font-weight:400">· sin registros para ' + escapeHTML(formatFechaED(fechaSolicitada)) + '</span>';
+    } else {
+      h1.textContent = 'Personal del día ' + fechaFmt;
+    }
+  }
+
+  const k = d.kpis || {};
+  document.getElementById('mo-k-enobra').textContent = (k.personasEnObra||0).toString();
+  document.getElementById('mo-k-ingreso').textContent = (k.totalConIngreso||0).toString();
+  document.getElementById('mo-k-salida').textContent = (k.totalConSalida||0).toString();
+  document.getElementById('mo-k-ausencias').textContent = (k.totalAusencias||0).toString();
+  document.getElementById('mo-k-horas').textContent = (k.totalHorasDia||0).toFixed(1) + ' h';
+  document.getElementById('mo-k-extras').textContent = (k.totalHorasExtras||0).toFixed(1) + ' h';
+
+  // Por frente (bars)
+  const porFrente = d.porFrente || [];
+  const maxF = Math.max.apply(null, porFrente.map(x=>x.count).concat([1]));
+  document.getElementById('mo-por-frente').innerHTML = porFrente.length ? porFrente.map(f => {
+    const pct = (f.count / maxF) * 100;
+    const fr = (f.frente||'').toUpperCase();
+    const cls = fr.indexOf('OBRA')===0 ? 'obra' : (fr.indexOf('M.O')===0 ? 'mo' : (fr.indexOf('INTER')===0 ? 'inter' : ''));
+    return '<div class="mo-bar"><div class="lbl"><span class="badge-fr ' + cls + '">' + escapeHTML(f.frente||'—') + '</span></div>' +
+      '<div class="barwrap"><div class="barfill" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+      '<div class="val">' + f.count + ' · ' + (f.horas||0).toFixed(1) + 'h</div></div>';
+  }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
+
+  // Por cargo (bars)
+  const porCargo = d.porCargo || [];
+  const maxC = Math.max.apply(null, porCargo.map(x=>x.count).concat([1]));
+  document.getElementById('mo-por-cargo').innerHTML = porCargo.length ? porCargo.map(c => {
+    const pct = (c.count / maxC) * 100;
+    return '<div class="mo-bar"><div class="lbl">' + escapeHTML(c.cargo||'—') + '</div>' +
+      '<div class="barwrap"><div class="barfill" style="width:' + pct.toFixed(1) + '%;background:linear-gradient(90deg,#22d3ee,#34d399)"></div></div>' +
+      '<div class="val">' + c.count + '</div></div>';
+  }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
+
+  // Tabla personas
+  const personas = d.personas || [];
+  document.getElementById('mo-total-personas').textContent = '· ' + personas.length + ' persona' + (personas.length===1?'':'s');
+  const tbody = document.querySelector('#mo-tabla tbody');
+  if (!personas.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Sin registros de personal en este día.</td></tr>';
+  } else {
+    tbody.innerHTML = personas.map(p => {
+      const fr = (p.frente||'').toUpperCase();
+      const clsFr = fr.indexOf('OBRA')===0 ? 'obra' : (fr.indexOf('M.O')===0 ? 'mo' : (fr.indexOf('INTER')===0 ? 'inter' : ''));
+      const ausencia = p.ausencia ? '<span style="color:#ef4444;font-weight:700">' + escapeHTML(p.ausencia) + (p.motivoAusencia ? ' · ' + escapeHTML(p.motivoAusencia) : '') + '</span>'
+        : (p.salida ? '<span style="color:#34d399">✓ Cerró jornada</span>' : (p.ingreso ? '<span style="color:#22d3ee">📍 En obra</span>' : '—'));
+      const fotoHtml = p.foto ? '<img class="foto-thumb" src="' + escapeHTML(p.foto) + '" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'"/>' : '<div class="foto-thumb"></div>';
+      const tardanza = p.tardanzaMin > 0 ? '<div class="tardanza">+' + p.tardanzaMin + ' min tarde</div>' : '';
+      const horas = p.horasTrabajadas !== null && p.horasTrabajadas !== undefined ? p.horasTrabajadas.toFixed(2) + ' h' : '—';
+      const extras = p.horasExtras > 0 ? '<span class="he-tag">+' + p.horasExtras.toFixed(2) + 'h</span>' : '—';
+      return '<tr>' +
+        '<td>' + fotoHtml + '</td>' +
+        '<td><div style="font-weight:600;color:#fff">' + escapeHTML(p.nombre||'') + '</div><div style="font-size:10.5px;color:#64748b">' + escapeHTML(p.cedula||'') + '</div></td>' +
+        '<td><span class="badge-fr ' + clsFr + '">' + escapeHTML(p.frente||'—') + '</span></td>' +
+        '<td>' + escapeHTML(p.cargo||'—') + '</td>' +
+        '<td class="num">' + escapeHTML(p.ingreso||'—') + tardanza + '</td>' +
+        '<td class="num">' + escapeHTML(p.salida||'—') + '</td>' +
+        '<td class="num"><span style="font-weight:700;color:#fff">' + horas + '</span></td>' +
+        '<td class="num">' + extras + '</td>' +
+        '<td>' + (p.fueraRango ? '<span class="pill-rango fuera">FUERA</span>' + (p.motivoRango ? '<div style="font-size:10.5px;color:#64748b;margin-top:2px">' + escapeHTML(p.motivoRango) + '</div>' : '') : '<span class="pill-rango ok">OK</span>') + '</td>' +
+        '<td>' + ausencia + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // Histórico diaria (barras horizontales)
+  const diaria = (d.diaria || []).slice().reverse().slice(0, 30).reverse();
+  const maxIng = Math.max.apply(null, diaria.map(x=>x.ingresos||0).concat([1]));
+  document.getElementById('mo-diaria').innerHTML = diaria.length ? '<div style="display:flex;gap:8px;align-items:flex-end;height:120px;padding:6px 4px;min-width:' + (diaria.length*42) + 'px">' +
+    diaria.map(dd => {
+      const h = (dd.ingresos / maxIng) * 100;
+      const isToday = dd.fecha === fechaUsada;
+      const color = isToday ? '#a855f7' : 'rgba(168,85,247,.45)';
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:32px">' +
+        '<div style="font-size:10.5px;color:#cbd5e1;font-weight:700">' + (dd.ingresos||0) + '</div>' +
+        '<div style="width:24px;height:' + h.toFixed(1) + '%;min-height:4px;background:' + color + ';border-radius:4px 4px 0 0;cursor:pointer" title="' + dd.fecha + ': ' + (dd.ingresos||0) + ' ingresos" onclick="moCambiarFecha(\'' + dd.fecha + '\')"></div>' +
+        '<div style="font-size:10px;color:#64748b">' + dd.fecha.slice(5) + '</div>' +
+      '</div>';
+    }).join('') + '</div>' : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos históricos</div>';
+}
+
+function moCambiarFecha(fecha){
+  if (!fecha) return;
+  MO_FECHA = fecha;
+  moCargar(false, fecha);
+}
+
+function moIrHoy(){
+  const hoy = moHoyStr();
+  MO_FECHA = hoy;
+  const picker = document.getElementById('mo-fecha-picker');
+  if (picker) picker.value = hoy;
+  moCargar(false, hoy);
+}
+
+async function moRefrescar(){
+  const btn = document.getElementById('mo-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
+  MO_LOADED = false;
+  await moCargar(true, MO_FECHA);
+  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
 }
 
 </script>
