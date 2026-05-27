@@ -507,6 +507,28 @@
         <div class="cta">Abrir dashboard <span class="arrow">→</span></div>
       </div>
 
+      <!-- CARD EJECUCION DIARIA -->
+      <div class="menu-card ind" onclick="goTo('ejecdiaria')" style="background:linear-gradient(180deg,rgba(251,191,36,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#fbbf24,#f97316)">📅</div>
+        <h2>Ejecución Diaria</h2>
+        <p class="desc">Actividades ejecutadas en el último día reportado en obra. Valor del día + valor acumulado por ítem desde la hoja AVANCE DIARIO.</p>
+        <div class="illust">
+          <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
+            <rect x="60" y="14" width="80" height="56" rx="6" fill="rgba(251,191,36,.08)" stroke="rgba(251,191,36,.55)" stroke-width="1.5"/>
+            <rect x="60" y="14" width="80" height="14" rx="6" fill="rgba(251,191,36,.35)"/>
+            <line x1="75" y1="40" x2="125" y2="40" stroke="rgba(251,191,36,.7)" stroke-width="2" stroke-linecap="round"/>
+            <line x1="75" y1="48" x2="120" y2="48" stroke="rgba(251,191,36,.55)" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="75" y1="56" x2="115" y2="56" stroke="rgba(251,191,36,.55)" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="75" y1="64" x2="110" y2="64" stroke="rgba(251,191,36,.55)" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="155" cy="40" r="2.5" fill="rgba(34,197,94,.95)"/>
+            <circle cx="155" cy="48" r="2.5" fill="rgba(34,197,94,.95)"/>
+            <circle cx="155" cy="56" r="2.5" fill="rgba(245,158,11,.95)"/>
+            <circle cx="155" cy="64" r="2.5" fill="rgba(34,197,94,.95)"/>
+          </svg>
+        </div>
+        <div class="cta">Ver ejecución del día <span class="arrow">→</span></div>
+      </div>
+
       <!-- CARD INDICADORES -->
       <div class="menu-card ind" onclick="goTo('indicadores')">
         <div class="icon">📊</div>
@@ -1131,6 +1153,84 @@
   </div>
 </div>
 
+<!-- ============ VISTA EJECUCIÓN DIARIA ============ -->
+<style>
+  #screen-ejecdiaria .wrap{max-width:1500px;margin:0 auto;padding:18px}
+  #screen-ejecdiaria header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 18px;gap:12px;flex-wrap:wrap}
+  #screen-ejecdiaria h1{margin:0;font-size:20px;color:#fff}
+  #screen-ejecdiaria h2{margin:0;font-size:13px;color:#94a3b8;font-weight:400}
+  #screen-ejecdiaria .ed-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+  @media(max-width:900px){#screen-ejecdiaria .ed-kpis{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:500px){#screen-ejecdiaria .ed-kpis{grid-template-columns:1fr}}
+  #screen-ejecdiaria .ed-kpi{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;border-left:3px solid var(--acc,#fbbf24)}
+  #screen-ejecdiaria .ed-kpi .l{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  #screen-ejecdiaria .ed-kpi .v{font-size:22px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;margin-top:4px}
+  #screen-ejecdiaria .ed-kpi .s{font-size:11px;color:#64748b;margin-top:2px}
+  #screen-ejecdiaria .ed-panel{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;overflow:hidden}
+  #screen-ejecdiaria .ed-tbl-wrap{overflow-x:auto}
+  #screen-ejecdiaria table{width:100%;border-collapse:collapse;font-size:12px;min-width:780px}
+  #screen-ejecdiaria th{text-align:left;padding:9px 10px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.85);position:sticky;top:0}
+  #screen-ejecdiaria th.num,#screen-ejecdiaria td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #screen-ejecdiaria td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:#cbd5e1;vertical-align:top}
+  #screen-ejecdiaria tr:hover td{background:rgba(255,255,255,.03)}
+  #screen-ejecdiaria .badge-cap{background:rgba(251,191,36,.15);color:#fbbf24;padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:700;display:inline-block}
+  #screen-ejecdiaria .num-strong{color:#34d399;font-weight:700}
+  @media(max-width:700px){
+    #screen-ejecdiaria table{font-size:11px}
+    #screen-ejecdiaria th,#screen-ejecdiaria td{padding:6px 8px}
+  }
+</style>
+<div class="screen" id="screen-ejecdiaria">
+  <div class="wrap">
+    <div class="topbar">
+      <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+      <div>
+        <div class="topbar-title">📅 Ejecución Diaria</div>
+        <div class="topbar-meta">Corte <span id="ed-fecha">—</span></div>
+      </div>
+      <button class="back-btn" onclick="ejecDiariaRefrescar()" id="ed-refresh-btn">Refrescar</button>
+    </div>
+
+    <header>
+      <div>
+        <h1>Avance del último día reportado</h1>
+        <h2>Solo actividades con avance &gt; 0 · datos de la hoja AVANCE DIARIO</h2>
+      </div>
+      <span id="ed-gen" style="font-size:11px;color:#64748b">—</span>
+    </header>
+
+    <div class="ed-kpis">
+      <div class="ed-kpi" style="--acc:#fbbf24"><div class="l">Fecha del corte</div><div class="v" id="ed-k-fecha">—</div><div class="s">último avance</div></div>
+      <div class="ed-kpi" style="--acc:#34d399"><div class="l">Actividades del día</div><div class="v" id="ed-k-num">—</div><div class="s">con avance &gt; 0</div></div>
+      <div class="ed-kpi" style="--acc:#22d3ee"><div class="l">Valor ejecutado día</div><div class="v" id="ed-k-vrdia">—</div><div class="s">cantidad × vr. unitario</div></div>
+      <div class="ed-kpi" style="--acc:#a855f7"><div class="l">Valor acumulado total</div><div class="v" id="ed-k-vracum">—</div><div class="s">a la fecha</div></div>
+    </div>
+
+    <div class="ed-panel">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">📋 Detalle de actividades</h3>
+      <div class="ed-tbl-wrap">
+        <table id="ed-tabla">
+          <thead>
+            <tr>
+              <th>Ítem</th>
+              <th>Descripción</th>
+              <th>Und</th>
+              <th class="num">Cant. del día</th>
+              <th class="num">Valor del día</th>
+              <th class="num">Cant. acumulada</th>
+              <th class="num">Valor acumulado</th>
+              <th class="num">% acumulado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando avance del día…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ VISTA REGISTRO FOTOGRÁFICO ============ -->
 <div class="screen" id="screen-fotos">
   <div style="padding:18px;max-width:1500px;margin:0 auto">
@@ -1276,6 +1376,7 @@ function goTo(name){
   if(name==='comunicaciones' && !CMS_LOADED){ cmsLoadData(); }
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
+  if(name==='ejecdiaria' && !EJEC_DIARIA_LOADED){ ejecDiariaCargar(); }
 }
 
 /* ====================== DATA SHARED ====================== */
@@ -3348,6 +3449,88 @@ async function fotosRefrescarConSync(){
   FOTOS_STATE.items = [];
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
   fotosCargarIndice();
+}
+
+
+/* ====================== EJECUCIÓN DIARIA ====================== */
+let EJEC_DIARIA_LOADED = false;
+let EJEC_DIARIA_DATA = null;
+
+async function ejecDiariaCargar(force){
+  if (EJEC_DIARIA_LOADED && !force) return;
+  const tbody = document.querySelector('#ed-tabla tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando avance del día…</td></tr>';
+  try {
+    const d = await jsonp(APPS_URL, force ? {action:'avance_diario', _ts:Date.now()} : {action:'avance_diario'});
+    if (!d || d.error) {
+      tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
+      return;
+    }
+    EJEC_DIARIA_DATA = d;
+    EJEC_DIARIA_LOADED = true;
+    ejecDiariaRender();
+  } catch(e){
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ Error: ' + escapeHTML(e.message||String(e)) + '</td></tr>';
+  }
+}
+
+function ejecDiariaRender(){
+  const d = EJEC_DIARIA_DATA;
+  if (!d) return;
+  // Fecha
+  const fechaFmt = d.fecha ? formatFechaED(d.fecha) : '—';
+  document.getElementById('ed-fecha').textContent = fechaFmt;
+  document.getElementById('ed-k-fecha').textContent = fechaFmt;
+  document.getElementById('ed-gen').textContent = 'gen ' + (d._generado || '');
+  // Calcular valor real (cant × vrUnit) ya que en la hoja J/L son porcentajes
+  let vrDiaCop = 0, vrAcumCop = 0;
+  (d.items||[]).forEach(it => {
+    it._vrDiaCop = (it.cantDia||0) * (it.vrUnit||0);
+    it._vrAcumCop = (it.cantAcum||0) * (it.vrUnit||0);
+    vrDiaCop += it._vrDiaCop;
+    vrAcumCop += it._vrAcumCop;
+  });
+  document.getElementById('ed-k-num').textContent = (d.items||[]).length.toString();
+  document.getElementById('ed-k-vrdia').textContent = moneyShort(vrDiaCop);
+  document.getElementById('ed-k-vracum').textContent = moneyShort(vrAcumCop);
+  // Tabla
+  const items = (d.items||[]).slice().sort((a,b) => (b._vrDiaCop||0) - (a._vrDiaCop||0));
+  const tbody = document.querySelector('#ed-tabla tbody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">Sin actividades con avance en este día.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(it => {
+    const pctAcum = (it.vrAcum||0) * 100;
+    return '<tr>' +
+      '<td><span class="badge-cap">' + escapeHTML(it.item||'') + '</span></td>' +
+      '<td>' + escapeHTML(it.desc||'') + '</td>' +
+      '<td>' + escapeHTML(it.und||'') + '</td>' +
+      '<td class="num"><span class="num-strong">' + fmt2.format(it.cantDia||0) + '</span></td>' +
+      '<td class="num"><span class="num-strong">' + money(it._vrDiaCop) + '</span></td>' +
+      '<td class="num">' + fmt2.format(it.cantAcum||0) + '</td>' +
+      '<td class="num">' + money(it._vrAcumCop) + '</td>' +
+      '<td class="num">' + pctAcum.toFixed(1) + '%</td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function ejecDiariaRefrescar(){
+  const btn = document.getElementById('ed-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
+  EJEC_DIARIA_LOADED = false;
+  await ejecDiariaCargar(true);
+  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+}
+
+function formatFechaED(s){
+  // s viene como YYYY-MM-DD
+  if (!s || s.length < 10) return s||'';
+  const parts = s.split('-');
+  if (parts.length !== 3) return s;
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const m = parseInt(parts[1],10) - 1;
+  return parts[2] + ' ' + (meses[m]||parts[1]) + ' ' + parts[0];
 }
 
 </script>
