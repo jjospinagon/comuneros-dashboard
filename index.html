@@ -1307,6 +1307,25 @@
   #screen-mo .foto-thumb{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid rgba(168,85,247,.3);background:#222}
   #screen-mo .he-tag{background:rgba(34,197,94,.18);color:#34d399;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:700;display:inline-block}
   #screen-mo .tardanza{color:#fbbf24;font-size:10.5px}
+  #screen-mo .mo-chip{padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.45);color:#cbd5e1;transition:all .15s;user-select:none}
+  #screen-mo .mo-chip:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.2)}
+  #screen-mo .mo-chip.active{background:rgba(168,85,247,.25);border-color:#a855f7;color:#fff}
+  #screen-mo tr.clickable{cursor:pointer}
+  #mo-persona-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;z-index:9999;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+  #mo-persona-modal.active{display:flex}
+  #mo-persona-modal .mp-card{background:#0a0f24;border:1px solid rgba(168,85,247,.3);border-radius:14px;max-width:1100px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;color:#cbd5e1}
+  #mo-persona-modal .mp-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:16px;margin-bottom:18px;gap:14px}
+  #mo-persona-modal h2{margin:0;font-size:20px;color:#fff;font-family:'Space Grotesk',sans-serif}
+  #mo-persona-modal .mp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+  @media(max-width:700px){#mo-persona-modal .mp-kpis{grid-template-columns:repeat(2,1fr)}}
+  #mo-persona-modal .mp-kpi{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;border-left:3px solid var(--acc,#a855f7)}
+  #mo-persona-modal .mp-kpi .l{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  #mo-persona-modal .mp-kpi .v{font-size:20px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;margin-top:2px}
+  #mo-persona-modal table{width:100%;border-collapse:collapse;font-size:12px}
+  #mo-persona-modal th{text-align:left;padding:8px 10px;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.6)}
+  #mo-persona-modal th.num,#mo-persona-modal td.num{text-align:right;font-variant-numeric:tabular-nums}
+  #mo-persona-modal td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.04)}
+  #mo-persona-modal .close-btn{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#ef4444;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600}
   @media(max-width:600px){
     #screen-mo table{font-size:11px;min-width:760px}
     #screen-mo th,#screen-mo td{padding:6px 8px}
@@ -1360,6 +1379,20 @@
 
     <div class="mo-panel" style="margin-bottom:14px">
       <h3>📋 Personal del día <span id="mo-total-personas" style="color:#94a3b8;font-weight:400;font-size:11px"></span></h3>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-right:4px">Frente:</span>
+          <div id="mo-chips-frente" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-right:4px">Cargo:</span>
+          <div id="mo-chips-cargo" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="mo-search" placeholder="🔍 Buscar por nombre o cédula…" oninput="moFiltrar()" style="flex:1;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;font-family:inherit;outline:none;max-width:320px">
+          <button onclick="moLimpiarFiltros()" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#ef4444;padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer">Limpiar</button>
+        </div>
+      </div>
       <div class="mo-tbl-wrap">
         <table id="mo-tabla">
           <thead>
@@ -1386,6 +1419,40 @@
     <div class="mo-panel">
       <h3>📈 Asistencia por día (histórico)</h3>
       <div id="mo-diaria" style="overflow-x:auto;padding:6px 0">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL PERSONA (drill-down) ============ -->
+<div id="mo-persona-modal" onclick="if(event.target===this)moCerrarPersona()">
+  <div class="mp-card">
+    <div class="mp-header">
+      <div style="display:flex;gap:14px;align-items:center;flex:1">
+        <div id="mp-foto" style="width:62px;height:62px;border-radius:50%;background:rgba(168,85,247,.15);border:2px solid rgba(168,85,247,.4);overflow:hidden;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <h2 id="mp-nombre">—</h2>
+          <div id="mp-meta" style="font-size:12px;color:#94a3b8;margin-top:4px">—</div>
+        </div>
+      </div>
+      <button class="close-btn" onclick="moCerrarPersona()">✕ Cerrar</button>
+    </div>
+    <div class="mp-kpis">
+      <div class="mp-kpi" style="--acc:#22d3ee"><div class="l">Días trabajados</div><div class="v" id="mp-dias">—</div></div>
+      <div class="mp-kpi" style="--acc:#a855f7"><div class="l">Total horas</div><div class="v" id="mp-horas">—</div></div>
+      <div class="mp-kpi" style="--acc:#34d399"><div class="l">Horas extras</div><div class="v" id="mp-extras">—</div></div>
+      <div class="mp-kpi" style="--acc:#fbbf24"><div class="l">Promedio h/día</div><div class="v" id="mp-prom">—</div></div>
+      <div class="mp-kpi" style="--acc:#f59e0b"><div class="l">Tardanzas</div><div class="v" id="mp-tard">—</div></div>
+      <div class="mp-kpi" style="--acc:#ef4444"><div class="l">Fuera de rango</div><div class="v" id="mp-fr">—</div></div>
+      <div class="mp-kpi" style="--acc:#dc2626"><div class="l">Ausencias</div><div class="v" id="mp-aus">—</div></div>
+    </div>
+    <h3 style="font-size:13px;font-weight:700;margin:0 0 10px;color:#fff">📅 Histórico de jornadas</h3>
+    <div id="mp-grafico" style="overflow-x:auto;padding:8px 0;margin-bottom:14px"></div>
+    <h3 style="font-size:13px;font-weight:700;margin:18px 0 10px;color:#fff">📋 Detalle día a día</h3>
+    <div style="overflow-x:auto">
+      <table id="mp-tabla">
+        <thead><tr><th>Fecha</th><th>Día</th><th class="num">Ingreso</th><th class="num">Salida</th><th class="num">Horas</th><th class="num">Extras</th><th>Estado</th><th>Notas</th></tr></thead>
+        <tbody><tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">⏳ Cargando…</td></tr></tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -3751,6 +3818,9 @@ function formatFechaED(s){
 let MO_LOADED = false;
 let MO_DATA = null;
 let MO_FECHA = null;
+let MO_FILTRO_FRENTE = 'TODOS';
+let MO_FILTRO_CARGO = 'TODOS';
+let MO_FILTRO_BUSCAR = '';
 
 function moHoyStr(){
   const d = new Date();
@@ -3811,18 +3881,42 @@ function moRender(){
     }
   }
 
-  const k = d.kpis || {};
-  document.getElementById('mo-k-enobra').textContent = (k.personasEnObra||0).toString();
-  document.getElementById('mo-k-ingreso').textContent = (k.totalConIngreso||0).toString();
-  document.getElementById('mo-k-salida').textContent = (k.totalConSalida||0).toString();
-  document.getElementById('mo-k-ausencias').textContent = (k.totalAusencias||0).toString();
-  document.getElementById('mo-k-horas').textContent = (k.totalHorasDia||0).toFixed(1) + ' h';
-  document.getElementById('mo-k-extras').textContent = (k.totalHorasExtras||0).toFixed(1) + ' h';
+  // Renderizar chips de filtro (basados en datos completos del día)
+  const allPersonas = d.personas || [];
+  const frentesUnicos = ['TODOS'].concat([...new Set(allPersonas.map(p => p.frente||'').filter(Boolean))]);
+  const cargosUnicos = ['TODOS'].concat([...new Set(allPersonas.map(p => p.cargo||'').filter(Boolean))]);
+  document.getElementById('mo-chips-frente').innerHTML = frentesUnicos.map(f => {
+    const active = f === MO_FILTRO_FRENTE ? ' active' : '';
+    return '<span class="mo-chip' + active + '" onclick="moFiltrarFrente(\'' + f.replace(/'/g,"\\'") + '\')">' + escapeHTML(f) + '</span>';
+  }).join('');
+  document.getElementById('mo-chips-cargo').innerHTML = cargosUnicos.map(c => {
+    const active = c === MO_FILTRO_CARGO ? ' active' : '';
+    return '<span class="mo-chip' + active + '" onclick="moFiltrarCargo(\'' + c.replace(/'/g,"\\'") + '\')">' + escapeHTML(c) + '</span>';
+  }).join('');
 
-  // Por frente (bars)
-  const porFrente = d.porFrente || [];
-  const maxF = Math.max.apply(null, porFrente.map(x=>x.count).concat([1]));
-  document.getElementById('mo-por-frente').innerHTML = porFrente.length ? porFrente.map(f => {
+  // Aplicar filtros
+  const personas = moAplicarFiltros(allPersonas);
+
+  // KPIs recalculados con filtros
+  const ki_ingreso = personas.filter(p => p.ingresoMin !== null && p.ingresoMin !== undefined).length;
+  const ki_salida = personas.filter(p => p.salidaMin !== null && p.salidaMin !== undefined).length;
+  const ki_aus = personas.filter(p => !!p.ausencia).length;
+  const ki_enobra = personas.filter(p => p.ingresoMin !== null && p.ingresoMin !== undefined && (p.salidaMin === null || p.salidaMin === undefined) && !p.ausencia).length;
+  const ki_horas = personas.reduce((s,p) => s + (p.horasTrabajadas||0), 0);
+  const ki_extras = personas.reduce((s,p) => s + (p.horasExtras||0), 0);
+  document.getElementById('mo-k-enobra').textContent = ki_enobra.toString();
+  document.getElementById('mo-k-ingreso').textContent = ki_ingreso.toString();
+  document.getElementById('mo-k-salida').textContent = ki_salida.toString();
+  document.getElementById('mo-k-ausencias').textContent = ki_aus.toString();
+  document.getElementById('mo-k-horas').textContent = ki_horas.toFixed(1) + ' h';
+  document.getElementById('mo-k-extras').textContent = ki_extras.toFixed(1) + ' h';
+
+  // Por frente (recalculado con filtros)
+  const porFrente = {};
+  personas.forEach(p => { const f = p.frente||'SIN FRENTE'; if(!porFrente[f]) porFrente[f]={frente:f,count:0,horas:0}; porFrente[f].count++; porFrente[f].horas+=(p.horasTrabajadas||0); });
+  const arrFrente = Object.values(porFrente).sort((a,b)=>b.count-a.count);
+  const maxF = Math.max.apply(null, arrFrente.map(x=>x.count).concat([1]));
+  document.getElementById('mo-por-frente').innerHTML = arrFrente.length ? arrFrente.map(f => {
     const pct = (f.count / maxF) * 100;
     const fr = (f.frente||'').toUpperCase();
     const cls = fr.indexOf('OBRA')===0 ? 'obra' : (fr.indexOf('M.O')===0 ? 'mo' : (fr.indexOf('INTER')===0 ? 'inter' : ''));
@@ -3831,10 +3925,12 @@ function moRender(){
       '<div class="val">' + f.count + ' · ' + (f.horas||0).toFixed(1) + 'h</div></div>';
   }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
 
-  // Por cargo (bars)
-  const porCargo = d.porCargo || [];
-  const maxC = Math.max.apply(null, porCargo.map(x=>x.count).concat([1]));
-  document.getElementById('mo-por-cargo').innerHTML = porCargo.length ? porCargo.map(c => {
+  // Por cargo
+  const porCargo = {};
+  personas.forEach(p => { const c = p.cargo||'SIN CARGO'; if(!porCargo[c]) porCargo[c]={cargo:c,count:0}; porCargo[c].count++; });
+  const arrCargo = Object.values(porCargo).sort((a,b)=>b.count-a.count);
+  const maxC = Math.max.apply(null, arrCargo.map(x=>x.count).concat([1]));
+  document.getElementById('mo-por-cargo').innerHTML = arrCargo.length ? arrCargo.map(c => {
     const pct = (c.count / maxC) * 100;
     return '<div class="mo-bar"><div class="lbl">' + escapeHTML(c.cargo||'—') + '</div>' +
       '<div class="barwrap"><div class="barfill" style="width:' + pct.toFixed(1) + '%;background:linear-gradient(90deg,#22d3ee,#34d399)"></div></div>' +
@@ -3842,11 +3938,10 @@ function moRender(){
   }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
 
   // Tabla personas
-  const personas = d.personas || [];
-  document.getElementById('mo-total-personas').textContent = '· ' + personas.length + ' persona' + (personas.length===1?'':'s');
+  document.getElementById('mo-total-personas').textContent = '· ' + personas.length + ' persona' + (personas.length===1?'':'s') + (allPersonas.length !== personas.length ? ' (filtrado de ' + allPersonas.length + ')' : '');
   const tbody = document.querySelector('#mo-tabla tbody');
   if (!personas.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Sin registros de personal en este día.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Sin registros que coincidan con los filtros.</td></tr>';
   } else {
     tbody.innerHTML = personas.map(p => {
       const fr = (p.frente||'').toUpperCase();
@@ -3857,7 +3952,8 @@ function moRender(){
       const tardanza = p.tardanzaMin > 0 ? '<div class="tardanza">+' + p.tardanzaMin + ' min tarde</div>' : '';
       const horas = p.horasTrabajadas !== null && p.horasTrabajadas !== undefined ? p.horasTrabajadas.toFixed(2) + ' h' : '—';
       const extras = p.horasExtras > 0 ? '<span class="he-tag">+' + p.horasExtras.toFixed(2) + 'h</span>' : '—';
-      return '<tr>' +
+      const ced = (p.cedula||'').replace(/'/g, "\\'");
+      return '<tr class="clickable" onclick="moAbrirPersona(\'' + ced + '\')">' +
         '<td>' + fotoHtml + '</td>' +
         '<td><div style="font-weight:600;color:#fff">' + escapeHTML(p.nombre||'') + '</div><div style="font-size:10.5px;color:#64748b">' + escapeHTML(p.cedula||'') + '</div></td>' +
         '<td><span class="badge-fr ' + clsFr + '">' + escapeHTML(p.frente||'—') + '</span></td>' +
@@ -3872,7 +3968,7 @@ function moRender(){
     }).join('');
   }
 
-  // Histórico diaria (barras horizontales)
+  // Histórico diaria (barras horizontales) - sin filtros
   const diaria = (d.diaria || []).slice().reverse().slice(0, 30).reverse();
   const maxIng = Math.max.apply(null, diaria.map(x=>x.ingresos||0).concat([1]));
   document.getElementById('mo-diaria').innerHTML = diaria.length ? '<div style="display:flex;gap:8px;align-items:flex-end;height:120px;padding:6px 4px;min-width:' + (diaria.length*42) + 'px">' +
@@ -3886,6 +3982,128 @@ function moRender(){
         '<div style="font-size:10px;color:#64748b">' + dd.fecha.slice(5) + '</div>' +
       '</div>';
     }).join('') + '</div>' : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos históricos</div>';
+}
+
+function moAplicarFiltros(personas){
+  return personas.filter(p => {
+    if (MO_FILTRO_FRENTE !== 'TODOS' && (p.frente||'') !== MO_FILTRO_FRENTE) return false;
+    if (MO_FILTRO_CARGO !== 'TODOS' && (p.cargo||'') !== MO_FILTRO_CARGO) return false;
+    if (MO_FILTRO_BUSCAR) {
+      const q = MO_FILTRO_BUSCAR.toLowerCase();
+      const nom = (p.nombre||'').toLowerCase();
+      const ced = (p.cedula||'').toLowerCase();
+      if (nom.indexOf(q) < 0 && ced.indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+}
+
+function moFiltrarFrente(f){ MO_FILTRO_FRENTE = f; moRender(); }
+function moFiltrarCargo(c){ MO_FILTRO_CARGO = c; moRender(); }
+function moFiltrar(){
+  const inp = document.getElementById('mo-search');
+  MO_FILTRO_BUSCAR = inp ? inp.value.trim() : '';
+  moRender();
+}
+function moLimpiarFiltros(){
+  MO_FILTRO_FRENTE = 'TODOS';
+  MO_FILTRO_CARGO = 'TODOS';
+  MO_FILTRO_BUSCAR = '';
+  const inp = document.getElementById('mo-search'); if (inp) inp.value = '';
+  moRender();
+}
+
+async function moAbrirPersona(cedula){
+  if (!cedula) return;
+  const modal = document.getElementById('mo-persona-modal');
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('mp-nombre').textContent = 'Cargando…';
+  document.getElementById('mp-meta').textContent = '—';
+  ['mp-dias','mp-horas','mp-extras','mp-prom','mp-tard','mp-fr','mp-aus'].forEach(id => document.getElementById(id).textContent = '—');
+  document.querySelector('#mp-tabla tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">⏳ Cargando histórico…</td></tr>';
+  document.getElementById('mp-grafico').innerHTML = '';
+  try {
+    const d = await jsonp(APPS_URL, {action:'mano_obra_persona', cedula: cedula});
+    if (!d || d.error) {
+      document.getElementById('mp-nombre').textContent = 'Error';
+      document.querySelector('#mp-tabla tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#ef4444">' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
+      return;
+    }
+    const info = d.info || {};
+    const fr = (info.frente||'').toUpperCase();
+    const clsFr = fr.indexOf('OBRA')===0 ? 'obra' : (fr.indexOf('M.O')===0 ? 'mo' : (fr.indexOf('INTER')===0 ? 'inter' : ''));
+    document.getElementById('mp-nombre').textContent = info.nombre || '—';
+    document.getElementById('mp-meta').innerHTML = '<span class="badge-fr ' + clsFr + '" style="padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:700">' + escapeHTML(info.frente||'—') + '</span> · ' + escapeHTML(info.cargo||'—') + ' · CC ' + escapeHTML(info.cedula||'') + (info.correo ? ' · <a href="mailto:' + escapeHTML(info.correo) + '" style="color:#22d3ee">' + escapeHTML(info.correo) + '</a>' : '');
+    // Foto: usar la última disponible
+    const ultimaFoto = (d.dias || []).slice().reverse().find(x => x.foto);
+    if (ultimaFoto && ultimaFoto.foto) {
+      document.getElementById('mp-foto').innerHTML = '<img src="' + escapeHTML(ultimaFoto.foto) + '" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'"/>';
+    } else {
+      document.getElementById('mp-foto').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:26px;color:rgba(168,85,247,.7)">👤</div>';
+    }
+    const t = d.totales || {};
+    document.getElementById('mp-dias').textContent = t.diasTrabajados||0;
+    document.getElementById('mp-horas').textContent = (t.totalHoras||0).toFixed(1) + 'h';
+    document.getElementById('mp-extras').textContent = (t.totalHorasExtras||0).toFixed(1) + 'h';
+    document.getElementById('mp-prom').textContent = (t.promedioHorasDia||0).toFixed(2) + 'h';
+    document.getElementById('mp-tard').textContent = t.totalTardanzas||0;
+    document.getElementById('mp-fr').textContent = t.totalFueraRango||0;
+    document.getElementById('mp-aus').textContent = t.totalAusencias||0;
+
+    // Gráfico de barras horas por día
+    const dias = d.dias || [];
+    const maxH = Math.max.apply(null, dias.map(x=>x.horasTrabajadas||0).concat([8]));
+    document.getElementById('mp-grafico').innerHTML = dias.length ? '<div style="display:flex;gap:6px;align-items:flex-end;height:110px;padding:6px 4px;min-width:' + (dias.length*38) + 'px">' +
+      dias.map(dd => {
+        const hh = dd.horasTrabajadas||0;
+        const altPct = (hh / maxH) * 100;
+        let color = 'rgba(168,85,247,.5)';
+        if (dd.horasExtras > 0) color = '#34d399';
+        else if (dd.ausencia) color = '#ef4444';
+        else if (dd.tardanzaMin > 0) color = '#fbbf24';
+        return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:30px">' +
+          '<div style="font-size:9.5px;color:#cbd5e1">' + (hh ? hh.toFixed(1) : (dd.ausencia?'A':'·')) + '</div>' +
+          '<div style="width:22px;height:' + altPct.toFixed(1) + '%;min-height:3px;background:' + color + ';border-radius:3px 3px 0 0" title="' + dd.fecha + ': ' + hh.toFixed(2) + 'h"></div>' +
+          '<div style="font-size:9px;color:#64748b">' + dd.fecha.slice(5) + '</div>' +
+        '</div>';
+      }).join('') + '</div>' : '<div style="color:#64748b;text-align:center;padding:20px">Sin jornadas registradas</div>';
+
+    // Tabla detalle
+    const tbody = document.querySelector('#mp-tabla tbody');
+    if (!dias.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">Sin registros</td></tr>';
+    } else {
+      tbody.innerHTML = dias.slice().reverse().map(dd => {
+        const horas = dd.horasTrabajadas !== null && dd.horasTrabajadas !== undefined ? dd.horasTrabajadas.toFixed(2)+'h' : '—';
+        const extras = dd.horasExtras > 0 ? '<span class="he-tag">+' + dd.horasExtras.toFixed(2) + 'h</span>' : '—';
+        const tardanza = dd.tardanzaMin > 0 ? ' <span class="tardanza">(+' + dd.tardanzaMin + ' min)</span>' : '';
+        const estado = dd.ausencia ? '<span style="color:#ef4444;font-weight:700">' + escapeHTML(dd.ausencia) + '</span>'
+          : (dd.salida ? '<span style="color:#34d399">Cerró</span>' : (dd.ingreso ? '<span style="color:#22d3ee">En obra</span>' : '—'));
+        const notas = [];
+        if (dd.fueraRango) notas.push('<span class="pill-rango fuera">FUERA</span>');
+        if (dd.motivoRango) notas.push('<span style="font-size:10px;color:#64748b">' + escapeHTML(dd.motivoRango) + '</span>');
+        if (dd.motivoAusencia) notas.push('<span style="font-size:10px;color:#fbbf24">' + escapeHTML(dd.motivoAusencia) + '</span>');
+        return '<tr>' +
+          '<td>' + escapeHTML(dd.fecha) + '</td>' +
+          '<td>' + escapeHTML(dd.diaSemana||'') + '</td>' +
+          '<td class="num">' + escapeHTML(dd.ingreso||'—') + tardanza + '</td>' +
+          '<td class="num">' + escapeHTML(dd.salida||'—') + '</td>' +
+          '<td class="num"><span style="font-weight:700;color:#fff">' + horas + '</span></td>' +
+          '<td class="num">' + extras + '</td>' +
+          '<td>' + estado + '</td>' +
+          '<td>' + (notas.join(' ') || '—') + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+  } catch(e) {
+    document.querySelector('#mp-tabla tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#ef4444">' + escapeHTML(e.message||String(e)) + '</td></tr>';
+  }
+}
+
+function moCerrarPersona(){
+  document.getElementById('mo-persona-modal').classList.remove('active');
+  document.body.style.overflow = '';
 }
 
 function moCambiarFecha(fecha){
