@@ -299,7 +299,22 @@ body.light tr:hover td{background:rgba(15,23,42,.03) !important}
 
 /* Inputs / pickers */
 body.light input,body.light select,body.light textarea{background:#fff !important;color:#0f172a !important;border-color:rgba(15,23,42,.15) !important}
-body.light input[type=date]{color-scheme:light}
+body.light input[type=date]{color-scheme:light !important;color:#0f172a !important;background:#fff !important}
+/* Icono nativo del calendario — webkit (Chrome/Edge) */
+body.light input[type=date]::-webkit-calendar-picker-indicator{
+  filter:invert(35%) sepia(82%) saturate(2200%) hue-rotate(180deg) brightness(95%) contrast(95%) !important;
+  opacity:1 !important;cursor:pointer;padding:2px;
+}
+body.light input[type=date]::-webkit-calendar-picker-indicator:hover{
+  filter:invert(45%) sepia(95%) saturate(2500%) hue-rotate(180deg) brightness(100%) contrast(100%) !important;
+  background:rgba(14,165,233,.12) !important;border-radius:4px;
+}
+/* Texto de la fecha (mes/día/año) y placeholders del input date */
+body.light input[type=date]::-webkit-datetime-edit,
+body.light input[type=date]::-webkit-datetime-edit-text,
+body.light input[type=date]::-webkit-datetime-edit-month-field,
+body.light input[type=date]::-webkit-datetime-edit-day-field,
+body.light input[type=date]::-webkit-datetime-edit-year-field{color:#0f172a !important}
 
 /* Chips / badges */
 body.light .ed-chip,body.light .mo-chip,body.light .maq-chip,body.light [class*="-chip"]{background:#fff !important;border-color:rgba(15,23,42,.12) !important;color:#475569 !important}
@@ -405,6 +420,20 @@ body.light [style*="background:rgba(255,255,255,.1)"],
 body.light [style*="background:rgba(255,255,255,.12)"],
 body.light [style*="background:rgba(255,255,255,.15)"]{
   background:rgba(15,23,42,.08) !important;
+}
+
+/* Date pickers inline (transparent + color:#fff + color-scheme:dark) — modo día */
+body.light input.date-input-themable,
+body.light input[type=date][style*="color:#fff"]{
+  color:#0f172a !important;
+  color-scheme:light !important;
+  background:#ffffff !important;
+  border:1px solid rgba(15,23,42,.15) !important;
+}
+body.light input.date-input-themable::-webkit-calendar-picker-indicator,
+body.light input[type=date][style*="color:#fff"]::-webkit-calendar-picker-indicator{
+  filter:invert(35%) sepia(82%) saturate(2200%) hue-rotate(180deg) brightness(95%) contrast(95%) !important;
+  opacity:1 !important;cursor:pointer;
 }
 
 /* Login overlay: forzar fondo claro en modo día (el inline es #000000) */
@@ -1379,7 +1408,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end">
         <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">📚 Capítulo</label><select id="obra-f-cap" onchange="obraAplicarFiltros()" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></select></div>
         <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">👤 Responsable</label><select id="obra-f-resp" onchange="obraAplicarFiltros()" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></select></div>
-        <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">📅 Fecha de Corte</label><input type="date" id="obra-f-corte" onchange="obraAplicarFiltros()" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></div>
+        <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">📅 Fecha de Corte</label><input type="date" id="obra-f-corte" onchange="obraAplicarFiltros()" class="date-input-themable" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></div>
         <div><label style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px">🔢 Top N</label><input type="number" id="obra-f-topn" value="20" min="1" max="98" onchange="obraAplicarFiltros()" style="width:100%;background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px"></div>
       </div>
       <div style="margin-top:10px;font-size:11px;color:#94a3b8" id="obra-filtros-info">—</div>
@@ -1453,7 +1482,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#94a3b8;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px">
           <span>📆</span>
-          <input type="date" id="ed-fecha-picker" onchange="ejecDiariaCambiarFecha(this.value)" style="background:transparent;border:0;color:#fff;font-size:12px;font-family:inherit;outline:none;cursor:pointer;color-scheme:dark">
+          <input type="date" id="ed-fecha-picker" onchange="ejecDiariaCambiarFecha(this.value)" class="date-input-themable" style="background:transparent;border:0;color:#fff;font-size:12px;font-family:inherit;outline:none;cursor:pointer;color-scheme:dark">
         </label>
         <button class="back-btn" onclick="ejecDiariaIrAyer()" id="ed-ayer-btn" title="Volver al día de ayer">Ayer</button>
         <button class="back-btn" onclick="ejecDiariaRefrescar()" id="ed-refresh-btn">Refrescar</button>
@@ -1706,7 +1735,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#94a3b8;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px">
           <span>📆</span>
-          <input type="date" id="mo-fecha-picker" onchange="moCambiarFecha(this.value)" style="background:transparent;border:0;color:#fff;font-size:12px;font-family:inherit;outline:none;cursor:pointer;color-scheme:dark">
+          <input type="date" id="mo-fecha-picker" onchange="moCambiarFecha(this.value)" class="date-input-themable" style="background:transparent;border:0;color:#fff;font-size:12px;font-family:inherit;outline:none;cursor:pointer;color-scheme:dark">
         </label>
         <button class="back-btn" onclick="moIrHoy()" title="Volver al día actual">Hoy</button>
         <button class="back-btn" onclick="moRefrescar()" id="mo-refresh-btn">Refrescar</button>
