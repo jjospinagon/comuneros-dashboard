@@ -5319,7 +5319,7 @@ function _rendFetchAvance(fecha){
     const cb = 'cb_rend_av_' + Date.now() + '_' + Math.random().toString(36).substring(2,7);
     window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
     const s = document.createElement('script');
-    s.src = APPS_URL + '?endpoint=avance_diario&fecha=' + encodeURIComponent(fecha) + '&nocache=1&_ts=' + Date.now() + '&callback=' + cb;
+    s.src = APPS_URL + '?action=avance_diario&fecha=' + encodeURIComponent(fecha) + '&nocache=1&_ts=' + Date.now() + '&callback=' + cb;
     s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
     document.body.appendChild(s);
     setTimeout(()=>{ if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
@@ -5331,7 +5331,7 @@ function _rendFetchMO(fecha){
     const cb = 'cb_rend_mo_' + Date.now() + '_' + Math.random().toString(36).substring(2,7);
     window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
     const s = document.createElement('script');
-    s.src = APPS_URL + '?endpoint=mano_obra&fecha=' + encodeURIComponent(fecha) + '&nocache=1&_ts=' + Date.now() + '&callback=' + cb;
+    s.src = APPS_URL + '?action=mano_obra&fecha=' + encodeURIComponent(fecha) + '&nocache=1&_ts=' + Date.now() + '&callback=' + cb;
     s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
     document.body.appendChild(s);
     setTimeout(()=>{ if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
