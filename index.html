@@ -3898,9 +3898,12 @@ function cmsShowOficio(id){
       <a href="${x.anexos_folder_url}" target="_blank" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;padding:6px 12px;border-radius:6px;font-size:11.5px;text-decoration:none;font-weight:600">🗂️ Carpeta ${x.fuente}/${x.tipo}</a>
     </div>
     <div style="margin-top:14px">
-      <div style="font-size:12px;color:#94a3b8;margin-bottom:6px;font-weight:600">📄 Transcripción del oficio</div>
-      <div id="cms-transcripcion" style="background:#0f1428;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px 16px;max-height:420px;overflow:auto;font-size:12.5px;color:#cbd5e1;white-space:pre-wrap;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.45">
-        <span style="color:#94a3b8;font-style:italic">⏳ Cargando transcripción del documento…</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:12px;color:#94a3b8;font-weight:600">📄 Documento del oficio</div>
+        <div id="cms-pdf-meta" style="font-size:11px;color:#64748b"></div>
+      </div>
+      <div id="cms-pdf-viewer" style="background:#0f1428;border:1px solid rgba(255,255,255,.08);border-radius:8px;min-height:560px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-style:italic;font-size:12.5px">
+        ⏳ Localizando documento en Drive…
       </div>
     </div>
     <div id="cms-anexos" style="margin-top:12px"></div>`;
@@ -3908,34 +3911,73 @@ function cmsShowOficio(id){
   document.getElementById('cms-detail').innerHTML = html;
   document.getElementById('cms-detail-panel').style.display = 'block';
   document.getElementById('cms-detail-panel').scrollIntoView({behavior:'smooth', block:'nearest'});
-  // Cargar transcripción automáticamente
+  // Cargar visor PDF embebido (en vez de transcripción OCR que fallaba)
   if(x.anexos_folder_url && x.consecutivo){
     const consSafe = (x.consecutivo||'').replace(/'/g, '');
-    cmsCargarTranscripcion(x.fuente, x.tipo, consSafe);
+    cmsCargarPDFEmbebido(x.fuente, x.tipo, consSafe, x.anexos_folder_url);
   }
 }
 
-async function cmsCargarTranscripcion(fuente, tipo, consecutivo){
-  const box = document.getElementById('cms-transcripcion');
-  if(!box) return;
+/* Embebe el PDF principal del oficio directamente desde Drive (vía iframe /preview).
+   Reemplaza la transcripción OCR que era lenta y fallaba frecuentemente. */
+async function cmsCargarPDFEmbebido(fuente, tipo, consecutivo, folderUrl){
+  const viewer = document.getElementById('cms-pdf-viewer');
+  const meta = document.getElementById('cms-pdf-meta');
+  if(!viewer) return;
   try{
-    const d = await jsonp(APPS_URL, {action:'oficio_transcripcion', fuente, tipo, consecutivo});
-    if(!d){ box.innerHTML = '<span style="color:#ef4444">Sin respuesta del servidor</span>'; return; }
-    if(d.error){
-      box.innerHTML = `<span style="color:#fbbf24">⚠ ${cmsEscape(d.error)}</span>` +
-        (d.folder_url ? `<br><a href="${d.folder_url}" target="_blank" style="color:#22d3ee;font-size:11.5px">→ Abrir carpeta en Drive</a>` : '');
+    // anexos_oficio devuelve archivos rápido (solo metadata Drive, sin OCR)
+    const d = await jsonp(APPS_URL, {action:'anexos_oficio', fuente, tipo, consecutivo});
+    if(!d || d.error || !d.archivos || !d.archivos.length){
+      viewer.innerHTML = `<div style="text-align:center;padding:24px">
+        <div style="color:#fbbf24;font-size:13px;margin-bottom:8px">⚠ No se encontraron archivos asociados al consecutivo</div>
+        <a href="${folderUrl}" target="_blank" style="color:#22d3ee;font-size:12px;text-decoration:none">→ Abrir carpeta ${cmsEscape(fuente)}/${cmsEscape(tipo)} en Drive</a>
+      </div>`;
       return;
     }
-    const titulo = d.titulo ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:6px"><b>${cmsEscape(d.titulo)}</b> · <a href="${d.viewUrl}" target="_blank" style="color:#22d3ee;text-decoration:none">abrir original</a></div>` : '';
-    const texto = (d.texto || '').trim();
-    if(!texto){
-      box.innerHTML = titulo + '<span style="color:#94a3b8;font-style:italic">El documento está vacío o no se pudo extraer texto.</span>';
+    // Priorizar PDF; fallback a primer archivo
+    const pdfs = d.archivos.filter(a => (a.mimeType||'').indexOf('pdf') >= 0 || /\.pdf$/i.test(a.title||''));
+    const principal = pdfs[0] || d.archivos[0];
+    if(!principal || !principal.id){
+      viewer.innerHTML = `<div style="text-align:center;padding:24px;color:#fbbf24;font-size:13px">⚠ Archivo sin ID válido</div>`;
       return;
     }
-    box.innerHTML = titulo + cmsEscape(texto);
+    const fileId = principal.id;
+    const isPdf = (principal.mimeType||'').indexOf('pdf') >= 0 || /\.pdf$/i.test(principal.title||'');
+    const previewUrl = 'https://drive.google.com/file/d/' + fileId + '/preview';
+    const openUrl = principal.viewUrl || ('https://drive.google.com/file/d/' + fileId + '/view');
+
+    // Header meta + iframe (Drive bloquea iframe con CSP en algunos casos → fallback a Google Docs Viewer)
+    if(meta){
+      meta.innerHTML = `<a href="${openUrl}" target="_blank" style="color:#22d3ee;text-decoration:none">📂 ${cmsEscape(principal.title||'documento')} · ${isPdf?'PDF':'archivo'}</a>`;
+    }
+    viewer.style.padding = '0';
+    viewer.style.overflow = 'hidden';
+    viewer.innerHTML = `<iframe src="${previewUrl}" style="width:100%;height:600px;border:0;border-radius:8px;background:#0f1428" allow="autoplay" loading="lazy" referrerpolicy="no-referrer"></iframe>`;
+
+    // Si hay más de 1 archivo, ofrecer cambio
+    if(d.archivos.length > 1){
+      const opciones = d.archivos.map((a,i) => {
+        const sel = (a.id === fileId) ? 'selected' : '';
+        return `<option value="${a.id}" ${sel}>${cmsEscape(a.title||('archivo '+(i+1)))}</option>`;
+      }).join('');
+      const selectorHtml = `<div style="margin-top:8px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:#94a3b8">
+        <span>📑 Ver otro archivo del oficio:</span>
+        <select id="cms-pdf-selector" onchange="cmsSwitchPDF(this.value)" style="background:#1e2a4a;border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 8px;border-radius:6px;font-size:11.5px;cursor:pointer">${opciones}</select>
+      </div>`;
+      viewer.insertAdjacentHTML('afterend', '<div id="cms-pdf-selector-wrap">' + selectorHtml + '</div>');
+    }
   }catch(e){
-    box.innerHTML = `<span style="color:#ef4444">Error: ${cmsEscape(e.message||String(e))}</span>`;
+    viewer.innerHTML = `<div style="color:#ef4444;padding:16px;font-size:12px">Error: ${cmsEscape(e.message||String(e))}</div>`;
   }
+}
+
+/* Cambia el PDF embebido cuando el oficio tiene múltiples archivos */
+function cmsSwitchPDF(fileId){
+  if(!fileId) return;
+  const viewer = document.getElementById('cms-pdf-viewer');
+  if(!viewer) return;
+  const previewUrl = 'https://drive.google.com/file/d/' + fileId + '/preview';
+  viewer.innerHTML = `<iframe src="${previewUrl}" style="width:100%;height:600px;border:0;border-radius:8px;background:#0f1428" allow="autoplay" loading="lazy" referrerpolicy="no-referrer"></iframe>`;
 }
 
 async function cmsCargarAnexos(fuente, tipo, consecutivo){
