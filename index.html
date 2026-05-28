@@ -5480,45 +5480,86 @@ function _trabFetchMO(fecha){
     const cb = 'cb_trab_' + Date.now() + '_' + Math.random().toString(36).substring(2,7);
     window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
     const s = document.createElement('script');
-    s.src = APPS_URL + '?action=mano_obra&fecha=' + encodeURIComponent(fecha) + '&nocache=1&_ts=' + Date.now() + '&callback=' + cb;
+    // Sin nocache=1 → backend reusa cache 6h por fecha. Esto reduce de ~5s a ~200ms por llamada repetida.
+    s.src = APPS_URL + '?action=mano_obra&fecha=' + encodeURIComponent(fecha) + '&callback=' + cb;
     s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
     document.body.appendChild(s);
     setTimeout(()=>{ if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
   });
 }
 
+/* Cache local de catálogos de trabajadores con TTL 15min por ventana de días.
+   Reapertura del módulo en la misma sesión = instantáneo. */
+const _TRAB_LS_KEY = 'monaco_trab_cat_v1';
+const _TRAB_TTL_MS = 15 * 60 * 1000;
+function _trabCacheGet(ventana){
+  try {
+    const raw = localStorage.getItem(_TRAB_LS_KEY + '_' + ventana);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || (Date.now() - obj.ts) > _TRAB_TTL_MS) return null;
+    // Rehidratar Sets (JSON los pierde)
+    const porCed = obj.porCedula || {};
+    Object.keys(porCed).forEach(k => { porCed[k].dias = new Set(porCed[k].dias || []); });
+    return { porCedula: porCed, totalDias: obj.totalDias, fechas: obj.fechas, _cached: true, ts: obj.ts };
+  } catch(_) { return null; }
+}
+function _trabCacheSet(ventana, cat){
+  try {
+    // Serializar Sets → arrays
+    const porCed = {};
+    Object.keys(cat.porCedula).forEach(k => {
+      const t = cat.porCedula[k];
+      porCed[k] = Object.assign({}, t, { dias: Array.from(t.dias) });
+    });
+    localStorage.setItem(_TRAB_LS_KEY + '_' + ventana, JSON.stringify({
+      ts: Date.now(), porCedula: porCed, totalDias: cat.totalDias, fechas: cat.fechas
+    }));
+  } catch(_) { /* localStorage lleno o privado */ }
+}
+
 function _trabFmtFecha(d){ return d.toISOString().substring(0,10); }
 
 async function trabCargar(){
-  document.getElementById('trab-loading-info').textContent = '⏳ Cargando…';
-  document.getElementById('trab-tabla').querySelector('tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Construyendo catálogo…</td></tr>';
+  const infoEl = document.getElementById('trab-loading-info');
+  const tbody = document.getElementById('trab-tabla').querySelector('tbody');
 
-  // Determinar fechas a consultar
+  // 1) Cache local → render instantáneo si existe y es fresco
+  const cached = _trabCacheGet(TRAB_VENTANA);
+  if (cached){
+    TRAB_CATALOGO = cached;
+    TRAB_LOADED = true;
+    const edadMin = Math.floor((Date.now() - cached.ts) / 60000);
+    infoEl.textContent = `✓ ${cached.fechas.length} días · ${Object.keys(cached.porCedula).length} trabajadores · cache ${edadMin}min`;
+    trabRender();
+    return;
+  }
+
+  infoEl.textContent = '⏳ Cargando…';
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Construyendo catálogo… (primera carga: ~15-30s)</td></tr>';
+
+  // 2) Determinar fechas (ordenadas DESC → cargar primero los días recientes)
   const hoy = new Date();
   let fechas = [];
   if (TRAB_VENTANA === 1){
     fechas = [_trabFmtFecha(hoy)];
   } else if (TRAB_VENTANA === 0){
-    // Todo: limitar a 90 días para no saturar
-    for (let i = 0; i < 90; i++){
-      const d = new Date(hoy); d.setDate(d.getDate() - i);
-      fechas.push(_trabFmtFecha(d));
-    }
+    for (let i = 0; i < 90; i++){ const d = new Date(hoy); d.setDate(d.getDate() - i); fechas.push(_trabFmtFecha(d)); }
   } else {
-    for (let i = 0; i < TRAB_VENTANA; i++){
-      const d = new Date(hoy); d.setDate(d.getDate() - i);
-      fechas.push(_trabFmtFecha(d));
-    }
+    for (let i = 0; i < TRAB_VENTANA; i++){ const d = new Date(hoy); d.setDate(d.getDate() - i); fechas.push(_trabFmtFecha(d)); }
   }
 
-  // Fetch paralelo en batches de 6
+  // 3) Fetch paralelo: BATCH 12 (era 6) + render incremental para feedback inmediato
   const porCedula = {};
   const totalDiasConData = new Set();
   let procesados = 0;
-  const BATCH = 6;
+  const BATCH = 12;
+  let primerRenderHecho = false;
+  const t0 = Date.now();
+
   for (let i = 0; i < fechas.length; i += BATCH){
     const slice = fechas.slice(i, i+BATCH);
-    document.getElementById('trab-loading-info').textContent = `⏳ ${procesados}/${fechas.length} días…`;
+    infoEl.textContent = `⏳ ${procesados}/${fechas.length} días… (${((Date.now()-t0)/1000).toFixed(1)}s)`;
     const results = await Promise.all(slice.map(f => _trabFetchMO(f)));
     results.forEach((mo, idx) => {
       procesados++;
@@ -5530,17 +5571,7 @@ async function trabCargar(){
         const ced = String(p.cedula || p.nombre || '').trim();
         if (!ced) return;
         if (!porCedula[ced]){
-          porCedula[ced] = {
-            cedula: p.cedula || '',
-            nombre: p.nombre || '',
-            cargo: p.cargo || '',
-            frente: p.frente || '',
-            foto: p.foto || '',
-            dias: new Set(),
-            horas: 0,
-            extras: 0,
-            ultimaFecha: ''
-          };
+          porCedula[ced] = { cedula:p.cedula||'', nombre:p.nombre||'', cargo:p.cargo||'', frente:p.frente||'', foto:p.foto||'', dias:new Set(), horas:0, extras:0, ultimaFecha:'' };
         }
         const t = porCedula[ced];
         t.dias.add(f);
@@ -5552,11 +5583,22 @@ async function trabCargar(){
         if (p.frente && !t.frente) t.frente = p.frente;
       });
     });
+
+    // Render parcial tras el primer batch para que el usuario vea KPIs y tabla
+    if (!primerRenderHecho && Object.keys(porCedula).length > 0){
+      TRAB_CATALOGO = { porCedula, totalDias: totalDiasConData.size, fechas: fechas.slice(0, i+BATCH) };
+      TRAB_LOADED = true;
+      trabRender();
+      primerRenderHecho = true;
+    }
   }
 
+  // 4) Render final + persistir en cache
   TRAB_CATALOGO = { porCedula, totalDias: totalDiasConData.size, fechas };
   TRAB_LOADED = true;
-  document.getElementById('trab-loading-info').textContent = `✓ ${fechas.length} días procesados · ${Object.keys(porCedula).length} trabajadores únicos`;
+  _trabCacheSet(TRAB_VENTANA, TRAB_CATALOGO);
+  const seg = ((Date.now()-t0)/1000).toFixed(1);
+  infoEl.textContent = `✓ ${fechas.length} días · ${Object.keys(porCedula).length} trabajadores · ${seg}s`;
   trabRender();
 }
 
