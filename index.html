@@ -1240,12 +1240,18 @@
     <div class="ed-kpis">
       <div class="ed-kpi" style="--acc:#fbbf24"><div class="l">Fecha del corte</div><div class="v" id="ed-k-fecha">—</div><div class="s">último avance</div></div>
       <div class="ed-kpi" style="--acc:#34d399"><div class="l">Actividades del día</div><div class="v" id="ed-k-num">—</div><div class="s">con avance &gt; 0</div></div>
-      <div class="ed-kpi" style="--acc:#22d3ee"><div class="l">Valor ejecutado día</div><div class="v" id="ed-k-vrdia">—</div><div class="s">cantidad × vr. unitario</div></div>
-      <div class="ed-kpi" style="--acc:#a855f7"><div class="l">Valor acumulado total</div><div class="v" id="ed-k-vracum">—</div><div class="s">a la fecha</div></div>
+      <div class="ed-kpi" style="--acc:#22d3ee"><div class="l">Costo directo día</div><div class="v" id="ed-k-vrdia">—</div><div class="s">cant × vr. unitario</div></div>
+      <div class="ed-kpi" style="--acc:#a855f7"><div class="l">TOTAL día (con AIU+PMT+PMA)</div><div class="v" id="ed-k-total">—</div><div class="s" id="ed-k-total-s">incluye arandelas</div></div>
+    </div>
+
+    <!-- Panel desglose AIU + PMT + PMA -->
+    <div class="ed-panel" style="margin-bottom:14px">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">💰 Desglose del valor del día</h3>
+      <div id="ed-desglose" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"></div>
     </div>
 
     <div class="ed-panel">
-      <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">📋 Detalle de actividades</h3>
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">📋 Detalle por capítulo <span id="ed-tabla-info" style="color:#94a3b8;font-weight:400;font-size:11px"></span></h3>
       <div class="ed-tbl-wrap">
         <table id="ed-tabla">
           <thead>
@@ -3747,39 +3753,91 @@ function ejecDiariaRender(){
     }
   }
 
-  // El backend ya devuelve vrDia y vrAcum en COP (cantidad × vrUnit)
+  // Backend devuelve costos con desglose AIU + PMT + PMA + TOTAL
   const items = (d.items||[]).slice();
-  let vrDiaCop = 0, vrAcumCop = 0;
   items.forEach(it => {
-    // Fallback defensivo: si el backend no calculó vrDia, hacerlo aquí
     if (typeof it.vrDia !== 'number') it.vrDia = (it.cantDia||0) * (it.vrUnit||0);
     if (typeof it.vrAcum !== 'number') it.vrAcum = (it.cantAcum||0) * (it.vrUnit||0);
-    vrDiaCop += it.vrDia;
-    vrAcumCop += it.vrAcum;
   });
+  const c = d.costos || {};
   document.getElementById('ed-k-num').textContent = items.length.toString();
-  document.getElementById('ed-k-vrdia').textContent = moneyShort(vrDiaCop);
-  document.getElementById('ed-k-vracum').textContent = moneyShort(vrAcumCop);
+  document.getElementById('ed-k-vrdia').textContent = moneyShort(c.directo || 0);
+  document.getElementById('ed-k-total').textContent = moneyShort(c.total || 0);
+  const pctObra = (c.factorObra || 0) * 100;
+  document.getElementById('ed-k-total-s').textContent = pctObra.toFixed(3) + '% del costo directo total';
 
-  items.sort((a,b) => (b.vrDia||0) - (a.vrDia||0));
+  // Desglose AIU + PMT + PMA
+  const aPct = ((c.aiuPct && c.aiuPct.A) || 0) * 100;
+  const iPct = ((c.aiuPct && c.aiuPct.I) || 0) * 100;
+  const uPct = ((c.aiuPct && c.aiuPct.U) || 0) * 100;
+  const desg = document.getElementById('ed-desglose');
+  if (desg) {
+    desg.innerHTML = [
+      {l:'Costo directo', v:c.directo||0, color:'#22d3ee', s:items.length+' actividades'},
+      {l:'A · Administración ('+aPct.toFixed(2)+'%)', v:c.a||0, color:'#fbbf24', s:'del costo directo'},
+      {l:'I · Imprevistos ('+iPct.toFixed(2)+'%)', v:c.i||0, color:'#f59e0b', s:'del costo directo'},
+      {l:'U · Utilidad ('+uPct.toFixed(2)+'%)', v:c.u||0, color:'#a855f7', s:'del costo directo'},
+      {l:'Subtotal Directos + Indirectos', v:c.directosIndirectos||0, color:'#34d399', s:'CD + A + I + U'},
+      {l:'PMT', v:c.pmtDia||0, color:'#94a3b8', s:pctObra.toFixed(3)+'% × $'+(c.pmtTotalObra||0).toLocaleString('es-CO')},
+      {l:'PMA', v:c.pmaDia||0, color:'#10b981', s:pctObra.toFixed(3)+'% × $'+(c.pmaTotalObra||0).toLocaleString('es-CO')},
+      {l:'TOTAL DEL DÍA', v:c.total||0, color:'#a855f7', s:'Σ con todas las arandelas', bold:true}
+    ].map(x => '<div style="background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;border-left:3px solid ' + x.color + (x.bold?';box-shadow:0 0 0 1px '+x.color+'33':'') + '">' +
+      '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700">' + x.l + '</div>' +
+      '<div style="font-size:' + (x.bold?'19px':'17px') + ';font-weight:700;color:#fff;font-family:Space Grotesk,sans-serif;margin-top:3px">' + money(x.v) + '</div>' +
+      '<div style="font-size:10px;color:#64748b;margin-top:2px">' + x.s + '</div>' +
+    '</div>').join('');
+  }
+
+  // Agrupar items por capítulo + ordenar por vrDia dentro de cada grupo
+  const grupos = {};
+  items.forEach(it => {
+    const cap = it.capitulo || '0';
+    if (!grupos[cap]) grupos[cap] = { capitulo: cap, capDesc: it.capituloDesc || ('CAPÍTULO ' + cap), items: [], totalVrDia: 0 };
+    grupos[cap].items.push(it);
+    grupos[cap].totalVrDia += (it.vrDia || 0);
+  });
+  const ordenCaps = Object.keys(grupos).sort((a,b) => parseInt(a,10) - parseInt(b,10));
+  document.getElementById('ed-tabla-info').textContent = '· ' + ordenCaps.length + ' capítulo' + (ordenCaps.length===1?'':'s') + ' · ' + items.length + ' actividades';
+
   const tbody = document.querySelector('#ed-tabla tbody');
   if (!items.length) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">Sin actividades con avance en este día.</td></tr>';
     return;
   }
-  tbody.innerHTML = items.map(it => {
-    const pctAcum = (it.pctAcum||0) * 100;
-    return '<tr>' +
-      '<td><span class="badge-cap">' + escapeHTML(it.item||'') + '</span></td>' +
-      '<td>' + escapeHTML(it.desc||'') + '</td>' +
-      '<td>' + escapeHTML(it.und||'') + '</td>' +
-      '<td class="num"><span class="num-strong">' + fmt2.format(it.cantDia||0) + '</span></td>' +
-      '<td class="num"><span class="num-strong">' + money(it.vrDia||0) + '</span></td>' +
-      '<td class="num">' + fmt2.format(it.cantAcum||0) + '</td>' +
-      '<td class="num">' + money(it.vrAcum||0) + '</td>' +
-      '<td class="num">' + pctAcum.toFixed(1) + '%</td>' +
-    '</tr>';
-  }).join('');
+  const filas = [];
+  ordenCaps.forEach(cap => {
+    const g = grupos[cap];
+    g.items.sort((a,b) => (b.vrDia||0) - (a.vrDia||0));
+    // Fila de capítulo (header)
+    filas.push('<tr style="background:rgba(168,85,247,.12)"><td colspan="8" style="padding:8px 12px;font-weight:700;color:#a855f7">' +
+      '<span style="display:inline-block;background:rgba(168,85,247,.25);padding:2px 8px;border-radius:5px;font-size:11px;margin-right:8px">CAP ' + escapeHTML(g.capitulo) + '</span>' +
+      escapeHTML(g.capDesc) +
+      '<span style="float:right;font-weight:600;color:#fff;font-size:11px">' + money(g.totalVrDia) + ' · ' + g.items.length + ' act.</span>' +
+      '</td></tr>');
+    g.items.forEach(it => {
+      const pctAcum = (it.pctAcum||0) * 100;
+      const barClr = pctAcum >= 100 ? '#34d399' : (pctAcum >= 50 ? '#fbbf24' : '#22d3ee');
+      const pctClamp = Math.min(pctAcum, 100);
+      filas.push('<tr>' +
+        '<td><span class="badge-cap">' + escapeHTML(it.item||'') + '</span></td>' +
+        '<td>' + escapeHTML(it.desc||'') + '</td>' +
+        '<td>' + escapeHTML(it.und||'') + '</td>' +
+        '<td class="num"><span class="num-strong">' + fmt2.format(it.cantDia||0) + '</span></td>' +
+        '<td class="num"><span class="num-strong">' + money(it.vrDia||0) + '</span></td>' +
+        '<td class="num">' + fmt2.format(it.cantAcum||0) + '</td>' +
+        '<td class="num">' + money(it.vrAcum||0) + '</td>' +
+        '<td class="num">' +
+          '<div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">' +
+            '<div style="width:60px;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;flex-shrink:0">' +
+              '<div style="height:100%;width:' + pctClamp.toFixed(1) + '%;background:linear-gradient(90deg,'+barClr+',#fff2);border-radius:3px"></div>' +
+            '</div>' +
+            '<span style="min-width:48px;font-weight:600">' + pctAcum.toFixed(1) + '%</span>' +
+          '</div>' +
+        '</td>' +
+      '</tr>');
+    });
+  });
+  tbody.innerHTML = filas.join('');
 }
 
 function ejecDiariaCambiarFecha(fecha){
