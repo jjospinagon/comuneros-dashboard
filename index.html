@@ -1966,7 +1966,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div class="mo-panel">
         <h3>📋 Catálogo Maestro <span id="trab-tabla-info" style="color:#94a3b8;font-weight:400;font-size:11px"></span></h3>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-          <input type="text" id="trab-search" placeholder="🔍 Buscar por nombre o cédula…" oninput="trabRender()" style="flex:1;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;font-family:inherit;outline:none;max-width:320px">
+          <input type="text" id="trab-search" placeholder="🔍 Buscar por nombre o cédula…" oninput="trabSearchDebounced()" style="flex:1;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;font-family:inherit;outline:none;max-width:320px">
           <span style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;align-self:center">Cargo:</span>
           <div id="trab-chips-cargo" style="display:flex;gap:6px;flex-wrap:wrap"></div>
         </div>
@@ -5376,24 +5376,43 @@ function trabRender(){
     `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:12px;color:#cbd5e1;font-weight:700">${v}</div><div style="width:100%;background:${colorsBin[i]};border-radius:4px 4px 0 0;height:${(v/maxBin*120)}px;min-height:2px"></div></div>`
   ).join('');
 
-  // Chips por cargo
+  // Chips por cargo (solo al recargar datos)
   const cargosUnicos = ['TODOS'].concat([...new Set(trabajadores.map(t => t.cargo || '').filter(Boolean))]);
   document.getElementById('trab-chips-cargo').innerHTML = cargosUnicos.map(c => {
     const active = c === TRAB_FILTRO_CARGO ? ' active' : '';
     return `<span class="mo-chip${active}" onclick="trabFiltrarCargo('${c.replace(/'/g,"\\'")}')">${escapeHTML(c)}</span>`;
   }).join('');
 
-  // Tabla maestro
+  // Pre-cachear trabajadores ordenados para tabla
+  TRAB_LISTA_ORDENADA = trabajadores.slice().sort((a,b) => b.dias.size - a.dias.size);
+
+  // Render tabla con filtros actuales
+  trabRenderTabla();
+}
+
+let TRAB_LISTA_ORDENADA = [];
+let TRAB_SEARCH_TIMER = null;
+
+function trabSearchDebounced(){
+  if (TRAB_SEARCH_TIMER) clearTimeout(TRAB_SEARCH_TIMER);
+  TRAB_SEARCH_TIMER = setTimeout(trabRenderTabla, 180);
+}
+
+function trabRenderTabla(){
+  if (!TRAB_CATALOGO || !TRAB_LISTA_ORDENADA.length) return;
+  const total = TRAB_LISTA_ORDENADA.length;
+  const totalDias = TRAB_CATALOGO.totalDias || 1;
   const search = (document.getElementById('trab-search').value || '').toLowerCase().trim();
   const tbody = document.querySelector('#trab-tabla tbody');
-  const filtrados = trabajadores.filter(t => {
+
+  const filtrados = TRAB_LISTA_ORDENADA.filter(t => {
     if (TRAB_FILTRO_CARGO !== 'TODOS' && (t.cargo || '') !== TRAB_FILTRO_CARGO) return false;
     if (search){
-      const txt = (t.nombre + ' ' + t.cedula).toLowerCase();
+      const txt = ((t.nombre || '') + ' ' + (t.cedula || '')).toLowerCase();
       if (txt.indexOf(search) === -1) return false;
     }
     return true;
-  }).sort((a,b) => b.dias.size - a.dias.size);
+  });
 
   document.getElementById('trab-tabla-info').textContent =
     `· ${filtrados.length} de ${total} trabajadores · ${TRAB_CATALOGO.totalDias} días con datos`;
@@ -5402,28 +5421,39 @@ function trabRender(){
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Sin coincidencias.</td></tr>';
     return;
   }
-  tbody.innerHTML = filtrados.map(t => {
+  const parts = new Array(filtrados.length);
+  for (let i = 0; i < filtrados.length; i++){
+    const t = filtrados[i];
     const fr = (t.frente||'').toUpperCase();
     const clsFr = fr.indexOf('OBRA') === 0 ? 'obra' : (fr.indexOf('M.O') === 0 ? 'mo' : (fr.indexOf('INTER') === 0 ? 'inter' : ''));
     const fotoHtml = t.foto ? `<img class="foto-thumb" src="${escapeHTML(t.foto)}" referrerpolicy="no-referrer" onerror="this.style.display='none'"/>` : '<div class="foto-thumb"></div>';
     const asistPct = ((t.dias.size / totalDias) * 100).toFixed(0);
     const ced = (t.cedula || '').replace(/'/g, "\\'");
-    return `<tr class="clickable" onclick="moAbrirPersona('${ced}')">` +
-      `<td>${fotoHtml}</td>` +
-      `<td><div style="font-weight:600;color:#fff">${escapeHTML(t.nombre || '')}</div></td>` +
-      `<td><div style="font-size:11px;color:#94a3b8">${escapeHTML(t.cedula || '—')}</div></td>` +
-      `<td>${escapeHTML(t.cargo || '—')}</td>` +
-      `<td><span class="badge-fr ${clsFr}">${escapeHTML(t.frente || '—')}</span></td>` +
-      `<td class="num"><strong style="color:#fff">${t.dias.size}</strong></td>` +
-      `<td class="num">${t.horas.toFixed(1)}h</td>` +
-      `<td class="num">${t.extras > 0 ? '<span class="he-tag">+'+t.extras.toFixed(1)+'h</span>' : '—'}</td>` +
-      `<td class="num"><strong style="color:${asistPct>=75?'#86efac':asistPct>=50?'#fcd34d':asistPct>=25?'#fb923c':'#fca5a5'}">${asistPct}%</strong></td>` +
-      `<td><span style="font-size:11px;color:#94a3b8">${t.ultimaFecha || '—'}</span></td>` +
-    `</tr>`;
-  }).join('');
+    const colorPct = asistPct>=75?'#86efac':asistPct>=50?'#fcd34d':asistPct>=25?'#fb923c':'#fca5a5';
+    parts[i] = '<tr class="clickable" onclick="moAbrirPersona(\''+ced+'\')">' +
+      '<td>'+fotoHtml+'</td>' +
+      '<td><div style="font-weight:600;color:#fff">'+escapeHTML(t.nombre || '')+'</div></td>' +
+      '<td><div style="font-size:11px;color:#94a3b8">'+escapeHTML(t.cedula || '—')+'</div></td>' +
+      '<td>'+escapeHTML(t.cargo || '—')+'</td>' +
+      '<td><span class="badge-fr '+clsFr+'">'+escapeHTML(t.frente || '—')+'</span></td>' +
+      '<td class="num"><strong style="color:#fff">'+t.dias.size+'</strong></td>' +
+      '<td class="num">'+t.horas.toFixed(1)+'h</td>' +
+      '<td class="num">'+(t.extras > 0 ? '<span class="he-tag">+'+t.extras.toFixed(1)+'h</span>' : '—')+'</td>' +
+      '<td class="num"><strong style="color:'+colorPct+'">'+asistPct+'%</strong></td>' +
+      '<td><span style="font-size:11px;color:#94a3b8">'+(t.ultimaFecha || '—')+'</span></td>' +
+    '</tr>';
+  }
+  tbody.innerHTML = parts.join('');
 }
 
-function trabFiltrarCargo(c){ TRAB_FILTRO_CARGO = c; trabRender(); }
+function trabFiltrarCargo(c){
+  TRAB_FILTRO_CARGO = c;
+  // Solo actualizar chips activos + re-render tabla (sin re-render donuts/kpis)
+  document.querySelectorAll('#trab-chips-cargo .mo-chip').forEach(el => {
+    el.classList.toggle('active', el.textContent.trim() === c);
+  });
+  trabRenderTabla();
+}
 
 function _trabRenderDonut(elId, data){
   const total = data.reduce((a,b) => a + b.value, 0);
