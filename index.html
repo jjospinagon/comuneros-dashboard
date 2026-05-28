@@ -1210,6 +1210,30 @@
     #screen-ejecdiaria table{font-size:11px}
     #screen-ejecdiaria th,#screen-ejecdiaria td{padding:6px 8px}
   }
+  @media(max-width:900px){
+    #ed-top-grid{grid-template-columns:1fr !important}
+  }
+  #screen-ejecdiaria .top5-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  #screen-ejecdiaria .top5-row:last-child{border-bottom:none}
+  #screen-ejecdiaria .top5-rank{flex:0 0 28px;height:28px;background:linear-gradient(135deg,#fbbf24,#f97316);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#000;font-size:13px;font-family:'Space Grotesk',sans-serif}
+  #screen-ejecdiaria .top5-rank.r2{background:linear-gradient(135deg,#e2e8f0,#94a3b8)}
+  #screen-ejecdiaria .top5-rank.r3{background:linear-gradient(135deg,#fbbf24,#a16207)}
+  #screen-ejecdiaria .top5-rank.rN{background:rgba(168,85,247,.25);color:#a855f7}
+  #screen-ejecdiaria .top5-body{flex:1;min-width:0}
+  #screen-ejecdiaria .top5-desc{font-size:12px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #screen-ejecdiaria .top5-meta{font-size:10.5px;color:#94a3b8;margin-top:2px}
+  #screen-ejecdiaria .top5-val{font-size:13.5px;font-weight:700;color:#34d399;font-family:'Space Grotesk',sans-serif;text-align:right}
+  #screen-ejecdiaria .top5-bar{height:4px;background:rgba(34,197,94,.15);border-radius:2px;margin-top:5px;overflow:hidden}
+  #screen-ejecdiaria .top5-bar > div{height:100%;background:linear-gradient(90deg,#22d3ee,#34d399);border-radius:2px}
+  #screen-ejecdiaria .barcap-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+  #screen-ejecdiaria .barcap-lbl{flex:0 0 140px;font-size:11.5px;color:#cbd5e1;font-weight:600;display:flex;align-items:center;gap:6px}
+  #screen-ejecdiaria .barcap-lbl .badge{background:rgba(168,85,247,.2);color:#a855f7;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;flex-shrink:0}
+  #screen-ejecdiaria .barcap-bar{flex:1;height:18px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden;position:relative}
+  #screen-ejecdiaria .barcap-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#a855f7,#22d3ee)}
+  #screen-ejecdiaria .barcap-val{flex:0 0 140px;font-size:11.5px;color:#fff;font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+  #screen-ejecdiaria .donut-leg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#cbd5e1;padding:3px 0}
+  #screen-ejecdiaria .donut-leg .sw{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+  #screen-ejecdiaria .donut-leg .pct{margin-left:auto;color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
 </style>
 <div class="screen" id="screen-ejecdiaria">
   <div class="wrap">
@@ -1248,6 +1272,23 @@
     <div class="ed-panel" style="margin-bottom:14px">
       <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">💰 Desglose del valor del día</h3>
       <div id="ed-desglose" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"></div>
+    </div>
+
+    <!-- Top 5 + Gráficos -->
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px" id="ed-top-grid">
+      <div class="ed-panel">
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">🏆 Top 5 actividades del día</h3>
+        <div id="ed-top5"></div>
+      </div>
+      <div class="ed-panel">
+        <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">📊 Distribución por capítulo</h3>
+        <div id="ed-donut" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <div class="ed-panel" style="margin-bottom:14px">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">📈 Avance del día por capítulo</h3>
+      <div id="ed-bars-cap"></div>
     </div>
 
     <div class="ed-panel">
@@ -3792,12 +3833,83 @@ function ejecDiariaRender(){
   const grupos = {};
   items.forEach(it => {
     const cap = it.capitulo || '0';
-    if (!grupos[cap]) grupos[cap] = { capitulo: cap, capDesc: it.capituloDesc || ('CAPÍTULO ' + cap), items: [], totalVrDia: 0 };
+    if (!grupos[cap]) grupos[cap] = { capitulo: cap, capDesc: it.capituloDesc || ('CAPÍTULO ' + cap), items: [], totalVrDia: 0, totalCantDia: 0 };
     grupos[cap].items.push(it);
     grupos[cap].totalVrDia += (it.vrDia || 0);
+    grupos[cap].totalCantDia += (it.cantDia || 0);
   });
   const ordenCaps = Object.keys(grupos).sort((a,b) => parseInt(a,10) - parseInt(b,10));
   document.getElementById('ed-tabla-info').textContent = '· ' + ordenCaps.length + ' capítulo' + (ordenCaps.length===1?'':'s') + ' · ' + items.length + ' actividades';
+
+  // === TOP 5 actividades por valor del día ===
+  const top5 = items.slice().sort((a,b) => (b.vrDia||0) - (a.vrDia||0)).slice(0,5);
+  const top5MaxV = Math.max.apply(null, top5.map(x=>x.vrDia||0).concat([1]));
+  const top5Div = document.getElementById('ed-top5');
+  if (top5Div) {
+    top5Div.innerHTML = top5.length ? top5.map((it, i) => {
+      const pct = (it.vrDia||0) / top5MaxV * 100;
+      const rankCls = i===0?'':(i===1?'r2':(i===2?'r3':'rN'));
+      return '<div class="top5-row">' +
+        '<div class="top5-rank ' + rankCls + '">' + (i+1) + '</div>' +
+        '<div class="top5-body">' +
+          '<div class="top5-desc" title="' + escapeHTML(it.desc||'') + '">' + escapeHTML(it.desc||'') + '</div>' +
+          '<div class="top5-meta">' + escapeHTML(it.item||'') + ' · ' + escapeHTML(it.und||'') + ' · ' + fmt2.format(it.cantDia||0) + ' und</div>' +
+          '<div class="top5-bar"><div style="width:' + pct.toFixed(1) + '%"></div></div>' +
+        '</div>' +
+        '<div class="top5-val">' + money(it.vrDia||0) + '</div>' +
+      '</div>';
+    }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
+  }
+
+  // === DONUT por capítulo (SVG) ===
+  const donutDiv = document.getElementById('ed-donut');
+  if (donutDiv) {
+    const palette = ['#a855f7','#22d3ee','#34d399','#fbbf24','#ef4444','#f97316','#06b6d4','#8b5cf6','#ec4899','#10b981','#f59e0b','#3b82f6'];
+    const totalDia = items.reduce((s,it)=>s+(it.vrDia||0),0) || 1;
+    const capList = ordenCaps.map((cap,idx) => {
+      const g = grupos[cap];
+      return { cap, capDesc: g.capDesc, val: g.totalVrDia, pct: g.totalVrDia/totalDia, color: palette[idx % palette.length] };
+    }).sort((a,b)=>b.val-a.val);
+    // SVG donut
+    const cx = 90, cy = 90, r = 70, stroke = 22;
+    let acumAng = -Math.PI/2;
+    const segs = capList.map(c => {
+      const ang = c.pct * 2 * Math.PI;
+      const x1 = cx + r * Math.cos(acumAng);
+      const y1 = cy + r * Math.sin(acumAng);
+      acumAng += ang;
+      const x2 = cx + r * Math.cos(acumAng);
+      const y2 = cy + r * Math.sin(acumAng);
+      const large = ang > Math.PI ? 1 : 0;
+      const path = 'M ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x2.toFixed(2) + ' ' + y2.toFixed(2);
+      return '<path d="' + path + '" fill="none" stroke="' + c.color + '" stroke-width="' + stroke + '" stroke-linecap="butt"/>';
+    }).join('');
+    const svg = '<svg viewBox="0 0 180 180" style="width:180px;height:180px;flex-shrink:0">' + segs +
+      '<text x="90" y="85" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="13" font-weight="700" fill="#fff">' + ordenCaps.length + '</text>' +
+      '<text x="90" y="102" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#94a3b8">capítulos</text>' +
+      '</svg>';
+    const leyenda = capList.slice(0,8).map(c => '<div class="donut-leg"><div class="sw" style="background:' + c.color + '"></div>' +
+      '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1" title="' + escapeHTML(c.capDesc) + '">Cap ' + escapeHTML(c.cap) + '</div>' +
+      '<div class="pct">' + (c.pct*100).toFixed(1) + '%</div></div>').join('');
+    donutDiv.innerHTML = svg + '<div style="flex:1;min-width:160px">' + leyenda + '</div>';
+  }
+
+  // === Barras por capítulo (todas) ===
+  const barsCapDiv = document.getElementById('ed-bars-cap');
+  if (barsCapDiv) {
+    const totalDia2 = items.reduce((s,it)=>s+(it.vrDia||0),0) || 1;
+    const maxCap = Math.max.apply(null, ordenCaps.map(cap => grupos[cap].totalVrDia).concat([1]));
+    barsCapDiv.innerHTML = ordenCaps.length ? ordenCaps.map(cap => {
+      const g = grupos[cap];
+      const pct = (g.totalVrDia / maxCap) * 100;
+      const pctTotal = (g.totalVrDia / totalDia2) * 100;
+      return '<div class="barcap-row">' +
+        '<div class="barcap-lbl"><span class="badge">' + escapeHTML(g.capitulo) + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHTML(g.capDesc) + '">' + escapeHTML(g.capDesc.length > 18 ? g.capDesc.slice(0,18)+'…' : g.capDesc) + '</span></div>' +
+        '<div class="barcap-bar"><div class="barcap-fill" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+        '<div class="barcap-val">' + money(g.totalVrDia) + ' <span style="color:#94a3b8;font-weight:400">(' + pctTotal.toFixed(1) + '%)</span></div>' +
+      '</div>';
+    }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
+  }
 
   const tbody = document.querySelector('#ed-tabla tbody');
   if (!items.length) {
