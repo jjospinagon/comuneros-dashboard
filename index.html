@@ -5287,6 +5287,7 @@ async function rendCargar(force){
 
   // Fetch paralelo limitado
   const BATCH = 5;
+  let fetchedOk = 0, fetchedAvance = 0, fetchedMO = 0;
   for (let i = 0; i < fechas.length; i += BATCH){
     const slice = fechas.slice(i, i+BATCH);
     const results = await Promise.all(slice.map(f => Promise.all([
@@ -5295,11 +5296,18 @@ async function rendCargar(force){
     results.forEach((r, idx) => {
       const f = slice[idx];
       const avance = r[0]; const mo = r[1];
-      if (avance && mo && (avance.directoCop > 0 || (mo.kpis && (mo.kpis.totalDia || 0) > 0))){
-        dias.push(_rendProcesarDia(f, avance, mo));
+      const tieneAvance = avance && avance.items && avance.items.some(it => (Number(it.cantDia)||0) > 0);
+      const tienePersonas = mo && Array.isArray(mo.personas) && mo.personas.length > 0;
+      if (tieneAvance) fetchedAvance++;
+      if (tienePersonas) fetchedMO++;
+      // Procesar si hay avance (es la fuente principal). MO puede venir vacío y se reporta como 0 HH.
+      if (tieneAvance){
+        dias.push(_rendProcesarDia(f, avance, mo || {personas:[]}));
+        fetchedOk++;
       }
     });
   }
+  console.log('[REND] fechas=' + fechas.length + ' avance=' + fetchedAvance + ' mo=' + fetchedMO + ' procesados=' + fetchedOk);
 
   REND_DATA = {dias, fechas};
   REND_LOADED = true;
@@ -5331,66 +5339,77 @@ function _rendFetchMO(fecha){
 }
 
 function _rendProcesarDia(fecha, avance, mo){
-  // Extraer Of y Ay del payload MO. Estructura esperada: mo.kpis con campos por cargo o mo.personas array.
+  // === MANO DE OBRA ===
+  // Estructura real: mo.personas[] con {cargo, horasTrabajadas, ingreso, salida, ausencia}
   let of_ = 0, ay = 0, hhOf = 0, hhAy = 0;
-  const personas = mo.personas || mo.detalle || [];
+  const personas = (mo && mo.personas) || [];
   personas.forEach(p => {
-    const cargo = String(p.cargo || p.Cargo || '').toLowerCase();
-    const hrs = Number(p.horas || p.Horas || p.hh || 8) || 8;
-    const esOf = /oficial/.test(cargo);
-    const esAy = /ayudant/.test(cargo);
-    if (esOf){ of_++; hhOf += hrs; }
-    else if (esAy){ ay++; hhAy += hrs; }
+    // Excluir ausencias y personas sin ingreso registrado
+    if (p.ausencia) return;
+    if (!p.ingreso && p.horasTrabajadas == null) return;
+    const cargo = String(p.cargo || '').toLowerCase();
+    const hrs = Number(p.horasTrabajadas) || 0;
+    if (hrs <= 0) return;
+    if (/oficial/.test(cargo)){ of_++; hhOf += hrs; }
+    else if (/ayudant/.test(cargo)){ ay++; hhAy += hrs; }
+    // Maestros y otros se ignoran para el cálculo de cuadrilla
   });
-  // Fallback: si no hay personas detalladas, intentar kpis agregados
-  if (of_ === 0 && ay === 0 && mo.kpis){
-    of_ = Number(mo.kpis.oficiales || 0);
-    ay = Number(mo.kpis.ayudantes || 0);
-    hhOf = of_ * 8;
-    hhAy = ay * 8;
-  }
-  const ce = Math.min(of_, ay/2);
+  const ce = (of_ > 0 && ay > 0) ? Math.min(of_, ay/2) : Math.max(of_, ay/2);
   const hhTotal = hhOf + hhAy;
 
-  // Procesar items del avance
+  // === AVANCE ===
+  // Estructura real: avance.items[] con {item, desc, und, cantDia, vrUnit, vrDia, capitulo}
+  // avance.costos.directo = costo directo total del día
+  const cdBackend = (avance && avance.costos && Number(avance.costos.directo)) || 0;
   const items = (avance.items || []).filter(it => (Number(it.cantDia) || 0) > 0).map(it => {
     const cantDia = Number(it.cantDia) || 0;
     const vrUnit = Number(it.vrUnit) || 0;
-    const costoDia = cantDia * vrUnit;
+    const costoDia = (typeof it.vrDia === 'number') ? Number(it.vrDia) : cantDia * vrUnit;
     const apu = rendBuscarApu(it.item, it.desc);
-    let hhApuTeoricas = null, rendApu = null, eficiencia = null;
+    let hhApuTeoricas = null, rendApu = null;
     if (apu){
       hhApuTeoricas = cantDia * (apu.hhOf + apu.hhAy);
       rendApu = apu.rendCE;
     }
     return {
-      item: it.item, desc: it.desc, und: it.und,
+      item: it.item || '', desc: it.desc || '', und: it.und || '',
+      capitulo: it.capitulo || (String(it.item||'').split('.')[0] || 'X'),
       cantDia, vrUnit, costoDia,
       apuMatch: !!apu,
       hhApu: hhApuTeoricas, rendApu, undApu: apu ? apu.und : null
     };
   });
+
+  // Costo directo del día: preferir el backend; fallback a sumatoria de items
+  const cdItems = items.reduce((a,b)=>a+b.costoDia, 0);
+  const cd = cdBackend > 0 ? cdBackend : cdItems;
+  const cdParaPeso = cdItems > 0 ? cdItems : 1;
+
   // Distribuir HH reales y CE entre ítems proporcional al costo directo del día
-  const cdTotal = items.reduce((a,b)=>a+b.costoDia, 0) || 1;
   items.forEach(it => {
-    const peso = it.costoDia / cdTotal;
+    const peso = it.costoDia / cdParaPeso;
     it.hhReales = hhTotal * peso;
     it.ceAsignadas = ce * peso;
     it.rendReal = (it.ceAsignadas > 0 && it.cantDia > 0) ? (it.cantDia / it.ceAsignadas) : 0;
     if (it.apuMatch && it.hhReales > 0){
       it.eficiencia = (it.hhApu / it.hhReales) * 100;
-    } else if (it.apuMatch && it.rendApu){
-      it.eficienciaFis = (it.rendReal / it.rendApu) * 100;
     }
   });
 
-  return {fecha, of:of_, ay, ce, hhOf, hhAy, hhTotal, cd: avance.directoCop || cdTotal, items};
+  return {fecha, of:of_, ay, ce, hhOf, hhAy, hhTotal, cd, items};
 }
 
 /* =================== RENDER GLOBAL =================== */
 function rendRender(){
   if (!REND_DATA || REND_DATA.dias.length === 0){
-    document.getElementById('rk-tabla').innerHTML = '<tr><td style="padding:30px;text-align:center;color:#94a3b8">Sin datos en el período seleccionado.</td></tr>';
+    const msg = '<tr><td colspan="8" style="padding:40px;text-align:center;color:#94a3b8;font-size:13px"><div style="font-size:32px;margin-bottom:10px">📭</div><div style="font-weight:600;color:#fff;margin-bottom:6px">Sin datos en el período seleccionado</div><div>Verifica que el rango incluya días con avance ejecutado.<br>Si la fecha es reciente, prueba <strong>🔄 Refrescar</strong> para forzar la sincronización del XLSX.</div></td></tr>';
+    document.getElementById('rk-tabla').innerHTML = msg;
+    document.getElementById('rf-tabla').innerHTML = msg;
+    document.getElementById('re-tabla').innerHTML = msg;
+    document.getElementById('rc-tabla').innerHTML = msg;
+    ['rk-ce','rk-hh','rk-ratio','rk-cope','rk-efi','rf-best','rf-worst','rf-count','re-hh','re-ce','re-mo','re-pct','rc-real','rc-apu','rc-efi','rc-sob'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
     return;
   }
   rendRenderConsolidado();
