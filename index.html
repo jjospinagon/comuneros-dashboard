@@ -2541,6 +2541,18 @@ function goTo(name){
   if(name==='mo' && !MO_LOADED){ moCargar(); }
   if(name==='maq' && !MAQ_LOADED){ maqCargar(); }
   if(name==='rendimientos' && !REND_LOADED){ rendCargar(); }
+  // Indicadores: precargar OBRA en background para unificar KPIs avance económico/%
+  if(name==='indicadores' && !OBRA_LOADED){
+    (async function(){
+      try{
+        var d = await jsonp(APPS_URL, {action:'dashboard_obra_v2'});
+        if(d && !d.error){ OBRA_DATA = d; OBRA_LOADED = true;
+          // Re-render si Indicadores ya está montado (sobrescribe KPIs económicos con fuente Obra)
+          if (IND_DATA && IND_CURRENT){ try{ renderIndCorte(); }catch(_){ } }
+        }
+      }catch(_){}
+    })();
+  }
 }
 
 /* ====================== DATA SHARED ====================== */
@@ -2682,16 +2694,31 @@ function renderIndCorte(){
   // KPIs
   const totT = d.totales['COSTO TOTAL']||{};
   const contrAlCorte = totT.contr_corte||0;
-  const realAlCorte = totT.real_corte||0;
+  let realAlCorte = totT.real_corte||0;
   const proyCorte = totT.proy_corte||0;
   const proyFinal = totT.proy_final||0;
   const totalProy = totT.total_contr || 0;
+
+  // OVERRIDE: si es corte más reciente y tenemos OBRA_DATA, usamos el avance económico
+  // del módulo Avance de Obra (fuente correcta validada por usuario)
+  let usingObraSource = false;
+  let contrFromObra = null;
+  if (isLatest && OBRA_DATA && typeof OBRA_DATA.ejecutadoGlobal === 'number' && OBRA_DATA.ejecutadoGlobal > 0){
+    contrFromObra = OBRA_DATA.ejecutadoGlobal;
+    realAlCorte = OBRA_DATA.ejecutadoGlobal; // override "Real al Corte" con avance económico real
+    usingObraSource = true;
+  }
+
   document.getElementById('kpi-total').textContent = money(totalProy);
   document.getElementById('kpi-total-sub').textContent = 'Valor vigente del contrato';
-  document.getElementById('kpi-contr').textContent = money(contrAlCorte);
-  document.getElementById('kpi-contr-sub').textContent = totalProy ? ((contrAlCorte/totalProy*100).toFixed(1)+'% del total') : '—';
+  document.getElementById('kpi-contr').textContent = money(usingObraSource ? contrFromObra : contrAlCorte);
+  document.getElementById('kpi-contr-sub').textContent = totalProy
+    ? (((usingObraSource ? contrFromObra : contrAlCorte)/totalProy*100).toFixed(1) + '% del total' + (usingObraSource ? ' · fuente Obra' : ''))
+    : '—';
   document.getElementById('kpi-real').textContent = money(realAlCorte);
-  document.getElementById('kpi-real-sub').textContent = contrAlCorte ? ((realAlCorte/contrAlCorte*100).toFixed(1)+'% del contractual') : '—';
+  document.getElementById('kpi-real-sub').textContent = usingObraSource
+    ? 'Avance económico (fuente Avance de Obra)'
+    : (contrAlCorte ? ((realAlCorte/contrAlCorte*100).toFixed(1)+'% del contractual') : '—');
   document.getElementById('kpi-util').innerHTML = moneyC(proyCorte);
   document.getElementById('kpi-util-sub').textContent = contrAlCorte ? ('Margen: '+(proyCorte/contrAlCorte*100).toFixed(1)+'%') : '—';
   document.getElementById('kpi-proy').innerHTML = moneyC(proyFinal);
@@ -3320,10 +3347,22 @@ function renderKpisAvanzados(){
   const d = IND_DATA[IND_CURRENT];
   if(!d) return;
   const acts = d.actividades||[];
-  // % Avance global
-  const avance = calcAvanceCorte(d) * 100;
+  // % Avance global: si corte actual y OBRA_DATA disponible, usar fuente Obra (correcta)
+  let avance;
+  let subAvance = 'Ponderado por valor';
+  if (IND_CURRENT === IND_LATEST && OBRA_DATA && OBRA_DATA.actividades && OBRA_DATA.actividades.length){
+    const allObra = OBRA_DATA.actividades;
+    const vrTotalObra = allObra.reduce((s,a) => s + (Number(a.vrTotal)||0), 0);
+    const vrEjecObra = (typeof OBRA_DATA.ejecutadoGlobal === 'number' && OBRA_DATA.ejecutadoGlobal > 0)
+      ? OBRA_DATA.ejecutadoGlobal
+      : allObra.reduce((s,a) => s + (Number(a.vrEjec)||0), 0);
+    avance = vrTotalObra > 0 ? (vrEjecObra / vrTotalObra * 100) : 0;
+    subAvance = 'Fuente: Avance de Obra';
+  } else {
+    avance = calcAvanceCorte(d) * 100;
+  }
   document.getElementById('kpi-pctavance').textContent = avance.toFixed(1) + '%';
-  document.getElementById('kpi-pctavance-sub').textContent = 'Ponderado por valor';
+  document.getElementById('kpi-pctavance-sub').textContent = subAvance;
   // Margen total
   const totT = d.totales['COSTO TOTAL']||{};
   const totalContr = totT.total_contr || 0;
@@ -4575,28 +4614,79 @@ async function invRefrescarConSync(){
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
   invLoadData();
 }
+/* Polling sync: force_sync_ind solo PROGRAMA en background; necesitamos esperar a que termine.
+   Lee cada 5s el endpoint indicadores hasta detectar nuevo corte o timeout 120s. */
 async function indRefrescarConSync(){
   var btn = document.getElementById('ind-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Programando sync…'; }
+
+  // Captura estado pre-sync
+  var nAntes = (IND_CORTES && IND_CORTES.length) || 0;
+  var latestAntes = IND_LATEST || '';
+
+  // 1) Programar sync background del Excel madre
   await _dispararSyncBackground('force_sync_ind', 'ind');
-  await new Promise(function(r){ setTimeout(r, 2500); });
+
+  // 2) Polling: cada 5s leer indicadores hasta detectar nuevo corte o agotar 120s
+  var nuevoCorteDetectado = null;
+  var lastInd = null;
+  for (var i = 0; i < 24; i++){ // 24 * 5s = 120s
+    await new Promise(function(r){ setTimeout(r, 5000); });
+    if (btn) btn.textContent = 'Esperando datos del Excel… ' + ((i+1)*5) + 's';
+    try {
+      var ind = await jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()});
+      if (ind && !ind._error){
+        lastInd = ind;
+        var cortes = Object.keys(ind).filter(function(k){ return !k.startsWith('_'); });
+        // Detectar: más cortes que antes, O un latest distinto al anterior
+        var cortesOrdenados = cortes.slice().sort(function(a,b){
+          var A = a.split('-').reverse().join('-');
+          var B = b.split('-').reverse().join('-');
+          return B.localeCompare(A);
+        });
+        var nuevoLatest = cortesOrdenados[0];
+        if (cortes.length > nAntes || (nuevoLatest && nuevoLatest !== latestAntes)){
+          nuevoCorteDetectado = nuevoLatest;
+          break;
+        }
+      }
+    } catch(e) { console.warn('poll ind:', e); }
+  }
+
+  // 3) Aplicar el último payload obtenido (con o sin nuevo corte)
+  if (lastInd){
+    IND_DATA = lastInd;
+    IND_CORTES = Object.keys(lastInd).filter(function(k){ return !k.startsWith('_'); }).sort(function(a,b){
+      var A = a.split('-').reverse().join('-');
+      var B = b.split('-').reverse().join('-');
+      return B.localeCompare(A);
+    });
+    IND_LATEST = IND_CORTES[0];
+    IND_CURRENT = IND_LATEST;
+  }
+
+  // 4) Refrescar también OBRA en paralelo (KPIs económicos unificados)
+  try { await _dispararSyncBackground('force_sync_obra', 'obra'); } catch(_){}
   try {
-    var ind = await jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()});
-    if (ind && !ind._error){
-      IND_DATA = ind;
-      IND_CORTES = Object.keys(ind).sort(function(a,b){
-        var A = a.split('-').reverse().join('-');
-        var B = b.split('-').reverse().join('-');
-        return B.localeCompare(A);
-      });
-      IND_LATEST = IND_CORTES[0];
-      IND_CURRENT = IND_LATEST;
-      renderIndCorteSelect();
-      renderIndCorte();
-      fillMenuKPIsInd();
+    var obraD = await jsonp(APPS_URL, {action:'dashboard_obra_v2', _ts: Date.now()});
+    if (obraD && !obraD.error){ OBRA_DATA = obraD; OBRA_LOADED = true; }
+  } catch(_){}
+
+  // 5) Render final
+  if (IND_DATA){
+    renderIndCorteSelect();
+    renderIndCorte();
+    fillMenuKPIsInd();
+  }
+
+  if (btn){
+    if (nuevoCorteDetectado){
+      btn.textContent = '✓ Nuevo corte: ' + nuevoCorteDetectado;
+    } else {
+      btn.textContent = '⚠ Sin nuevo corte detectado';
     }
-  } catch(e) { console.warn('refresh ind:', e); }
-  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+    setTimeout(function(){ if (btn){ btn.textContent = 'Refrescar'; btn.disabled = false; } }, 4000);
+  }
 }
 
 
