@@ -2013,12 +2013,14 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <span class="rend-chip" data-period="sem" onclick="rendSetPeriodo('sem')">🗓️ Semana</span>
       <span class="rend-chip active" data-period="mes" onclick="rendSetPeriodo('mes')">📆 Mes</span>
       <span class="rend-chip" data-period="todo" onclick="rendSetPeriodo('todo')">∞ Todo</span>
-      <span class="rend-chip" data-period="custom" onclick="rendSetPeriodo('custom')">⚙ Custom</span>
+      <span class="rend-chip" data-period="custom" onclick="rendSetPeriodo('custom')">⚙ Personalizado</span>
     </div>
-    <div id="rend-fechas-wrap" style="display:none;gap:8px;align-items:center">
-      <input type="date" id="rend-f-ini" class="date-input-themable" onchange="rendCargar(true)" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;color-scheme:dark">
-      <span style="color:#64748b;font-size:11px">→</span>
-      <input type="date" id="rend-f-fin" class="date-input-themable" onchange="rendCargar(true)" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;color-scheme:dark">
+    <div id="rend-fechas-wrap" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Desde</span>
+      <input type="date" id="rend-f-ini" class="date-input-themable" onchange="rendCambiarFechaManual()" style="background:rgba(20,26,55,.6);border:1px solid rgba(244,114,182,.3);color:#fff;border-radius:8px;padding:7px 10px;font-size:12px;color-scheme:dark;cursor:pointer">
+      <span style="color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Hasta</span>
+      <input type="date" id="rend-f-fin" class="date-input-themable" onchange="rendCambiarFechaManual()" style="background:rgba(20,26,55,.6);border:1px solid rgba(244,114,182,.3);color:#fff;border-radius:8px;padding:7px 10px;font-size:12px;color-scheme:dark;cursor:pointer">
+      <button onclick="rendCargar(true)" style="background:linear-gradient(135deg,#f472b6,#a855f7);border:0;color:#fff;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer">Aplicar</button>
     </div>
     <div style="margin-left:auto;font-size:11.5px;color:#cbd5e1" id="rend-rango-info">—</div>
   </div>
@@ -5174,8 +5176,37 @@ function rendSetPeriodo(p){
   document.querySelectorAll('.rend-chip').forEach(c=>{
     c.classList.toggle('active', c.getAttribute('data-period') === p);
   });
-  document.getElementById('rend-fechas-wrap').style.display = (p === 'custom') ? 'flex' : 'none';
-  if (p !== 'custom') rendCargar(true);
+  // Pre-poblar los inputs date con el rango calculado del período
+  if (p !== 'custom'){
+    const r = rendCalcularRangoPreset(p);
+    if (r){
+      const fi = document.getElementById('rend-f-ini');
+      const ff = document.getElementById('rend-f-fin');
+      if (fi) fi.value = rendFmtFecha(r.ini);
+      if (ff) ff.value = rendFmtFecha(r.fin);
+    }
+    rendCargar(true);
+  }
+}
+
+function rendCambiarFechaManual(){
+  // Si el usuario cambia las fechas manualmente, activar modo Personalizado
+  REND_PERIODO = 'custom';
+  document.querySelectorAll('.rend-chip').forEach(c=>{
+    c.classList.toggle('active', c.getAttribute('data-period') === 'custom');
+  });
+  rendCargar(true);
+}
+
+function rendCalcularRangoPreset(p){
+  const hoy = new Date();
+  let fin = hoy, ini;
+  if (p === 'dia'){ ini = new Date(hoy); }
+  else if (p === 'sem'){ ini = new Date(hoy); ini.setDate(ini.getDate() - 7); }
+  else if (p === 'mes'){ ini = new Date(hoy); ini.setDate(ini.getDate() - 30); }
+  else if (p === 'todo'){ ini = new Date('2025-12-01'); }
+  else return null;
+  return {ini, fin};
 }
 
 function rendTab(t){
@@ -5189,24 +5220,18 @@ function rendTab(t){
 }
 
 function rendCalcularRango(){
-  const hoy = new Date();
-  let fin = hoy, ini;
-  if (REND_PERIODO === 'dia'){
-    ini = new Date(hoy);
-  } else if (REND_PERIODO === 'sem'){
-    ini = new Date(hoy); ini.setDate(ini.getDate() - 7);
-  } else if (REND_PERIODO === 'mes'){
-    ini = new Date(hoy); ini.setDate(ini.getDate() - 30);
-  } else if (REND_PERIODO === 'todo'){
-    ini = new Date('2025-12-01');
-  } else if (REND_PERIODO === 'custom'){
-    const v1 = document.getElementById('rend-f-ini').value;
-    const v2 = document.getElementById('rend-f-fin').value;
-    if (!v1 || !v2){ alert('Selecciona fecha inicial y final'); return null; }
-    ini = new Date(v1 + 'T00:00:00');
-    fin = new Date(v2 + 'T00:00:00');
+  // Si los inputs ya tienen valores, usar esos. Si no, calcular del preset.
+  const fi = document.getElementById('rend-f-ini');
+  const ff = document.getElementById('rend-f-fin');
+  if (fi && ff && fi.value && ff.value){
+    return {ini: new Date(fi.value + 'T00:00:00'), fin: new Date(ff.value + 'T00:00:00')};
   }
-  return {ini, fin};
+  const r = rendCalcularRangoPreset(REND_PERIODO);
+  if (r){
+    if (fi) fi.value = rendFmtFecha(r.ini);
+    if (ff) ff.value = rendFmtFecha(r.fin);
+  }
+  return r;
 }
 
 function rendFmtFecha(d){
@@ -5217,6 +5242,15 @@ async function rendCargar(force){
   if (REND_LOADED && !force) return;
   const cont = document.getElementById('rk-tabla');
   if (cont) cont.innerHTML = '<tr><td style="padding:30px;text-align:center;color:#94a3b8">⏳ Cargando datos de rendimiento…</td></tr>';
+
+  // Asegurar que los inputs de fecha tengan valor inicial
+  const fi = document.getElementById('rend-f-ini');
+  const ff = document.getElementById('rend-f-fin');
+  if (fi && !fi.value && ff && !ff.value){
+    const r = rendCalcularRangoPreset(REND_PERIODO) || rendCalcularRangoPreset('mes');
+    fi.value = rendFmtFecha(r.ini);
+    ff.value = rendFmtFecha(r.fin);
+  }
 
   const rango = rendCalcularRango();
   if (!rango) return;
