@@ -2369,13 +2369,17 @@ async function mosaicoCargar(){
       setTimeout(() => { if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
     })));
 
-    // 4) Construir pool con URLs (thumb o url)
+    // 4) Construir pool con IDs de Drive (para construir thumb con lh3.googleusercontent.com)
     let pool = [];
     arrs.forEach(d => {
       if (d && Array.isArray(d.items)){
         d.items.forEach(it => {
-          const url = it.thumb || it.thumbUrl || it.url || it.fileUrl || it.link;
-          if (url) pool.push(url);
+          const id = it.id || it.fileId || it.driveId;
+          if (id) pool.push(id);
+          else {
+            const url = it.thumb || it.thumbUrl || it.url || it.fileUrl || it.link;
+            if (url) pool.push(url);
+          }
         });
       }
     });
@@ -2393,14 +2397,35 @@ async function mosaicoCargar(){
   }
 }
 
+function _mosaicoUrlFromId(idOrUrl){
+  // Si parece URL, devolverla; si parece ID de Drive, construir thumb
+  if (!idOrUrl) return '';
+  const s = String(idOrUrl);
+  if (s.indexOf('http') === 0 || s.indexOf('data:') === 0) return s;
+  return 'https://lh3.googleusercontent.com/d/' + s + '=w400-h400';
+}
+
+function _mosaicoFallback(img){
+  let n = parseInt(img.dataset.try || '0', 10);
+  n++;
+  img.dataset.try = String(n);
+  const fid = img.dataset.fid;
+  if (!fid) { img.style.opacity = '.2'; return; }
+  if (n === 1) img.src = 'https://drive.google.com/uc?export=view&id=' + fid;
+  else if (n === 2) img.src = 'https://drive.usercontent.google.com/download?id=' + fid + '&export=view';
+  else img.style.opacity = '.2';
+}
+
 function mosaicoRender(){
   const grid = document.getElementById('menu-mosaico');
   if (!grid) return;
-  const n = Math.min(MOSAICO_CELLS, MOSAICO_POOL.length);
   const parts = [];
   for (let i = 0; i < MOSAICO_CELLS; i++){
-    const url = MOSAICO_POOL[i % MOSAICO_POOL.length];
-    parts.push('<div class="mosaico-cell" data-i="' + i + '"><img src="' + url + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.opacity=.2"/></div>');
+    const idOrUrl = MOSAICO_POOL[i % MOSAICO_POOL.length];
+    const url = _mosaicoUrlFromId(idOrUrl);
+    const isId = url.indexOf('lh3.googleusercontent.com') >= 0;
+    const fidAttr = isId ? ' data-fid="' + idOrUrl + '"' : '';
+    parts.push('<div class="mosaico-cell" data-i="' + i + '"><img src="' + url + '"' + fidAttr + ' loading="lazy" referrerpolicy="no-referrer" onerror="_mosaicoFallback(this)"/></div>');
   }
   grid.innerHTML = parts.join('');
 }
@@ -2420,11 +2445,17 @@ function mosaicoStartRotacion(){
     const cellsArr = Array.from(cells);
     for (let k = 0; k < 2; k++){
       const cell = cellsArr[Math.floor(Math.random() * cellsArr.length)];
-      const newUrl = MOSAICO_POOL[nextIdx % MOSAICO_POOL.length];
+      const idOrUrl = MOSAICO_POOL[nextIdx % MOSAICO_POOL.length];
+      const newUrl = _mosaicoUrlFromId(idOrUrl);
       nextIdx++;
       cell.classList.add('fade-out');
       cell.style.opacity = '0';
       setTimeout(() => {
+        // Resetear contador de fallback al cambiar imagen
+        cell.dataset.try = '0';
+        if (newUrl.indexOf('lh3.googleusercontent.com') >= 0){
+          cell.dataset.fid = String(idOrUrl);
+        }
         cell.src = newUrl;
         cell.style.opacity = '1';
         cell.classList.remove('fade-out');
