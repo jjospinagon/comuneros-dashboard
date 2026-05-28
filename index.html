@@ -2002,7 +2002,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div class="topbar-title">Rendimientos de Mano de Obra</div>
       <div class="topbar-meta" id="rend-meta">Cuadrilla = 1 Oficial + 2 Ayudantes (CE) · cruzando avance ejecutado con personal en obra</div>
     </div>
-    <button onclick="rendCargar(true)" style="margin-left:auto;background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.4);color:#f9a8d4;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer">🔄 Refrescar</button>
+    <button id="rend-refresh-btn" onclick="rendRefrescar()" style="margin-left:auto;background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.4);color:#f9a8d4;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer">🔄 Refrescar</button>
   </div>
 
   <!-- Filtros de período -->
@@ -5238,6 +5238,24 @@ function rendFmtFecha(d){
   return d.toISOString().substring(0,10);
 }
 
+async function rendRefrescar(){
+  const btn = document.getElementById('rend-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando backend…'; }
+  try {
+    // Forzar re-sincronización del XLSX → Sheet espejo (tanto avance como MO)
+    await _dispararSyncBackground('force_sync_avance', 'avance');
+    await _dispararSyncBackground('force_sync_mo', 'mo');
+    // Esperar a que el backend termine de procesar
+    await new Promise(r => setTimeout(r, 4000));
+  } catch(e){ console.error('Sync error', e); }
+  if (btn) { btn.textContent = '⏳ Recargando datos…'; }
+  // Limpiar cache local de fetches con timestamp
+  REND_LOADED = false;
+  REND_DATA = null;
+  await rendCargar(true);
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Refrescar'; }
+}
+
 async function rendCargar(force){
   if (REND_LOADED && !force) return;
   const cont = document.getElementById('rk-tabla');
@@ -5293,7 +5311,7 @@ function _rendFetchAvance(fecha){
     const cb = 'cb_rend_av_' + Date.now() + '_' + Math.random().toString(36).substring(2,7);
     window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
     const s = document.createElement('script');
-    s.src = APPS_URL + '?endpoint=avance_diario&fecha=' + encodeURIComponent(fecha) + '&callback=' + cb;
+    s.src = APPS_URL + '?endpoint=avance_diario&fecha=' + encodeURIComponent(fecha) + '&nocache=1&_ts=' + Date.now() + '&callback=' + cb;
     s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
     document.body.appendChild(s);
     setTimeout(()=>{ if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
@@ -5305,7 +5323,7 @@ function _rendFetchMO(fecha){
     const cb = 'cb_rend_mo_' + Date.now() + '_' + Math.random().toString(36).substring(2,7);
     window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
     const s = document.createElement('script');
-    s.src = APPS_URL + '?endpoint=mano_obra&fecha=' + encodeURIComponent(fecha) + '&callback=' + cb;
+    s.src = APPS_URL + '?endpoint=mano_obra&fecha=' + encodeURIComponent(fecha) + '&nocache=1&_ts=' + Date.now() + '&callback=' + cb;
     s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
     document.body.appendChild(s);
     setTimeout(()=>{ if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
