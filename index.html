@@ -354,6 +354,69 @@ body.light .menu-card .illust svg [stroke="rgba(255,255,255,.18)"]{stroke:rgba(1
 /* Ejecución diaria barras y elementos */
 body.light .badge-cap{background:rgba(251,191,36,.18) !important;color:#b45309 !important}
 
+/* =============== RENDIMIENTOS · estilos ================ */
+.rend-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);
+  color:#cbd5e1;font-size:12px;padding:6px 12px;border-radius:999px;
+  cursor:pointer;transition:all .15s;font-weight:500;
+}
+.rend-chip:hover{border-color:rgba(244,114,182,.5);color:#fff}
+.rend-chip.active{background:linear-gradient(135deg,#f472b6,#a855f7);border-color:transparent;color:#fff;font-weight:600}
+.rend-tab{
+  background:transparent;border:0;color:#94a3b8;
+  padding:10px 18px;cursor:pointer;font-size:13px;font-weight:600;
+  border-bottom:2px solid transparent;transition:all .15s;
+}
+.rend-tab:hover{color:#cbd5e1}
+.rend-tab.active{color:#f472b6;border-bottom-color:#f472b6}
+.rend-kpi{
+  background:rgba(20,26,55,.55);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.06);border-radius:12px;
+  padding:14px 16px;
+}
+.rend-kpi .l{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:6px}
+.rend-kpi .v{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:4px}
+.rend-kpi .s{font-size:10.5px;color:#64748b;font-weight:500}
+.rend-panel{
+  background:rgba(20,26,55,.6);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px 18px;
+}
+.rend-panel h3{font-size:13px;font-weight:700;margin:0 0 12px;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.2px}
+#screen-rendimientos table{color:#cbd5e1}
+#screen-rendimientos table th{
+  background:rgba(0,0,0,.35);color:#94a3b8;font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.4px;font-weight:600;
+  padding:10px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08);
+  position:sticky;top:0;z-index:1;
+}
+#screen-rendimientos table td{padding:8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+#screen-rendimientos table tr:hover td{background:rgba(244,114,182,.05)}
+.rend-efi-bar{display:inline-block;width:60px;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:6px}
+.rend-efi-bar > span{display:block;height:100%;border-radius:3px}
+.rend-pill{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10.5px;font-weight:600}
+.rend-pill.green{background:rgba(34,197,94,.18);color:#86efac}
+.rend-pill.yellow{background:rgba(251,191,36,.18);color:#fcd34d}
+.rend-pill.red{background:rgba(239,68,68,.18);color:#fca5a5}
+.rend-pill.gray{background:rgba(148,163,184,.15);color:#cbd5e1}
+
+/* Modo día */
+body.light .rend-chip{background:#fff !important;border-color:rgba(15,23,42,.1) !important;color:#475569 !important}
+body.light .rend-chip.active{background:linear-gradient(135deg,#f472b6,#a855f7) !important;color:#fff !important;border-color:transparent !important}
+body.light .rend-tab{color:#64748b !important}
+body.light .rend-tab.active{color:#db2777 !important;border-bottom-color:#db2777 !important}
+body.light .rend-kpi{background:#ffffff !important;border-color:rgba(15,23,42,.08) !important;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+body.light .rend-kpi .l{color:#64748b !important}
+body.light .rend-kpi .v{color:#0f172a !important}
+body.light .rend-kpi .s{color:#64748b !important}
+body.light .rend-panel{background:#ffffff !important;border-color:rgba(15,23,42,.08) !important;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+body.light .rend-panel h3{color:#0f172a !important}
+body.light #screen-rendimientos table{color:#1e293b !important}
+body.light #screen-rendimientos table th{background:#f1f5f9 !important;color:#475569 !important;border-bottom-color:rgba(15,23,42,.08) !important}
+body.light #screen-rendimientos table td{color:#1e293b !important;border-bottom-color:rgba(15,23,42,.04) !important}
+body.light #screen-rendimientos table tr:hover td{background:rgba(244,114,182,.06) !important}
+body.light .rend-efi-bar{background:rgba(15,23,42,.08) !important}
+
 /* =========================================================
    OVERRIDES INLINE AGRESIVOS — modo día
    Para tarjetas/paneles que usan style="background:rgba(0,0,0,.X)"
@@ -796,22 +859,29 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div class="cta">Ver personal en obra <span class="arrow">→</span></div>
       </div>
 
-      <!-- CARD INDICADORES -->
-      <div class="menu-card ind" onclick="goTo('indicadores')">
-        <div class="icon">📊</div>
-        <h2>Indicadores Contractuales</h2>
-        <p class="desc">Avance económico multi-corte (5 fechas), 93 actividades, EVM, hitos contractuales y proyecciones financieras.</p>
+      <!-- CARD RENDIMIENTOS -->
+      <div class="menu-card ind" onclick="goTo('rendimientos')" style="background:linear-gradient(180deg,rgba(244,114,182,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#f472b6,#a855f7)">⚙️</div>
+        <h2>Rendimientos</h2>
+        <p class="desc">Productividad de mano de obra cruzando avance ejecutado con cuadrillas (1 Of + 2 Ay). Eficiencia vs APU contractual, $/CE-día y curva de aprendizaje.</p>
         <div class="illust">
           <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
-            <rect x="20" y="48" width="22" height="22" rx="2" fill="rgba(59,130,246,.7)"/>
-            <rect x="50" y="32" width="22" height="38" rx="2" fill="rgba(34,211,238,.75)"/>
-            <rect x="80" y="20" width="22" height="50" rx="2" fill="rgba(34,197,94,.8)"/>
-            <rect x="110" y="38" width="22" height="32" rx="2" fill="rgba(245,158,11,.75)"/>
-            <rect x="140" y="26" width="22" height="44" rx="2" fill="rgba(168,85,247,.75)"/>
-            <line x1="14" y1="72" x2="170" y2="72" stroke="rgba(148,163,184,.35)" stroke-width="1"/>
+            <line x1="15" y1="68" x2="190" y2="68" stroke="rgba(148,163,184,.35)" stroke-width="1"/>
+            <line x1="15" y1="10" x2="15" y2="68" stroke="rgba(148,163,184,.35)" stroke-width="1"/>
+            <!-- Curva subiendo (aprendizaje) -->
+            <path d="M20 60 C 50 58, 75 52, 100 40 S 150 22, 185 16" stroke="rgba(244,114,182,.9)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <!-- Banda objetivo APU -->
+            <line x1="15" y1="30" x2="190" y2="30" stroke="rgba(34,197,94,.55)" stroke-width="1.2" stroke-dasharray="4 3"/>
+            <!-- Cuadrilla: 1 of + 2 ay -->
+            <circle cx="40" cy="46" r="5" fill="rgba(244,114,182,.9)"/>
+            <circle cx="55" cy="50" r="3.5" fill="rgba(168,85,247,.7)"/>
+            <circle cx="68" cy="50" r="3.5" fill="rgba(168,85,247,.7)"/>
+            <!-- Punto destacado -->
+            <circle cx="185" cy="16" r="3.5" fill="rgba(244,114,182,.95)"/>
+            <circle cx="185" cy="16" r="6" fill="none" stroke="rgba(244,114,182,.4)" stroke-width="1.2"/>
           </svg>
         </div>
-        <div class="cta">Ver dashboard completo <span class="arrow">→</span></div>
+        <div class="cta">Analizar productividad <span class="arrow">→</span></div>
       </div>
 
       <!-- CARD INVENTARIO -->
@@ -831,6 +901,24 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
             <line x1="68" y1="26" x2="100" y2="26" stroke="rgba(16,185,129,.7)" stroke-width="1.2"/>
             <rect x="104" y="18" width="32" height="26" rx="1.5" fill="rgba(168,85,247,.18)" stroke="rgba(168,85,247,.7)" stroke-width="1.5"/>
             <line x1="104" y1="26" x2="136" y2="26" stroke="rgba(168,85,247,.7)" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <div class="cta">Ver dashboard completo <span class="arrow">→</span></div>
+      </div>
+
+      <!-- CARD INDICADORES -->
+      <div class="menu-card ind" onclick="goTo('indicadores')">
+        <div class="icon">📊</div>
+        <h2>Indicadores Contractuales</h2>
+        <p class="desc">Avance económico multi-corte (5 fechas), 93 actividades, EVM, hitos contractuales y proyecciones financieras.</p>
+        <div class="illust">
+          <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
+            <rect x="20" y="48" width="22" height="22" rx="2" fill="rgba(59,130,246,.7)"/>
+            <rect x="50" y="32" width="22" height="38" rx="2" fill="rgba(34,211,238,.75)"/>
+            <rect x="80" y="20" width="22" height="50" rx="2" fill="rgba(34,197,94,.8)"/>
+            <rect x="110" y="38" width="22" height="32" rx="2" fill="rgba(245,158,11,.75)"/>
+            <rect x="140" y="26" width="22" height="44" rx="2" fill="rgba(168,85,247,.75)"/>
+            <line x1="14" y1="72" x2="170" y2="72" stroke="rgba(148,163,184,.35)" stroke-width="1"/>
           </svg>
         </div>
         <div class="cta">Ver dashboard completo <span class="arrow">→</span></div>
@@ -1906,6 +1994,158 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   </div>
 </div>
 
+<!-- ============ VISTA RENDIMIENTOS ============ -->
+<div class="screen" id="screen-rendimientos">
+  <div class="topbar">
+    <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+    <div>
+      <div class="topbar-title">Rendimientos de Mano de Obra</div>
+      <div class="topbar-meta" id="rend-meta">Cuadrilla = 1 Oficial + 2 Ayudantes (CE) · cruzando avance ejecutado con personal en obra</div>
+    </div>
+    <button onclick="rendCargar(true)" style="margin-left:auto;background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.4);color:#f9a8d4;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer">🔄 Refrescar</button>
+  </div>
+
+  <!-- Filtros de período -->
+  <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(244,114,182,.18);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Período</span>
+      <span class="rend-chip" data-period="dia" onclick="rendSetPeriodo('dia')">📅 Día</span>
+      <span class="rend-chip" data-period="sem" onclick="rendSetPeriodo('sem')">🗓️ Semana</span>
+      <span class="rend-chip active" data-period="mes" onclick="rendSetPeriodo('mes')">📆 Mes</span>
+      <span class="rend-chip" data-period="todo" onclick="rendSetPeriodo('todo')">∞ Todo</span>
+      <span class="rend-chip" data-period="custom" onclick="rendSetPeriodo('custom')">⚙ Custom</span>
+    </div>
+    <div id="rend-fechas-wrap" style="display:none;gap:8px;align-items:center">
+      <input type="date" id="rend-f-ini" class="date-input-themable" onchange="rendCargar(true)" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;color-scheme:dark">
+      <span style="color:#64748b;font-size:11px">→</span>
+      <input type="date" id="rend-f-fin" class="date-input-themable" onchange="rendCargar(true)" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;color-scheme:dark">
+    </div>
+    <div style="margin-left:auto;font-size:11.5px;color:#cbd5e1" id="rend-rango-info">—</div>
+  </div>
+
+  <!-- TABS -->
+  <div style="display:flex;gap:6px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px;flex-wrap:wrap">
+    <button class="rend-tab active" data-tab="cons" onclick="rendTab('cons')">📊 Consolidado</button>
+    <button class="rend-tab" data-tab="fis" onclick="rendTab('fis')">📏 Productividad Física</button>
+    <button class="rend-tab" data-tab="eco" onclick="rendTab('eco')">💰 Productividad Económica</button>
+    <button class="rend-tab" data-tab="efi" onclick="rendTab('efi')">⚡ Eficiencia vs APU</button>
+  </div>
+
+  <!-- TAB CONSOLIDADO (D) -->
+  <div id="rend-pane-cons" class="rend-pane">
+    <!-- KPIs gerenciales -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">
+      <div class="rend-kpi" style="border-left:4px solid #f472b6"><div class="l">CE Promedio / día</div><div class="v" id="rk-ce">—</div><div class="s" id="rk-ce-sub">cuadrillas equivalentes</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #a855f7"><div class="l">HH Efectivas</div><div class="v" id="rk-hh">—</div><div class="s" id="rk-hh-sub">Of + Ay totales</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #22d3ee"><div class="l">Ratio Of : Ay</div><div class="v" id="rk-ratio">—</div><div class="s" id="rk-ratio-sub">ideal 1 : 2</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #22c55e"><div class="l">$ / CE-día</div><div class="v" id="rk-cope">—</div><div class="s">producción económica</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #fbbf24"><div class="l">Eficiencia M.O.</div><div class="v" id="rk-efi">—</div><div class="s">vs APU contractual</div></div>
+    </div>
+
+    <!-- Dashboard híbrido: mini-paneles -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;margin-bottom:14px">
+      <!-- Mix personal -->
+      <div class="rend-panel">
+        <h3>👷 Mix de Personal (Of vs Ay)</h3>
+        <div id="rk-mix" style="text-align:center;padding:14px 0">—</div>
+      </div>
+      <!-- Top eficiencia -->
+      <div class="rend-panel">
+        <h3>🏆 Top 5 Actividades por Eficiencia</h3>
+        <div id="rk-top" style="font-size:12.5px">—</div>
+      </div>
+      <!-- Bottom eficiencia -->
+      <div class="rend-panel">
+        <h3>⚠️ Bottom 5 — Intervenir</h3>
+        <div id="rk-bot" style="font-size:12.5px">—</div>
+      </div>
+    </div>
+
+    <!-- Tendencia -->
+    <div class="rend-panel" style="margin-bottom:14px">
+      <h3>📈 Curva de Aprendizaje · Eficiencia M.O. por día</h3>
+      <div id="rk-trend" style="height:220px"></div>
+    </div>
+
+    <!-- Tabla resumen actividad -->
+    <div class="rend-panel">
+      <h3>📋 Resumen por Actividad</h3>
+      <div style="overflow-x:auto">
+        <table id="rk-tabla" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB PRODUCTIVIDAD FÍSICA (A) -->
+  <div id="rend-pane-fis" class="rend-pane" style="display:none">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+      <div class="rend-kpi" style="border-left:4px solid #22c55e"><div class="l">Mejor rendimiento</div><div class="v" id="rf-best">—</div><div class="s" id="rf-best-sub">—</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #ef4444"><div class="l">Peor rendimiento</div><div class="v" id="rf-worst">—</div><div class="s" id="rf-worst-sub">—</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #fbbf24"><div class="l">Actividades evaluadas</div><div class="v" id="rf-count">—</div><div class="s">con cantidad ejecutada</div></div>
+    </div>
+
+    <div class="rend-panel" style="margin-bottom:14px">
+      <h3>📏 Rendimiento Físico por Actividad (real vs APU)</h3>
+      <p style="font-size:11.5px;color:#94a3b8;margin:0 0 10px">Rendimiento real = cantidad ejecutada / (CE × jornada de 8 hr). Verde ≥ 100% APU · Amarillo 85-100% · Rojo &lt; 85%.</p>
+      <div style="overflow-x:auto">
+        <table id="rf-tabla" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+      </div>
+    </div>
+
+    <div class="rend-panel">
+      <h3>📊 Distribución de eficiencias</h3>
+      <div id="rf-hist" style="display:flex;align-items:end;gap:6px;height:160px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)"></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:4px"><span>&lt;50%</span><span>75%</span><span>100% (APU)</span><span>125%</span><span>&gt;150%</span></div>
+    </div>
+  </div>
+
+  <!-- TAB PRODUCTIVIDAD ECONÓMICA (B) -->
+  <div id="rend-pane-eco" class="rend-pane" style="display:none">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+      <div class="rend-kpi" style="border-left:4px solid #22d3ee"><div class="l">$ producido / HH</div><div class="v" id="re-hh">—</div><div class="s">por hora-hombre</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #22c55e"><div class="l">$ producido / CE-día</div><div class="v" id="re-ce">—</div><div class="s">por cuadrilla-jornada</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #fbbf24"><div class="l">$ MO real / día</div><div class="v" id="re-mo">—</div><div class="s">Of + Ay (s/ APU)</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #f472b6"><div class="l">% M.O. / Directo</div><div class="v" id="re-pct">—</div><div class="s" id="re-pct-sub">vs benchmark</div></div>
+    </div>
+
+    <div class="rend-panel" style="margin-bottom:14px">
+      <h3>💰 Productividad Económica por Día</h3>
+      <p style="font-size:11.5px;color:#94a3b8;margin:0 0 10px">Tendencia de $/CE-día. Línea verde = promedio del período.</p>
+      <div id="re-chart" style="height:220px"></div>
+    </div>
+
+    <div class="rend-panel">
+      <h3>📋 Detalle Económico por Día</h3>
+      <div style="overflow-x:auto">
+        <table id="re-tabla" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB EFICIENCIA vs APU (C) -->
+  <div id="rend-pane-efi" class="rend-pane" style="display:none">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+      <div class="rend-kpi" style="border-left:4px solid #fbbf24"><div class="l">HH Reales Consumidas</div><div class="v" id="rc-real">—</div><div class="s">Oficiales + Ayudantes</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #22d3ee"><div class="l">HH APU Teóricas</div><div class="v" id="rc-apu">—</div><div class="s">para lo ejecutado</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #22c55e"><div class="l">Eficiencia M.O.</div><div class="v" id="rc-efi">—</div><div class="s" id="rc-efi-sub">100% = al ritmo APU</div></div>
+      <div class="rend-kpi" style="border-left:4px solid #ef4444"><div class="l">Sobrecosto M.O.</div><div class="v" id="rc-sob">—</div><div class="s">$ extra vs APU</div></div>
+    </div>
+
+    <div class="rend-panel" style="margin-bottom:14px">
+      <h3>⚡ Eficiencia por Actividad (HH APU / HH Real)</h3>
+      <p style="font-size:11.5px;color:#94a3b8;margin:0 0 10px">&gt;100% = produce más rápido que APU. &lt;100% = subrendimiento. Sin APU = falta calibrar tabla.</p>
+      <div style="overflow-x:auto">
+        <table id="rc-tabla" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+      </div>
+    </div>
+
+    <div class="rend-panel">
+      <h3>🎯 Eficiencia por Capítulo</h3>
+      <div id="rc-cap" style="display:grid;gap:8px"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL DETALLE ALERTA ============ -->
 <div id="alert-modal" style="display:none;position:fixed;inset:0;background:rgba(10,15,30,.85);backdrop-filter:blur(8px);z-index:9500;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeAlertDetail()">
   <div style="background:linear-gradient(135deg,rgba(20,26,55,.97),rgba(15,20,40,.97));border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px 28px;max-width:920px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
@@ -2026,6 +2266,7 @@ function goTo(name){
   if(name==='ejecdiaria' && !EJEC_DIARIA_LOADED){ ejecDiariaCargar(); }
   if(name==='mo' && !MO_LOADED){ moCargar(); }
   if(name==='maq' && !MAQ_LOADED){ maqCargar(); }
+  if(name==='rendimientos' && !REND_LOADED){ rendCargar(); }
 }
 
 /* ====================== DATA SHARED ====================== */
@@ -4847,6 +5088,568 @@ async function moRefrescar(){
   MO_LOADED = false;
   await moCargar(true, MO_FECHA);
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+}
+
+/* ====================== RENDIMIENTOS ====================== */
+let REND_LOADED = false;
+let REND_PERIODO = 'mes';   // dia | sem | mes | todo | custom
+let REND_TAB = 'cons';
+let REND_DATA = null;       // {dias:[{fecha, items:[...], mo:{of, ay, hh}, cd}], totals:{...}}
+let REND_RANGO = {ini:null, fin:null};
+
+/* Tabla típica APU alcantarillado COL — HH por unidad de obra.
+   1 cuadrilla = 1 Of + 2 Ay → jornada 8 hr → 24 HH/jornada.
+   Rendimiento = und producidas en 1 jornada por 1 CE.
+   Estos valores son típicos colombianos para alcantarillado <=12";
+   se ajustan después con APU contractual real. */
+const REND_APU_TIPICO = {
+  // Excavaciones (m³ / cuadrilla-día)
+  '1.01': {desc:'Localización y replanteo', und:'ml',  rendCE:80, hhOf:0.10, hhAy:0.20},
+  '1.02': {desc:'Demolición pavimento concreto', und:'m²', rendCE:18, hhOf:0.44, hhAy:0.89},
+  '1.03': {desc:'Demolición pavimento asfáltico', und:'m²', rendCE:35, hhOf:0.23, hhAy:0.46},
+  '2.01': {desc:'Excavación manual 0-2m', und:'m³', rendCE:8,  hhOf:1.00, hhAy:2.00},
+  '2.02': {desc:'Excavación manual 2-4m', und:'m³', rendCE:5,  hhOf:1.60, hhAy:3.20},
+  '2.03': {desc:'Excavación mecánica 0-2m', und:'m³', rendCE:40, hhOf:0.20, hhAy:0.40},
+  '2.04': {desc:'Excavación mecánica 2-4m', und:'m³', rendCE:30, hhOf:0.27, hhAy:0.53},
+  '2.05': {desc:'Excavación mecánica 4-6m', und:'m³', rendCE:22, hhOf:0.36, hhAy:0.73},
+  '2.06': {desc:'Retiro material sobrante', und:'m³', rendCE:30, hhOf:0.27, hhAy:0.53},
+  // Tuberías PVC alcantarillado (ml / CE-día)
+  '3.01': {desc:'Tubería PVC NOVAFORT 6"', und:'ml', rendCE:35, hhOf:0.23, hhAy:0.46},
+  '3.02': {desc:'Tubería PVC NOVAFORT 8"', und:'ml', rendCE:30, hhOf:0.27, hhAy:0.53},
+  '3.03': {desc:'Tubería PVC NOVAFORT 10"', und:'ml', rendCE:25, hhOf:0.32, hhAy:0.64},
+  '3.04': {desc:'Tubería PVC NOVAFORT 12"', und:'ml', rendCE:20, hhOf:0.40, hhAy:0.80},
+  '3.05': {desc:'Tubería PVC NOVAFORT 14"', und:'ml', rendCE:16, hhOf:0.50, hhAy:1.00},
+  '3.06': {desc:'Tubería concreto reforzado', und:'ml', rendCE:14, hhOf:0.57, hhAy:1.14},
+  // Cajas y pozos (und / cuadrilla-día)
+  '4.01': {desc:'Caja inspección domiciliaria', und:'und', rendCE:2.5, hhOf:3.20, hhAy:6.40},
+  '4.02': {desc:'Pozo inspección 1.0-2.0m', und:'und', rendCE:0.5, hhOf:16.0, hhAy:32.0},
+  '4.03': {desc:'Pozo inspección 2.0-3.0m', und:'und', rendCE:0.33, hhOf:24.0, hhAy:48.0},
+  '4.04': {desc:'Pozo inspección 3.0-4.0m', und:'und', rendCE:0.25, hhOf:32.0, hhAy:64.0},
+  // Rellenos (m³ / CE-día)
+  '5.01': {desc:'Relleno material seleccionado', und:'m³', rendCE:18, hhOf:0.44, hhAy:0.89},
+  '5.02': {desc:'Relleno material común', und:'m³', rendCE:22, hhOf:0.36, hhAy:0.73},
+  '5.03': {desc:'Cama de arena', und:'m³', rendCE:14, hhOf:0.57, hhAy:1.14},
+  // Pavimentos (m² / CE-día)
+  '6.01': {desc:'Subbase granular', und:'m²', rendCE:35, hhOf:0.23, hhAy:0.46},
+  '6.02': {desc:'Base granular', und:'m²', rendCE:30, hhOf:0.27, hhAy:0.53},
+  '6.03': {desc:'Pavimento concreto rígido', und:'m²', rendCE:14, hhOf:0.57, hhAy:1.14},
+  '6.04': {desc:'Pavimento asfáltico', und:'m²', rendCE:50, hhOf:0.16, hhAy:0.32}
+};
+
+/* Match item del avance contra tabla APU típica. Match exacto por código o por descripción contiene. */
+function rendBuscarApu(itemCod, itemDesc){
+  if (REND_APU_TIPICO[itemCod]) return REND_APU_TIPICO[itemCod];
+  if (!itemDesc) return null;
+  const d = String(itemDesc).toLowerCase();
+  // Match heurístico por palabras clave
+  if (/replante|localiz/i.test(d)) return REND_APU_TIPICO['1.01'];
+  if (/demoli.*pavi.*concr/i.test(d)) return REND_APU_TIPICO['1.02'];
+  if (/demoli.*pavi.*asfalt/i.test(d)) return REND_APU_TIPICO['1.03'];
+  if (/excav.*manual.*0.*2/i.test(d)) return REND_APU_TIPICO['2.01'];
+  if (/excav.*manual.*2.*4/i.test(d)) return REND_APU_TIPICO['2.02'];
+  if (/excav.*mec.*0.*2/i.test(d)) return REND_APU_TIPICO['2.03'];
+  if (/excav.*mec.*2.*4/i.test(d)) return REND_APU_TIPICO['2.04'];
+  if (/excav.*mec.*4.*6/i.test(d)) return REND_APU_TIPICO['2.05'];
+  if (/retiro.*material|sobrant/i.test(d)) return REND_APU_TIPICO['2.06'];
+  if (/tuber.*6.?"/i.test(d) || /pvc.*6/i.test(d)) return REND_APU_TIPICO['3.01'];
+  if (/tuber.*8.?"/i.test(d) || /pvc.*8/i.test(d)) return REND_APU_TIPICO['3.02'];
+  if (/tuber.*10.?"/i.test(d)) return REND_APU_TIPICO['3.03'];
+  if (/tuber.*12.?"/i.test(d)) return REND_APU_TIPICO['3.04'];
+  if (/caja.*inspec|domicili/i.test(d)) return REND_APU_TIPICO['4.01'];
+  if (/pozo.*1.*2/i.test(d)) return REND_APU_TIPICO['4.02'];
+  if (/pozo.*2.*3/i.test(d)) return REND_APU_TIPICO['4.03'];
+  if (/pozo.*3.*4/i.test(d)) return REND_APU_TIPICO['4.04'];
+  if (/relleno.*selec/i.test(d)) return REND_APU_TIPICO['5.01'];
+  if (/relleno.*com[uú]n|comun/i.test(d)) return REND_APU_TIPICO['5.02'];
+  if (/cama.*arena/i.test(d)) return REND_APU_TIPICO['5.03'];
+  if (/subbase/i.test(d)) return REND_APU_TIPICO['6.01'];
+  if (/base.*granular/i.test(d)) return REND_APU_TIPICO['6.02'];
+  if (/pavimento.*r[ií]gido|concreto/i.test(d)) return REND_APU_TIPICO['6.03'];
+  if (/pavimento.*asf[aá]ltic|asfalto/i.test(d)) return REND_APU_TIPICO['6.04'];
+  return null;
+}
+
+function rendSetPeriodo(p){
+  REND_PERIODO = p;
+  document.querySelectorAll('.rend-chip').forEach(c=>{
+    c.classList.toggle('active', c.getAttribute('data-period') === p);
+  });
+  document.getElementById('rend-fechas-wrap').style.display = (p === 'custom') ? 'flex' : 'none';
+  if (p !== 'custom') rendCargar(true);
+}
+
+function rendTab(t){
+  REND_TAB = t;
+  document.querySelectorAll('.rend-tab').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-tab') === t);
+  });
+  document.querySelectorAll('.rend-pane').forEach(p=>p.style.display = 'none');
+  const pane = document.getElementById('rend-pane-' + t);
+  if (pane) pane.style.display = 'block';
+}
+
+function rendCalcularRango(){
+  const hoy = new Date();
+  let fin = hoy, ini;
+  if (REND_PERIODO === 'dia'){
+    ini = new Date(hoy);
+  } else if (REND_PERIODO === 'sem'){
+    ini = new Date(hoy); ini.setDate(ini.getDate() - 7);
+  } else if (REND_PERIODO === 'mes'){
+    ini = new Date(hoy); ini.setDate(ini.getDate() - 30);
+  } else if (REND_PERIODO === 'todo'){
+    ini = new Date('2025-12-01');
+  } else if (REND_PERIODO === 'custom'){
+    const v1 = document.getElementById('rend-f-ini').value;
+    const v2 = document.getElementById('rend-f-fin').value;
+    if (!v1 || !v2){ alert('Selecciona fecha inicial y final'); return null; }
+    ini = new Date(v1 + 'T00:00:00');
+    fin = new Date(v2 + 'T00:00:00');
+  }
+  return {ini, fin};
+}
+
+function rendFmtFecha(d){
+  return d.toISOString().substring(0,10);
+}
+
+async function rendCargar(force){
+  if (REND_LOADED && !force) return;
+  const cont = document.getElementById('rk-tabla');
+  if (cont) cont.innerHTML = '<tr><td style="padding:30px;text-align:center;color:#94a3b8">⏳ Cargando datos de rendimiento…</td></tr>';
+
+  const rango = rendCalcularRango();
+  if (!rango) return;
+  REND_RANGO = rango;
+
+  // Iterar día por día (limitado para no saturar JSONP)
+  const dias = [];
+  const fechas = [];
+  let cursor = new Date(rango.ini);
+  while (cursor <= rango.fin && fechas.length < 35){
+    fechas.push(rendFmtFecha(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  document.getElementById('rend-rango-info').textContent =
+    fechas.length + ' días · ' + rendFmtFecha(rango.ini) + ' → ' + rendFmtFecha(rango.fin);
+
+  // Fetch paralelo limitado
+  const BATCH = 5;
+  for (let i = 0; i < fechas.length; i += BATCH){
+    const slice = fechas.slice(i, i+BATCH);
+    const results = await Promise.all(slice.map(f => Promise.all([
+      _rendFetchAvance(f), _rendFetchMO(f)
+    ])));
+    results.forEach((r, idx) => {
+      const f = slice[idx];
+      const avance = r[0]; const mo = r[1];
+      if (avance && mo && (avance.directoCop > 0 || (mo.kpis && (mo.kpis.totalDia || 0) > 0))){
+        dias.push(_rendProcesarDia(f, avance, mo));
+      }
+    });
+  }
+
+  REND_DATA = {dias, fechas};
+  REND_LOADED = true;
+  rendRender();
+}
+
+function _rendFetchAvance(fecha){
+  return new Promise(res => {
+    const cb = 'cb_rend_av_' + Date.now() + '_' + Math.random().toString(36).substring(2,7);
+    window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
+    const s = document.createElement('script');
+    s.src = APPS_URL + '?endpoint=avance_diario&fecha=' + encodeURIComponent(fecha) + '&callback=' + cb;
+    s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
+    document.body.appendChild(s);
+    setTimeout(()=>{ if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
+  });
+}
+
+function _rendFetchMO(fecha){
+  return new Promise(res => {
+    const cb = 'cb_rend_mo_' + Date.now() + '_' + Math.random().toString(36).substring(2,7);
+    window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
+    const s = document.createElement('script');
+    s.src = APPS_URL + '?endpoint=mano_obra&fecha=' + encodeURIComponent(fecha) + '&callback=' + cb;
+    s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
+    document.body.appendChild(s);
+    setTimeout(()=>{ if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
+  });
+}
+
+function _rendProcesarDia(fecha, avance, mo){
+  // Extraer Of y Ay del payload MO. Estructura esperada: mo.kpis con campos por cargo o mo.personas array.
+  let of_ = 0, ay = 0, hhOf = 0, hhAy = 0;
+  const personas = mo.personas || mo.detalle || [];
+  personas.forEach(p => {
+    const cargo = String(p.cargo || p.Cargo || '').toLowerCase();
+    const hrs = Number(p.horas || p.Horas || p.hh || 8) || 8;
+    const esOf = /oficial/.test(cargo);
+    const esAy = /ayudant/.test(cargo);
+    if (esOf){ of_++; hhOf += hrs; }
+    else if (esAy){ ay++; hhAy += hrs; }
+  });
+  // Fallback: si no hay personas detalladas, intentar kpis agregados
+  if (of_ === 0 && ay === 0 && mo.kpis){
+    of_ = Number(mo.kpis.oficiales || 0);
+    ay = Number(mo.kpis.ayudantes || 0);
+    hhOf = of_ * 8;
+    hhAy = ay * 8;
+  }
+  const ce = Math.min(of_, ay/2);
+  const hhTotal = hhOf + hhAy;
+
+  // Procesar items del avance
+  const items = (avance.items || []).filter(it => (Number(it.cantDia) || 0) > 0).map(it => {
+    const cantDia = Number(it.cantDia) || 0;
+    const vrUnit = Number(it.vrUnit) || 0;
+    const costoDia = cantDia * vrUnit;
+    const apu = rendBuscarApu(it.item, it.desc);
+    let hhApuTeoricas = null, rendApu = null, eficiencia = null;
+    if (apu){
+      hhApuTeoricas = cantDia * (apu.hhOf + apu.hhAy);
+      rendApu = apu.rendCE;
+    }
+    return {
+      item: it.item, desc: it.desc, und: it.und,
+      cantDia, vrUnit, costoDia,
+      apuMatch: !!apu,
+      hhApu: hhApuTeoricas, rendApu, undApu: apu ? apu.und : null
+    };
+  });
+  // Distribuir HH reales y CE entre ítems proporcional al costo directo del día
+  const cdTotal = items.reduce((a,b)=>a+b.costoDia, 0) || 1;
+  items.forEach(it => {
+    const peso = it.costoDia / cdTotal;
+    it.hhReales = hhTotal * peso;
+    it.ceAsignadas = ce * peso;
+    it.rendReal = (it.ceAsignadas > 0 && it.cantDia > 0) ? (it.cantDia / it.ceAsignadas) : 0;
+    if (it.apuMatch && it.hhReales > 0){
+      it.eficiencia = (it.hhApu / it.hhReales) * 100;
+    } else if (it.apuMatch && it.rendApu){
+      it.eficienciaFis = (it.rendReal / it.rendApu) * 100;
+    }
+  });
+
+  return {fecha, of:of_, ay, ce, hhOf, hhAy, hhTotal, cd: avance.directoCop || cdTotal, items};
+}
+
+/* =================== RENDER GLOBAL =================== */
+function rendRender(){
+  if (!REND_DATA || REND_DATA.dias.length === 0){
+    document.getElementById('rk-tabla').innerHTML = '<tr><td style="padding:30px;text-align:center;color:#94a3b8">Sin datos en el período seleccionado.</td></tr>';
+    return;
+  }
+  rendRenderConsolidado();
+  rendRenderFisica();
+  rendRenderEconomica();
+  rendRenderEficiencia();
+}
+
+/* =================== TAB CONSOLIDADO (D) =================== */
+function rendRenderConsolidado(){
+  const D = REND_DATA.dias;
+  const totOf = D.reduce((a,b)=>a+b.of,0);
+  const totAy = D.reduce((a,b)=>a+b.ay,0);
+  const totHH = D.reduce((a,b)=>a+b.hhTotal,0);
+  const totCE = D.reduce((a,b)=>a+b.ce,0);
+  const totCD = D.reduce((a,b)=>a+b.cd,0);
+  const avgCE = totCE / D.length;
+  const cope = totCE > 0 ? totCD / totCE : 0;
+  const ratio = totAy > 0 ? (totOf / totAy) : 0;
+
+  // Agregado por ítem para eficiencia
+  const aggItems = {};
+  D.forEach(d => d.items.forEach(it => {
+    if (!aggItems[it.item]){
+      aggItems[it.item] = {item:it.item, desc:it.desc, und:it.und, cant:0, costo:0, hhReales:0, hhApu:0, apuMatch:it.apuMatch, undApu:it.undApu};
+    }
+    aggItems[it.item].cant += it.cantDia;
+    aggItems[it.item].costo += it.costoDia;
+    aggItems[it.item].hhReales += it.hhReales;
+    if (it.hhApu) aggItems[it.item].hhApu += it.hhApu;
+  }));
+  const itemsArr = Object.values(aggItems);
+  itemsArr.forEach(it => {
+    it.eficiencia = (it.apuMatch && it.hhReales > 0) ? (it.hhApu / it.hhReales) * 100 : null;
+  });
+  const totHHApu = itemsArr.reduce((a,b)=>a+(b.hhApu||0),0);
+  const efi = totHH > 0 ? (totHHApu / totHH) * 100 : 0;
+
+  // KPIs
+  document.getElementById('rk-ce').textContent = avgCE.toFixed(2);
+  document.getElementById('rk-ce-sub').textContent = D.length + ' días · ' + totCE.toFixed(1) + ' CE acum';
+  document.getElementById('rk-hh').textContent = fmt0.format(Math.round(totHH));
+  document.getElementById('rk-hh-sub').textContent = totOf + ' Of · ' + totAy + ' Ay';
+  document.getElementById('rk-ratio').textContent = '1 : ' + (totOf > 0 ? (totAy/totOf).toFixed(2) : '—');
+  const ratioOK = ratio > 0 && ratio >= 0.4 && ratio <= 0.6;
+  document.getElementById('rk-ratio-sub').textContent = ratioOK ? '✓ balanceado' : '⚠ desbalanceado';
+  document.getElementById('rk-ratio-sub').style.color = ratioOK ? '#86efac' : '#fca5a5';
+  document.getElementById('rk-cope').textContent = money(Math.round(cope));
+  document.getElementById('rk-efi').textContent = efi.toFixed(0) + '%';
+  document.getElementById('rk-efi').style.color = efi >= 100 ? '#86efac' : efi >= 85 ? '#fcd34d' : '#fca5a5';
+
+  // Mix Of vs Ay (donut SVG simple)
+  const total = totOf + totAy;
+  if (total > 0){
+    const pctOf = totOf / total * 100;
+    const pctAy = totAy / total * 100;
+    const r = 50, c = 2 * Math.PI * r;
+    const offOf = c * (1 - pctOf/100);
+    document.getElementById('rk-mix').innerHTML =
+      '<svg viewBox="0 0 130 130" style="width:130px;height:130px">' +
+        '<circle cx="65" cy="65" r="50" fill="none" stroke="rgba(168,85,247,.7)" stroke-width="18"/>' +
+        '<circle cx="65" cy="65" r="50" fill="none" stroke="rgba(244,114,182,.9)" stroke-width="18" stroke-dasharray="'+c+'" stroke-dashoffset="'+offOf+'" transform="rotate(-90 65 65)"/>' +
+        '<text x="65" y="62" text-anchor="middle" fill="#fff" font-size="20" font-weight="700" font-family="Space Grotesk">'+pctOf.toFixed(0)+'%</text>' +
+        '<text x="65" y="78" text-anchor="middle" fill="#94a3b8" font-size="10">Oficiales</text>' +
+      '</svg>' +
+      '<div style="display:flex;justify-content:center;gap:18px;margin-top:8px;font-size:11.5px;color:#cbd5e1">' +
+        '<div><span style="display:inline-block;width:10px;height:10px;background:#f472b6;border-radius:50%;margin-right:5px"></span>'+totOf+' Of ('+pctOf.toFixed(0)+'%)</div>' +
+        '<div><span style="display:inline-block;width:10px;height:10px;background:#a855f7;border-radius:50%;margin-right:5px"></span>'+totAy+' Ay ('+pctAy.toFixed(0)+'%)</div>' +
+      '</div>';
+  }
+
+  // Top 5 / Bottom 5
+  const conApu = itemsArr.filter(it => it.eficiencia != null && it.cant > 0);
+  conApu.sort((a,b) => b.eficiencia - a.eficiencia);
+  const top5 = conApu.slice(0, 5);
+  const bot5 = conApu.slice(-5).reverse();
+  const renderRanking = (arr, type) => {
+    if (arr.length === 0) return '<div style="color:#64748b;padding:14px 0">Sin datos para ranking</div>';
+    return arr.map(it => {
+      const e = it.eficiencia;
+      const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:8px">' +
+        '<div style="flex:1;min-width:0"><div style="color:#fff;font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.item||'—')+' · '+escapeHTML(it.desc||'').substring(0,28)+'</div><div style="font-size:10.5px;color:#94a3b8">'+fmt2.format(it.cant)+' '+it.und+'</div></div>' +
+        '<span class="rend-pill '+cls+'">'+e.toFixed(0)+'%</span>' +
+      '</div>';
+    }).join('');
+  };
+  document.getElementById('rk-top').innerHTML = renderRanking(top5);
+  document.getElementById('rk-bot').innerHTML = renderRanking(bot5);
+
+  // Curva de aprendizaje (eficiencia por día)
+  if (D.length > 1){
+    const w = 700, h = 200, pad = {l:40, r:20, t:20, b:30};
+    const innerW = w - pad.l - pad.r, innerH = h - pad.t - pad.b;
+    const efDia = D.map(d => {
+      const hhA = d.items.reduce((a,b)=>a+(b.hhApu||0),0);
+      return d.hhTotal > 0 ? (hhA / d.hhTotal) * 100 : 0;
+    });
+    const maxE = Math.max(120, ...efDia);
+    const minE = 0;
+    const pts = efDia.map((e,i) => {
+      const x = pad.l + (innerW * i / Math.max(1, efDia.length-1));
+      const y = pad.t + innerH - (innerH * (e - minE) / (maxE - minE));
+      return x + ',' + y;
+    });
+    document.getElementById('rk-trend').innerHTML =
+      '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%">' +
+        // baseline 100%
+        '<line x1="'+pad.l+'" y1="'+(pad.t+innerH-(innerH*(100-minE)/(maxE-minE)))+'" x2="'+(w-pad.r)+'" y2="'+(pad.t+innerH-(innerH*(100-minE)/(maxE-minE)))+'" stroke="rgba(34,197,94,.5)" stroke-width="1" stroke-dasharray="4 3"/>' +
+        '<text x="'+(w-pad.r-4)+'" y="'+(pad.t+innerH-(innerH*(100-minE)/(maxE-minE))-4)+'" text-anchor="end" fill="rgba(34,197,94,.85)" font-size="10">APU 100%</text>' +
+        // axes
+        '<line x1="'+pad.l+'" y1="'+pad.t+'" x2="'+pad.l+'" y2="'+(pad.t+innerH)+'" stroke="rgba(148,163,184,.3)" stroke-width="1"/>' +
+        '<line x1="'+pad.l+'" y1="'+(pad.t+innerH)+'" x2="'+(w-pad.r)+'" y2="'+(pad.t+innerH)+'" stroke="rgba(148,163,184,.3)" stroke-width="1"/>' +
+        // polyline eficiencia
+        '<polyline points="'+pts.join(' ')+'" fill="none" stroke="#f472b6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        // dots
+        efDia.map((e,i) => {
+          const x = pad.l + (innerW * i / Math.max(1, efDia.length-1));
+          const y = pad.t + innerH - (innerH * (e - minE) / (maxE - minE));
+          return '<circle cx="'+x+'" cy="'+y+'" r="3" fill="#f472b6"/>';
+        }).join('') +
+        // labels eje X (primera, media, última)
+        '<text x="'+pad.l+'" y="'+(h-8)+'" text-anchor="start" fill="#94a3b8" font-size="9.5">'+D[0].fecha.substring(5)+'</text>' +
+        '<text x="'+(w-pad.r)+'" y="'+(h-8)+'" text-anchor="end" fill="#94a3b8" font-size="9.5">'+D[D.length-1].fecha.substring(5)+'</text>' +
+      '</svg>';
+  } else {
+    document.getElementById('rk-trend').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:12px">Necesita ≥ 2 días para mostrar tendencia</div>';
+  }
+
+  // Tabla resumen
+  itemsArr.sort((a,b) => String(a.item||'').localeCompare(String(b.item||''), undefined, {numeric:true}));
+  const th = '<thead><tr><th>Ítem</th><th>Descripción</th><th>Cant.</th><th>Und</th><th>$ Directo</th><th>HH Real</th><th>HH APU</th><th>Eficiencia</th></tr></thead>';
+  const tbody = '<tbody>' + itemsArr.map(it => {
+    const e = it.eficiencia;
+    let bar = '<span class="rend-pill gray">sin APU</span>';
+    if (e != null){
+      const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
+      const w = Math.min(150, Math.max(5, e));
+      bar = '<span class="rend-efi-bar"><span style="width:'+w+'%;background:'+(cls==='green'?'#22c55e':cls==='yellow'?'#fbbf24':'#ef4444')+'"></span></span><span class="rend-pill '+cls+'">'+e.toFixed(0)+'%</span>';
+    }
+    return '<tr><td><strong>'+(it.item||'—')+'</strong></td><td>'+escapeHTML(it.desc||'').substring(0,45)+'</td><td>'+fmt2.format(it.cant)+'</td><td>'+(it.und||'')+'</td><td>'+money(Math.round(it.costo))+'</td><td>'+fmt0.format(Math.round(it.hhReales))+'</td><td>'+(it.hhApu ? fmt0.format(Math.round(it.hhApu)) : '—')+'</td><td>'+bar+'</td></tr>';
+  }).join('') + '</tbody>';
+  document.getElementById('rk-tabla').innerHTML = th + tbody;
+}
+
+/* =================== TAB PRODUCTIVIDAD FÍSICA (A) =================== */
+function rendRenderFisica(){
+  const D = REND_DATA.dias;
+  const agg = {};
+  D.forEach(d => d.items.forEach(it => {
+    if (!it.apuMatch || it.cantDia <= 0) return;
+    if (!agg[it.item]) agg[it.item] = {item:it.item, desc:it.desc, und:it.und, undApu:it.undApu, cant:0, ce:0, rendApu:it.rendApu};
+    agg[it.item].cant += it.cantDia;
+    agg[it.item].ce += it.ceAsignadas;
+  }));
+  const arr = Object.values(agg).map(it => ({
+    ...it,
+    rendReal: it.ce > 0 ? it.cant / it.ce : 0,
+    eficiencia: (it.rendApu > 0 && it.ce > 0) ? ((it.cant/it.ce) / it.rendApu * 100) : 0
+  })).filter(it => it.rendApu > 0).sort((a,b) => b.eficiencia - a.eficiencia);
+
+  if (arr.length === 0){
+    document.getElementById('rf-tabla').innerHTML = '<tr><td style="padding:30px;text-align:center;color:#94a3b8">Sin actividades con APU mapeado en el período.</td></tr>';
+    document.getElementById('rf-best').textContent = '—';
+    document.getElementById('rf-worst').textContent = '—';
+    document.getElementById('rf-count').textContent = '0';
+    return;
+  }
+  const best = arr[0], worst = arr[arr.length-1];
+  document.getElementById('rf-best').textContent = best.eficiencia.toFixed(0) + '%';
+  document.getElementById('rf-best-sub').textContent = (best.item||'') + ' · ' + (best.desc||'').substring(0,22);
+  document.getElementById('rf-worst').textContent = worst.eficiencia.toFixed(0) + '%';
+  document.getElementById('rf-worst-sub').textContent = (worst.item||'') + ' · ' + (worst.desc||'').substring(0,22);
+  document.getElementById('rf-count').textContent = arr.length;
+
+  const th = '<thead><tr><th>Ítem</th><th>Descripción</th><th>Cant. Ejec.</th><th>Und</th><th>CE asig.</th><th>Rend. Real</th><th>Rend. APU</th><th>Eficiencia</th></tr></thead>';
+  arr.sort((a,b) => String(a.item||'').localeCompare(String(b.item||''), undefined, {numeric:true}));
+  const tbody = '<tbody>' + arr.map(it => {
+    const e = it.eficiencia;
+    const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
+    return '<tr><td><strong>'+it.item+'</strong></td><td>'+escapeHTML(it.desc||'').substring(0,40)+'</td><td>'+fmt2.format(it.cant)+'</td><td>'+(it.und||'')+'</td><td>'+it.ce.toFixed(2)+'</td><td>'+it.rendReal.toFixed(2)+' '+it.und+'/CE</td><td>'+it.rendApu.toFixed(2)+' '+it.undApu+'/CE</td><td><span class="rend-pill '+cls+'">'+e.toFixed(0)+'%</span></td></tr>';
+  }).join('') + '</tbody>';
+  document.getElementById('rf-tabla').innerHTML = th + tbody;
+
+  // Histograma simple de eficiencias
+  const bins = [0,0,0,0,0]; // <50, 50-75, 75-100, 100-125, >125
+  arr.forEach(it => {
+    const e = it.eficiencia;
+    if (e < 50) bins[0]++;
+    else if (e < 75) bins[1]++;
+    else if (e < 100) bins[2]++;
+    else if (e < 125) bins[3]++;
+    else bins[4]++;
+  });
+  const maxBin = Math.max(...bins, 1);
+  const colors = ['#ef4444','#f97316','#fbbf24','#22c55e','#0ea5e9'];
+  document.getElementById('rf-hist').innerHTML = bins.map((v,i) =>
+    '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:11px;color:#cbd5e1;font-weight:600">'+v+'</div><div style="width:100%;background:'+colors[i]+';border-radius:4px 4px 0 0;height:'+(v/maxBin*120)+'px;min-height:2px"></div></div>'
+  ).join('');
+}
+
+/* =================== TAB ECONÓMICA (B) =================== */
+function rendRenderEconomica(){
+  const D = REND_DATA.dias;
+  const totHH = D.reduce((a,b)=>a+b.hhTotal,0);
+  const totCE = D.reduce((a,b)=>a+b.ce,0);
+  const totCD = D.reduce((a,b)=>a+b.cd,0);
+
+  // Costo MO real estimado: Of jornal típico $80k/día, Ay $55k/día → simplificación
+  const JORNAL_OF = 80000, JORNAL_AY = 55000;
+  const totOf = D.reduce((a,b)=>a+b.of,0);
+  const totAy = D.reduce((a,b)=>a+b.ay,0);
+  const moRealCop = totOf*JORNAL_OF + totAy*JORNAL_AY;
+  const pctMO = totCD > 0 ? (moRealCop / totCD * 100) : 0;
+
+  document.getElementById('re-hh').textContent = money(totHH > 0 ? Math.round(totCD/totHH) : 0);
+  document.getElementById('re-ce').textContent = money(totCE > 0 ? Math.round(totCD/totCE) : 0);
+  document.getElementById('re-mo').textContent = money(Math.round(moRealCop / Math.max(1,D.length)));
+  document.getElementById('re-pct').textContent = pctMO.toFixed(1) + '%';
+  // Benchmark típico alcantarillado: M.O. = 18-28% del directo
+  const benchOK = pctMO >= 15 && pctMO <= 30;
+  document.getElementById('re-pct-sub').textContent = benchOK ? '✓ dentro de rango APU' : (pctMO > 30 ? '⚠ exceso M.O.' : '⚠ subreporte M.O.');
+  document.getElementById('re-pct-sub').style.color = benchOK ? '#86efac' : '#fca5a5';
+
+  // Chart $/CE-día por día
+  if (D.length > 1){
+    const w = 700, h = 200, pad = {l:50, r:20, t:20, b:30};
+    const iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+    const vals = D.map(d => d.ce > 0 ? d.cd/d.ce : 0);
+    const promedio = vals.reduce((a,b)=>a+b,0) / vals.length;
+    const maxV = Math.max(...vals, 1);
+    document.getElementById('re-chart').innerHTML =
+      '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%">' +
+        '<line x1="'+pad.l+'" y1="'+(pad.t+ih-(ih*promedio/maxV))+'" x2="'+(w-pad.r)+'" y2="'+(pad.t+ih-(ih*promedio/maxV))+'" stroke="rgba(34,197,94,.6)" stroke-width="1" stroke-dasharray="4 3"/>' +
+        '<text x="'+(w-pad.r-4)+'" y="'+(pad.t+ih-(ih*promedio/maxV)-4)+'" text-anchor="end" fill="rgba(34,197,94,.85)" font-size="10">Promedio '+money(Math.round(promedio))+'</text>' +
+        vals.map((v,i) => {
+          const x = pad.l + (iw * i / Math.max(1, vals.length-1)) - 6;
+          const bh = ih * v / maxV;
+          return '<rect x="'+x+'" y="'+(pad.t+ih-bh)+'" width="12" height="'+bh+'" fill="rgba(34,211,238,.85)" rx="2"/>';
+        }).join('') +
+        '<line x1="'+pad.l+'" y1="'+(pad.t+ih)+'" x2="'+(w-pad.r)+'" y2="'+(pad.t+ih)+'" stroke="rgba(148,163,184,.3)" stroke-width="1"/>' +
+        '<text x="'+pad.l+'" y="'+(h-8)+'" text-anchor="start" fill="#94a3b8" font-size="9.5">'+D[0].fecha.substring(5)+'</text>' +
+        '<text x="'+(w-pad.r)+'" y="'+(h-8)+'" text-anchor="end" fill="#94a3b8" font-size="9.5">'+D[D.length-1].fecha.substring(5)+'</text>' +
+      '</svg>';
+  }
+
+  // Tabla por día
+  const th = '<thead><tr><th>Fecha</th><th>Of</th><th>Ay</th><th>CE</th><th>HH</th><th>$ Directo</th><th>$/HH</th><th>$/CE-día</th></tr></thead>';
+  const tbody = '<tbody>' + D.map(d => {
+    const ceUsa = d.ce || 0.001;
+    return '<tr><td><strong>'+d.fecha+'</strong></td><td>'+d.of+'</td><td>'+d.ay+'</td><td>'+d.ce.toFixed(2)+'</td><td>'+fmt0.format(Math.round(d.hhTotal))+'</td><td>'+money(Math.round(d.cd))+'</td><td>'+money(d.hhTotal>0?Math.round(d.cd/d.hhTotal):0)+'</td><td>'+money(Math.round(d.cd/ceUsa))+'</td></tr>';
+  }).join('') + '</tbody>';
+  document.getElementById('re-tabla').innerHTML = th + tbody;
+}
+
+/* =================== TAB EFICIENCIA vs APU (C) =================== */
+function rendRenderEficiencia(){
+  const D = REND_DATA.dias;
+  const totHHReal = D.reduce((a,b)=>a+b.hhTotal,0);
+  let totHHApu = 0;
+  const agg = {};
+  const aggCap = {};
+  D.forEach(d => d.items.forEach(it => {
+    if (!it.apuMatch) return;
+    if (!agg[it.item]) agg[it.item] = {item:it.item, desc:it.desc, und:it.und, cant:0, hhReal:0, hhApu:0};
+    agg[it.item].cant += it.cantDia;
+    agg[it.item].hhReal += it.hhReales;
+    agg[it.item].hhApu += it.hhApu || 0;
+    totHHApu += it.hhApu || 0;
+    const cap = (it.item || '').toString().split('.')[0] || 'X';
+    if (!aggCap[cap]) aggCap[cap] = {cap, hhReal:0, hhApu:0};
+    aggCap[cap].hhReal += it.hhReales;
+    aggCap[cap].hhApu += it.hhApu || 0;
+  }));
+  const efi = totHHReal > 0 ? (totHHApu / totHHReal * 100) : 0;
+  // Sobrecosto: HH extras consumidas × jornal promedio
+  const jornalProm = (80000 + 55000*2) / 24; // jornal por HH cuadrilla
+  const sobrecosto = Math.max(0, totHHReal - totHHApu) * jornalProm;
+
+  document.getElementById('rc-real').textContent = fmt0.format(Math.round(totHHReal));
+  document.getElementById('rc-apu').textContent = totHHApu > 0 ? fmt0.format(Math.round(totHHApu)) : '—';
+  document.getElementById('rc-efi').textContent = efi.toFixed(0) + '%';
+  document.getElementById('rc-efi').style.color = efi >= 100 ? '#86efac' : efi >= 85 ? '#fcd34d' : '#fca5a5';
+  document.getElementById('rc-efi-sub').textContent = efi >= 100 ? '✓ supera APU' : efi >= 85 ? '⚠ levemente subrendido' : '✗ subrendimiento severo';
+  document.getElementById('rc-sob').textContent = money(Math.round(sobrecosto));
+
+  // Tabla por actividad
+  const arr = Object.values(agg).sort((a,b) => String(a.item||'').localeCompare(String(b.item||''), undefined, {numeric:true}));
+  const th = '<thead><tr><th>Ítem</th><th>Descripción</th><th>Cant.</th><th>Und</th><th>HH Real</th><th>HH APU</th><th>Eficiencia</th><th>Estado</th></tr></thead>';
+  const tbody = '<tbody>' + arr.map(it => {
+    if (it.hhReal === 0) return '';
+    const e = it.hhApu > 0 ? (it.hhApu / it.hhReal * 100) : null;
+    let pill = '<span class="rend-pill gray">sin APU</span>';
+    let estado = '—';
+    if (e != null){
+      const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
+      pill = '<span class="rend-pill '+cls+'">'+e.toFixed(0)+'%</span>';
+      estado = e >= 100 ? '✓ Al ritmo APU' : e >= 85 ? '⚠ Revisar' : '✗ Crítico';
+    }
+    return '<tr><td><strong>'+it.item+'</strong></td><td>'+escapeHTML(it.desc||'').substring(0,40)+'</td><td>'+fmt2.format(it.cant)+'</td><td>'+(it.und||'')+'</td><td>'+fmt0.format(Math.round(it.hhReal))+'</td><td>'+(it.hhApu ? fmt0.format(Math.round(it.hhApu)) : '—')+'</td><td>'+pill+'</td><td style="font-size:11px">'+estado+'</td></tr>';
+  }).join('') + '</tbody>';
+  document.getElementById('rc-tabla').innerHTML = th + tbody;
+
+  // Por capítulo
+  const capsArr = Object.values(aggCap).sort((a,b)=>String(a.cap).localeCompare(String(b.cap), undefined, {numeric:true}));
+  document.getElementById('rc-cap').innerHTML = capsArr.map(c => {
+    const e = c.hhApu > 0 ? (c.hhApu / c.hhReal * 100) : 0;
+    const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
+    const w = Math.min(150, Math.max(2, e));
+    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:8px"><div style="width:80px;font-weight:600;color:#fff;font-size:12px">CAP '+c.cap+'</div><div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:'+(cls==='green'?'linear-gradient(90deg,#22c55e,#86efac)':cls==='yellow'?'linear-gradient(90deg,#fbbf24,#fcd34d)':'linear-gradient(90deg,#ef4444,#fca5a5)')+'"></div></div><div style="width:60px;text-align:right;font-weight:600;font-size:12px;color:'+(cls==='green'?'#86efac':cls==='yellow'?'#fcd34d':'#fca5a5')+'">'+e.toFixed(0)+'%</div></div>';
+  }).join('') || '<div style="color:#64748b;padding:14px">Sin datos APU para mostrar.</div>';
 }
 
 </script>
