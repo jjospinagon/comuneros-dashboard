@@ -529,6 +529,33 @@
         <div class="cta">Ver ejecución del día <span class="arrow">→</span></div>
       </div>
 
+      <!-- CARD CONTROL DE MAQUINARIA -->
+      <div class="menu-card ind" onclick="goTo('maq')" style="background:linear-gradient(180deg,rgba(245,158,11,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🚜</div>
+        <h2>Control de Maquinaria</h2>
+        <p class="desc">Horas laboradas y stand-by de la maquinaria pesada. Costos por máquina, operadores y labores. Filtros por período y por máquina.</p>
+        <div class="illust">
+          <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
+            <!-- Excavadora simplificada -->
+            <rect x="40" y="35" width="50" height="20" rx="3" fill="rgba(245,158,11,.6)" stroke="rgba(245,158,11,.9)" stroke-width="1.5"/>
+            <rect x="50" y="22" width="30" height="16" rx="2" fill="rgba(245,158,11,.4)" stroke="rgba(245,158,11,.9)" stroke-width="1.5"/>
+            <line x1="85" y1="38" x2="115" y2="20" stroke="rgba(245,158,11,.9)" stroke-width="3" stroke-linecap="round"/>
+            <line x1="115" y1="20" x2="130" y2="35" stroke="rgba(245,158,11,.9)" stroke-width="3" stroke-linecap="round"/>
+            <polygon points="125,35 140,35 138,45 127,45" fill="rgba(245,158,11,.75)" stroke="rgba(245,158,11,.9)" stroke-width="1.5"/>
+            <!-- Orugas -->
+            <ellipse cx="50" cy="60" rx="6" ry="5" fill="rgba(245,158,11,.85)"/>
+            <ellipse cx="80" cy="60" rx="6" ry="5" fill="rgba(245,158,11,.85)"/>
+            <line x1="50" y1="55" x2="80" y2="55" stroke="rgba(245,158,11,.5)" stroke-width="2"/>
+            <line x1="50" y1="65" x2="80" y2="65" stroke="rgba(245,158,11,.5)" stroke-width="2"/>
+            <!-- Indicadores -->
+            <circle cx="165" cy="28" r="3" fill="rgba(239,68,68,.85)"/>
+            <circle cx="165" cy="40" r="3" fill="rgba(251,191,36,.85)"/>
+            <circle cx="165" cy="52" r="3" fill="rgba(34,197,94,.85)"/>
+          </svg>
+        </div>
+        <div class="cta">Ver maquinaria <span class="arrow">→</span></div>
+      </div>
+
       <!-- CARD MANO DE OBRA -->
       <div class="menu-card ind" onclick="goTo('mo')" style="background:linear-gradient(180deg,rgba(168,85,247,.05),rgba(20,26,55,.4))">
         <div class="icon" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">👷</div>
@@ -1316,6 +1343,116 @@
   </div>
 </div>
 
+<!-- ============ VISTA CONTROL DE MAQUINARIA ============ -->
+<style>
+  #screen-maq .wrap{max-width:1500px;margin:0 auto;padding:18px}
+  #screen-maq header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 18px;gap:12px;flex-wrap:wrap}
+  #screen-maq h1{margin:0;font-size:20px;color:#fff}
+  #screen-maq h2{margin:0;font-size:13px;color:#94a3b8;font-weight:400}
+  #screen-maq .maq-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 14px;margin-bottom:14px}
+  #screen-maq .maq-filters .lbl{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-right:4px}
+  #screen-maq .maq-filters input[type=date]{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);color:#fff;padding:5px 10px;border-radius:8px;font-size:12px;font-family:inherit;outline:none;color-scheme:dark}
+  #screen-maq .maq-chip{padding:5px 11px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.45);color:#cbd5e1;user-select:none;transition:all .15s}
+  #screen-maq .maq-chip:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.2)}
+  #screen-maq .maq-chip.active{background:rgba(245,158,11,.25);border-color:#f59e0b;color:#fff}
+  #screen-maq .maq-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}
+  @media(max-width:1100px){#screen-maq .maq-kpis{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:600px){#screen-maq .maq-kpis{grid-template-columns:repeat(2,1fr)}}
+  #screen-maq .maq-kpi{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px 14px;border-left:3px solid var(--acc,#f59e0b)}
+  #screen-maq .maq-kpi .l{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  #screen-maq .maq-kpi .v{font-size:22px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;margin-top:4px}
+  #screen-maq .maq-kpi .s{font-size:10.5px;color:#64748b;margin-top:2px}
+  #screen-maq .maq-grid-detail{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:1100px){#screen-maq .maq-grid-detail{grid-template-columns:1fr}}
+  #screen-maq .maq-panel{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px}
+  #screen-maq .maq-panel h3{font-size:13px;font-weight:700;margin:0 0 10px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  #screen-maq .maq-panel .tarifa{background:rgba(245,158,11,.18);color:#fbbf24;padding:2px 8px;border-radius:5px;font-size:10.5px;font-weight:700}
+  #screen-maq .maq-mini-kpi{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+  #screen-maq .maq-mini-kpi:last-child{border-bottom:none}
+  #screen-maq .maq-mini-kpi .v{font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+  #screen-maq table{width:100%;border-collapse:collapse;font-size:12px;min-width:880px}
+  #screen-maq th{text-align:left;padding:9px 10px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.85);position:sticky;top:0}
+  #screen-maq th.num,#screen-maq td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #screen-maq td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:#cbd5e1}
+  #screen-maq tr:hover td{background:rgba(255,255,255,.03)}
+  #screen-maq .maq-tbl-wrap{overflow-x:auto;max-height:65vh}
+  #screen-maq .badge-tipo{padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block}
+  #screen-maq .badge-tipo.lab{background:rgba(34,197,94,.18);color:#34d399}
+  #screen-maq .badge-tipo.fes{background:rgba(251,191,36,.18);color:#fbbf24}
+  #screen-maq .badge-tipo.no{background:rgba(239,68,68,.18);color:#ef4444}
+  #screen-maq .badge-maq{padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block;background:rgba(245,158,11,.18);color:#fbbf24}
+  #screen-maq .badge-maq.m305{background:rgba(168,85,247,.18);color:#a855f7}
+  #screen-maq .badge-maq.mmini{background:rgba(34,211,238,.18);color:#22d3ee}
+</style>
+<div class="screen" id="screen-maq">
+  <div class="wrap">
+    <div class="topbar">
+      <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+      <div>
+        <div class="topbar-title">🚜 Control de Maquinaria</div>
+        <div class="topbar-meta">Horas de obra + stand by · <span id="maq-rango">—</span></div>
+      </div>
+      <button class="back-btn" onclick="maqRefrescar()" id="maq-refresh-btn">Refrescar</button>
+    </div>
+
+    <header>
+      <div>
+        <h1>Operación de maquinaria pesada</h1>
+        <h2>Tarifa stand-by: Retro 312 $170.000/h · Retro 305 $150.000/h · Minicargador $150.000/h</h2>
+      </div>
+      <span id="maq-gen" style="font-size:11px;color:#64748b">—</span>
+    </header>
+
+    <div class="maq-filters">
+      <span class="lbl">Período</span>
+      <input type="date" id="maq-fdesde" onchange="maqAplicarFiltros()" title="Fecha desde"/>
+      <span style="color:#64748b">→</span>
+      <input type="date" id="maq-fhasta" onchange="maqAplicarFiltros()" title="Fecha hasta"/>
+      <button class="maq-chip" onclick="maqRangoPreset('hoy')">Hoy</button>
+      <button class="maq-chip" onclick="maqRangoPreset('semana')">Semana</button>
+      <button class="maq-chip" onclick="maqRangoPreset('mes')">Mes</button>
+      <button class="maq-chip" onclick="maqRangoPreset('todo')">Todo</button>
+      <div style="flex:1"></div>
+      <span class="lbl">Máquina</span>
+      <div id="maq-chips-maq" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+
+    <div class="maq-kpis">
+      <div class="maq-kpi" style="--acc:#22d3ee"><div class="l">Máquinas</div><div class="v" id="maq-k-maq">—</div><div class="s">en seguimiento</div></div>
+      <div class="maq-kpi" style="--acc:#34d399"><div class="l">Horas trabajadas</div><div class="v" id="maq-k-htrab">—</div><div class="s">en período</div></div>
+      <div class="maq-kpi" style="--acc:#fbbf24"><div class="l">Horas stand-by</div><div class="v" id="maq-k-hsb">—</div><div class="s">a pagar</div></div>
+      <div class="maq-kpi" style="--acc:#ef4444"><div class="l">Costo stand-by</div><div class="v" id="maq-k-csb">—</div><div class="s">total acumulado</div></div>
+      <div class="maq-kpi" style="--acc:#a855f7"><div class="l">Registros</div><div class="v" id="maq-k-reg">—</div><div class="s">en período</div></div>
+    </div>
+
+    <div class="maq-grid-detail" id="maq-cards"></div>
+
+    <div class="maq-panel">
+      <h3>📋 Detalle día a día <span id="maq-tbl-info" style="color:#94a3b8;font-weight:400;font-size:11px"></span></h3>
+      <div class="maq-tbl-wrap">
+        <table id="maq-tabla">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Día</th>
+              <th>Máquina</th>
+              <th>Tipo</th>
+              <th class="num">Hr ini</th>
+              <th class="num">Hr fin</th>
+              <th class="num">Total hr</th>
+              <th class="num">Stand-by</th>
+              <th class="num">$ Stand-by</th>
+              <th>Operador</th>
+              <th>Labor</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ VISTA MANO DE OBRA ============ -->
 <style>
   #screen-mo .wrap{max-width:1500px;margin:0 auto;padding:18px}
@@ -1651,6 +1788,7 @@ function goTo(name){
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
   if(name==='ejecdiaria' && !EJEC_DIARIA_LOADED){ ejecDiariaCargar(); }
   if(name==='mo' && !MO_LOADED){ moCargar(); }
+  if(name==='maq' && !MAQ_LOADED){ maqCargar(); }
 }
 
 /* ====================== DATA SHARED ====================== */
@@ -3919,7 +4057,7 @@ function ejecDiariaRender(){
   const filas = [];
   ordenCaps.forEach(cap => {
     const g = grupos[cap];
-    g.items.sort((a,b) => (b.vrDia||0) - (a.vrDia||0));
+    g.items.sort((a,b) => String(a.item||'').localeCompare(String(b.item||''), undefined, {numeric: true}));
     // Fila de capítulo (header)
     filas.push('<tr style="background:rgba(168,85,247,.12)"><td colspan="8" style="padding:8px 12px;font-weight:700;color:#a855f7">' +
       '<span style="display:inline-block;background:rgba(168,85,247,.25);padding:2px 8px;border-radius:5px;font-size:11px;margin-right:8px">CAP ' + escapeHTML(g.capitulo) + '</span>' +
@@ -3982,6 +4120,182 @@ function formatFechaED(s){
   const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const m = parseInt(parts[1],10) - 1;
   return parts[2] + ' ' + (meses[m]||parts[1]) + ' ' + parts[0];
+}
+
+/* ====================== CONTROL DE MAQUINARIA ====================== */
+let MAQ_LOADED = false;
+let MAQ_DATA = null;
+let MAQ_FILTRO_MAQ = 'TODAS';
+let MAQ_F_DESDE = '';
+let MAQ_F_HASTA = '';
+
+async function maqCargar(force){
+  const tbody = document.querySelector('#maq-tabla tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando…</td></tr>';
+  try {
+    const params = {action:'control_maquinaria'};
+    if (force) params._ts = Date.now();
+    const d = await jsonp(APPS_URL, params);
+    if (!d || d.error) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
+      return;
+    }
+    MAQ_DATA = d;
+    MAQ_LOADED = true;
+    // Inicializar rango de fechas con lo disponible
+    if (!MAQ_F_DESDE || !MAQ_F_HASTA) {
+      const fmin = d.maquinas.reduce((a,m)=>!a||(m.primeraFecha && m.primeraFecha < a)?(m.primeraFecha||a):a, null);
+      const fmax = d.maquinas.reduce((a,m)=>!a||(m.ultimaFecha && m.ultimaFecha > a)?(m.ultimaFecha||a):a, null);
+      MAQ_F_DESDE = fmin || '';
+      MAQ_F_HASTA = fmax || '';
+      const inpD = document.getElementById('maq-fdesde'); if (inpD) inpD.value = MAQ_F_DESDE;
+      const inpH = document.getElementById('maq-fhasta'); if (inpH) inpH.value = MAQ_F_HASTA;
+    }
+    maqRender();
+  } catch(e){
+    if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="color:#ef4444;padding:20px;text-align:center">❌ Error: ' + escapeHTML(e.message||String(e)) + '</td></tr>';
+  }
+}
+
+function maqAplicarFiltros(){
+  const inpD = document.getElementById('maq-fdesde');
+  const inpH = document.getElementById('maq-fhasta');
+  MAQ_F_DESDE = inpD ? inpD.value : '';
+  MAQ_F_HASTA = inpH ? inpH.value : '';
+  maqRender();
+}
+
+function maqFiltrarMaq(id){
+  MAQ_FILTRO_MAQ = id;
+  maqRender();
+}
+
+function maqRangoPreset(p){
+  const hoy = new Date();
+  const fmt = d => d.toISOString().slice(0,10);
+  if (p === 'hoy') { MAQ_F_DESDE = fmt(hoy); MAQ_F_HASTA = fmt(hoy); }
+  else if (p === 'semana') { var d1 = new Date(hoy); d1.setDate(hoy.getDate()-7); MAQ_F_DESDE = fmt(d1); MAQ_F_HASTA = fmt(hoy); }
+  else if (p === 'mes') { var d2 = new Date(hoy); d2.setDate(hoy.getDate()-30); MAQ_F_DESDE = fmt(d2); MAQ_F_HASTA = fmt(hoy); }
+  else if (p === 'todo' && MAQ_DATA) {
+    const fmin = MAQ_DATA.maquinas.reduce((a,m)=>!a||(m.primeraFecha && m.primeraFecha < a)?(m.primeraFecha||a):a, null);
+    const fmax = MAQ_DATA.maquinas.reduce((a,m)=>!a||(m.ultimaFecha && m.ultimaFecha > a)?(m.ultimaFecha||a):a, null);
+    MAQ_F_DESDE = fmin || ''; MAQ_F_HASTA = fmax || '';
+  }
+  document.getElementById('maq-fdesde').value = MAQ_F_DESDE;
+  document.getElementById('maq-fhasta').value = MAQ_F_HASTA;
+  maqRender();
+}
+
+function maqRender(){
+  const d = MAQ_DATA;
+  if (!d) return;
+  document.getElementById('maq-gen').textContent = 'gen ' + (d._generado || '');
+
+  // Chips por máquina
+  const chipsM = document.getElementById('maq-chips-maq');
+  if (chipsM) {
+    const opciones = [{id:'TODAS', label:'Todas'}].concat((d.maquinas||[]).map(m => ({id:m.id, label:m.nombre})));
+    chipsM.innerHTML = opciones.map(o => {
+      const active = o.id === MAQ_FILTRO_MAQ ? ' active' : '';
+      return '<button class="maq-chip' + active + '" onclick="maqFiltrarMaq(\'' + o.id + '\')">' + escapeHTML(o.label) + '</button>';
+    }).join('');
+  }
+
+  // Filtrar registros
+  function filtrarRegs(regs){
+    return regs.filter(r => {
+      if (MAQ_F_DESDE && r.fecha < MAQ_F_DESDE) return false;
+      if (MAQ_F_HASTA && r.fecha > MAQ_F_HASTA) return false;
+      return true;
+    });
+  }
+  const maqs = (d.maquinas||[]).filter(m => MAQ_FILTRO_MAQ === 'TODAS' || m.id === MAQ_FILTRO_MAQ);
+
+  // Recalcular agregados filtrados
+  let totHt=0, totSb=0, totC=0, totReg=0;
+  const maqsAgg = maqs.map(m => {
+    const regsF = filtrarRegs(m.registros||[]);
+    const ht = regsF.reduce((s,r)=>s+(r.totalHoras||0),0);
+    const sb = regsF.reduce((s,r)=>s+(r.horasPagarStandBy||0),0);
+    const c = regsF.reduce((s,r)=>s+(r.costoStandBy||0),0);
+    const opsAgg = {};
+    regsF.forEach(r => { if (r.operador && !/^FESTIVO|NO SE/i.test(r.operador)) { if(!opsAgg[r.operador]) opsAgg[r.operador]={nombre:r.operador,dias:0,horas:0}; opsAgg[r.operador].dias++; opsAgg[r.operador].horas+=(r.totalHoras||0); } });
+    const diasLab = regsF.filter(r => /LABORAL/i.test(r.tipo||'')).length;
+    const diasFes = regsF.filter(r => /FESTIVO/i.test(r.tipo||'')).length;
+    const diasNoLab = regsF.filter(r => /NO LABORAD/i.test(r.tipo||'')).length;
+    totHt += ht; totSb += sb; totC += c; totReg += regsF.length;
+    return Object.assign({}, m, {
+      _regsF: regsF, _ht: +ht.toFixed(2), _sb: +sb.toFixed(2), _c: +c.toFixed(2),
+      _ops: Object.values(opsAgg).sort((a,b)=>b.horas-a.horas),
+      _diasLab: diasLab, _diasFes: diasFes, _diasNoLab: diasNoLab
+    });
+  });
+
+  // KPIs
+  document.getElementById('maq-k-maq').textContent = maqs.length;
+  document.getElementById('maq-k-htrab').textContent = totHt.toFixed(1) + ' h';
+  document.getElementById('maq-k-hsb').textContent = totSb.toFixed(1) + ' h';
+  document.getElementById('maq-k-csb').textContent = moneyShort(totC);
+  document.getElementById('maq-k-reg').textContent = totReg.toString();
+
+  // Rango display
+  document.getElementById('maq-rango').textContent = (MAQ_F_DESDE ? MAQ_F_DESDE : '—') + ' a ' + (MAQ_F_HASTA ? MAQ_F_HASTA : '—');
+
+  // Cards por máquina
+  const cardsDiv = document.getElementById('maq-cards');
+  if (cardsDiv) {
+    cardsDiv.innerHTML = maqsAgg.map(m => {
+      const opsHtml = m._ops.length ? m._ops.slice(0,3).map(o =>
+        '<div class="maq-mini-kpi"><span style="color:#94a3b8">' + escapeHTML(o.nombre) + '</span><span class="v">' + o.horas.toFixed(1) + ' h · ' + o.dias + ' d</span></div>'
+      ).join('') : '<div style="color:#64748b;text-align:center;padding:8px">Sin operadores</div>';
+      const clsM = m.id === '312' ? '' : (m.id === '305' ? 'm305' : 'mmini');
+      return '<div class="maq-panel">' +
+        '<h3><span><span class="badge-maq ' + clsM + '">' + m.id + '</span> ' + escapeHTML(m.nombre) + '</span><span class="tarifa">$' + (m.tarifa).toLocaleString('es-CO') + '/h</span></h3>' +
+        '<div class="maq-mini-kpi"><span style="color:#94a3b8">Horas trabajadas</span><span class="v" style="color:#34d399">' + m._ht.toFixed(1) + ' h</span></div>' +
+        '<div class="maq-mini-kpi"><span style="color:#94a3b8">Horas stand-by</span><span class="v" style="color:#fbbf24">' + m._sb.toFixed(1) + ' h</span></div>' +
+        '<div class="maq-mini-kpi"><span style="color:#94a3b8">Costo stand-by</span><span class="v" style="color:#ef4444">' + money(m._c) + '</span></div>' +
+        '<div class="maq-mini-kpi"><span style="color:#94a3b8">Días laborales</span><span class="v">' + m._diasLab + ' · F:' + m._diasFes + ' · NL:' + m._diasNoLab + '</span></div>' +
+        '<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06)"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-bottom:5px">Operadores</div>' + opsHtml + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Tabla detalle
+  const tbody = document.querySelector('#maq-tabla tbody');
+  let todosRegs = [];
+  maqsAgg.forEach(m => m._regsF.forEach(r => todosRegs.push(Object.assign({}, r, {maqId:m.id, maqNombre:m.nombre}))));
+  todosRegs.sort((a,b) => a.fecha.localeCompare(b.fecha));
+  document.getElementById('maq-tbl-info').textContent = '· ' + todosRegs.length + ' registros';
+  if (!todosRegs.length) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">Sin registros en el período seleccionado.</td></tr>';
+  } else {
+    tbody.innerHTML = todosRegs.map(r => {
+      const clsT = /LABORAL/i.test(r.tipo) ? 'lab' : (/FESTIVO/i.test(r.tipo) ? 'fes' : 'no');
+      const clsM = r.maqId === '312' ? '' : (r.maqId === '305' ? 'm305' : 'mmini');
+      return '<tr>' +
+        '<td>' + escapeHTML(r.fecha) + '</td>' +
+        '<td>' + escapeHTML(r.dia||'') + '</td>' +
+        '<td><span class="badge-maq ' + clsM + '">' + escapeHTML(r.maqId) + '</span></td>' +
+        '<td><span class="badge-tipo ' + clsT + '">' + escapeHTML(r.tipo||'') + '</span></td>' +
+        '<td class="num">' + (r.hrIni!==null?r.hrIni:'—') + '</td>' +
+        '<td class="num">' + (r.hrFin!==null?r.hrFin:'—') + '</td>' +
+        '<td class="num">' + (r.totalHoras!==null?r.totalHoras.toFixed(1):'—') + '</td>' +
+        '<td class="num">' + (r.horasPagarStandBy!==null?r.horasPagarStandBy.toFixed(1):'—') + '</td>' +
+        '<td class="num">' + (r.costoStandBy ? money(r.costoStandBy) : '$0') + '</td>' +
+        '<td>' + escapeHTML(r.operador||'—') + '</td>' +
+        '<td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escapeHTML(r.labor||'') + '">' + escapeHTML(r.labor||'—') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+}
+
+async function maqRefrescar(){
+  const btn = document.getElementById('maq-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
+  MAQ_LOADED = false;
+  MAQ_F_DESDE = ''; MAQ_F_HASTA = '';
+  await maqCargar(true);
+  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
 }
 
 /* ====================== MANO DE OBRA ====================== */
