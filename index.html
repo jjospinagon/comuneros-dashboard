@@ -2323,13 +2323,16 @@ if (document.readyState === 'loading') {
   initTheme();
 }
 
-/* ====================== MOSAICO FOTOS ROTATIVO ====================== */
-let MOSAICO_POOL = [];        // array de URLs de fotos disponibles
-let MOSAICO_CELLS = 16;       // celdas visibles
+/* ====================== MOSAICO FOTOS ROTATIVO (vía foto_proxy) ====================== */
+let MOSAICO_POOL = [];            // IDs de Drive de fotos disponibles
+let MOSAICO_CELLS = 16;
 let MOSAICO_TIMER = null;
 let MOSAICO_LOADED = false;
+let MOSAICO_DATA_CACHE = {};      // {fileId: dataURL base64}
+let MOSAICO_INFLIGHT = {};        // {fileId: Promise} para deduplicar
+const _MOS_PLACEHOLDER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'><rect width='1' height='1' fill='%231a1f3a'/></svg>";
 
-function _mosaicoShuffle(arr){
+function _mosShuffle(arr){
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
@@ -2338,135 +2341,167 @@ function _mosaicoShuffle(arr){
   return a;
 }
 
+/* JSONP wrapper unificado */
+function _mosJsonp(params, timeoutMs){
+  return new Promise((res) => {
+    const cb = 'cb_mos_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    let s;
+    let to;
+    window[cb] = (d) => {
+      if (to) clearTimeout(to);
+      delete window[cb];
+      try { s.parentNode.removeChild(s); } catch(_) {}
+      res(d);
+    };
+    s = document.createElement('script');
+    const qs = Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&');
+    s.src = APPS_URL + '?' + qs + '&callback=' + cb;
+    s.onerror = () => {
+      if (to) clearTimeout(to);
+      delete window[cb];
+      try { s.parentNode.removeChild(s); } catch(_) {}
+      res(null);
+    };
+    document.body.appendChild(s);
+    to = setTimeout(() => {
+      if (window[cb]) { delete window[cb]; try{s.parentNode.removeChild(s);}catch(_){}; res(null); }
+    }, timeoutMs || 30000);
+  });
+}
+
+/* Pide dataURL base64 al backend para un fileId. Con cache + dedup. */
+function _mosFetchFoto(fid){
+  if (!fid) return Promise.resolve(null);
+  if (MOSAICO_DATA_CACHE[fid]) return Promise.resolve(MOSAICO_DATA_CACHE[fid]);
+  if (MOSAICO_INFLIGHT[fid]) return MOSAICO_INFLIGHT[fid];
+  const p = _mosJsonp({action:'foto_proxy', id: fid, size:'small', format:'base64'}, 45000).then(d => {
+    delete MOSAICO_INFLIGHT[fid];
+    if (!d) return null;
+    const url = d.dataURL || d.thumbnailLink || null;
+    if (url) MOSAICO_DATA_CACHE[fid] = url;
+    return url;
+  });
+  MOSAICO_INFLIGHT[fid] = p;
+  return p;
+}
+
 async function mosaicoCargar(){
   if (MOSAICO_LOADED) return;
   const info = document.getElementById('mosaico-info');
-  try {
-    // 1) Cargar índice para saber último año con fotos
-    const idx = await new Promise((res) => {
-      const cb = 'cb_mos_idx_' + Date.now();
-      window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
-      const s = document.createElement('script');
-      s.src = APPS_URL + '?action=fotos&callback=' + cb;
-      s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
-      document.body.appendChild(s);
-      setTimeout(() => { if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 30000);
-    });
-    if (!idx || !idx.indice){ if (info) info.textContent = 'Sin fotos disponibles'; return; }
+  if (info) info.textContent = '⏳ Cargando índice…';
 
-    // 2) Tomar últimos 2 años con fotos
-    const anios = Object.keys(idx.indice).sort().reverse().slice(0, 2);
-    if (!anios.length){ if (info) info.textContent = 'Sin fotos disponibles'; return; }
+  // 1) Cargar índice
+  const idx = await _mosJsonp({action:'fotos'}, 30000);
+  if (!idx || !idx.indice){ if (info) info.textContent = 'Sin fotos disponibles'; return; }
 
-    // 3) Cargar items por año (paralelo)
-    const arrs = await Promise.all(anios.map(a => new Promise((res) => {
-      const cb = 'cb_mos_yr_' + a + '_' + Date.now();
-      window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
-      const s = document.createElement('script');
-      s.src = APPS_URL + '?action=fotos&anio=' + encodeURIComponent(a) + '&callback=' + cb;
-      s.onerror = () => { delete window[cb]; document.body.removeChild(s); res(null); };
-      document.body.appendChild(s);
-      setTimeout(() => { if (window[cb]){ delete window[cb]; try{document.body.removeChild(s);}catch(_){}; res(null); } }, 45000);
-    })));
+  // 2) Tomar últimos 2 años
+  const anios = Object.keys(idx.indice).sort().reverse().slice(0, 2);
+  if (!anios.length){ if (info) info.textContent = 'Sin fotos disponibles'; return; }
 
-    // 4) Construir pool con IDs de Drive (para construir thumb con lh3.googleusercontent.com)
-    let pool = [];
-    arrs.forEach(d => {
-      if (d && Array.isArray(d.items)){
-        d.items.forEach(it => {
-          const id = it.id || it.fileId || it.driveId;
-          if (id) pool.push(id);
-          else {
-            const url = it.thumb || it.thumbUrl || it.url || it.fileUrl || it.link;
-            if (url) pool.push(url);
-          }
-        });
-      }
-    });
-    pool = _mosaicoShuffle(pool);
-    MOSAICO_POOL = pool;
-    MOSAICO_LOADED = true;
-    if (info) info.textContent = pool.length + ' fotos · rota cada 3s';
+  // 3) Cargar items por año
+  if (info) info.textContent = '⏳ Cargando catálogo…';
+  const arrs = await Promise.all(anios.map(a => _mosJsonp({action:'fotos', anio: a}, 45000)));
 
-    if (pool.length === 0){ if (info) info.textContent = 'Sin fotos disponibles'; return; }
-    mosaicoRender();
-    mosaicoStartRotacion();
-  } catch (e){
-    if (info) info.textContent = 'Error cargando fotos';
-    console.error('mosaico', e);
-  }
+  // 4) Pool de IDs (campo .i es el Drive ID; el backend lo abrevia)
+  let pool = [];
+  arrs.forEach(d => {
+    if (d && Array.isArray(d.items)){
+      d.items.forEach(it => {
+        const id = it.i || it.id || it.fileId || it.driveId;
+        if (id) pool.push(id);
+      });
+    }
+  });
+  if (pool.length === 0){ if (info) info.textContent = 'Sin fotos en el catálogo'; return; }
+  pool = _mosShuffle(pool);
+  MOSAICO_POOL = pool;
+  MOSAICO_LOADED = true;
+
+  if (info) info.textContent = '⏳ Descargando ' + Math.min(MOSAICO_CELLS, pool.length) + ' fotos…';
+
+  // 5) Pre-renderizar grid con placeholders y luego ir llenando con foto_proxy
+  mosaicoRenderPlaceholders();
+  await _mosCargarInicial();
+
+  if (info) info.textContent = pool.length + ' fotos · rota cada 3s';
+  mosaicoStartRotacion();
 }
 
-function _mosaicoUrlFromId(idOrUrl){
-  // Si parece URL, devolverla; si parece ID de Drive, construir thumb
-  if (!idOrUrl) return '';
-  const s = String(idOrUrl);
-  if (s.indexOf('http') === 0 || s.indexOf('data:') === 0) return s;
-  return 'https://lh3.googleusercontent.com/d/' + s + '=w400-h400';
-}
-
-function _mosaicoFallback(img){
-  let n = parseInt(img.dataset.try || '0', 10);
-  n++;
-  img.dataset.try = String(n);
-  const fid = img.dataset.fid;
-  if (!fid) { img.style.opacity = '.2'; return; }
-  if (n === 1) img.src = 'https://drive.google.com/uc?export=view&id=' + fid;
-  else if (n === 2) img.src = 'https://drive.usercontent.google.com/download?id=' + fid + '&export=view';
-  else img.style.opacity = '.2';
-}
-
-function mosaicoRender(){
+function mosaicoRenderPlaceholders(){
   const grid = document.getElementById('menu-mosaico');
   if (!grid) return;
   const parts = [];
   for (let i = 0; i < MOSAICO_CELLS; i++){
-    const idOrUrl = MOSAICO_POOL[i % MOSAICO_POOL.length];
-    const url = _mosaicoUrlFromId(idOrUrl);
-    const isId = url.indexOf('lh3.googleusercontent.com') >= 0;
-    const fidAttr = isId ? ' data-fid="' + idOrUrl + '"' : '';
-    parts.push('<div class="mosaico-cell" data-i="' + i + '"><img src="' + url + '"' + fidAttr + ' loading="lazy" referrerpolicy="no-referrer" onerror="_mosaicoFallback(this)"/></div>');
+    parts.push('<div class="mosaico-cell" data-i="' + i + '"><img src="' + _MOS_PLACEHOLDER + '" data-fid="" style="opacity:.3"/></div>');
   }
   grid.innerHTML = parts.join('');
 }
 
+async function _mosCargarInicial(){
+  const grid = document.getElementById('menu-mosaico');
+  if (!grid) return;
+  const cells = grid.querySelectorAll('.mosaico-cell img');
+  const n = Math.min(MOSAICO_CELLS, MOSAICO_POOL.length);
+  // Cargar en batches de 4 en paralelo
+  const BATCH = 4;
+  for (let i = 0; i < n; i += BATCH){
+    const slice = [];
+    for (let k = i; k < Math.min(i+BATCH, n); k++) slice.push(k);
+    await Promise.all(slice.map(async (idx) => {
+      const fid = MOSAICO_POOL[idx];
+      const img = cells[idx];
+      if (!img) return;
+      img.dataset.fid = fid;
+      const url = await _mosFetchFoto(fid);
+      if (url && img.dataset.fid === fid){
+        img.src = url;
+        img.style.opacity = '1';
+      } else if (!url){
+        img.style.opacity = '.2';
+      }
+    }));
+    const info = document.getElementById('mosaico-info');
+    if (info) info.textContent = '⏳ ' + Math.min(i+BATCH, n) + '/' + n + ' fotos…';
+  }
+}
+
 function mosaicoStartRotacion(){
   if (MOSAICO_TIMER) clearInterval(MOSAICO_TIMER);
-  let nextIdx = MOSAICO_CELLS; // próximo índice a usar del pool
-  MOSAICO_TIMER = setInterval(() => {
-    // Solo si el menú está visible
+  let nextIdx = MOSAICO_CELLS;
+  MOSAICO_TIMER = setInterval(async () => {
     const sc = document.getElementById('screen-menu');
     if (!sc || !sc.classList.contains('active')) return;
     if (!MOSAICO_POOL.length) return;
-    // Cambiar 2 celdas al azar con fade
     const grid = document.getElementById('menu-mosaico');
     const cells = grid ? grid.querySelectorAll('.mosaico-cell img') : [];
     if (!cells.length) return;
-    const cellsArr = Array.from(cells);
+    // Cambiar 2 celdas al azar
+    const indices = [];
     for (let k = 0; k < 2; k++){
-      const cell = cellsArr[Math.floor(Math.random() * cellsArr.length)];
-      const idOrUrl = MOSAICO_POOL[nextIdx % MOSAICO_POOL.length];
-      const newUrl = _mosaicoUrlFromId(idOrUrl);
+      indices.push(Math.floor(Math.random() * cells.length));
+    }
+    await Promise.all(indices.map(async (ci) => {
+      const cell = cells[ci];
+      const fid = MOSAICO_POOL[nextIdx % MOSAICO_POOL.length];
       nextIdx++;
-      cell.classList.add('fade-out');
+      // Pre-cargar dataURL antes de hacer fade
+      const url = await _mosFetchFoto(fid);
+      if (!url) return;
+      // Fade out → swap → fade in
+      cell.style.transition = 'opacity .35s ease';
       cell.style.opacity = '0';
       setTimeout(() => {
-        // Resetear contador de fallback al cambiar imagen
-        cell.dataset.try = '0';
-        if (newUrl.indexOf('lh3.googleusercontent.com') >= 0){
-          cell.dataset.fid = String(idOrUrl);
-        }
-        cell.src = newUrl;
+        cell.dataset.fid = fid;
+        cell.src = url;
         cell.style.opacity = '1';
-        cell.classList.remove('fade-out');
-      }, 400);
-    }
+      }, 350);
+    }));
   }, 3000);
 }
 
-// Lanzar mosaico al cargar la página (con delay para no bloquear el menu)
+// Lanzar mosaico al cargar la página
 function _mosaicoInit(){
-  setTimeout(mosaicoCargar, 1500);
+  setTimeout(mosaicoCargar, 1200);
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', _mosaicoInit);
