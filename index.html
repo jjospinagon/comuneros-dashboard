@@ -2560,6 +2560,17 @@ let IND_DATA = null;          // todos los cortes contractuales
 let IND_CORTES = [];
 let IND_LATEST = '';
 let IND_CURRENT = '';
+/* Filtra solo claves con formato DD-MM-YYYY (excluye "FORMATO", "_info", etc.) y ordena desc */
+const _FECHA_RX = /^\d{2}-\d{2}-\d{4}$/;
+function _cortesValidos(ind){
+  return Object.keys(ind || {})
+    .filter(k => _FECHA_RX.test(k))
+    .sort((a,b) => {
+      const A = a.split('-').reverse().join('-');
+      const B = b.split('-').reverse().join('-');
+      return B.localeCompare(A);
+    });
+}
 let INV_DATA = null;          // payload getDashboardData
 let INV_CONS = null;          // payload getConsolidadoData
 let INV_LOADED = false;
@@ -2584,10 +2595,7 @@ async function boot(){
     const ind = await jsonp(APPS_URL,{action:'indicadores'});
     if(!ind || ind._error) throw new Error((ind&&ind._error)||'Indicadores vacíos');
     IND_DATA = ind;
-    IND_CORTES = Object.keys(ind).sort((a,b)=>{
-      const A=a.split('-').reverse().join('-'), B=b.split('-').reverse().join('-');
-      return B.localeCompare(A);
-    });
+    IND_CORTES = _cortesValidos(ind);
     IND_LATEST = IND_CORTES[0];
     // Disparar panel acciones cuando hay data
     setTimeout(function(){ try{ renderAccionesHoy(); }catch(e){console.warn(e);} }, 800);
@@ -4637,15 +4645,9 @@ async function indRefrescarConSync(){
       var ind = await jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()});
       if (ind && !ind._error){
         lastInd = ind;
-        var cortes = Object.keys(ind).filter(function(k){ return !k.startsWith('_'); });
-        // Detectar: más cortes que antes, O un latest distinto al anterior
-        var cortesOrdenados = cortes.slice().sort(function(a,b){
-          var A = a.split('-').reverse().join('-');
-          var B = b.split('-').reverse().join('-');
-          return B.localeCompare(A);
-        });
+        var cortesOrdenados = _cortesValidos(ind);
         var nuevoLatest = cortesOrdenados[0];
-        if (cortes.length > nAntes || (nuevoLatest && nuevoLatest !== latestAntes)){
+        if (cortesOrdenados.length > nAntes || (nuevoLatest && nuevoLatest !== latestAntes)){
           nuevoCorteDetectado = nuevoLatest;
           break;
         }
@@ -4656,11 +4658,7 @@ async function indRefrescarConSync(){
   // 3) Aplicar el último payload obtenido (con o sin nuevo corte)
   if (lastInd){
     IND_DATA = lastInd;
-    IND_CORTES = Object.keys(lastInd).filter(function(k){ return !k.startsWith('_'); }).sort(function(a,b){
-      var A = a.split('-').reverse().join('-');
-      var B = b.split('-').reverse().join('-');
-      return B.localeCompare(A);
-    });
+    IND_CORTES = _cortesValidos(lastInd);
     IND_LATEST = IND_CORTES[0];
     IND_CURRENT = IND_LATEST;
   }
