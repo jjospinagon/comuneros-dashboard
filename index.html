@@ -3934,9 +3934,40 @@ async function cmsCargarPDFEmbebido(fuente, tipo, consecutivo, folderUrl){
       </div>`;
       return;
     }
-    // Priorizar PDF; fallback a primer archivo
-    const pdfs = d.archivos.filter(a => (a.mimeType||'').indexOf('pdf') >= 0 || /\.pdf$/i.test(a.title||''));
-    const principal = pdfs[0] || d.archivos[0];
+    // Matching por patrón de nombre del oficio:
+    //   obra          → OBRA.023.2025.XXXX (XXXX = consecutivo)
+    //   interventoria → INT.COM.XXXX
+    // Probamos consecutivo crudo, sólo dígitos, sin/con padding 4 dígitos.
+    const consecDig = (consecutivo || '').replace(/\D/g, '');
+    const candidatos = [consecutivo, consecDig, consecDig.replace(/^0+/, '')];
+    if (consecDig.length < 4) candidatos.push(consecDig.padStart(4, '0'));
+    const tokens = Array.from(new Set(candidatos.filter(Boolean)));
+
+    const prefijoFuente = (fuente === 'obra') ? 'OBRA.023.2025' :
+                          (fuente === 'interventoria' || fuente === 'intercomuneros') ? 'INT.COM' : '';
+
+    const matchea = (a) => {
+      const t = (a.title || '').toUpperCase();
+      const tn = t.replace(/[\s_]+/g, '.');
+      const isPdf = (a.mimeType||'').indexOf('pdf') >= 0 || /\.pdf$/i.test(a.title||'');
+      // Coincide con prefijo de fuente + token de consecutivo
+      const hayPrefijo = prefijoFuente && (tn.indexOf(prefijoFuente) >= 0);
+      const hayToken = tokens.some(tok => tn.indexOf(tok.toUpperCase()) >= 0);
+      return { isPdf, score: (isPdf?4:0) + (hayPrefijo?2:0) + (hayToken?1:0) };
+    };
+
+    const ranked = d.archivos
+      .map(a => ({ a, ...matchea(a) }))
+      .sort((x, y) => y.score - x.score);
+
+    // Score: isPdf(4) + hayPrefijo(2) + hayToken(1)
+    // 7 = ideal (PDF + prefijo + consecutivo), 5 = PDF + consecutivo, 6 = PDF + prefijo, 4 = PDF cualquiera
+    const pdfIdealMatch  = ranked.filter(r => r.isPdf && r.score === 7);
+    const pdfTokenMatch  = ranked.filter(r => r.isPdf && r.score === 5);
+    const pdfPrefijoOnly = ranked.filter(r => r.isPdf && r.score === 6);
+    const pdfsAny        = ranked.filter(r => r.isPdf);
+
+    const principal = (pdfIdealMatch[0] || pdfTokenMatch[0] || pdfPrefijoOnly[0] || pdfsAny[0] || ranked[0] || {a:d.archivos[0]}).a;
     if(!principal || !principal.id){
       viewer.innerHTML = `<div style="text-align:center;padding:24px;color:#fbbf24;font-size:13px">⚠ Archivo sin ID válido</div>`;
       return;
