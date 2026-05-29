@@ -4802,7 +4802,34 @@ async function ejecDiariaCargar(force, fechaOverride){
   try {
     const params = {action:'avance_diario', fecha: fecha};
     if (force) params._ts = Date.now();
-    const d = await jsonp(APPS_URL, params);
+    let d = await jsonp(APPS_URL, params);
+
+    // Caso especial: hoja AD_ANALISIS vacía → fechasDisponibles=[] + error
+    // Dispara sync background y hace polling hasta que aparezcan fechas o timeout.
+    if (d && d.error && (!d.fechasDisponibles || d.fechasDisponibles.length === 0)) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#34d399">⏳ Sincronizando con Excel maestro… (~150s)<br><span style="font-size:11px;color:#94a3b8">La hoja espejo está vacía, se está repoblando.</span></td></tr>';
+      try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); } catch(_){}
+      // Polling cada 10s hasta 180s
+      let recuperado = null;
+      for (let i = 0; i < 18; i++){
+        await new Promise(r => setTimeout(r, 10000));
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#34d399">⏳ Sincronizando… ' + ((i+1)*10) + 's / 180s</td></tr>';
+        try {
+          const probe = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()});
+          if (probe && probe.fechasDisponibles && probe.fechasDisponibles.length > 0){
+            recuperado = probe;
+            break;
+          }
+        } catch(_){}
+      }
+      if (recuperado) {
+        d = recuperado;
+      } else {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#fbbf24;padding:20px;text-align:center">⚠ La sincronización con el Excel maestro está tardando más de lo normal.<br><span style="font-size:11px;color:#94a3b8">Intenta presionar "Refrescar" en 1-2 minutos.</span></td></tr>';
+        return;
+      }
+    }
+
     if (!d || (d.error && !d.items)) {
       if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
       return;
