@@ -4324,8 +4324,8 @@ function obraInicializarFiltros(data){
   const selResp = document.getElementById('obra-f-resp');
   selCap.innerHTML = caps.map(c => '<option value="'+escapeHTML(c)+'">'+escapeHTML(c)+'</option>').join('');
   selResp.innerHTML = resps.map(r => '<option value="'+escapeHTML(r)+'">'+escapeHTML(r)+'</option>').join('');
-  // Fecha de corte: default = hoy
-  const today = new Date().toISOString().slice(0,10);
+  // Fecha de corte: default = hoy (en zona horaria Colombia)
+  const today = (typeof _fechaCO === 'function') ? _fechaCO() : new Date().toISOString().slice(0,10);
   document.getElementById('obra-f-corte').value = today;
 }
 
@@ -4786,11 +4786,10 @@ let EJEC_DIARIA_DATA = null;
 let EJEC_DIARIA_FECHA = null; // YYYY-MM-DD seleccionada
 
 function ejecDiariaAyerStr(){
+  // Ayer en zona horaria Colombia (America/Bogota). 86_400_000 ms = 24h.
   const d = new Date(Date.now() - 86400000);
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const dd = String(d.getDate()).padStart(2,'0');
-  return y + '-' + m + '-' + dd;
+  return (typeof _fechaCO === 'function') ? _fechaCO(d)
+       : d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
 async function ejecDiariaCargar(force, fechaOverride){
@@ -5115,7 +5114,7 @@ function maqFiltrarMaq(id){
 
 function maqRangoPreset(p){
   const hoy = new Date();
-  const fmt = d => d.toISOString().slice(0,10);
+  const fmt = d => _fechaCO(d); // zona Colombia (America/Bogota)
   if (p === 'hoy') { MAQ_F_DESDE = fmt(hoy); MAQ_F_HASTA = fmt(hoy); }
   else if (p === 'semana') { var d1 = new Date(hoy); d1.setDate(hoy.getDate()-7); MAQ_F_DESDE = fmt(d1); MAQ_F_HASTA = fmt(hoy); }
   else if (p === 'mes') { var d2 = new Date(hoy); d2.setDate(hoy.getDate()-30); MAQ_F_DESDE = fmt(d2); MAQ_F_HASTA = fmt(hoy); }
@@ -5249,11 +5248,12 @@ let MO_FILTRO_FRENTE = 'TODOS';
 let MO_FILTRO_CARGO = 'TODOS';
 let MO_FILTRO_BUSCAR = '';
 
-function moHoyStr(){
-  const d = new Date();
-  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-  return y + '-' + m + '-' + dd;
-}
+/* Formato YYYY-MM-DD forzado a zona horaria de Colombia (America/Bogota, UTC-5).
+   Evita el bug de que el navegador en otra zona convierta a UTC y dé un día desfasado.
+   en-CA produce YYYY-MM-DD nativamente. */
+const _FMT_CO = new Intl.DateTimeFormat('en-CA', { year:'numeric', month:'2-digit', day:'2-digit', timeZone: 'America/Bogota' });
+function _fechaCO(d){ return _FMT_CO.format(d || new Date()); }
+function moHoyStr(){ return _fechaCO(); }
 
 async function moCargar(force, fechaOverride){
   const tbody = document.querySelector('#mo-tabla tbody');
@@ -5618,7 +5618,7 @@ function _trabCacheSet(ventana, cat){
   } catch(_) { /* localStorage lleno o privado */ }
 }
 
-function _trabFmtFecha(d){ return d.toISOString().substring(0,10); }
+function _trabFmtFecha(d){ return _fechaCO(d); }
 
 async function trabCargar(){
   const infoEl = document.getElementById('trab-loading-info');
@@ -6031,9 +6031,7 @@ function rendCalcularRango(){
   return r;
 }
 
-function rendFmtFecha(d){
-  return d.toISOString().substring(0,10);
-}
+function rendFmtFecha(d){ return _fechaCO(d); }
 
 async function rendRefrescar(){
   const btn = document.getElementById('rend-refresh-btn');
