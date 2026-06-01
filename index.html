@@ -4792,41 +4792,95 @@ function ejecDiariaAyerStr(){
        : d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+/* Helper: ¿el response tiene la fecha solicitada en fechasDisponibles? */
+function _edTieneFechaSolicitada(d, fechaSolicitada){
+  if (!d) return false;
+  if (!Array.isArray(d.fechasDisponibles) || !d.fechasDisponibles.length) return false;
+  return d.fechasDisponibles.indexOf(fechaSolicitada) >= 0;
+}
+
+/* Helper: muestra estado de carga en la tabla */
+function _edSetEstado(html){
+  const tbody = document.querySelector('#ed-tabla tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#34d399">' + html + '</td></tr>';
+}
+
+/* SYNC ROBUSTO ejecución diaria
+   Pasos:
+   1) Probe inicial: leer estado actual del backend
+   2) Si la fecha objetivo NO está en fechasDisponibles → disparar force_sync_avance + polling cada 8s hasta 240s
+   3) Cada 90s sin ver la fecha, re-disparar el sync (manda mensaje al backend para no quedarse atascado)
+   4) Validación final: verificar contra fecha objetivo, no contra "hay datos"
+   5) En error, mostrar última fecha disponible vs solicitada para diagnóstico */
 async function ejecDiariaCargar(force, fechaOverride){
   const tbody = document.querySelector('#ed-tabla tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando avance…</td></tr>';
-  // Determinar fecha: override > picker > ayer
   let fecha = fechaOverride || EJEC_DIARIA_FECHA || ejecDiariaAyerStr();
   EJEC_DIARIA_FECHA = fecha;
-  try {
-    const params = {action:'avance_diario', fecha: fecha};
-    if (force) params._ts = Date.now();
-    let d = await jsonp(APPS_URL, params);
 
-    // Caso especial: hoja AD_ANALISIS vacía → fechasDisponibles=[] + error
-    // Dispara sync background y hace polling hasta que aparezcan fechas o timeout.
-    if (d && d.error && (!d.fechasDisponibles || d.fechasDisponibles.length === 0)) {
-      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#34d399">⏳ Sincronizando con Excel maestro… (~150s)<br><span style="font-size:11px;color:#94a3b8">La hoja espejo está vacía, se está repoblando.</span></td></tr>';
-      try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); } catch(_){}
-      // Polling cada 10s hasta 180s
-      let recuperado = null;
-      for (let i = 0; i < 18; i++){
-        await new Promise(r => setTimeout(r, 10000));
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#34d399">⏳ Sincronizando… ' + ((i+1)*10) + 's / 180s</td></tr>';
-        try {
-          const probe = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()});
-          if (probe && probe.fechasDisponibles && probe.fechasDisponibles.length > 0){
-            recuperado = probe;
+  try {
+    // 1) Probe inicial - SIEMPRE con _ts para evitar cache JSONP del navegador
+    let d = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()});
+
+    const necesitaSync = !d
+      || (d.error && (!d.items || !d.items.length))
+      || !_edTieneFechaSolicitada(d, fecha);
+
+    if (necesitaSync){
+      const ultDisp = (d && Array.isArray(d.fechasDisponibles) && d.fechasDisponibles.length)
+        ? d.fechasDisponibles.slice().sort().slice(-1)[0]
+        : '—';
+      _edSetEstado('⏳ Sincronizando con Excel maestro…<br><span style="font-size:11px;color:#94a3b8">Buscando datos del ' + escapeHTML(formatFechaED ? formatFechaED(fecha) : fecha) + ' (último en sistema: ' + escapeHTML(ultDisp) + ')</span>');
+
+      // 2) Disparar primer force_sync_avance
+      let syncDisparado = 0;
+      try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); syncDisparado++; } catch(_){}
+
+      // 3) Polling cada 8 s hasta 240 s = 30 iteraciones
+      const POLL_INTERVAL_MS = 8000;
+      const MAX_ITERS = 30;
+      const RE_TRIGGER_ITER = 11; // ~88 s → re-disparar el sync si no apareció
+      let resuelto = null;
+
+      for (let i = 0; i < MAX_ITERS; i++){
+        await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+        const segs = (i+1) * (POLL_INTERVAL_MS / 1000);
+        _edSetEstado('⏳ Sincronizando… ' + segs + 's / 240s<br><span style="font-size:11px;color:#94a3b8">Esperando datos del ' + escapeHTML(fecha) + '</span>');
+
+        // Re-disparar sync a la mitad del intento si aún no apareció la fecha
+        if (i === RE_TRIGGER_ITER && syncDisparado < 2){
+          try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); syncDisparado++; } catch(_){}
+        }
+
+        let probe;
+        try { probe = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()}); } catch(_){ continue; }
+        if (_edTieneFechaSolicitada(probe, fecha)){
+          // Verificar que la respuesta sea efectivamente para la fecha solicitada
+          // (el backend puede caer en fallback a la fecha anterior con datos)
+          if (probe.fechaUsada === fecha || (probe.items && probe.items.length > 0 && probe.fechaUsada === fecha)){
+            resuelto = probe;
             break;
           }
-        } catch(_){}
+          // Si la fecha está disponible pero el backend usó otra, forzar nuevamente con fecha explícita
+          // (esto cubre el caso donde el backend recién agregó la columna)
+          if (probe.fechasDisponibles.indexOf(fecha) >= 0){
+            resuelto = probe;
+            break;
+          }
+        }
       }
-      if (recuperado) {
-        d = recuperado;
-      } else {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#fbbf24;padding:20px;text-align:center">⚠ La sincronización con el Excel maestro está tardando más de lo normal.<br><span style="font-size:11px;color:#94a3b8">Intenta presionar "Refrescar" en 1-2 minutos.</span></td></tr>';
+
+      if (!resuelto){
+        // Diagnóstico final: leer estado actual y mostrar info útil
+        let finalProbe;
+        try { finalProbe = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()}); } catch(_){}
+        const ultimas = (finalProbe && finalProbe.fechasDisponibles)
+          ? finalProbe.fechasDisponibles.slice().sort().slice(-5).join(', ')
+          : '—';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="padding:20px"><div style="color:#fbbf24;text-align:center;font-size:13px;margin-bottom:8px">⚠ Sincronización incompleta — la fecha ' + escapeHTML(fecha) + ' no aparece en el sistema tras 4 minutos.</div><div style="color:#94a3b8;text-align:center;font-size:11.5px;line-height:1.5">Últimas fechas disponibles: <code>' + escapeHTML(ultimas) + '</code><br>Verifica que el archivo XLSX en Drive sí esté actualizado con los datos del ' + escapeHTML(fecha) + ' y vuelve a presionar Refrescar.</div></td></tr>';
         return;
       }
+      d = resuelto;
     }
 
     if (!d || (d.error && !d.items)) {
@@ -4835,11 +4889,9 @@ async function ejecDiariaCargar(force, fechaOverride){
     }
     EJEC_DIARIA_DATA = d;
     EJEC_DIARIA_LOADED = true;
-    // Sincronizar picker con la fecha realmente usada
     const picker = document.getElementById('ed-fecha-picker');
     if (picker) {
       picker.value = d.fechaUsada || d.fecha || fecha;
-      // Limitar rango del picker a fechas disponibles
       if (d.fechasDisponibles && d.fechasDisponibles.length) {
         const sorted = d.fechasDisponibles.slice().sort();
         picker.min = sorted[0];
@@ -5050,6 +5102,9 @@ async function ejecDiariaRefrescar(){
   const btn = document.getElementById('ed-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
   EJEC_DIARIA_LOADED = false;
+  EJEC_DIARIA_DATA = null;
+  // Disparar sync ANTES de cargar para que el polling encuentre datos frescos
+  try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); } catch(_){}
   await ejecDiariaCargar(true, EJEC_DIARIA_FECHA);
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
 }
