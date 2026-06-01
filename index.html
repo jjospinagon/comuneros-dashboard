@@ -5269,6 +5269,10 @@ async function moCargar(force, fechaOverride){
       return;
     }
     MO_DATA = d;
+    // FIX corrupción Drive.Files.copy: las horas vienen sumadas ~+3h04m sobre la real.
+    // Detectamos el patrón (secuencia <2min entre personas consecutivas + todas > 9:30 AM)
+    // y restamos el offset para alinear con la hora real del Excel.
+    _moCompensarOffsetHoras(MO_DATA);
     MO_LOADED = true;
     const picker = document.getElementById('mo-fecha-picker');
     if (picker) {
@@ -5285,6 +5289,59 @@ async function moCargar(force, fechaOverride){
   } catch(e){
     if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="color:#ef4444;padding:20px;text-align:center">❌ Error: ' + escapeHTML(e.message||String(e)) + '</td></tr>';
   }
+}
+
+/* Compensa la corrupción de horas que introduce Drive.Files.copy al convertir el
+   XLSX REGISTRO DE INGRESO Y SALIDAS a Sheets temporal. El bug suma ~+3h04min a
+   cada celda TIME-only. Detectamos el patrón (3+ trabajadores con diff <2min en
+   ingreso consecutivo + primer ingreso > 9:30 AM) y restamos el offset estimado.
+   Si el patrón no se cumple, no toca nada. */
+function _moParseTime(s){
+  if(!s) return null;
+  const m = String(s).match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(!m) return null;
+  return parseInt(m[1])*3600 + parseInt(m[2])*60 + parseInt(m[3]||'0');
+}
+function _moFmtTime(sec){
+  if(sec == null || isNaN(sec)) return null;
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+function _moCompensarOffsetHoras(d){
+  if(!d || !Array.isArray(d.personas) || d.personas.length < 3) return;
+  // Recolectar segundos de ingreso ordenados
+  const segs = d.personas
+    .map(p => _moParseTime(p.ingreso))
+    .filter(v => v != null && v > 0)
+    .sort((a,b) => a-b);
+  if(segs.length < 3) return;
+  // Detectar patrón: la mayoría de diffs consecutivos están entre 5s y 120s
+  let consecutivos = 0;
+  for(let i=1; i<segs.length; i++){
+    const diff = segs[i]-segs[i-1];
+    if(diff >= 5 && diff <= 120) consecutivos++;
+  }
+  const pctConsec = consecutivos / (segs.length-1);
+  // Primer ingreso debe ser > 9:30 (típica hora corrupta) Y > 50% diffs consecutivos
+  const PRIMER_INGRESO_UMBRAL = 9 * 3600 + 30 * 60; // 9:30 AM en segundos
+  if(segs[0] < PRIMER_INGRESO_UMBRAL || pctConsec < 0.5) return;
+  // Estimar offset: usar hora típica de inicio de jornada (7:00 AM) como ancla
+  // Restar (primer_ingreso - 7:00) en segundos. Mínimo offset 60min, máximo 360min.
+  const ANCLA_REAL = 7 * 3600; // 7:00 AM
+  let offsetSeg = segs[0] - ANCLA_REAL;
+  if(offsetSeg < 60*60 || offsetSeg > 360*60) return;
+  // Aplicar offset
+  d.personas.forEach(p => {
+    if(p.ingreso){ const s = _moParseTime(p.ingreso); if(s!=null){ p.ingreso = _moFmtTime(s - offsetSeg); p.ingresoMin = (s - offsetSeg) / 60; }}
+    if(p.salida){ const s = _moParseTime(p.salida); if(s!=null){ p.salida = _moFmtTime(s - offsetSeg); p.salidaMin = (s - offsetSeg) / 60; }}
+    // Recalcular tardanzaMin (relativa a 7:00 AM = 0)
+    if(p.ingresoMin != null && p.ingresoMin > 0){
+      const horaEsperadaMin = 7 * 60; // 7:00 AM
+      p.tardanzaMin = Math.max(0, Math.round(p.ingresoMin - horaEsperadaMin));
+    }
+  });
+  d._horasCompensadas = '+offset:' + Math.round(offsetSeg/60) + 'min';
 }
 
 function moRender(){
@@ -5578,7 +5635,13 @@ function trabSetVentana(d){
 function _trabFetchMO(fecha){
   return new Promise(res => {
     const cb = 'cb_trab_' + Date.now() + '_' + Math.random().toString(36).substring(2,7);
-    window[cb] = (d) => { delete window[cb]; document.body.removeChild(s); res(d); };
+    window[cb] = (d) => {
+      delete window[cb];
+      document.body.removeChild(s);
+      // Compensar corrupción de horas (mismo fix que MO principal)
+      try { if (typeof _moCompensarOffsetHoras === 'function') _moCompensarOffsetHoras(d); } catch(_){}
+      res(d);
+    };
     const s = document.createElement('script');
     // Sin nocache=1 → backend reusa cache 6h por fecha. Esto reduce de ~5s a ~200ms por llamada repetida.
     s.src = APPS_URL + '?action=mano_obra&fecha=' + encodeURIComponent(fecha) + '&callback=' + cb;
@@ -5590,7 +5653,7 @@ function _trabFetchMO(fecha){
 
 /* Cache local de catálogos de trabajadores con TTL 15min por ventana de días.
    Reapertura del módulo en la misma sesión = instantáneo. */
-const _TRAB_LS_KEY = 'monaco_trab_cat_v1';
+const _TRAB_LS_KEY = 'monaco_trab_cat_v2'; // bump v1→v2 tras fix compensación horas
 const _TRAB_TTL_MS = 15 * 60 * 1000;
 function _trabCacheGet(ventana){
   try {
