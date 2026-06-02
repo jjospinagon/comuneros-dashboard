@@ -314,6 +314,14 @@ body.light table{color:#0f172a}
 body.light th{background:#f8fafc !important;color:#475569 !important;border-bottom-color:rgba(15,23,42,.08) !important}
 body.light td{color:#1e293b !important;border-bottom-color:rgba(15,23,42,.06) !important}
 body.light tr:hover td{background:rgba(15,23,42,.03) !important}
+/* Toasts de sincronización (persisten al navegar entre módulos) */
+.sync-toast{position:fixed;right:14px;background:rgba(15,23,42,.95);color:#e2e8f0;padding:10px 14px;border-radius:10px;border-left:3px solid #f59e0b;box-shadow:0 6px 24px rgba(0,0,0,.4);z-index:99999;font-size:12px;backdrop-filter:blur(8px);display:flex;align-items:center;gap:8px;max-width:320px;animation:toastIn .3s ease-out;font-weight:600}
+.sync-toast.ok{border-left-color:#22c55e}
+.sync-toast.err{border-left-color:#ef4444}
+@keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+.sync-toast .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(245,158,11,.3);border-top-color:#f59e0b;border-radius:50%;animation:tspin 1s linear infinite}
+@keyframes tspin{to{transform:rotate(360deg)}}
+body.light .sync-toast{background:rgba(255,255,255,.98) !important;color:#0f172a !important;box-shadow:0 6px 24px rgba(15,23,42,.18) !important}
 /* Columnas congeladas tabla Actividades en modo día */
 body.light #screen-indicadores #tbl-act th.frz{background:#f1f5f9 !important;color:#475569 !important}
 body.light #screen-indicadores #tbl-act td.frz{background:#ffffff !important;color:#1e293b !important;backdrop-filter:none !important}
@@ -2559,7 +2567,14 @@ function goTo(name){
   if(name==='comunicaciones' && !CMS_LOADED){ cmsLoadData(); }
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
-  if(name==='ejecdiaria' && !EJEC_DIARIA_LOADED){ ejecDiariaCargar(); }
+  if(name==='ejecdiaria'){
+    if (!EJEC_DIARIA_LOADED){
+      ejecDiariaCargar();
+    } else if (Date.now() - (EJEC_DIARIA_LAST_SYNC || 0) > 120000){
+      // Auto-refresh silencioso: pasaron >2min desde el último sync → forzar fresh
+      setTimeout(function(){ try { ejecDiariaRefrescar(); } catch(_){} }, 200);
+    }
+  }
   if(name==='mo' && !MO_LOADED){ moCargar(); }
   if(name==='maq' && !MAQ_LOADED){ maqCargar(); }
   if(name==='rendimientos' && !REND_LOADED){ rendCargar(); }
@@ -4751,6 +4766,50 @@ function obraAplicarFiltros(){
 }
 
 
+/* ====== TOAST GLOBAL DE SINCRONIZACIÓN (persiste al navegar entre módulos) ====== */
+const _SYNC_TOASTS = {};
+function _toastSync(key, label){
+  // Si ya existe el toast con esta key, solo actualiza el texto
+  var existing = document.getElementById('toast-' + key);
+  if (existing){
+    var lblEl = existing.querySelector('.lbl');
+    if (lblEl) lblEl.textContent = label;
+    return existing;
+  }
+  var t = document.createElement('div');
+  t.id = 'toast-' + key;
+  t.className = 'sync-toast';
+  t.innerHTML = '<span class="spin"></span><span class="lbl"></span>';
+  t.querySelector('.lbl').textContent = label;
+  // Apilar verticalmente
+  var existingCount = document.querySelectorAll('.sync-toast').length;
+  t.style.top = (14 + existingCount * 60) + 'px';
+  document.body.appendChild(t);
+  _SYNC_TOASTS[key] = t;
+  return t;
+}
+function _toastDone(key, msg, ok){
+  var t = _SYNC_TOASTS[key] || document.getElementById('toast-' + key);
+  if (!t) return;
+  t.className = 'sync-toast ' + (ok === false ? 'err' : 'ok');
+  var icon = (ok === false) ? '⚠' : '✓';
+  t.innerHTML = '<span style="font-size:16px">' + icon + '</span><span class="lbl"></span>';
+  t.querySelector('.lbl').textContent = msg;
+  setTimeout(function(){
+    if (t && t.parentNode) t.parentNode.removeChild(t);
+    delete _SYNC_TOASTS[key];
+    // Reapilar
+    document.querySelectorAll('.sync-toast').forEach(function(el, i){ el.style.top = (14 + i * 60) + 'px'; });
+  }, 4500);
+}
+
+/* Tracker timestamps de último sync por módulo (para auto-refresh al re-entrar) */
+let EJEC_DIARIA_LAST_SYNC = 0;
+let OBRA_LAST_SYNC = 0;
+let MO_LAST_SYNC = 0;
+let MAQ_LAST_SYNC = 0;
+let IND_LAST_SYNC = 0;
+
 /* ====== REFRESH MANUAL CON SYNC FORZADO (v45) ====== */
 async function _dispararSyncBackground(action, label){
   try {
@@ -4765,6 +4824,7 @@ async function _dispararSyncBackground(action, label){
 async function obraRefrescarConSync(){
   var cont = document.getElementById('obra-secciones');
   if (cont) cont.innerHTML = '<div style="color:#34d399;text-align:center;padding:40px 20px">⏳ Sincronizando con Excel maestro...<br><span id="obra-sync-status" style="font-size:12px;color:#94a3b8">disparando sync...</span></div>';
+  _toastSync('obra', '🏗️ Ejecución de Obra · sincronizando Excel…');
   // Capturar _generado actual para detectar cambio
   var generadoAntes = (OBRA_DATA && OBRA_DATA._generado) || '';
   // 1) Disparar sync background
@@ -4803,6 +4863,8 @@ async function obraRefrescarConSync(){
   } else {
     obraCargar(true);
   }
+  OBRA_LAST_SYNC = Date.now();
+  _toastDone('obra', nuevoDetectado ? 'Ejecución de Obra actualizada' : 'Obra · sin nuevos datos', nuevoDetectado);
 }
 async function invRefrescarConSync(){
   var btn = document.getElementById('inv-refresh-btn');
@@ -4822,6 +4884,7 @@ async function invRefrescarConSync(){
 async function indRefrescarConSync(){
   var btn = document.getElementById('ind-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Programando sync…'; }
+  _toastSync('ind', '📊 Indicadores · sincronizando Excel maestro…');
 
   // Captura estado pre-sync
   var nAntes = (IND_CORTES && IND_CORTES.length) || 0;
@@ -4880,6 +4943,8 @@ async function indRefrescarConSync(){
     }
     setTimeout(function(){ if (btn){ btn.textContent = 'Refrescar'; btn.disabled = false; } }, 4000);
   }
+  IND_LAST_SYNC = Date.now();
+  _toastDone('ind', nuevoCorteDetectado ? ('Nuevo corte: ' + nuevoCorteDetectado) : 'Indicadores · sin nuevo corte', !!nuevoCorteDetectado);
 }
 
 
@@ -5220,11 +5285,18 @@ function ejecDiariaIrAyer(){
 async function ejecDiariaRefrescar(){
   const btn = document.getElementById('ed-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
+  _toastSync('ed', '📊 Ejecución Diaria · sincronizando Excel…');
   EJEC_DIARIA_LOADED = false;
   EJEC_DIARIA_DATA = null;
   // Disparar sync ANTES de cargar para que el polling encuentre datos frescos
   try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); } catch(_){}
-  await ejecDiariaCargar(true, EJEC_DIARIA_FECHA);
+  try {
+    await ejecDiariaCargar(true, EJEC_DIARIA_FECHA);
+    EJEC_DIARIA_LAST_SYNC = Date.now();
+    _toastDone('ed', 'Ejecución Diaria actualizada', true);
+  } catch(e){
+    _toastDone('ed', 'Error al actualizar Ejecución Diaria', false);
+  }
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
 }
 
@@ -5408,15 +5480,19 @@ function maqRender(){
 async function maqRefrescar(){
   const btn = document.getElementById('maq-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando Excel…'; }
+  _toastSync('maq', '🚜 Maquinaria · sincronizando Excel…');
   try {
-    // Forzar sync (si el endpoint no existe el backend lo ignora silenciosamente)
     await _dispararSyncBackground('force_sync_maq', 'maq');
     await new Promise(function(r){ setTimeout(r, 6000); });
   } catch(e) { console.warn('maq sync err:', e); }
   if (btn) { btn.textContent = '⏳ Recargando…'; }
   MAQ_LOADED = false;
   MAQ_F_DESDE = ''; MAQ_F_HASTA = '';
-  await maqCargar(true);
+  try {
+    await maqCargar(true);
+    MAQ_LAST_SYNC = Date.now();
+    _toastDone('maq', 'Maquinaria actualizada', true);
+  } catch(e){ _toastDone('maq', 'Error Maquinaria', false); }
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
 }
 
@@ -5787,15 +5863,18 @@ function moIrHoy(){
 async function moRefrescar(){
   const btn = document.getElementById('mo-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando Excel…'; }
+  _toastSync('mo', '👷 Mano de Obra · sincronizando Excel…');
   try {
-    // Forzar sync del XLSX → Sheet espejo para MO
     await _dispararSyncBackground('force_sync_mo', 'mo');
-    // Esperar a que el backend escriba al Sheet (8s amplio para datasets grandes)
     await new Promise(function(r){ setTimeout(r, 8000); });
   } catch(e) { console.warn('mo sync err:', e); }
   if (btn) { btn.textContent = '⏳ Recargando…'; }
   MO_LOADED = false;
-  await moCargar(true, MO_FECHA);
+  try {
+    await moCargar(true, MO_FECHA);
+    MO_LAST_SYNC = Date.now();
+    _toastDone('mo', 'Mano de Obra actualizada', true);
+  } catch(e){ _toastDone('mo', 'Error MO', false); }
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
 }
 
