@@ -4513,6 +4513,13 @@ function obraAplicarFiltros(){
       pctProg = cs.programado[idxSem];
       vrProg = vrTotal * pctProg;
     }
+    // Alinear el último punto de cs.real con el KPI %AVANCE REAL (vrEjec/vrTotal)
+    // El backend a veces difiere por redondeos acumulados; el KPI es la fuente de verdad
+    if (idxSem >= 0 && Array.isArray(cs.real) && cs.real.length > idxSem) {
+      // Crear copia para no mutar OBRA_DATA original
+      cs = Object.assign({}, cs, { real: cs.real.slice() });
+      cs.real[idxSem] = pctReal;
+    }
   }
   if (typeof pctProg !== 'number') {
     // Fallback: cálculo ponderado por actividad filtrada (cuando hay filtros activos)
