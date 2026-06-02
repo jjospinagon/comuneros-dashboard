@@ -4827,8 +4827,8 @@ async function obraRefrescarConSync(){
   _toastSync('obra', '🏗️ Ejecución de Obra · sincronizando Excel…');
   // Capturar _generado actual para detectar cambio
   var generadoAntes = (OBRA_DATA && OBRA_DATA._generado) || '';
-  // 1) Disparar sync background
-  await _dispararSyncBackground('force_sync_obra', 'obra');
+  // 1) Disparar sync background + nocache=1 para borrar cache
+  try { await jsonp(APPS_URL, {action:'force_sync_obra', nocache:'1', _ts: Date.now()}); } catch(_){}
   // 2) Polling hasta detectar nuevo _generado o timeout 120s
   var nuevoDetectado = false;
   var lastObra = null;
@@ -4837,7 +4837,9 @@ async function obraRefrescarConSync(){
     await new Promise(function(r){ setTimeout(r, 5000); });
     if (statusEl) statusEl.textContent = 'esperando datos del Excel… ' + ((i+1)*5) + 's';
     try {
-      var d = await jsonp(APPS_URL, {action:'dashboard_obra_v2', _ts: Date.now()});
+      // Primera iteración con nocache=1 para invalidar cache backend; resto sin
+      var params = (i === 0) ? {action:'dashboard_obra_v2', nocache:'1', _ts: Date.now()} : {action:'dashboard_obra_v2', _ts: Date.now()};
+      var d = await jsonp(APPS_URL, params);
       if (d && !d.error){
         lastObra = d;
         if (d._generado && d._generado !== generadoAntes){
@@ -5288,16 +5290,31 @@ async function ejecDiariaRefrescar(){
   _toastSync('ed', '📊 Ejecución Diaria · sincronizando Excel…');
   EJEC_DIARIA_LOADED = false;
   EJEC_DIARIA_DATA = null;
-  // Disparar sync ANTES de cargar para que el polling encuentre datos frescos
-  try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); } catch(_){}
+  // Disparar sync ANTES de cargar para que el polling encuentre datos frescos + nocache=1 para borrar cache backend
+  try { await jsonp(APPS_URL, {action:'force_sync_avance', nocache:'1', _ts: Date.now()}); } catch(_){}
+  // Esperar a que el sync escriba al sheet espejo (ANALISIS COMUNEROS es grande)
+  await new Promise(function(r){ setTimeout(r, 5000); });
   try {
-    await ejecDiariaCargar(true, EJEC_DIARIA_FECHA);
+    // Pasar nocache=1 también en la carga para que backend borre cache
+    await ejecDiariaCargarConBust(EJEC_DIARIA_FECHA);
     EJEC_DIARIA_LAST_SYNC = Date.now();
     _toastDone('ed', 'Ejecución Diaria actualizada', true);
   } catch(e){
     _toastDone('ed', 'Error al actualizar Ejecución Diaria', false);
   }
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+}
+async function ejecDiariaCargarConBust(fecha){
+  // Igual a ejecDiariaCargar(true, fecha) pero forzando nocache=1 en la primera petición
+  EJEC_DIARIA_LOADED = false;
+  EJEC_DIARIA_DATA = null;
+  // Primera lectura con nocache=1
+  try {
+    var d = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha||'', nocache:'1', _ts: Date.now()});
+    if (d && !d.error){ EJEC_DIARIA_DATA = d; EJEC_DIARIA_LOADED = true; }
+  } catch(_){}
+  // Render normal
+  return ejecDiariaCargar(true, fecha);
 }
 
 function formatFechaED(s){
