@@ -1126,25 +1126,25 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <table id="tbl-act" class="act-frozen">
           <thead>
             <tr>
-              <th class="frz frz-1">Ítem</th>
-              <th class="frz frz-2">Actividad</th>
-              <th>Categoría</th>
-              <th>Und</th>
-              <th class="num">Cant. Contractual</th>
-              <th class="num">Costo Contr. ($)</th>
-              <th class="num">Total Contractual ($)</th>
-              <th class="num">Costo Real ($)</th>
-              <th class="num">Dif. Costo vs Contr.</th>
-              <th class="num">Cant. Ejec. al Corte</th>
-              <th class="num">Cant. Adicional</th>
-              <th class="num">% Ejecución</th>
-              <th class="num">May/Men Cant ($)</th>
-              <th class="num">Util / Pérd no comp.</th>
-              <th class="num">Margen Económico</th>
-              <th class="num">Costo Contr. al Corte</th>
-              <th class="num">Costo Real al Corte</th>
-              <th class="num">Proy. Econ. al Corte</th>
-              <th class="num">Proy. Econ. al Finalizar</th>
+              <th class="frz frz-1">ÍTEM</th>
+              <th class="frz frz-2">ACTIVIDADES</th>
+              <th>CATEGORÍA</th>
+              <th>UNIDAD</th>
+              <th class="num">CANTIDAD CONTRACTUAL</th>
+              <th class="num">COSTO CONTRACTUAL ($)</th>
+              <th class="num">TOTAL CONTRACTUAL ($)</th>
+              <th class="num">COSTO REAL ($)</th>
+              <th class="num">DIFERENCIA COSTO CONTRACTUAL Vs REAL</th>
+              <th class="num">CANTIDAD EJECUTADA DE LO CONTRACTUAL</th>
+              <th class="num">CANTIDAD EJECUTADA ADICIONAL</th>
+              <th class="num">PORCENTAJE DE EJECUCIÓN</th>
+              <th class="num">MAYORES/MENORES CANTIDADES AL CORTE</th>
+              <th class="num">UTILIDAD/PÉRDIDA Vs CONTRACTUAL</th>
+              <th class="num">MARGEN ECONÓMICO</th>
+              <th class="num">COSTO CONTRACTUAL AL CORTE</th>
+              <th class="num">COSTO REAL AL CORTE</th>
+              <th class="num">PROYECCIÓN ECONÓMICA AL CORTE</th>
+              <th class="num">PROYECCIÓN ECONÓMICA AL FINALIZAR</th>
             </tr>
           </thead>
           <tbody id="tbody-act"></tbody>
@@ -6606,4 +6606,79 @@ function rendRenderEconomica(){
         }).join('') +
         '<line x1="'+pad.l+'" y1="'+(pad.t+ih)+'" x2="'+(w-pad.r)+'" y2="'+(pad.t+ih)+'" stroke="rgba(148,163,184,.3)" stroke-width="1"/>' +
         '<text x="'+pad.l+'" y="'+(h-8)+'" text-anchor="start" fill="#94a3b8" font-size="9.5">'+D[0].fecha.substring(5)+'</text>' +
-        '<text x="'+(w-pad.r)+'" y="'+(h-8)+'" text-anchor="end" fill="#94a3b8" font-size="
+        '<text x="'+(w-pad.r)+'" y="'+(h-8)+'" text-anchor="end" fill="#94a3b8" font-size="9.5">'+D[D.length-1].fecha.substring(5)+'</text>' +
+      '</svg>';
+  }
+
+  // Tabla por día
+  const th = '<thead><tr><th>Fecha</th><th>Of</th><th>Ay</th><th>CE</th><th>HH</th><th>$ Directo</th><th>$/HH</th><th>$/CE-día</th></tr></thead>';
+  const tbody = '<tbody>' + D.map(d => {
+    const ceUsa = d.ce || 0.001;
+    return '<tr><td><strong>'+d.fecha+'</strong></td><td>'+d.of+'</td><td>'+d.ay+'</td><td>'+d.ce.toFixed(2)+'</td><td>'+fmt0.format(Math.round(d.hhTotal))+'</td><td>'+money(Math.round(d.cd))+'</td><td>'+money(d.hhTotal>0?Math.round(d.cd/d.hhTotal):0)+'</td><td>'+money(Math.round(d.cd/ceUsa))+'</td></tr>';
+  }).join('') + '</tbody>';
+  document.getElementById('re-tabla').innerHTML = th + tbody;
+}
+
+/* =================== TAB EFICIENCIA vs APU (C) =================== */
+function rendRenderEficiencia(){
+  const D = REND_DATA.dias;
+  const totHHReal = D.reduce((a,b)=>a+b.hhTotal,0);
+  let totHHApu = 0;
+  const agg = {};
+  const aggCap = {};
+  D.forEach(d => d.items.forEach(it => {
+    if (!it.apuMatch) return;
+    if (!agg[it.item]) agg[it.item] = {item:it.item, desc:it.desc, und:it.und, cant:0, hhReal:0, hhApu:0};
+    agg[it.item].cant += it.cantDia;
+    agg[it.item].hhReal += it.hhReales;
+    agg[it.item].hhApu += it.hhApu || 0;
+    totHHApu += it.hhApu || 0;
+    const cap = (it.item || '').toString().split('.')[0] || 'X';
+    if (!aggCap[cap]) aggCap[cap] = {cap, hhReal:0, hhApu:0};
+    aggCap[cap].hhReal += it.hhReales;
+    aggCap[cap].hhApu += it.hhApu || 0;
+  }));
+  const efi = totHHReal > 0 ? (totHHApu / totHHReal * 100) : 0;
+  // Sobrecosto: HH extras consumidas × jornal promedio
+  const jornalProm = (80000 + 55000*2) / 24; // jornal por HH cuadrilla
+  const sobrecosto = Math.max(0, totHHReal - totHHApu) * jornalProm;
+
+  document.getElementById('rc-real').textContent = fmt0.format(Math.round(totHHReal));
+  document.getElementById('rc-apu').textContent = totHHApu > 0 ? fmt0.format(Math.round(totHHApu)) : '—';
+  document.getElementById('rc-efi').textContent = efi.toFixed(0) + '%';
+  document.getElementById('rc-efi').style.color = efi >= 100 ? '#86efac' : efi >= 85 ? '#fcd34d' : '#fca5a5';
+  document.getElementById('rc-efi-sub').textContent = efi >= 100 ? '✓ supera APU' : efi >= 85 ? '⚠ levemente subrendido' : '✗ subrendimiento severo';
+  document.getElementById('rc-sob').textContent = money(Math.round(sobrecosto));
+
+  // Tabla por actividad
+  const arr = Object.values(agg).sort((a,b) => String(a.item||'').localeCompare(String(b.item||''), undefined, {numeric:true}));
+  const th = '<thead><tr><th>Ítem</th><th>Descripción</th><th>Cant.</th><th>Und</th><th>HH Real</th><th>HH APU</th><th>Eficiencia</th><th>Estado</th></tr></thead>';
+  const tbody = '<tbody>' + arr.map(it => {
+    if (it.hhReal === 0) return '';
+    const e = it.hhApu > 0 ? (it.hhApu / it.hhReal * 100) : null;
+    let pill = '<span class="rend-pill gray">sin APU</span>';
+    let estado = '—';
+    if (e != null){
+      const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
+      pill = '<span class="rend-pill '+cls+'">'+e.toFixed(0)+'%</span>';
+      estado = e >= 100 ? '✓ Al ritmo APU' : e >= 85 ? '⚠ Revisar' : '✗ Crítico';
+    }
+    return '<tr><td><strong>'+it.item+'</strong></td><td>'+escapeHTML(it.desc||'').substring(0,40)+'</td><td>'+fmt2.format(it.cant)+'</td><td>'+(it.und||'')+'</td><td>'+fmt0.format(Math.round(it.hhReal))+'</td><td>'+(it.hhApu ? fmt0.format(Math.round(it.hhApu)) : '—')+'</td><td>'+pill+'</td><td style="font-size:11px">'+estado+'</td></tr>';
+  }).join('') + '</tbody>';
+  document.getElementById('rc-tabla').innerHTML = th + tbody;
+
+  // Por capítulo
+  const capsArr = Object.values(aggCap).sort((a,b)=>String(a.cap).localeCompare(String(b.cap), undefined, {numeric:true}));
+  document.getElementById('rc-cap').innerHTML = capsArr.map(c => {
+    const e = c.hhApu > 0 ? (c.hhApu / c.hhReal * 100) : 0;
+    const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
+    const w = Math.min(150, Math.max(2, e));
+    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:8px"><div style="width:80px;font-weight:600;color:#fff;font-size:12px">CAP '+c.cap+'</div><div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:'+(cls==='green'?'linear-gradient(90deg,#22c55e,#86efac)':cls==='yellow'?'linear-gradient(90deg,#fbbf24,#fcd34d)':'linear-gradient(90deg,#ef4444,#fca5a5)')+'"></div></div><div style="width:60px;text-align:right;font-weight:600;font-size:12px;color:'+(cls==='green'?'#86efac':cls==='yellow'?'#fcd34d':'#fca5a5')+'">'+e.toFixed(0)+'%</div></div>';
+  }).join('') || '<div style="color:#64748b;padding:14px">Sin datos APU para mostrar.</div>';
+}
+
+</script>
+
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
