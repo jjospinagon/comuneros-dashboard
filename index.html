@@ -4764,23 +4764,58 @@ async function _dispararSyncBackground(action, label){
 }
 async function obraRefrescarConSync(){
   var cont = document.getElementById('obra-secciones');
-  if (cont) cont.innerHTML = '<div style="color:#34d399;text-align:center;padding:60px 20px">Sincronizando con Excel maestro... <br><span style="font-size:12px;color:#94a3b8">(puede tardar hasta 5 min la primera vez)</span></div>';
+  if (cont) cont.innerHTML = '<div style="color:#34d399;text-align:center;padding:40px 20px">⏳ Sincronizando con Excel maestro...<br><span id="obra-sync-status" style="font-size:12px;color:#94a3b8">disparando sync...</span></div>';
+  // Capturar _generado actual para detectar cambio
+  var generadoAntes = (OBRA_DATA && OBRA_DATA._generado) || '';
+  // 1) Disparar sync background
   await _dispararSyncBackground('force_sync_obra', 'obra');
-  await new Promise(function(r){ setTimeout(r, 4000); });
+  // 2) Polling hasta detectar nuevo _generado o timeout 120s
+  var nuevoDetectado = false;
+  var lastObra = null;
+  var statusEl = document.getElementById('obra-sync-status');
+  for (var i = 0; i < 24; i++){ // 24 × 5s = 120s
+    await new Promise(function(r){ setTimeout(r, 5000); });
+    if (statusEl) statusEl.textContent = 'esperando datos del Excel… ' + ((i+1)*5) + 's';
+    try {
+      var d = await jsonp(APPS_URL, {action:'dashboard_obra_v2', _ts: Date.now()});
+      if (d && !d.error){
+        lastObra = d;
+        if (d._generado && d._generado !== generadoAntes){
+          nuevoDetectado = true;
+          break;
+        }
+      }
+    } catch(e){ console.warn('poll obra:', e); }
+  }
+  // 3) Aplicar último payload
   OBRA_LOADED = false;
   OBRA_DATA = null;
-  obraCargar(true);
+  if (lastObra) {
+    OBRA_DATA = (typeof obraNormalizarData==='function') ? obraNormalizarData(lastObra) : lastObra;
+    OBRA_LOADED = true;
+  }
+  if (statusEl) statusEl.textContent = nuevoDetectado ? '✓ datos actualizados · renderizando…' : '⚠ sin cambio detectado · renderizando última versión…';
+  // 4) Render
+  if (OBRA_DATA) {
+    document.getElementById('obra-gen').textContent = 'gen ' + (OBRA_DATA._generado || '');
+    obraInicializarFiltros(OBRA_DATA);
+    obraAplicarFiltros();
+  } else {
+    obraCargar(true);
+  }
 }
 async function invRefrescarConSync(){
   var btn = document.getElementById('inv-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando Excel…'; }
   await _dispararSyncBackground('force_sync_inv', 'inv');
-  await new Promise(function(r){ setTimeout(r, 2000); });
+  // Esperar 6s para asegurar que el sync XLSX→Sheet espejo termine
+  await new Promise(function(r){ setTimeout(r, 6000); });
+  if (btn) { btn.textContent = '⏳ Recargando…'; }
   INV_LOADED = false;
   INV_DATA = null;
   INV_CONS = null;
-  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
   invLoadData();
+  if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
 }
 /* Polling sync: force_sync_ind solo PROGRAMA en background; necesitamos esperar a que termine.
    Lee cada 5s el endpoint indicadores hasta detectar nuevo corte o timeout 120s. */
@@ -5372,7 +5407,13 @@ function maqRender(){
 
 async function maqRefrescar(){
   const btn = document.getElementById('maq-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando Excel…'; }
+  try {
+    // Forzar sync (si el endpoint no existe el backend lo ignora silenciosamente)
+    await _dispararSyncBackground('force_sync_maq', 'maq');
+    await new Promise(function(r){ setTimeout(r, 6000); });
+  } catch(e) { console.warn('maq sync err:', e); }
+  if (btn) { btn.textContent = '⏳ Recargando…'; }
   MAQ_LOADED = false;
   MAQ_F_DESDE = ''; MAQ_F_HASTA = '';
   await maqCargar(true);
@@ -5745,7 +5786,14 @@ function moIrHoy(){
 
 async function moRefrescar(){
   const btn = document.getElementById('mo-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando Excel…'; }
+  try {
+    // Forzar sync del XLSX → Sheet espejo para MO
+    await _dispararSyncBackground('force_sync_mo', 'mo');
+    // Esperar a que el backend escriba al Sheet (8s amplio para datasets grandes)
+    await new Promise(function(r){ setTimeout(r, 8000); });
+  } catch(e) { console.warn('mo sync err:', e); }
+  if (btn) { btn.textContent = '⏳ Recargando…'; }
   MO_LOADED = false;
   await moCargar(true, MO_FECHA);
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
