@@ -1668,10 +1668,10 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     </header>
 
     <div class="ed-kpis">
-      <div class="ed-kpi" style="--acc:#fbbf24"><div class="l">Fecha del corte</div><div class="v" id="ed-k-fecha">—</div><div class="s">último avance</div></div>
-      <div class="ed-kpi" style="--acc:#34d399"><div class="l">Actividades del día</div><div class="v" id="ed-k-num">—</div><div class="s">con avance &gt; 0</div></div>
-      <div class="ed-kpi" style="--acc:#22d3ee"><div class="l">Costo directo día</div><div class="v" id="ed-k-vrdia">—</div><div class="s">cant × vr. unitario</div></div>
-      <div class="ed-kpi" style="--acc:#a855f7"><div class="l">TOTAL día (con AIU+PMT+PMA)</div><div class="v" id="ed-k-total">—</div><div class="s" id="ed-k-total-s">incluye arandelas</div></div>
+      <div class="ed-kpi" style="--acc:#fbbf24"><div class="l" id="ed-kl-fecha">Fecha del corte</div><div class="v" id="ed-k-fecha">—</div><div class="s">último avance</div></div>
+      <div class="ed-kpi" style="--acc:#34d399"><div class="l" id="ed-kl-num">Actividades del día</div><div class="v" id="ed-k-num">—</div><div class="s">con avance &gt; 0</div></div>
+      <div class="ed-kpi" style="--acc:#22d3ee"><div class="l" id="ed-kl-vrdia">Costo directo día</div><div class="v" id="ed-k-vrdia">—</div><div class="s">cant × vr. unitario</div></div>
+      <div class="ed-kpi" style="--acc:#a855f7"><div class="l" id="ed-kl-total">TOTAL día (con AIU+PMT+PMA)</div><div class="v" id="ed-k-total">—</div><div class="s" id="ed-k-total-s">incluye arandelas</div></div>
       <div class="ed-kpi" style="--acc:#f59e0b"><div class="l">Meta programada</div><div class="v" id="ed-k-meta">—</div><div class="s" id="ed-k-meta-s">FLUJO ÷ días laborales</div></div>
       <div class="ed-kpi" style="--acc:#10b981"><div class="l">Cumplimiento meta</div><div class="v" id="ed-k-cumpl">—</div><div class="s" id="ed-k-cumpl-s">real ÷ meta</div></div>
     </div>
@@ -1718,8 +1718,8 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
               <th>Ítem</th>
               <th>Descripción</th>
               <th>Und</th>
-              <th class="num">Cant. del día</th>
-              <th class="num">Valor del día</th>
+              <th class="num" id="ed-th-cantdia">Cant. del día</th>
+              <th class="num" id="ed-th-vrdia">Valor del día</th>
               <th class="num">Cant. acumulada</th>
               <th class="num">Valor acumulado</th>
               <th class="num">% acumulado</th>
@@ -2635,6 +2635,21 @@ function goTo(name){
     } else if (Date.now() - (EJEC_DIARIA_LAST_SYNC || 0) > 120000){
       // Auto-refresh silencioso: pasaron >2min desde el último sync → forzar fresh
       setTimeout(function(){ try { ejecDiariaRefrescar(); } catch(_){} }, 200);
+    }
+    // Auto-fetch IND_DATA en background si no está cargado (para panel Δ vs corte)
+    if (!window.IND_DATA){
+      (async function(){
+        try {
+          var ind = await jsonp(APPS_URL, {action:'indicadores'});
+          if (ind && !ind._error){
+            IND_DATA = ind;
+            IND_CORTES = (typeof _cortesValidos==='function') ? _cortesValidos(ind) : [];
+            IND_LATEST = IND_CORTES[0]; IND_CURRENT = IND_LATEST;
+            // Re-render ejec diaria si ya hay data, para que el panel Δ vs corte aparezca
+            if (EJEC_DIARIA_DATA){ try { ejecDiariaRender(); } catch(_){} }
+          }
+        } catch(_){}
+      })();
     }
   }
   if(name==='mo' && !MO_LOADED){ moCargar(); }
@@ -5205,6 +5220,18 @@ function ejecDiariaRender(){
   const pctObra = (c.factorObra || 0) * 100;
   document.getElementById('ed-k-total-s').textContent = pctObra.toFixed(3) + '% del costo directo total';
 
+  // Labels dinámicos día/periodo
+  (function(){
+    var suf = esPeriodo ? 'del periodo' : 'del día';
+    var setL = function(id, txt){ var el = document.getElementById(id); if (el) el.textContent = txt; };
+    setL('ed-kl-fecha', esPeriodo ? 'Rango del periodo' : 'Fecha del corte');
+    setL('ed-kl-num', 'Actividades ' + suf);
+    setL('ed-kl-vrdia', 'Costo directo ' + suf);
+    setL('ed-kl-total', 'TOTAL ' + suf + ' (con AIU+PMT+PMA)');
+    setL('ed-th-cantdia', 'Cant. ' + suf);
+    setL('ed-th-vrdia', 'Valor ' + suf);
+  })();
+
   // === GANANCIA / PÉRDIDA vs CORTE DE INDICADORES ===
   (function(){
     var panel = document.getElementById('ed-corte-panel');
@@ -7037,7 +7064,10 @@ async function rendCargar(force){
       if (tienePersonas) fetchedMO++;
       // Procesar si hay avance (es la fuente principal). MO puede venir vacío y se reporta como 0 HH.
       if (tieneAvance){
-        dias.push(_rendProcesarDia(f, avance, mo || {personas:[]}));
+        var dia = _rendProcesarDia(f, avance, mo || {personas:[]});
+        dia._tienePersonas = tienePersonas;
+        dia._numPersonasBackend = (mo && mo.personas && mo.personas.length) || 0;
+        dias.push(dia);
         fetchedOk++;
       }
     });
@@ -7047,6 +7077,29 @@ async function rendCargar(force){
   REND_DATA = {dias, fechas};
   REND_LOADED = true;
   rendRender();
+  // Diagnóstico visible: días con avance pero MO vacío o sin cuadrillas
+  (function(){
+    var diasProblema = dias.filter(function(d){
+      var sinCE = (d.ce||0) === 0;
+      var sinHH = (d.hhTotal||0) === 0;
+      return sinCE || sinHH;
+    });
+    if (!diasProblema.length) return;
+    var host = document.getElementById('rend-pane-cons');
+    if (!host) return;
+    var existing = document.getElementById('rend-diag-mo');
+    if (existing) existing.remove();
+    var div = document.createElement('div');
+    div.id = 'rend-diag-mo';
+    div.style.cssText = 'background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:11.5px;color:#fbbf24';
+    var detalles = diasProblema.slice(0,6).map(function(d){
+      return '<span style="color:#fbbf24;font-weight:600">'+d.fecha+'</span>: '+
+        (d._numPersonasBackend? d._numPersonasBackend+' pers. del backend, pero 0 cuadrillas' : 'MO vacío (0 personas)')+
+        ' · '+(d.hhTotal||0).toFixed(1)+' HH';
+    }).join(' · ');
+    div.innerHTML = '⚠️ <b>'+diasProblema.length+' día(s)</b> con avance pero sin info de cuadrillas/HH · '+detalles+(diasProblema.length>6?' · …':'')+'<br><span style="color:#94a3b8;font-size:10.5px">Revisa el archivo XLSX (hoja Asistencia) para esas fechas. Si tiene datos, posiblemente el backend getManoObra no los está leyendo correctamente — abre F12 → Console para el warning detallado.</span>';
+    host.insertBefore(div, host.firstChild);
+  })();
 }
 
 function _rendFetchAvance(fecha){
