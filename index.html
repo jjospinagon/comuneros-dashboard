@@ -1069,6 +1069,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div class="kpi-i"><div class="label">Contractual al Corte</div><div class="value" id="kpi-contr">—</div><div class="sub" id="kpi-contr-sub">—</div></div>
       <div class="kpi-i"><div class="label">Real al Corte</div><div class="value" id="kpi-real">—</div><div class="sub" id="kpi-real-sub">—</div></div>
       <div class="kpi-i"><div class="label">Utilidad al Corte</div><div class="value" id="kpi-util">—</div><div class="sub" id="kpi-util-sub">—</div></div>
+      <div class="kpi-i" style="border-left:3px solid #fbbf24"><div class="label">Stand-by al Corte</div><div class="value" id="kpi-standby" style="color:#fbbf24">—</div><div class="sub" id="kpi-standby-sub">descontado de la proyección</div></div>
       <div class="kpi-i"><div class="label">Proyección Final</div><div class="value" id="kpi-proy">—</div><div class="sub" id="kpi-proy-sub">—</div></div>
     </div>
 
@@ -2574,18 +2575,6 @@ function goTo(name){
       }catch(_){}
     })();
   }
-  // Indicadores: precargar MAQUINARIA en background para integrar stand-by a proyección al corte
-  if(name==='indicadores' && !MAQ_LOADED){
-    (async function(){
-      try{
-        var dm = await jsonp(APPS_URL, {action:'control_maquinaria'});
-        if(dm && !dm.error){ MAQ_DATA = dm; MAQ_LOADED = true;
-          // Re-render Actividades si Indicadores ya está montado (aplica ajuste stand-by)
-          if (IND_DATA && IND_CURRENT && typeof renderActividades === 'function'){ try{ renderActividades(); }catch(_){ } }
-        }
-      }catch(_){}
-    })();
-  }
 }
 
 /* ====================== DATA SHARED ====================== */
@@ -2684,75 +2673,9 @@ function dirCell(val, fmt, goodIsPositive){
   return '<span style="color:'+color+';font-weight:600;display:inline-flex;align-items:center;gap:4px;justify-content:flex-end">'+
     '<span style="font-size:10px;opacity:.85">'+arrow+'</span>'+text+'</span>';
 }
-/* === Stand-by maquinaria integrado a proyección económica al corte ===
-   Reglas:
-   - Retro CAT 305 → carga a items 2.01, 2.02, 2.03, 2.04
-   - Minicargador  → carga a items 2.05, 2.06
-   - Ventana: jueves → miércoles cuyo miércoles ≤ fecha del corte
-   - Reparto proporcional al valor ejecutado al corte (costo_contr_corte)
-   - Se RESTA del proy_corte (stand-by reduce la proyección) */
-const STANDBY_MAP = [
-  { idMatch: ['305'], items: ['2.01','2.02','2.03','2.04'] },
-  { idMatch: ['mini','HSI','minicargador'], items: ['2.05','2.06'] }
-];
-function _semanaJueMieDelCorte(corteDDMMYYYY){
-  if (!corteDDMMYYYY) return null;
-  var p = String(corteDDMMYYYY).split('-');
-  if (p.length !== 3) return null;
-  // IND_CURRENT viene como "DD-MM-YYYY"
-  var iso = p[2] + '-' + p[1] + '-' + p[0];
-  var d = new Date(iso + 'T00:00:00');
-  if (isNaN(d.getTime())) return null;
-  var dow = d.getDay(); // 0=dom..6=sáb
-  var diasAtras = (dow + 4) % 7; // distancia hasta el último miércoles ≤ corte
-  var mie = new Date(d); mie.setDate(d.getDate() - diasAtras);
-  var jue = new Date(mie); jue.setDate(mie.getDate() - 6);
-  var fmt = function(dt){
-    return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
-  };
-  return { desde: fmt(jue), hasta: fmt(mie) };
-}
-function _findMaqByPatrones(patrones){
-  if (!MAQ_DATA || !Array.isArray(MAQ_DATA.maquinas)) return null;
-  var pats = patrones.map(function(s){ return String(s).toLowerCase(); });
-  return MAQ_DATA.maquinas.find(function(m){
-    var n = String(m.nombre||'').toLowerCase();
-    var id = String(m.id||'').toLowerCase();
-    return pats.some(function(p){ return n.indexOf(p) >= 0 || id.indexOf(p) >= 0; });
-  }) || null;
-}
-function _calcularAjusteStandByPorItem(){
-  var ajuste = {};
-  if (!MAQ_DATA || !ACT_ROWS || !IND_CURRENT) return { ajuste: ajuste, info: null };
-  var rango = _semanaJueMieDelCorte(IND_CURRENT);
-  if (!rango) return { ajuste: ajuste, info: null };
-  var info = { desde: rango.desde, hasta: rango.hasta, maquinas: [] };
-  STANDBY_MAP.forEach(function(cfg){
-    var maq = _findMaqByPatrones(cfg.idMatch);
-    if (!maq || !Array.isArray(maq.registros)) return;
-    var totalSb = maq.registros.reduce(function(s, r){
-      if (!r || !r.fecha) return s;
-      if (r.fecha < rango.desde || r.fecha > rango.hasta) return s;
-      return s + (Number(r.costoStandBy) || 0);
-    }, 0);
-    if (totalSb <= 0) return;
-    var itemsACT = ACT_ROWS.filter(function(a){ return cfg.items.indexOf(String(a.item||'').trim()) >= 0; });
-    if (!itemsACT.length) return;
-    var sumValor = itemsACT.reduce(function(s, a){ return s + (Number(a.costo_contr_corte) || 0); }, 0);
-    if (sumValor > 0) {
-      itemsACT.forEach(function(a){
-        var peso = (Number(a.costo_contr_corte) || 0) / sumValor;
-        ajuste[a.item] = (ajuste[a.item] || 0) + totalSb * peso;
-      });
-    } else {
-      // Si no hay valor ejecutado aún, reparto uniforme entre items mapeados
-      var equ = totalSb / itemsACT.length;
-      itemsACT.forEach(function(a){ ajuste[a.item] = (ajuste[a.item] || 0) + equ; });
-    }
-    info.maquinas.push({ nombre: maq.nombre, id: maq.id, totalSb: totalSb, items: cfg.items });
-  });
-  return { ajuste: ajuste, info: info };
-}
+/* === Stand-by provisional: total al corte (reglas finales pendientes) ===
+   Se RESTA de la PROYECCIÓN FINAL del bloque de KPIs. */
+const STANDBY_PROVISIONAL_AL_CORTE = 78200000; // $78.200.000 (corte 28-may-2026)
 
 function renderActividades(){
   const filter = (document.getElementById('act-filter')?.value||'').toLowerCase().trim();
@@ -2760,35 +2683,9 @@ function renderActividades(){
     const s = ((a.item||'')+' '+(a.actividad||'')+' '+(a.cat_nombre||'')).toLowerCase();
     return s.indexOf(filter) >= 0;
   });
-  // Calcular ajuste stand-by para esta corte
-  const _sbResult = _calcularAjusteStandByPorItem();
-  const _sbAjuste = _sbResult.ajuste || {};
-  // Mostrar info de la ventana stand-by si hay datos (desglose por máquina)
-  var _info = _sbResult.info;
-  var infoLabel = rows.length + ' de ' + ACT_ROWS.length + ' ítems';
-  if (_info && _info.maquinas && _info.maquinas.length) {
-    var totalAjuste = Object.keys(_sbAjuste).reduce(function(s,k){ return s + _sbAjuste[k]; }, 0);
-    var desglose = _info.maquinas.map(function(m){
-      return escapeHTML(m.nombre || m.id) + ' ' + money(m.totalSb);
-    }).join(' · ');
-    infoLabel += ' · stand-by ' + _info.desde + '→' + _info.hasta + ': ' + desglose + ' · TOTAL ' + money(totalAjuste);
-    // Log detallado para diagnóstico en consola del navegador
-    try {
-      console.log('[stand-by] ventana', _info.desde, '→', _info.hasta);
-      _info.maquinas.forEach(function(m){
-        console.log('[stand-by] ' + (m.nombre||m.id) + ' (id=' + m.id + ') → $' + m.totalSb.toLocaleString('es-CO') + ' · reparte a items: ' + m.items.join(','));
-      });
-      console.log('[stand-by] TOTAL descontado de proy_corte: $' + totalAjuste.toLocaleString('es-CO'));
-      console.log('[stand-by] ajuste por item:', _sbAjuste);
-    } catch(_){}
-  }
-  document.getElementById('act-count').textContent = infoLabel;
+  document.getElementById('act-count').textContent = rows.length + ' de ' + ACT_ROWS.length + ' ítems';
   document.getElementById('tbody-act').innerHTML = rows.map(a=>{
     const totContr = (a.total_contr!=null) ? a.total_contr : ((Number(a.cant_contr)||0)*(Number(a.costo_contr_u)||0));
-    // Ajuste por stand-by (resta de proy_corte para reducir la proyección)
-    const sbItem = _sbAjuste[a.item] || 0;
-    const proyCorteAjustada = (Number(a.proy_corte) || 0) - sbItem;
-    const tooltipSb = sbItem > 0 ? (' title="Incluye -' + money(sbItem) + ' por stand-by maquinaria (' + (_info ? _info.desde + '→' + _info.hasta : '') + ')"') : '';
     // dif_unit positivo = costo real menor (ganancia)
     return '<tr>'+
       '<td class="frz frz-1">'+(a.item||'')+'</td>'+
@@ -2808,7 +2705,7 @@ function renderActividades(){
       '<td class="num">'+dirCell(a.margen,'pct',true)+'</td>'+
       '<td class="num">'+money(a.costo_contr_corte)+'</td>'+
       '<td class="num">'+money(a.costo_real_corte)+'</td>'+
-      '<td class="num"'+tooltipSb+'>'+dirCell(proyCorteAjustada,'money',true)+(sbItem>0?' <span style="font-size:10px;color:#fbbf24" title="Incluye stand-by descontado">⚠</span>':'')+'</td>'+
+      '<td class="num">'+dirCell(a.proy_corte,'money',true)+'</td>'+
       '<td class="num">'+dirCell(a.proy_final,'money',true)+'</td>'+
     '</tr>';
   }).join('');
@@ -2858,8 +2755,18 @@ function renderIndCorte(){
     : (contrAlCorte ? ((realAlCorte/contrAlCorte*100).toFixed(1)+'% del contractual') : '—');
   document.getElementById('kpi-util').innerHTML = moneyC(proyCorte);
   document.getElementById('kpi-util-sub').textContent = contrAlCorte ? ('Margen: '+(proyCorte/contrAlCorte*100).toFixed(1)+'%') : '—';
-  document.getElementById('kpi-proy').innerHTML = moneyC(proyFinal);
-  document.getElementById('kpi-proy-sub').textContent = 'Al finalizar el contrato';
+  // Stand-by provisional al corte (resta a la proyección final)
+  var standbyAjuste = (typeof STANDBY_PROVISIONAL_AL_CORTE === 'number') ? STANDBY_PROVISIONAL_AL_CORTE : 0;
+  var kpiSb = document.getElementById('kpi-standby');
+  if (kpiSb) {
+    kpiSb.textContent = '-' + money(standbyAjuste);
+    var kpiSbSub = document.getElementById('kpi-standby-sub');
+    if (kpiSbSub) kpiSbSub.textContent = 'descontado de la proyección · corte 28-may-2026';
+  }
+  // Proyección Final con stand-by descontado
+  var proyFinalAjustada = proyFinal - standbyAjuste;
+  document.getElementById('kpi-proy').innerHTML = moneyC(proyFinalAjustada);
+  document.getElementById('kpi-proy-sub').textContent = 'Al finalizar el contrato · stand-by descontado';
 
   // Categorías
   const cats = d.categorias||[];
