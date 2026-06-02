@@ -920,7 +920,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <!-- CARD INVENTARIO -->
       <div class="menu-card inv" onclick="goTo('inventario')">
         <div class="icon">📦</div>
-        <h2>Inventario Valorizado</h2>
+        <h2>Inventario</h2>
         <p class="desc">Stock consolidado del almacén (225 ítems únicos), valoración por facturas DIAN, F-ALM-04 y comparación entre fuentes.</p>
         <div class="illust">
           <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
@@ -942,7 +942,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <!-- CARD INDICADORES -->
       <div class="menu-card ind" onclick="goTo('indicadores')">
         <div class="icon">📊</div>
-        <h2>Indicadores Contractuales</h2>
+        <h2>Indicadores Financieros de Obra</h2>
         <p class="desc">Avance económico multi-corte (5 fechas), 93 actividades, EVM, hitos contractuales y proyecciones financieras.</p>
         <div class="illust">
           <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
@@ -1046,7 +1046,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   <div class="topbar">
     <button class="back-btn" onclick="goTo('menu')">← Menú</button>
     <div>
-      <div class="topbar-title">Indicadores Contractuales</div>
+      <div class="topbar-title">Indicadores Financieros de Obra</div>
       <div class="topbar-meta">Corte <span id="topbar-corte-ind">—</span></div>
     </div>
     <button class="back-btn" onclick="indRefrescarConSync()" id="ind-refresh-btn">Refrescar</button>
@@ -1175,7 +1175,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   <div class="topbar">
     <button class="back-btn" onclick="goTo('menu')">← Menú</button>
     <div>
-      <div class="topbar-title">Inventario Valorizado</div>
+      <div class="topbar-title">Inventario</div>
       <div class="topbar-meta">Actualizado <span id="inv-timestamp">—</span></div>
     </div>
     <button class="back-btn" onclick="invRefrescarConSync()" id="inv-refresh-btn">Refrescar</button>
@@ -6504,17 +6504,23 @@ function _rendProcesarDia(fecha, avance, mo){
   // Estructura real: mo.personas[] con {cargo, horasTrabajadas, ingreso, salida, ausencia}
   let of_ = 0, ay = 0, hhOf = 0, hhAy = 0;
   const personas = (mo && mo.personas) || [];
+  let _diagSkippedAusencia = 0, _diagSkippedSinHrs = 0, _diagOtroCargo = 0, _diagSinIngresoYNoHrs = 0;
   personas.forEach(p => {
-    // Excluir ausencias y personas sin ingreso registrado
-    if (p.ausencia) return;
-    if (!p.ingreso && p.horasTrabajadas == null) return;
+    // Excluir solo ausencias explícitas
+    if (p.ausencia) { _diagSkippedAusencia++; return; }
     const cargo = String(p.cargo || '').toLowerCase();
     const hrs = Number(p.horasTrabajadas) || 0;
-    if (hrs <= 0) return;
+    // Si NO tiene horas trabajadas Y NO tiene ingreso registrado → ignorar
+    if (hrs <= 0 && !p.ingreso) { _diagSinIngresoYNoHrs++; return; }
+    // Si tiene horas pero son 0 (caso raro) → ignorar
+    if (hrs <= 0) { _diagSkippedSinHrs++; return; }
     if (/oficial/.test(cargo)){ of_++; hhOf += hrs; }
     else if (/ayudant/.test(cargo)){ ay++; hhAy += hrs; }
-    // Maestros y otros se ignoran para el cálculo de cuadrilla
+    else _diagOtroCargo++;
   });
+  if (personas.length > 0 && of_ === 0 && ay === 0) {
+    console.warn('[REND ' + fecha + '] MO con ' + personas.length + ' personas pero 0 cuadrillas: ausencia=' + _diagSkippedAusencia + ' sinIngresoNiHrs=' + _diagSinIngresoYNoHrs + ' sin0hrs=' + _diagSkippedSinHrs + ' otroCargo=' + _diagOtroCargo + ' · primeros cargos: ' + personas.slice(0,5).map(p=>(p.cargo||'?')+'/'+(p.horasTrabajadas||'?')+'h').join(' | '));
+  }
   const ce = (of_ > 0 && ay > 0) ? Math.min(of_, ay/2) : Math.max(of_, ay/2);
   const hhTotal = hhOf + hhAy;
 
