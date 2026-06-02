@@ -2821,32 +2821,42 @@ function renderIndCorte(){
   const totT = d.totales['COSTO TOTAL']||{};
   const contrAlCorte = totT.contr_corte||0;
   let realAlCorte = totT.real_corte||0;
-  const proyCorte = totT.proy_corte||0;
+  let proyCorte = totT.proy_corte||0;
   const proyFinal = totT.proy_final||0;
   const totalProy = totT.total_contr || 0;
 
   // OVERRIDE: si es corte más reciente y tenemos OBRA_DATA, usamos el avance económico
-  // del módulo Avance de Obra (fuente correcta validada por usuario)
+  // del módulo Avance de Obra como CONTRACTUAL AL CORTE (lo facturable).
+  // Real y Utilidad se ESCALAN proporcionalmente al ratio original de Indicadores
+  // para mantener consistencia: Real = Contr × (real_ind / contr_ind), Util = Contr - Real.
   let usingObraSource = false;
   let contrFromObra = null;
   if (isLatest && OBRA_DATA && typeof OBRA_DATA.ejecutadoGlobal === 'number' && OBRA_DATA.ejecutadoGlobal > 0){
     contrFromObra = OBRA_DATA.ejecutadoGlobal;
-    realAlCorte = OBRA_DATA.ejecutadoGlobal; // override "Real al Corte" con avance económico real
+    if (contrAlCorte > 0) {
+      // Conservar margen % original de Indicadores
+      const ratioCosto = (totT.real_corte || 0) / contrAlCorte;
+      realAlCorte = contrFromObra * ratioCosto;
+      proyCorte = contrFromObra - realAlCorte; // utilidad = contractual − real
+    }
+    // Si contrAlCorte=0, dejamos realAlCorte y proyCorte como vienen de Indicadores
     usingObraSource = true;
   }
 
+  const contrShow = usingObraSource ? contrFromObra : contrAlCorte;
+
   document.getElementById('kpi-total').textContent = money(totalProy);
   document.getElementById('kpi-total-sub').textContent = 'Valor vigente del contrato';
-  document.getElementById('kpi-contr').textContent = money(usingObraSource ? contrFromObra : contrAlCorte);
+  document.getElementById('kpi-contr').textContent = money(contrShow);
   document.getElementById('kpi-contr-sub').textContent = totalProy
-    ? (((usingObraSource ? contrFromObra : contrAlCorte)/totalProy*100).toFixed(1) + '% del total' + (usingObraSource ? ' · fuente Obra' : ''))
+    ? ((contrShow/totalProy*100).toFixed(1) + '% del total' + (usingObraSource ? ' · fuente Obra' : ''))
     : '—';
   document.getElementById('kpi-real').textContent = money(realAlCorte);
-  document.getElementById('kpi-real-sub').textContent = usingObraSource
-    ? 'Avance económico (fuente Avance de Obra)'
-    : (contrAlCorte ? ((realAlCorte/contrAlCorte*100).toFixed(1)+'% del contractual') : '—');
+  document.getElementById('kpi-real-sub').textContent = contrShow
+    ? ((realAlCorte/contrShow*100).toFixed(1)+'% del contractual' + (usingObraSource ? ' · costo real ejecutado' : ''))
+    : '—';
   document.getElementById('kpi-util').innerHTML = moneyC(proyCorte);
-  document.getElementById('kpi-util-sub').textContent = contrAlCorte ? ('Margen: '+(proyCorte/contrAlCorte*100).toFixed(1)+'%') : '—';
+  document.getElementById('kpi-util-sub').textContent = contrShow ? ('Margen: '+(proyCorte/contrShow*100).toFixed(1)+'%') : '—';
   // Stand-by provisional al corte (resta a la proyección final)
   var standbyAjuste = (typeof STANDBY_PROVISIONAL_AL_CORTE === 'number') ? STANDBY_PROVISIONAL_AL_CORTE : 0;
   var kpiSb = document.getElementById('kpi-standby');
