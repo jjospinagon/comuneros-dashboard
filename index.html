@@ -2763,12 +2763,24 @@ function renderActividades(){
   // Calcular ajuste stand-by para esta corte
   const _sbResult = _calcularAjusteStandByPorItem();
   const _sbAjuste = _sbResult.ajuste || {};
-  // Mostrar info de la ventana stand-by si hay datos
+  // Mostrar info de la ventana stand-by si hay datos (desglose por máquina)
   var _info = _sbResult.info;
   var infoLabel = rows.length + ' de ' + ACT_ROWS.length + ' ítems';
   if (_info && _info.maquinas && _info.maquinas.length) {
     var totalAjuste = Object.keys(_sbAjuste).reduce(function(s,k){ return s + _sbAjuste[k]; }, 0);
-    infoLabel += ' · stand-by ' + _info.desde + '→' + _info.hasta + ': ' + money(totalAjuste);
+    var desglose = _info.maquinas.map(function(m){
+      return escapeHTML(m.nombre || m.id) + ' ' + money(m.totalSb);
+    }).join(' · ');
+    infoLabel += ' · stand-by ' + _info.desde + '→' + _info.hasta + ': ' + desglose + ' · TOTAL ' + money(totalAjuste);
+    // Log detallado para diagnóstico en consola del navegador
+    try {
+      console.log('[stand-by] ventana', _info.desde, '→', _info.hasta);
+      _info.maquinas.forEach(function(m){
+        console.log('[stand-by] ' + (m.nombre||m.id) + ' (id=' + m.id + ') → $' + m.totalSb.toLocaleString('es-CO') + ' · reparte a items: ' + m.items.join(','));
+      });
+      console.log('[stand-by] TOTAL descontado de proy_corte: $' + totalAjuste.toLocaleString('es-CO'));
+      console.log('[stand-by] ajuste por item:', _sbAjuste);
+    } catch(_){}
   }
   document.getElementById('act-count').textContent = infoLabel;
   document.getElementById('tbody-act').innerHTML = rows.map(a=>{
