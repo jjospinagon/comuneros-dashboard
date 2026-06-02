@@ -4485,16 +4485,6 @@ function obraAplicarFiltros(){
     return (corteDate - ini) / (fin - ini);
   }
 
-  // Suma ponderada del valor programado por actividad filtrada
-  const vrProg = filtradas.reduce((s, a) => {
-    const pa = pctProgramadoActividad(a, corte);
-    return s + (a.vrTotal || 0) * pa;
-  }, 0);
-
-  // % Programado del subset filtrado (no del proyecto global)
-  const pctProg = vrTotal > 0 ? vrProg / vrTotal : 0;
-  const spi = vrProg > 0 ? vrEjec / vrProg : 0;
-
   // Curva S: normalizar % programado si vinieron como valores absolutos del backend.
   // (Bug detectado: la fila 115 de FLUJO DE CAJA_INTER son valores ABSOLUTOS, no %.
   //  Los % reales sí vienen normalizados en cs.real.)
@@ -4510,6 +4500,29 @@ function obraAplicarFiltros(){
       programado: _prog.map(v => v / _maxProg)
     };
   }
+
+  // % Programado y vrProg:
+  // - Sin filtros (TODOS): usar el valor de la CURVA S de la semana actual (fuente de verdad del XLSX)
+  // - Con filtros: usar cálculo ponderado por las actividades filtradas
+  const sinFiltros = (fCap === 'TODOS' && fResp === 'TODOS');
+  let pctProg, vrProg;
+  if (sinFiltros && cs.semanas && cs.semanas.length) {
+    const semanaLabel = 'S' + semanaActual;
+    const idxSem = cs.semanas.indexOf(semanaLabel);
+    if (idxSem >= 0 && typeof cs.programado[idxSem] === 'number') {
+      pctProg = cs.programado[idxSem];
+      vrProg = vrTotal * pctProg;
+    }
+  }
+  if (typeof pctProg !== 'number') {
+    // Fallback: cálculo ponderado por actividad filtrada (cuando hay filtros activos)
+    vrProg = filtradas.reduce((s, a) => {
+      const pa = pctProgramadoActividad(a, corte);
+      return s + (a.vrTotal || 0) * pa;
+    }, 0);
+    pctProg = vrTotal > 0 ? vrProg / vrTotal : 0;
+  }
+  const spi = vrProg > 0 ? vrEjec / vrProg : 0;
   
   const completadas = filtradas.filter(a => (a.pctAcum||0) >= 0.999).length;
   const enCurso = filtradas.filter(a => (a.pctAcum||0) > 0 && (a.pctAcum||0) < 0.999).length;
