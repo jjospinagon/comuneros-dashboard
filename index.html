@@ -4506,38 +4506,49 @@ function obraAplicarFiltros(){
     return (corteDate - ini) / (fin - ini);
   }
 
-  // Curva S: normalizar % programado si vinieron como valores absolutos del backend.
-  // (Bug detectado: la fila 115 de FLUJO DE CAJA_INTER son valores ABSOLUTOS, no %.
-  //  Los % reales sí vienen normalizados en cs.real.)
+  // Curva S desde FLUJO DE CAJA_INTER:
+  //  - Fila 115 (1-based) = "$ ACUMULADO PROGRAMADO" (valores ABSOLUTOS en pesos $) → cs.programado
+  //  - Fila 117 (1-based) = "% real acumulado" → cs.real
+  // Por eso cs.programado a veces viene en absoluto (max > 1.5) y a veces en % (max <= 1)
   let cs = OBRA_DATA.curvaS || {programado:[], real:[], semanas:[], fechas:[]};
   const _prog = cs.programado || [];
   let _maxProg = 0;
   for (let i = 0; i < _prog.length; i++) { if (_prog[i] > _maxProg) _maxProg = _prog[i]; }
-  if (_maxProg > 1.5 && _maxProg > 0) {
-    cs = {
-      semanas: cs.semanas || [],
-      fechas:  cs.fechas  || [],
-      real:    cs.real    || [],
-      programado: _prog.map(v => v / _maxProg)
-    };
-  }
+  const _progEsAbsoluto = (_maxProg > 1.5);
+  // Conservar ambas representaciones para uso flexible:
+  //  - programadoAbs: pesos acumulados (fuente de verdad directa del XLSX)
+  //  - programado: % acumulado (para gráficos / SPI)
+  const programadoAbs = _progEsAbsoluto ? _prog.slice() : _prog.map(v => v * (vrTotal || 1));
+  const programadoPct = (_progEsAbsoluto && _maxProg > 0) ? _prog.map(v => v / _maxProg) : _prog.slice();
+  cs = {
+    semanas: cs.semanas || [],
+    fechas:  cs.fechas  || [],
+    real:    cs.real    || [],
+    programado: programadoPct,
+    programadoAbs: programadoAbs
+  };
 
   // % Programado y vrProg:
-  // - Sin filtros (TODOS): usar el valor de la CURVA S de la semana actual (fuente de verdad del XLSX)
-  // - Con filtros: usar cálculo ponderado por las actividades filtradas
+  // - Sin filtros (TODOS): usar VALOR ABSOLUTO de FLUJO DE CAJA_INTER (fila 115) directo
+  // - Con filtros: cálculo ponderado por actividades filtradas
   const sinFiltros = (fCap === 'TODOS' && fResp === 'TODOS');
   let pctProg, vrProg;
   if (sinFiltros && cs.semanas && cs.semanas.length) {
     const semanaLabel = 'S' + semanaActual;
     const idxSem = cs.semanas.indexOf(semanaLabel);
-    if (idxSem >= 0 && typeof cs.programado[idxSem] === 'number') {
-      pctProg = cs.programado[idxSem];
-      vrProg = vrTotal * pctProg;
+    if (idxSem >= 0) {
+      // VR PROGRAMADO = valor absoluto acumulado de FLUJO DE CAJA_INTER fila 115 al corte Sxx
+      // (esto es la suma de todas las semanas hasta Sxx, ya calculada en el XLSX)
+      if (typeof cs.programadoAbs[idxSem] === 'number' && cs.programadoAbs[idxSem] > 0) {
+        vrProg = cs.programadoAbs[idxSem];
+        pctProg = vrTotal > 0 ? vrProg / vrTotal : 0;
+      } else if (typeof cs.programado[idxSem] === 'number') {
+        pctProg = cs.programado[idxSem];
+        vrProg = vrTotal * pctProg;
+      }
     }
-    // Alinear el último punto de cs.real con el KPI %AVANCE REAL (vrEjec/vrTotal)
-    // El backend a veces difiere por redondeos acumulados; el KPI es la fuente de verdad
+    // Alinear último punto de cs.real con el KPI %AVANCE REAL (fuente de verdad: avance económico)
     if (idxSem >= 0 && Array.isArray(cs.real) && cs.real.length > idxSem) {
-      // Crear copia para no mutar OBRA_DATA original
       cs = Object.assign({}, cs, { real: cs.real.slice() });
       cs.real[idxSem] = pctReal;
     }
