@@ -1573,7 +1573,8 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-ejecdiaria header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 18px;gap:12px;flex-wrap:wrap}
   #screen-ejecdiaria h1{margin:0;font-size:20px;color:#fff}
   #screen-ejecdiaria h2{margin:0;font-size:13px;color:#94a3b8;font-weight:400}
-  #screen-ejecdiaria .ed-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+  #screen-ejecdiaria .ed-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px}
+  @media(max-width:1400px){#screen-ejecdiaria .ed-kpis{grid-template-columns:repeat(3,1fr)}}
   @media(max-width:900px){#screen-ejecdiaria .ed-kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:500px){#screen-ejecdiaria .ed-kpis{grid-template-columns:1fr}}
   #screen-ejecdiaria .ed-kpi{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;border-left:3px solid var(--acc,#fbbf24)}
@@ -1623,6 +1624,12 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-ejecdiaria .donut-leg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#cbd5e1;padding:3px 0}
   #screen-ejecdiaria .donut-leg .sw{width:12px;height:12px;border-radius:3px;flex-shrink:0}
   #screen-ejecdiaria .donut-leg .pct{margin-left:auto;color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
+  #screen-ejecdiaria .ed-chip{background:transparent;border:0;color:#cbd5e1;padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s}
+  #screen-ejecdiaria .ed-chip:hover{background:rgba(255,255,255,.06);color:#fff}
+  #screen-ejecdiaria .ed-chip.active{background:rgba(168,85,247,.30);color:#fff;box-shadow:inset 0 0 0 1px rgba(168,85,247,.5)}
+  body.light #screen-ejecdiaria .ed-chip{color:#475569}
+  body.light #screen-ejecdiaria .ed-chip:hover{background:rgba(0,0,0,.05);color:#0f172a}
+  body.light #screen-ejecdiaria .ed-chip.active{background:rgba(168,85,247,.20);color:#7c3aed;box-shadow:inset 0 0 0 1px rgba(168,85,247,.5)}
 </style>
 <div class="screen" id="screen-ejecdiaria">
   <div class="wrap">
@@ -1633,9 +1640,19 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div class="topbar-meta">Corte <span id="ed-fecha">—</span></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#94a3b8;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px">
-          <span>📆</span>
+        <div id="ed-modo-chips" style="display:flex;gap:4px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:3px">
+          <button class="ed-chip active" data-modo="dia"  onclick="ejecDiariaSetModo('dia')">Día</button>
+          <button class="ed-chip"        data-modo="sem"  onclick="ejecDiariaSetModo('sem')">Semana</button>
+          <button class="ed-chip"        data-modo="mes"  onclick="ejecDiariaSetModo('mes')">Mes</button>
+          <button class="ed-chip"        data-modo="cust" onclick="ejecDiariaSetModo('cust')">Rango</button>
+        </div>
+        <label id="ed-lbl-desde" style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#94a3b8;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px">
+          <span id="ed-lbl-desde-ico">📆</span>
           <input type="date" id="ed-fecha-picker" onchange="ejecDiariaCambiarFecha(this.value)" class="date-input-themable" style="background:transparent;border:0;color:#fff;font-size:12px;font-family:inherit;outline:none;cursor:pointer;color-scheme:dark">
+        </label>
+        <label id="ed-lbl-hasta" style="display:none;align-items:center;gap:6px;font-size:11.5px;color:#94a3b8;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px">
+          <span>→</span>
+          <input type="date" id="ed-fecha-picker-hasta" onchange="ejecDiariaCambiarFechaHasta(this.value)" class="date-input-themable" style="background:transparent;border:0;color:#fff;font-size:12px;font-family:inherit;outline:none;cursor:pointer;color-scheme:dark">
         </label>
         <button class="back-btn" onclick="ejecDiariaIrAyer()" id="ed-ayer-btn" title="Volver al día de ayer">Ayer</button>
         <button class="back-btn" onclick="ejecDiariaRefrescar()" id="ed-refresh-btn">Refrescar</button>
@@ -1655,6 +1672,18 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div class="ed-kpi" style="--acc:#34d399"><div class="l">Actividades del día</div><div class="v" id="ed-k-num">—</div><div class="s">con avance &gt; 0</div></div>
       <div class="ed-kpi" style="--acc:#22d3ee"><div class="l">Costo directo día</div><div class="v" id="ed-k-vrdia">—</div><div class="s">cant × vr. unitario</div></div>
       <div class="ed-kpi" style="--acc:#a855f7"><div class="l">TOTAL día (con AIU+PMT+PMA)</div><div class="v" id="ed-k-total">—</div><div class="s" id="ed-k-total-s">incluye arandelas</div></div>
+      <div class="ed-kpi" style="--acc:#f59e0b"><div class="l">Meta programada</div><div class="v" id="ed-k-meta">—</div><div class="s" id="ed-k-meta-s">FLUJO ÷ días laborales</div></div>
+      <div class="ed-kpi" style="--acc:#10b981"><div class="l">Cumplimiento meta</div><div class="v" id="ed-k-cumpl">—</div><div class="s" id="ed-k-cumpl-s">real ÷ meta</div></div>
+    </div>
+
+    <!-- Panel: Ganancia / Pérdida del día vs Corte de Indicadores -->
+    <div class="ed-panel" id="ed-corte-panel" style="margin-bottom:14px;display:none">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <span>💎 Ganancia / Pérdida vs corte de Indicadores</span>
+        <span id="ed-corte-info" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
+      </h3>
+      <div id="ed-corte-desglose" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:8px"></div>
+      <div style="font-size:10.5px;color:#64748b">Compara <b>cantidad ejecutada × costo real unitario del corte</b> (precio actualizado) con <b>cantidad ejecutada × precio del avance</b>. Δ &gt; 0 = más ingreso real que el registrado en avance.</div>
     </div>
 
     <!-- Panel desglose AIU + PMT + PMA -->
@@ -1810,6 +1839,33 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
             </tr>
           </thead>
           <tbody><tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====== Correlaciones Stand-by jue→mié distribuido a items mov. tierras ====== -->
+    <div class="maq-panel" style="margin-top:14px">
+      <h3>🔗 Correlaciones Stand-by · semana jue→mié distribuida a Cap 2 (Mov. Tierras)
+        <span id="maq-corr-info" style="color:#94a3b8;font-weight:400;font-size:11px"></span>
+      </h3>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">
+        Cada fila resume una semana <b>jueves → miércoles</b>. La distribución a ítems del Cap 2 se hace ponderando por el valor ejecutado de cada actividad en esa misma ventana:
+        Retro 305 → 2.01-2.04, Minicargador → 2.05-2.06.
+      </div>
+      <div style="overflow-x:auto">
+        <table id="maq-corr-tabla" style="min-width:1100px">
+          <thead>
+            <tr>
+              <th>Semana (jue→mié)</th>
+              <th class="num">Hr trab.</th>
+              <th class="num">Hr stand-by</th>
+              <th class="num">$ Stand-by 305</th>
+              <th class="num">$ Stand-by Mini</th>
+              <th class="num">$ Stand-by total</th>
+              <th>Distribución → ítems</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">⏳ Calculando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -5110,17 +5166,24 @@ async function ejecDiariaCargar(force, fechaOverride){
 function ejecDiariaRender(){
   const d = EJEC_DIARIA_DATA;
   if (!d) return;
+  const esPeriodo = !!d._periodo;
   const fechaSolicitada = d.fecha || '';
   const fechaUsada = d.fechaUsada || fechaSolicitada;
-  const fechaFmt = fechaUsada ? formatFechaED(fechaUsada) : '—';
+  const fechaFmt = esPeriodo
+    ? (formatFechaED(d._periodo.desde) + ' → ' + formatFechaED(d._periodo.hasta))
+    : (fechaUsada ? formatFechaED(fechaUsada) : '—');
   document.getElementById('ed-fecha').textContent = fechaFmt;
   document.getElementById('ed-k-fecha').textContent = fechaFmt;
-  document.getElementById('ed-gen').textContent = 'gen ' + (d._generado || '');
+  document.getElementById('ed-gen').textContent = esPeriodo ? (d._periodo.diasConDatos+'/'+d._periodo.dias+' días con datos') : ('gen ' + (d._generado || ''));
 
   // Aviso si la fecha solicitada no tiene datos y se sustituyó por la anterior con avance
   const h1 = document.getElementById('ed-h1');
   if (h1) {
-    if (fechaSolicitada && fechaUsada && fechaSolicitada !== fechaUsada) {
+    if (esPeriodo){
+      h1.innerHTML = (d._periodo.etiqueta||'Periodo') + ' · ' + escapeHTML(formatFechaED(d._periodo.desde)) +
+        ' → ' + escapeHTML(formatFechaED(d._periodo.hasta)) +
+        ' <span style="font-size:12px;color:#a855f7;font-weight:400">· ' + d._periodo.diasConDatos + ' / ' + d._periodo.dias + ' días con avance</span>';
+    } else if (fechaSolicitada && fechaUsada && fechaSolicitada !== fechaUsada) {
       h1.innerHTML = 'Avance del día ' + escapeHTML(formatFechaED(fechaUsada)) +
         ' <span style="font-size:12px;color:#fbbf24;font-weight:400">· sin datos para ' +
         escapeHTML(formatFechaED(fechaSolicitada)) + ', usando el último disponible</span>';
@@ -5141,6 +5204,89 @@ function ejecDiariaRender(){
   document.getElementById('ed-k-total').textContent = moneyShort(c.total || 0);
   const pctObra = (c.factorObra || 0) * 100;
   document.getElementById('ed-k-total-s').textContent = pctObra.toFixed(3) + '% del costo directo total';
+
+  // === GANANCIA / PÉRDIDA vs CORTE DE INDICADORES ===
+  (function(){
+    var panel = document.getElementById('ed-corte-panel');
+    var info = document.getElementById('ed-corte-info');
+    var desg = document.getElementById('ed-corte-desglose');
+    if (!panel || !desg) return;
+    var fechaRef = esPeriodo ? d._periodo.hasta : (d.fechaUsada || d.fecha);
+    var corte = _edCorteAplicable(fechaRef);
+    if (!corte || !window.IND_DATA){
+      panel.style.display = 'none';
+      return;
+    }
+    var calc = _edCalcularGananciaCorte(items, corte);
+    if (!calc || calc.hits === 0){
+      panel.style.display = 'block';
+      if (info) info.textContent = 'Corte aplicable: ' + corte + ' · sin matches de items en el corte';
+      desg.innerHTML = '<div style="color:#94a3b8;padding:10px;font-size:11.5px">Ningún ítem del día coincide con el catálogo de actividades del corte ' + escapeHTML(corte) + '. Verifica que los códigos de ítem coincidan.</div>';
+      return;
+    }
+    panel.style.display = 'block';
+    // Calcular ventana vie-jue del corte: si corte es DD-MM-YYYY de un jueves, ventana = vie(corte+1) → jue(corte+7)
+    var corteFecha = (function(){ var p = corte.split('-'); return new Date(parseInt(p[2],10), parseInt(p[1],10)-1, parseInt(p[0],10)); })();
+    var vie = new Date(corteFecha); vie.setDate(corteFecha.getDate()+1);
+    var jueSig = new Date(corteFecha); jueSig.setDate(corteFecha.getDate()+7);
+    function fmtCorto(d){
+      var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      return d.getDate() + ' ' + meses[d.getMonth()];
+    }
+    if (info) info.textContent = 'Corte ' + corte + ' · vigencia ' + fmtCorto(vie) + ' → ' + fmtCorto(jueSig) + ' · ' + calc.hits + ' ítem(s) con precio';
+    var deltaCorte = calc.deltaCorte;
+    var deltaContr = calc.deltaContr;
+    var colorCorte = deltaCorte >= 0 ? '#10b981' : '#ef4444';
+    var colorContr = deltaContr >= 0 ? '#10b981' : '#ef4444';
+    desg.innerHTML = [
+      {l:'Real ejec × precio AVANCE', v:calc.sumAvance, color:'#22d3ee', s:'cant día × vrUnit registro'},
+      {l:'Real ejec × precio CORTE', v:calc.sumCorte, color:'#a855f7', s:'costo real unitario al corte ' + corte},
+      {l:'Δ vs corte (real)', v:deltaCorte, color:colorCorte, s:(deltaCorte>=0?'+':'')+((calc.sumAvance>0?(deltaCorte/calc.sumAvance*100):0)).toFixed(1)+'% sobre avance', bold:true},
+      {l:'Real ejec × precio CONTRATO', v:calc.sumContr, color:'#fbbf24', s:'costo contractual unitario'},
+      {l:'Δ vs contrato', v:deltaContr, color:colorContr, s:(deltaContr>=0?'+':'')+((calc.sumAvance>0?(deltaContr/calc.sumAvance*100):0)).toFixed(1)+'% sobre avance'}
+    ].map(function(x){
+      return '<div style="background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;border-left:3px solid '+x.color+(x.bold?';box-shadow:0 0 0 1px '+x.color+'33':'')+'">'+
+        '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700">'+x.l+'</div>'+
+        '<div style="font-size:'+(x.bold?'18px':'16px')+';font-weight:700;color:'+(x.bold?x.color:'#fff')+';font-family:Space Grotesk,sans-serif;margin-top:3px">'+money(x.v)+'</div>'+
+        '<div style="font-size:10px;color:#64748b;margin-top:2px">'+x.s+'</div>'+
+      '</div>';
+    }).join('');
+  })();
+
+  // === META PROGRAMADA y CUMPLIMIENTO (async) ===
+  (function(){
+    var kMeta = document.getElementById('ed-k-meta');
+    var kMetaS = document.getElementById('ed-k-meta-s');
+    var kCumpl = document.getElementById('ed-k-cumpl');
+    var kCumplS = document.getElementById('ed-k-cumpl-s');
+    if (!kMeta) return;
+    kMeta.textContent = '⏳';
+    kCumpl.textContent = '⏳';
+    var rangoDesde = esPeriodo ? d._periodo.desde : (d.fechaUsada || d.fecha);
+    var rangoHasta = esPeriodo ? d._periodo.hasta : (d.fechaUsada || d.fecha);
+    _edCalcularMetaPeriodo(rangoDesde, rangoHasta).then(function(res){
+      var meta = res.meta || 0;
+      var real = Number(c.directo)||0; // comparable a meta (que es costo directo programado)
+      kMeta.textContent = moneyShort(meta);
+      kMetaS.textContent = esPeriodo
+        ? ('FLUJO · '+res.dias+' día(s) laborable(s)')
+        : 'FLUJO ÷ días lab. de la semana';
+      if (meta > 0){
+        var pct = (real / meta) * 100;
+        kCumpl.textContent = pct.toFixed(0) + '%';
+        kCumplS.textContent = (real >= meta)
+          ? ('✓ supera la meta · +'+moneyShort(real-meta))
+          : ('⚠ déficit '+moneyShort(meta-real));
+        kCumpl.style.color = real >= meta ? '#10b981' : (pct >= 70 ? '#fbbf24' : '#ef4444');
+      } else {
+        kCumpl.textContent = '—';
+        kCumplS.textContent = 'sin meta programada';
+      }
+    }).catch(function(){
+      kMeta.textContent = '—';
+      kCumpl.textContent = '—';
+    });
+  })();
 
   // Desglose AIU + PMT + PMA
   const aPct = ((c.aiuPct && c.aiuPct.A) || 0) * 100;
@@ -5290,10 +5436,329 @@ function ejecDiariaRender(){
   tbody.innerHTML = filas.join('');
 }
 
+/* ====== Modo periodo (dia/sem/mes/cust) ====== */
+var EJEC_DIARIA_MODO = 'dia';
+var EJEC_DIARIA_HASTA = '';
+var _ED_META_CACHE = null;       // { ts, cs }
+var _ED_META_TTL = 5*60*1000;    // 5 min cache
+
+async function _edFetchCurvaProgramada(){
+  if (_ED_META_CACHE && (Date.now()-_ED_META_CACHE.ts) < _ED_META_TTL) return _ED_META_CACHE.cs;
+  try {
+    var d = await jsonp(APPS_URL, {action:'dashboard_obra', _ts:Date.now()});
+    if (d && d.curvaS){
+      _ED_META_CACHE = {ts:Date.now(), cs:d.curvaS};
+      return d.curvaS;
+    }
+  } catch(_){}
+  return null;
+}
+
+function _edSemanaDeFecha(fechaStr, cs){
+  // cs.fechas[i] = fecha de INICIO de la semana Si (formato Excel serial o ISO según backend)
+  if (!cs || !Array.isArray(cs.fechas) || !cs.fechas.length) return -1;
+  var d = _edParseFecha(fechaStr);
+  if (!d) return -1;
+  // Normalizar cs.fechas a Date objects (manejar serial Excel o ISO string)
+  function toDate(v){
+    if (v instanceof Date) return v;
+    if (typeof v === 'number'){
+      // Excel serial: días desde 1900-01-01 (con bug de año bisiesto 1900)
+      var base = new Date(1899,11,30).getTime();
+      return new Date(base + v*86400000);
+    }
+    if (typeof v === 'string'){
+      var p = v.split(/[-\/T]/);
+      if (p.length >= 3){
+        if (parseInt(p[0],10) > 1900) return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+        return new Date(parseInt(p[2],10), parseInt(p[1],10)-1, parseInt(p[0],10));
+      }
+    }
+    return null;
+  }
+  // Encontrar la última semana cuya fecha inicio <= d
+  var idxMatch = -1;
+  for (var i=0; i<cs.fechas.length; i++){
+    var fi = toDate(cs.fechas[i]);
+    if (!fi) continue;
+    if (fi.getTime() <= d.getTime()) idxMatch = i;
+    else break;
+  }
+  return idxMatch;
+}
+
+// === Conexión con precios de Indicadores semana (corte jueves anterior) ===
+function _edCorteAplicable(fechaStr){
+  // Devuelve la clave del corte (formato DD-MM-YYYY) del último jueves ESTRICTAMENTE anterior a fechaStr
+  if (!window.IND_DATA || typeof IND_DATA !== 'object') return null;
+  var d = _edParseFecha(fechaStr);
+  if (!d) return null;
+  // Avanzar al jueves <= fechaStr; si la fecha ya es jueves, restar 7
+  var dow = d.getDay(); // 0=dom,1=lun..4=jue
+  var diff;
+  if (dow === 4) diff = -7;
+  else if (dow > 4) diff = -(dow-4);    // vie=-1, sáb=-2
+  else diff = -(dow+3);                  // dom=-3, lun=-4, mar=-5, mié=-6
+  var jue = new Date(d); jue.setDate(d.getDate()+diff);
+  // Buscar el corte más cercano <= jue
+  var cortes = Object.keys(IND_DATA).filter(function(k){ return /^\d{2}-\d{2}-\d{4}$/.test(k); });
+  if (!cortes.length) return null;
+  function parseClave(k){
+    var p = k.split('-');
+    return new Date(parseInt(p[2],10), parseInt(p[1],10)-1, parseInt(p[0],10));
+  }
+  cortes.sort(function(a,b){ return parseClave(b).getTime() - parseClave(a).getTime(); });
+  for (var i=0; i<cortes.length; i++){
+    if (parseClave(cortes[i]).getTime() <= jue.getTime()) return cortes[i];
+  }
+  return cortes[cortes.length-1]; // fallback al más antiguo
+}
+
+function _edCalcularGananciaCorte(items, corteKey){
+  if (!window.IND_DATA || !corteKey || !IND_DATA[corteKey]) return null;
+  var acts = IND_DATA[corteKey].actividades || [];
+  var mapaPrecio = {};
+  acts.forEach(function(a){
+    var k = String(a.item||'').trim();
+    if (!k) return;
+    mapaPrecio[k] = {
+      costoRealU: Number(a.costo_real_u)||0,
+      costoContrU: Number(a.costo_contr_u)||0
+    };
+  });
+  var sumAvance = 0, sumCorte = 0, sumContr = 0, hits = 0;
+  items.forEach(function(it){
+    var cantDia = Number(it.cantDia)||0;
+    if (cantDia <= 0) return;
+    var vrUnitAv = Number(it.vrUnit)||0;
+    var preciosM = mapaPrecio[String(it.item||'').trim()];
+    if (!preciosM) return;
+    hits++;
+    sumAvance += cantDia * vrUnitAv;
+    sumCorte += cantDia * preciosM.costoRealU;
+    sumContr += cantDia * preciosM.costoContrU;
+  });
+  return {
+    hits: hits,
+    sumAvance: sumAvance,
+    sumCorte: sumCorte,
+    sumContr: sumContr,
+    deltaCorte: sumCorte - sumAvance,
+    deltaContr: sumContr - sumAvance
+  };
+}
+
+async function _edCalcularMetaPeriodo(desde, hasta){
+  var cs = await _edFetchCurvaProgramada();
+  if (!cs || !cs.programadoAbs || !cs.programadoAbs.length) return {meta:0, dias:0};
+  var fechas = _edListarFechas(desde, hasta);
+  var meta = 0, diasContados = 0;
+  var DIAS_LAB_POR_SEM = 5.5; // L-V + medio sábado (consistente con stand-by 5h L-V, 2.5h sáb)
+  fechas.forEach(function(f){
+    var idx = _edSemanaDeFecha(f, cs);
+    if (idx < 0) return;
+    var prev = idx > 0 ? (Number(cs.programadoAbs[idx-1])||0) : 0;
+    var cur  = Number(cs.programadoAbs[idx])||0;
+    var deltaSem = cur - prev;
+    if (deltaSem <= 0) return;
+    // Excluir domingos del cómputo
+    var d = _edParseFecha(f);
+    var dow = d ? d.getDay() : 1;
+    if (dow === 0) return; // domingo no programado
+    var pesoDia = (dow === 6) ? 0.5/DIAS_LAB_POR_SEM : 1/DIAS_LAB_POR_SEM;
+    meta += deltaSem * pesoDia;
+    diasContados++;
+  });
+  return {meta:meta, dias:diasContados};
+}
+
+function _edParseFecha(s){
+  if (!s || s.length<10) return null;
+  var p = s.split('-');
+  return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+}
+function _edFmtFecha(d){
+  if (!(d instanceof Date)) return '';
+  var y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2);
+  return y+'-'+m+'-'+dd;
+}
+function _edRangoSemana(fecha){
+  // Lunes a domingo de la semana que contiene la fecha
+  var d = _edParseFecha(fecha); if (!d) return null;
+  var dow = d.getDay(); // 0=dom..6=sab
+  var diffLun = (dow===0 ? -6 : 1-dow);
+  var lun = new Date(d); lun.setDate(d.getDate()+diffLun);
+  var dom = new Date(lun); dom.setDate(lun.getDate()+6);
+  return {desde:_edFmtFecha(lun), hasta:_edFmtFecha(dom)};
+}
+function _edRangoMes(fecha){
+  var d = _edParseFecha(fecha); if (!d) return null;
+  var ini = new Date(d.getFullYear(), d.getMonth(), 1);
+  var fin = new Date(d.getFullYear(), d.getMonth()+1, 0);
+  return {desde:_edFmtFecha(ini), hasta:_edFmtFecha(fin)};
+}
+function _edListarFechas(desde, hasta){
+  var ini = _edParseFecha(desde), fin = _edParseFecha(hasta);
+  if (!ini || !fin) return [];
+  var out = [], cur = new Date(ini);
+  while (cur.getTime() <= fin.getTime()){
+    out.push(_edFmtFecha(cur));
+    cur.setDate(cur.getDate()+1);
+    if (out.length > 366) break; // safety
+  }
+  return out;
+}
+
+function ejecDiariaSetModo(modo){
+  EJEC_DIARIA_MODO = modo;
+  var chips = document.querySelectorAll('#ed-modo-chips .ed-chip');
+  for (var i=0;i<chips.length;i++){ chips[i].classList.toggle('active', chips[i].getAttribute('data-modo')===modo); }
+  var lblHasta = document.getElementById('ed-lbl-hasta');
+  var lblDesdeIco = document.getElementById('ed-lbl-desde-ico');
+  if (modo==='cust'){
+    if (lblHasta) lblHasta.style.display = 'flex';
+    if (lblDesdeIco) lblDesdeIco.textContent = '🟢';
+    // Si no hay hasta, inicializar = picker actual
+    var pHasta = document.getElementById('ed-fecha-picker-hasta');
+    if (pHasta && !pHasta.value) pHasta.value = EJEC_DIARIA_FECHA || _edFmtFecha(new Date());
+    EJEC_DIARIA_HASTA = pHasta ? pHasta.value : EJEC_DIARIA_FECHA;
+  } else {
+    if (lblHasta) lblHasta.style.display = 'none';
+    if (lblDesdeIco) lblDesdeIco.textContent = '📆';
+  }
+  ejecDiariaRecargarSegunModo();
+}
+
+function ejecDiariaRecargarSegunModo(){
+  var base = EJEC_DIARIA_FECHA || ejecDiariaAyerStr();
+  if (EJEC_DIARIA_MODO === 'dia'){
+    ejecDiariaCargar(false, base);
+  } else if (EJEC_DIARIA_MODO === 'sem'){
+    var r = _edRangoSemana(base); if (r) ejecDiariaCargarPeriodo(r.desde, r.hasta, 'Semana');
+  } else if (EJEC_DIARIA_MODO === 'mes'){
+    var r2 = _edRangoMes(base); if (r2) ejecDiariaCargarPeriodo(r2.desde, r2.hasta, 'Mes');
+  } else if (EJEC_DIARIA_MODO === 'cust'){
+    var hasta = EJEC_DIARIA_HASTA || base;
+    var desde = base, ha = hasta;
+    if (_edParseFecha(desde) && _edParseFecha(ha) && _edParseFecha(desde).getTime() > _edParseFecha(ha).getTime()){
+      var tmp = desde; desde = ha; ha = tmp;
+    }
+    ejecDiariaCargarPeriodo(desde, ha, 'Rango');
+  }
+}
+
+function ejecDiariaCambiarFechaHasta(fecha){
+  if (!fecha) return;
+  EJEC_DIARIA_HASTA = fecha;
+  if (EJEC_DIARIA_MODO === 'cust') ejecDiariaRecargarSegunModo();
+}
+
+async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
+  var tbody = document.querySelector('#ed-tabla tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando '+escapeHTML(etiqueta||'')+' '+escapeHTML(desde)+' → '+escapeHTML(hasta)+'…</td></tr>';
+  var fechas = _edListarFechas(desde, hasta);
+  if (!fechas.length){
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">Rango inválido</td></tr>';
+    return;
+  }
+  // Batching para no saturar
+  var BATCH = 5;
+  var resultados = [];
+  for (var i=0; i<fechas.length; i+=BATCH){
+    var slice = fechas.slice(i, i+BATCH);
+    var promesas = slice.map(function(f){
+      return jsonp(APPS_URL, {action:'avance_diario', fecha:f, _ts:Date.now()}).catch(function(){ return null; });
+    });
+    var resp = await Promise.all(promesas);
+    for (var j=0;j<resp.length;j++) resultados.push({fecha:slice[j], data:resp[j]});
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ '+(Math.min(i+BATCH,fechas.length))+' / '+fechas.length+' días procesados…</td></tr>';
+  }
+  // Agregar: sumar items por (item, desc, und) usando vrUnit del primer día encontrado
+  var bag = {}; // key -> {item, desc, und, capitulo, capituloDesc, vrUnit, cantDia, vrDia, cantAcum, vrAcum, pctAcum}
+  var diasConDatos = 0;
+  var costosAcum = {directo:0, a:0, i:0, u:0, directosIndirectos:0, pmtDia:0, pmaDia:0, total:0};
+  var aiuPct = null, factorObra = null, pmtTotal=null, pmaTotal=null;
+  var lastAcumPorItem = {}; // para tomar el ÚLTIMO valor acumulado del periodo
+  resultados.forEach(function(r){
+    var d = r.data;
+    if (!d || !d.items || !d.items.length) return;
+    if (d.fechaUsada !== r.fecha) return; // ignorar fallback a otra fecha
+    diasConDatos++;
+    var c = d.costos || {};
+    costosAcum.directo += Number(c.directo)||0;
+    costosAcum.a += Number(c.a)||0;
+    costosAcum.i += Number(c.i)||0;
+    costosAcum.u += Number(c.u)||0;
+    costosAcum.directosIndirectos += Number(c.directosIndirectos)||0;
+    costosAcum.pmtDia += Number(c.pmtDia)||0;
+    costosAcum.pmaDia += Number(c.pmaDia)||0;
+    costosAcum.total += Number(c.total)||0;
+    if (!aiuPct && c.aiuPct) aiuPct = c.aiuPct;
+    if (factorObra==null && c.factorObra!=null) factorObra = c.factorObra;
+    if (pmtTotal==null && c.pmtTotalObra!=null) pmtTotal = c.pmtTotalObra;
+    if (pmaTotal==null && c.pmaTotalObra!=null) pmaTotal = c.pmaTotalObra;
+    d.items.forEach(function(it){
+      var key = String(it.item||'') + '|' + String(it.desc||'');
+      if (!bag[key]){
+        bag[key] = {
+          item: it.item||'', desc: it.desc||'', und: it.und||'',
+          capitulo: it.capitulo || (String(it.item||'').split('.')[0] || 'X'),
+          capituloDesc: it.capituloDesc || ('CAPÍTULO ' + (it.capitulo||'')),
+          vrUnit: Number(it.vrUnit)||0,
+          cantDia: 0, vrDia: 0,
+          cantAcum: 0, vrAcum: 0, pctAcum: 0
+        };
+      }
+      var b = bag[key];
+      b.cantDia += Number(it.cantDia)||0;
+      var vd = (typeof it.vrDia==='number') ? Number(it.vrDia) : (Number(it.cantDia)||0)*(Number(it.vrUnit)||0);
+      b.vrDia += vd;
+      // Mantener el último acumulado del periodo (el del día más reciente)
+      lastAcumPorItem[key] = {
+        cantAcum: Number(it.cantAcum)||0,
+        vrAcum: Number(it.vrAcum)||0,
+        pctAcum: Number(it.pctAcum)||0,
+        fecha: r.fecha
+      };
+    });
+  });
+  // Aplicar último acumulado del periodo
+  Object.keys(lastAcumPorItem).forEach(function(k){
+    if (bag[k]){
+      bag[k].cantAcum = lastAcumPorItem[k].cantAcum;
+      bag[k].vrAcum = lastAcumPorItem[k].vrAcum;
+      bag[k].pctAcum = lastAcumPorItem[k].pctAcum;
+    }
+  });
+  var items = Object.values(bag).filter(function(b){ return b.cantDia > 0; });
+  var dataAgregada = {
+    fecha: desde,
+    fechaUsada: desde + ' → ' + hasta,
+    items: items,
+    costos: {
+      directo: costosAcum.directo,
+      a: costosAcum.a, i: costosAcum.i, u: costosAcum.u,
+      directosIndirectos: costosAcum.directosIndirectos,
+      pmtDia: costosAcum.pmtDia, pmaDia: costosAcum.pmaDia,
+      total: costosAcum.total,
+      aiuPct: aiuPct || {A:0,I:0,U:0},
+      factorObra: factorObra || 0,
+      pmtTotalObra: pmtTotal || 0,
+      pmaTotalObra: pmaTotal || 0
+    },
+    _generado: '',
+    _periodo: {desde:desde, hasta:hasta, dias:fechas.length, diasConDatos:diasConDatos, etiqueta:etiqueta||''}
+  };
+  EJEC_DIARIA_DATA = dataAgregada;
+  EJEC_DIARIA_LOADED = true;
+  ejecDiariaRender();
+}
+
 function ejecDiariaCambiarFecha(fecha){
   if (!fecha) return;
   EJEC_DIARIA_FECHA = fecha;
-  ejecDiariaCargar(false, fecha);
+  if (EJEC_DIARIA_MODO === 'dia') ejecDiariaCargar(false, fecha);
+  else ejecDiariaRecargarSegunModo();
 }
 
 function ejecDiariaIrAyer(){
@@ -5512,6 +5977,115 @@ function maqRender(){
       '</tr>';
     }).join('');
   }
+  // Tabla correlaciones jue→mié
+  maqRenderCorrelaciones(maqsAgg);
+}
+
+/* ====== Correlaciones Stand-by jue→mié ====== */
+function _maqInicioSemanaJueves(fechaStr){
+  // Devuelve el jueves <= fechaStr (formato YYYY-MM-DD)
+  if (!fechaStr || fechaStr.length < 10) return null;
+  var p = fechaStr.split('-');
+  var d = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+  var dow = d.getDay(); // 4=jueves
+  var diff = (dow >= 4) ? -(dow-4) : -(dow+3);
+  d.setDate(d.getDate()+diff);
+  var y = d.getFullYear(), m = ('0'+(d.getMonth()+1)).slice(-2), dd = ('0'+d.getDate()).slice(-2);
+  return y+'-'+m+'-'+dd;
+}
+
+async function _maqFetchActividadesCap2(){
+  // Intenta usar IND_DATA[corteActual].actividades para items 2.x con valor real ejecutado
+  try {
+    if (window.IND_DATA && window.IND_CURRENT && IND_DATA[IND_CURRENT]){
+      var acts = IND_DATA[IND_CURRENT].actividades || [];
+      return acts.filter(function(a){ return /^2\./.test(String(a.item||'')); });
+    }
+  } catch(_){}
+  return [];
+}
+
+async function maqRenderCorrelaciones(maqsAgg){
+  var tbody = document.querySelector('#maq-corr-tabla tbody');
+  var info = document.getElementById('maq-corr-info');
+  if (!tbody) return;
+  // Agrupar todos los registros por semana jue→mié
+  var bucket = {}; // key = inicio jueves YYYY-MM-DD
+  (maqsAgg||[]).forEach(function(m){
+    (m._regsF||[]).forEach(function(r){
+      var jue = _maqInicioSemanaJueves(r.fecha);
+      if (!jue) return;
+      if (!bucket[jue]) bucket[jue] = { jue:jue, ht:0, sb:0, costo305:0, costoMini:0, costo312:0, costoTot:0, regs:0 };
+      var b = bucket[jue];
+      b.ht += Number(r.totalHoras)||0;
+      b.sb += Number(r.horasPagarStandBy)||0;
+      var c = Number(r.costoStandBy)||0;
+      b.costoTot += c;
+      if (m.id === '305') b.costo305 += c;
+      else if (m.id === '312') b.costo312 += c;
+      else b.costoMini += c;
+      b.regs++;
+    });
+  });
+  var claves = Object.keys(bucket).sort(); // ascendente
+  if (!claves.length){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">Sin registros para correlacionar en el período seleccionado.</td></tr>';
+    if (info) info.textContent = '';
+    return;
+  }
+  if (info) info.textContent = '· ' + claves.length + ' semana(s) jue→mié';
+  // Cap 2 items con valor ejecutado para repartir
+  var acts = await _maqFetchActividadesCap2();
+  // Subgrupos
+  var grupo305 = ['2.01','2.02','2.03','2.04'];
+  var grupoMini = ['2.05','2.06'];
+  function pesoGrupo(grupo){
+    var pesos = {};
+    var total = 0;
+    grupo.forEach(function(it){
+      var a = acts.find(function(x){ return String(x.item) === it; });
+      var v = a ? (Number(a.costo_real_corte)||0) : 0;
+      pesos[it] = v;
+      total += v;
+    });
+    return {pesos:pesos, total:total};
+  }
+  var p305 = pesoGrupo(grupo305);
+  var pMini = pesoGrupo(grupoMini);
+  function distribuir(costo, info){
+    if (!info.total) return info.pesos; // sin avance → reparto en 0
+    var out = {};
+    Object.keys(info.pesos).forEach(function(it){
+      out[it] = costo * (info.pesos[it] / info.total);
+    });
+    return out;
+  }
+  function fmtJue(jue){
+    var p = jue.split('-');
+    var dJ = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+    var dM = new Date(dJ); dM.setDate(dJ.getDate()+6);
+    var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return dJ.getDate()+' '+meses[dJ.getMonth()]+' → '+dM.getDate()+' '+meses[dM.getMonth()];
+  }
+  var html = claves.map(function(k){
+    var b = bucket[k];
+    var d305 = distribuir(b.costo305, p305);
+    var dMini = distribuir(b.costoMini, pMini);
+    var dist = [];
+    grupo305.forEach(function(it){ if (d305[it]>0) dist.push('<span style="background:rgba(34,211,238,.18);color:#22d3ee;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-right:4px;display:inline-block;margin-bottom:2px">'+it+': '+moneyShort(d305[it])+'</span>'); });
+    grupoMini.forEach(function(it){ if (dMini[it]>0) dist.push('<span style="background:rgba(168,85,247,.18);color:#a855f7;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-right:4px;display:inline-block;margin-bottom:2px">'+it+': '+moneyShort(dMini[it])+'</span>'); });
+    if (!dist.length) dist.push('<span style="color:#64748b;font-size:10.5px">sin avance Cap 2 referenciado</span>');
+    return '<tr>'+
+      '<td><b>'+escapeHTML(fmtJue(k))+'</b><div style="color:#64748b;font-size:10.5px">'+b.regs+' reg.</div></td>'+
+      '<td class="num">'+b.ht.toFixed(1)+' h</td>'+
+      '<td class="num" style="color:#fbbf24">'+b.sb.toFixed(1)+' h</td>'+
+      '<td class="num" style="color:#22d3ee">'+money(b.costo305)+'</td>'+
+      '<td class="num" style="color:#a855f7">'+money(b.costoMini)+'</td>'+
+      '<td class="num" style="color:#ef4444;font-weight:700">'+money(b.costoTot)+'</td>'+
+      '<td>'+dist.join('')+'</td>'+
+    '</tr>';
+  }).join('');
+  tbody.innerHTML = html;
 }
 
 async function maqRefrescar(){
