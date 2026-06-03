@@ -2620,6 +2620,99 @@ function jsonp(url, params){
   });
 }
 
+/* ================== CACHE LOCALSTORAGE 60s ==================
+   Acelera navegación entre módulos. Refrescar limpia y re-pide.
+   ============================================================ */
+var _LS_CACHE_TTL = 60000; // 60s default
+function _lsKey(k){ return 'ckpv1:' + k; }
+function _lsGet(key){
+  try {
+    var raw = localStorage.getItem(_lsKey(key));
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    if (!obj || !obj.ts || !obj.data) return null;
+    if (Date.now() - obj.ts > (obj.ttl || _LS_CACHE_TTL)) return null;
+    return obj.data;
+  } catch(_){ return null; }
+}
+function _lsSet(key, data, ttl){
+  try {
+    var payload = JSON.stringify({ts: Date.now(), ttl: ttl||_LS_CACHE_TTL, data: data});
+    localStorage.setItem(_lsKey(key), payload);
+  } catch(e){
+    // QuotaExceeded: limpiar entradas viejas y reintentar
+    try {
+      for (var i=localStorage.length-1; i>=0; i--){
+        var k = localStorage.key(i);
+        if (k && k.indexOf('ckpv1:') === 0) localStorage.removeItem(k);
+      }
+      localStorage.setItem(_lsKey(key), payload);
+    } catch(_){}
+  }
+}
+function _lsBust(prefix){
+  try {
+    for (var i=localStorage.length-1; i>=0; i--){
+      var k = localStorage.key(i);
+      if (k && k.indexOf(_lsKey(prefix)) === 0) localStorage.removeItem(k);
+    }
+  } catch(_){}
+}
+function _lsAge(key){
+  try {
+    var raw = localStorage.getItem(_lsKey(key));
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    return Math.floor((Date.now() - obj.ts)/1000);
+  } catch(_){ return null; }
+}
+
+/* Wrapper: usa cache si existe (no expirado), sino llama fn() y guarda */
+async function _cached(key, fn, ttl){
+  var hit = _lsGet(key);
+  if (hit !== null) return hit;
+  var fresh = await fn();
+  if (fresh != null) _lsSet(key, fresh, ttl);
+  return fresh;
+}
+
+/* JSONP con cache LS por key derivada de params */
+async function jsonpCached(url, params, key, ttl){
+  if (key){
+    var hit = _lsGet(key);
+    if (hit !== null) return hit;
+  }
+  var fresh = await jsonp(url, params);
+  if (key && fresh && !fresh.error && !fresh._error) _lsSet(key, fresh, ttl);
+  return fresh;
+}
+
+/* Banner "hace Xs" — mantiene un único interval global que actualiza
+   todos los <span data-freshness="<key>"></span> en pantalla */
+var _FRESHNESS_TIMER = null;
+function _formatAge(s){
+  if (s == null) return '—';
+  if (s < 60) return 'hace ' + s + 's';
+  if (s < 3600) return 'hace ' + Math.floor(s/60) + ' min';
+  return 'hace ' + Math.floor(s/3600) + 'h';
+}
+function _refreshFreshness(){
+  var nodes = document.querySelectorAll('[data-freshness]');
+  nodes.forEach(function(n){
+    var k = n.getAttribute('data-freshness');
+    if (!k) return;
+    var age = _lsAge(k);
+    n.textContent = age == null ? '' : _formatAge(age);
+    n.style.color = (age != null && age > 300) ? '#fbbf24' : '#64748b';
+  });
+}
+function _startFreshnessTimer(){
+  if (_FRESHNESS_TIMER) return;
+  _FRESHNESS_TIMER = setInterval(_refreshFreshness, 5000);
+  _refreshFreshness();
+}
+document.addEventListener('DOMContentLoaded', _startFreshnessTimer);
+
 /* ====================== NAVEGACIÓN ====================== */
 function goTo(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -4431,6 +4524,18 @@ function obraFmt(v){
 async function obraCargar(force){
   if(OBRA_LOADED && !force) return;
   const cont = document.getElementById('obra-secciones');
+  // Si hay cache LS válido y NO es force → usar inmediato
+  if (!force) {
+    var cached = _lsGet('obra');
+    if (cached) {
+      OBRA_DATA = obraNormalizarData(cached);
+      OBRA_LOADED = true;
+      document.getElementById('obra-gen').textContent = 'gen ' + (cached._generado || '');
+      obraInicializarFiltros(OBRA_DATA);
+      obraAplicarFiltros();
+      return;
+    }
+  }
   cont.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:60px 20px">⏳ Cargando dashboard de obra…</div>';
   try{
     const params = force ? {action:'dashboard_obra_v2', _ts: Date.now()} : {action:'dashboard_obra_v2'};
@@ -4439,6 +4544,7 @@ async function obraCargar(force){
       cont.innerHTML = '<div style="color:#ef4444;padding:20px">❌ '+escapeHTML(d.error)+'</div>';
       return;
     }
+    _lsSet('obra', d);
     OBRA_DATA = obraNormalizarData(d);
     OBRA_LOADED = true;
     document.getElementById('obra-gen').textContent = 'gen ' + (d._generado || '');
@@ -4920,131 +5026,90 @@ async function _dispararSyncBackground(action, label){
   }
 }
 async function obraRefrescarConSync(){
-  var cont = document.getElementById('obra-secciones');
-  if (cont) cont.innerHTML = '<div style="color:#34d399;text-align:center;padding:40px 20px">⏳ Sincronizando con Excel maestro...<br><span id="obra-sync-status" style="font-size:12px;color:#94a3b8">disparando sync...</span></div>';
-  _toastSync('obra', '🏗️ Ejecución de Obra · sincronizando Excel…');
-  // Capturar _generado actual para detectar cambio
-  var generadoAntes = (OBRA_DATA && OBRA_DATA._generado) || '';
-  // 1) Disparar sync background + nocache=1 para borrar cache
-  try { await jsonp(APPS_URL, {action:'force_sync_obra', nocache:'1', _ts: Date.now()}); } catch(_){}
-  // 2) Polling hasta detectar nuevo _generado o timeout 120s
-  var nuevoDetectado = false;
-  var lastObra = null;
-  var statusEl = document.getElementById('obra-sync-status');
-  for (var i = 0; i < 24; i++){ // 24 × 5s = 120s
-    await new Promise(function(r){ setTimeout(r, 5000); });
-    if (statusEl) statusEl.textContent = 'esperando datos del Excel… ' + ((i+1)*5) + 's';
-    try {
-      // Primera iteración con nocache=1 para invalidar cache backend; resto sin
-      var params = (i === 0) ? {action:'dashboard_obra_v2', nocache:'1', _ts: Date.now()} : {action:'dashboard_obra_v2', _ts: Date.now()};
-      var d = await jsonp(APPS_URL, params);
-      if (d && !d.error){
-        lastObra = d;
-        if (d._generado && d._generado !== generadoAntes){
-          nuevoDetectado = true;
-          break;
-        }
-      }
-    } catch(e){ console.warn('poll obra:', e); }
-  }
-  // 3) Aplicar último payload
-  OBRA_LOADED = false;
-  OBRA_DATA = null;
-  if (lastObra) {
-    OBRA_DATA = (typeof obraNormalizarData==='function') ? obraNormalizarData(lastObra) : lastObra;
-    OBRA_LOADED = true;
-  }
-  if (statusEl) statusEl.textContent = nuevoDetectado ? '✓ datos actualizados · renderizando…' : '⚠ sin cambio detectado · renderizando última versión…';
-  // 4) Render
-  if (OBRA_DATA) {
-    document.getElementById('obra-gen').textContent = 'gen ' + (OBRA_DATA._generado || '');
-    obraInicializarFiltros(OBRA_DATA);
-    obraAplicarFiltros();
-  } else {
-    obraCargar(true);
+  // PATRÓN FIRE-AND-FORGET: el sync corre en background (no bloquea UI).
+  // El usuario ve datos del cache server-side inmediato + auto-refresh cuando termine sync.
+  _toastSync('obra', '🏗️ Obra · sync background (datos en ~60s)');
+  _lsBust('obra'); // invalidar cache cliente
+  // 1) Disparar sync background sin await
+  jsonp(APPS_URL, {action:'force_sync_obra', nocache:'1', _ts: Date.now()}).catch(function(){});
+  // 2) Re-pedir datos AHORA (backend ya tiene cache reciente del trigger horario)
+  OBRA_LOADED = false; OBRA_DATA = null;
+  try {
+    await obraCargar(true);
+    _toastDone('obra', 'Obra · vista actualizada (sync en background)', true);
+  } catch(e){
+    _toastDone('obra', 'Error al refrescar Obra', false);
   }
   OBRA_LAST_SYNC = Date.now();
-  _toastDone('obra', nuevoDetectado ? 'Ejecución de Obra actualizada' : 'Obra · sin nuevos datos', nuevoDetectado);
+  // 3) Auto-refresh en 60s para traer los datos del sync background recién disparado
+  setTimeout(function(){
+    if (document.getElementById('screen-obra') && document.getElementById('screen-obra').classList.contains('active')){
+      _lsBust('obra'); obraCargar(true);
+    }
+  }, 60000);
 }
 async function invRefrescarConSync(){
+  // FIRE-AND-FORGET
   var btn = document.getElementById('inv-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando Excel…'; }
-  await _dispararSyncBackground('force_sync_inv', 'inv');
-  // Esperar 6s para asegurar que el sync XLSX→Sheet espejo termine
-  await new Promise(function(r){ setTimeout(r, 6000); });
-  if (btn) { btn.textContent = '⏳ Recargando…'; }
-  INV_LOADED = false;
-  INV_DATA = null;
-  INV_CONS = null;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Refrescando…'; }
+  _toastSync && _toastSync('inv', '📦 Inventario · sync background');
+  _lsBust('inv');
+  jsonp(APPS_URL, {action:'force_sync_inv', _ts: Date.now()}).catch(function(){});
+  INV_LOADED = false; INV_DATA = null; INV_CONS = null;
   invLoadData();
+  _toastDone && _toastDone('inv', 'Inventario · vista actualizada', true);
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+  setTimeout(function(){
+    if (document.getElementById('screen-inventario') && document.getElementById('screen-inventario').classList.contains('active')){
+      _lsBust('inv'); INV_LOADED = false; INV_DATA = null; INV_CONS = null; invLoadData();
+    }
+  }, 60000);
 }
 /* Polling sync: force_sync_ind solo PROGRAMA en background; necesitamos esperar a que termine.
    Lee cada 5s el endpoint indicadores hasta detectar nuevo corte o timeout 120s. */
 async function indRefrescarConSync(){
+  // FIRE-AND-FORGET
   var btn = document.getElementById('ind-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Programando sync…'; }
-  _toastSync('ind', '📊 Indicadores · sincronizando Excel maestro…');
-
-  // Captura estado pre-sync
-  var nAntes = (IND_CORTES && IND_CORTES.length) || 0;
-  var latestAntes = IND_LATEST || '';
-
-  // 1) Programar sync background del Excel madre
-  await _dispararSyncBackground('force_sync_ind', 'ind');
-
-  // 2) Polling: cada 5s leer indicadores hasta detectar nuevo corte o agotar 120s
-  var nuevoCorteDetectado = null;
-  var lastInd = null;
-  for (var i = 0; i < 24; i++){ // 24 * 5s = 120s
-    await new Promise(function(r){ setTimeout(r, 5000); });
-    if (btn) btn.textContent = 'Esperando datos del Excel… ' + ((i+1)*5) + 's';
-    try {
-      var ind = await jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()});
-      if (ind && !ind._error){
-        lastInd = ind;
-        var cortesOrdenados = _cortesValidos(ind);
-        var nuevoLatest = cortesOrdenados[0];
-        if (cortesOrdenados.length > nAntes || (nuevoLatest && nuevoLatest !== latestAntes)){
-          nuevoCorteDetectado = nuevoLatest;
-          break;
-        }
-      }
-    } catch(e) { console.warn('poll ind:', e); }
-  }
-
-  // 3) Aplicar el último payload obtenido (con o sin nuevo corte)
-  if (lastInd){
-    IND_DATA = lastInd;
-    IND_CORTES = _cortesValidos(lastInd);
-    IND_LATEST = IND_CORTES[0];
-    IND_CURRENT = IND_LATEST;
-  }
-
-  // 4) Refrescar también OBRA en paralelo (KPIs económicos unificados)
-  try { await _dispararSyncBackground('force_sync_obra', 'obra'); } catch(_){}
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Refrescando…'; }
+  _toastSync('ind', '📊 Indicadores · sync background');
+  _lsBust('ind'); _lsBust('obra');
+  // 1) Dispara ambos syncs sin await
+  jsonp(APPS_URL, {action:'force_sync_ind', _ts: Date.now()}).catch(function(){});
+  jsonp(APPS_URL, {action:'force_sync_obra', _ts: Date.now()}).catch(function(){});
+  // 2) Re-fetch ind + obra del cache server-side (ya pobre del trigger horario)
   try {
-    var obraD = await jsonp(APPS_URL, {action:'dashboard_obra_v2', _ts: Date.now()});
-    if (obraD && !obraD.error){ OBRA_DATA = (typeof obraNormalizarData==='function') ? obraNormalizarData(obraD) : obraD; OBRA_LOADED = true; }
-  } catch(_){}
-
-  // 5) Render final
-  if (IND_DATA){
-    renderIndCorteSelect();
-    renderIndCorte();
-    fillMenuKPIsInd();
-  }
-
-  if (btn){
-    if (nuevoCorteDetectado){
-      btn.textContent = '✓ Nuevo corte: ' + nuevoCorteDetectado;
-    } else {
-      btn.textContent = '⚠ Sin nuevo corte detectado';
+    var ind = await jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()});
+    if (ind && !ind._error){
+      IND_DATA = ind;
+      IND_CORTES = _cortesValidos(ind);
+      IND_LATEST = IND_CORTES[0]; IND_CURRENT = IND_LATEST;
+      _lsSet('ind', ind);
     }
-    setTimeout(function(){ if (btn){ btn.textContent = 'Refrescar'; btn.disabled = false; } }, 4000);
-  }
+    var obraD = await jsonp(APPS_URL, {action:'dashboard_obra_v2', _ts: Date.now()});
+    if (obraD && !obraD.error){
+      OBRA_DATA = (typeof obraNormalizarData==='function') ? obraNormalizarData(obraD) : obraD;
+      OBRA_LOADED = true; _lsSet('obra', obraD);
+    }
+    if (IND_DATA){ renderIndCorteSelect(); renderIndCorte(); fillMenuKPIsInd(); }
+    _toastDone('ind', 'Indicadores · vista actualizada', true);
+  } catch(e){ _toastDone('ind', 'Error Indicadores', false); }
   IND_LAST_SYNC = Date.now();
-  _toastDone('ind', nuevoCorteDetectado ? ('Nuevo corte: ' + nuevoCorteDetectado) : 'Indicadores · sin nuevo corte', !!nuevoCorteDetectado);
+  if (btn){ btn.textContent = 'Refrescar'; btn.disabled = false; }
+  // 3) Auto-refresh en 60s para traer los datos del sync background
+  setTimeout(function(){
+    if (document.getElementById('screen-indicadores') && document.getElementById('screen-indicadores').classList.contains('active')){
+      _lsBust('ind');
+      jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()}).then(function(ind){
+        if (ind && !ind._error){
+          IND_DATA = ind;
+          IND_CORTES = _cortesValidos(ind);
+          IND_LATEST = IND_CORTES[0]; IND_CURRENT = IND_LATEST;
+          _lsSet('ind', ind);
+          renderIndCorteSelect(); renderIndCorte(); fillMenuKPIsInd();
+        }
+      }).catch(function(){});
+    }
+  }, 60000);
 }
 
 
@@ -5807,24 +5872,27 @@ function ejecDiariaIrAyer(){
 }
 
 async function ejecDiariaRefrescar(){
+  // FIRE-AND-FORGET
   const btn = document.getElementById('ed-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
-  _toastSync('ed', '📊 Ejecución Diaria · sincronizando Excel…');
-  EJEC_DIARIA_LOADED = false;
-  EJEC_DIARIA_DATA = null;
-  // Disparar sync ANTES de cargar para que el polling encuentre datos frescos + nocache=1 para borrar cache backend
-  try { await jsonp(APPS_URL, {action:'force_sync_avance', nocache:'1', _ts: Date.now()}); } catch(_){}
-  // Esperar a que el sync escriba al sheet espejo (ANALISIS COMUNEROS es grande)
-  await new Promise(function(r){ setTimeout(r, 5000); });
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Refrescando…'; }
+  _toastSync('ed', '📊 Ejecución Diaria · sync background');
+  _lsBust('ed');
+  jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}).catch(function(){});
+  EJEC_DIARIA_LOADED = false; EJEC_DIARIA_DATA = null;
   try {
-    // Pasar nocache=1 también en la carga para que backend borre cache
-    await ejecDiariaCargarConBust(EJEC_DIARIA_FECHA);
-    EJEC_DIARIA_LAST_SYNC = Date.now();
-    _toastDone('ed', 'Ejecución Diaria actualizada', true);
+    await ejecDiariaCargar(true, EJEC_DIARIA_FECHA);
+    _toastDone('ed', 'Ejecución Diaria · vista actualizada', true);
   } catch(e){
     _toastDone('ed', 'Error al actualizar Ejecución Diaria', false);
   }
+  EJEC_DIARIA_LAST_SYNC = Date.now();
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+  // Auto-refresh en 60s para traer los datos del sync background
+  setTimeout(function(){
+    if (document.getElementById('screen-ejecdiaria') && document.getElementById('screen-ejecdiaria').classList.contains('active')){
+      _lsBust('ed'); EJEC_DIARIA_LOADED = false; ejecDiariaCargar(true, EJEC_DIARIA_FECHA);
+    }
+  }, 60000);
 }
 async function ejecDiariaCargarConBust(fecha){
   // Igual a ejecDiariaCargar(true, fecha) pero forzando nocache=1 en la primera petición
@@ -5858,6 +5926,14 @@ let MAQ_F_HASTA = '';
 
 async function maqCargar(force){
   const tbody = document.querySelector('#maq-tabla tbody');
+  // Cache LS hit
+  if (!force) {
+    var cached = _lsGet('maq');
+    if (cached) {
+      MAQ_DATA = cached; MAQ_LOADED = true;
+      _maqAfterLoad(cached); return;
+    }
+  }
   if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando…</td></tr>';
   try {
     const params = {action:'control_maquinaria'};
@@ -5867,21 +5943,25 @@ async function maqCargar(force){
       if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
       return;
     }
+    _lsSet('maq', d);
     MAQ_DATA = d;
     MAQ_LOADED = true;
-    // Inicializar rango de fechas con lo disponible
-    if (!MAQ_F_DESDE || !MAQ_F_HASTA) {
-      const fmin = d.maquinas.reduce((a,m)=>!a||(m.primeraFecha && m.primeraFecha < a)?(m.primeraFecha||a):a, null);
-      const fmax = d.maquinas.reduce((a,m)=>!a||(m.ultimaFecha && m.ultimaFecha > a)?(m.ultimaFecha||a):a, null);
-      MAQ_F_DESDE = fmin || '';
-      MAQ_F_HASTA = fmax || '';
-      const inpD = document.getElementById('maq-fdesde'); if (inpD) inpD.value = MAQ_F_DESDE;
-      const inpH = document.getElementById('maq-fhasta'); if (inpH) inpH.value = MAQ_F_HASTA;
-    }
-    maqRender();
+    _maqAfterLoad(d);
   } catch(e){
     if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="color:#ef4444;padding:20px;text-align:center">❌ Error: ' + escapeHTML(e.message||String(e)) + '</td></tr>';
   }
+}
+
+function _maqAfterLoad(d){
+  if (!MAQ_F_DESDE || !MAQ_F_HASTA) {
+    const fmin = d.maquinas.reduce((a,m)=>!a||(m.primeraFecha && m.primeraFecha < a)?(m.primeraFecha||a):a, null);
+    const fmax = d.maquinas.reduce((a,m)=>!a||(m.ultimaFecha && m.ultimaFecha > a)?(m.ultimaFecha||a):a, null);
+    MAQ_F_DESDE = fmin || '';
+    MAQ_F_HASTA = fmax || '';
+    const inpD = document.getElementById('maq-fdesde'); if (inpD) inpD.value = MAQ_F_DESDE;
+    const inpH = document.getElementById('maq-fhasta'); if (inpH) inpH.value = MAQ_F_HASTA;
+  }
+  maqRender();
 }
 
 function maqAplicarFiltros(){
@@ -6126,22 +6206,24 @@ async function maqRenderCorrelaciones(maqsAgg){
 }
 
 async function maqRefrescar(){
+  // FIRE-AND-FORGET
   const btn = document.getElementById('maq-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando Excel…'; }
-  _toastSync('maq', '🚜 Maquinaria · sincronizando Excel…');
-  try {
-    await _dispararSyncBackground('force_sync_maq', 'maq');
-    await new Promise(function(r){ setTimeout(r, 6000); });
-  } catch(e) { console.warn('maq sync err:', e); }
-  if (btn) { btn.textContent = '⏳ Recargando…'; }
-  MAQ_LOADED = false;
-  MAQ_F_DESDE = ''; MAQ_F_HASTA = '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Refrescando…'; }
+  _toastSync('maq', '🚜 Maquinaria · sync background');
+  _lsBust('maq');
+  jsonp(APPS_URL, {action:'force_sync_maq', _ts: Date.now()}).catch(function(){});
+  MAQ_LOADED = false; MAQ_F_DESDE = ''; MAQ_F_HASTA = '';
   try {
     await maqCargar(true);
-    MAQ_LAST_SYNC = Date.now();
-    _toastDone('maq', 'Maquinaria actualizada', true);
+    _toastDone('maq', 'Maquinaria · vista actualizada', true);
   } catch(e){ _toastDone('maq', 'Error Maquinaria', false); }
+  MAQ_LAST_SYNC = Date.now();
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+  setTimeout(function(){
+    if (document.getElementById('screen-maq') && document.getElementById('screen-maq').classList.contains('active')){
+      _lsBust('maq'); maqCargar(true);
+    }
+  }, 60000);
 }
 
 /* ====================== MANO DE OBRA ====================== */
@@ -6161,9 +6243,20 @@ function moHoyStr(){ return _fechaCO(); }
 
 async function moCargar(force, fechaOverride){
   const tbody = document.querySelector('#mo-tabla tbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando personal…</td></tr>';
   let fecha = fechaOverride || MO_FECHA || moHoyStr();
   MO_FECHA = fecha;
+  // Cache LS por fecha
+  if (!force) {
+    var cached = _lsGet('mo:' + fecha);
+    if (cached) {
+      MO_DATA = cached;
+      _moCompensarOffsetHoras(MO_DATA);
+      MO_LOADED = true;
+      const picker = document.getElementById('mo-fecha-picker'); if (picker) picker.value = fecha;
+      moRender(); return;
+    }
+  }
+  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando personal…</td></tr>';
   try {
     const params = {action:'mano_obra', fecha: fecha};
     if (force) params._ts = Date.now();
@@ -6172,6 +6265,7 @@ async function moCargar(force, fechaOverride){
       if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
       return;
     }
+    _lsSet('mo:' + fecha, d);
     MO_DATA = d;
     // FIX corrupción Drive.Files.copy: las horas vienen sumadas ~+3h04m sobre la real.
     // Detectamos el patrón (secuencia <2min entre personas consecutivas + todas > 9:30 AM)
@@ -6509,21 +6603,24 @@ function moIrHoy(){
 }
 
 async function moRefrescar(){
+  // FIRE-AND-FORGET
   const btn = document.getElementById('mo-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sincronizando Excel…'; }
-  _toastSync('mo', '👷 Mano de Obra · sincronizando Excel…');
-  try {
-    await _dispararSyncBackground('force_sync_mo', 'mo');
-    await new Promise(function(r){ setTimeout(r, 8000); });
-  } catch(e) { console.warn('mo sync err:', e); }
-  if (btn) { btn.textContent = '⏳ Recargando…'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Refrescando…'; }
+  _toastSync('mo', '👷 Mano de Obra · sync background');
+  _lsBust('mo');
+  jsonp(APPS_URL, {action:'force_sync_mo', _ts: Date.now()}).catch(function(){});
   MO_LOADED = false;
   try {
     await moCargar(true, MO_FECHA);
-    MO_LAST_SYNC = Date.now();
-    _toastDone('mo', 'Mano de Obra actualizada', true);
+    _toastDone('mo', 'Mano de Obra · vista actualizada', true);
   } catch(e){ _toastDone('mo', 'Error MO', false); }
+  MO_LAST_SYNC = Date.now();
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
+  setTimeout(function(){
+    if (document.getElementById('screen-mo') && document.getElementById('screen-mo').classList.contains('active')){
+      _lsBust('mo'); moCargar(true, MO_FECHA);
+    }
+  }, 60000);
 }
 
 /* ====================== CATÁLOGO TRABAJADORES ====================== */
