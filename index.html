@@ -5187,16 +5187,22 @@ async function ejecDiariaCargar(force, fechaOverride){
 
     // Normalizar d.fechaUsada a ISO (puede venir como Date object o string Date.toString())
     if (d && d.fechaUsada) d.fechaUsada = _edToISOSafe(d.fechaUsada);
-    // Detectar fallback fallido: backend retornó una fechaUsada distinta a la solicitada
-    // y los items están vacíos → no hay datos reales para ninguna fecha
-    const fallbackVacio = d && d.fechaUsada && d.fechaUsada !== fecha
+
+    // Lógica de "sin datos":
+    //  A) Backend no respondió o respondió con error sin items
+    //  B) La fecha solicitada NO está en fechasDisponibles (cronograma)
+    //  C) El backend hizo fallback (fechaUsada != fecha solicitada) Y los items vienen vacíos
+    //     → significa que ni la fecha pedida ni la fallback tienen avance real
+    //  ⚠ Si la fecha SÍ está disponible pero items vacío y fechaUsada == fecha solicitada,
+    //    eso es legítimo (día sin avance ejecutado, ej. domingo) → renderizar normal con 0
+    const fechaEnDisponibles = _edTieneFechaSolicitada(d, fecha);
+    const fallbackFallido = d && d.fechaUsada && d.fechaUsada !== fecha
       && (!d.items || !d.items.length);
 
     const necesitaSync = !d
       || (d.error && (!d.items || !d.items.length))
-      || !_edTieneFechaSolicitada(d, fecha)
-      || fallbackVacio
-      || (!d.items || !d.items.length);
+      || !fechaEnDisponibles
+      || fallbackFallido;
 
     if (necesitaSync){
       // NUEVA LÓGICA RÁPIDA (sin polling 240s):
