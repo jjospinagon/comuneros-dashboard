@@ -6537,12 +6537,13 @@ function moRender(){
   if (!personas.length) {
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Sin registros que coincidan con los filtros.</td></tr>';
   } else {
+    MO_PERSONAS_VISIBLES = personas;
     tbody.innerHTML = personas.map(p => {
       const fr = (p.frente||'').toUpperCase();
       const clsFr = fr.indexOf('OBRA')===0 ? 'obra' : (fr.indexOf('M.O')===0 ? 'mo' : (fr.indexOf('INTER')===0 ? 'inter' : ''));
       // FIX 2026-06-09: botón "Cerrar jornada" para personas con ingreso pero sin salida (En obra)
       var _enObra = !p.ausencia && p.ingreso && !p.salida;
-      var _btnCerrar = _enObra ? '<button type="button" class="mo-btn-cerrar" onclick="event.stopPropagation(); moCerrarJornada(\'' + (p.cedula||'').replace(/\x27/g,"\\\x27") + '\',\'' + escapeHTML(p.nombre||'') + '\')" style="margin-left:6px;background:#fbbf24;color:#0f172a;border:none;padding:3px 8px;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer">Cerrar jornada</button>' : '';
+      var _btnCerrar = _enObra ? '<button type="button" class="mo-btn-cerrar" onclick="event.stopPropagation(); moCerrarJornadaIdx(' + personas.indexOf(p) + ')" style="margin-left:6px;background:#fbbf24;color:#0f172a;border:none;padding:3px 8px;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer">Cerrar jornada</button>' : '';
       const ausencia = p.ausencia ? '<span style="color:#ef4444;font-weight:700">' + escapeHTML(p.ausencia) + (p.motivoAusencia ? ' · ' + escapeHTML(p.motivoAusencia) : '') + '</span>'
         : (p.salida ? '<span style="color:#34d399">✓ Cerró jornada</span>' : (p.ingreso ? '<span style="color:#22d3ee">📍 En obra</span>' + _btnCerrar : '—'));
       const fotoHtml = p.foto ? '<img class="foto-thumb" src="' + escapeHTML(p.foto) + '" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'"/>' : '<div class="foto-thumb"></div>';
@@ -6611,13 +6612,15 @@ function moLimpiarFiltros(){
 }
 
 // FIX 2026-06-09: cerrar jornada manual desde el cockpit MO
-async function moCerrarJornada(cedula, nombre){
-  if (!cedula) return;
-  if (!confirm('Cerrar jornada de ' + (nombre||cedula) + ' ahora?\n\nSe registrará la hora actual como hora de salida en el XLSX de registros.')) return;
-  var horaAhora = new Date();
-  var pad = function(n){ return n<10?'0'+n:''+n; };
-  var horaStr = pad(horaAhora.getHours()) + ':' + pad(horaAhora.getMinutes());
-  var fechaStr = horaAhora.getFullYear()+'-'+pad(horaAhora.getMonth()+1)+'-'+pad(horaAhora.getDate());
+var MO_PERSONAS_VISIBLES = [];
+function moCerrarJornadaIdx(idx){
+  var p = MO_PERSONAS_VISIBLES[idx];
+  if (!p) { alert('Persona no encontrada en cache. Refresca la pagina.'); return; }
+  moCerrarJornada(p);
+}
+async function moCerrarJornada(p){
+  if (!p || !p.cedula) return;
+  if (!confirm('Cerrar jornada de ' + (p.nombre||p.cedula) + ' ahora?\n\nSe registrara la hora actual como hora de SALIDA en el XLSX de registros.')) return;
   var registrador = '';
   try {
     var loginInfo = JSON.parse(localStorage.getItem(LOGIN_KEY)||'{}');
@@ -6626,18 +6629,18 @@ async function moCerrarJornada(cedula, nombre){
   try {
     var res = await jsonp(APPS_URL, {
       action: 'cerrar_jornada',
-      cedula: cedula,
-      fecha: fechaStr,
-      hora_salida: horaStr,
+      cedula: p.cedula,
+      nombre: p.nombre || '',
+      frente: p.frente || '',
+      cargo: p.cargo || '',
       registrador: registrador,
       _ts: Date.now()
     });
     if (!res || !res.ok) {
-      alert('No fue posible cerrar la jornada.\n' + ((res && res.error) || 'Endpoint cerrar_jornada no disponible en backend.\nRevisa instalación monaco_cerrar_jornada.gs en Apps Script.'));
+      alert('No fue posible cerrar la jornada.\n' + ((res && res.error) || 'Backend no disponible. Reintenta en 30s.'));
       return;
     }
-    alert('✓ Jornada cerrada de ' + (nombre||cedula) + ' a las ' + horaStr + '. Registro enviado al XLSX.');
-    // Refrescar tabla MO
+    alert('OK Jornada cerrada de ' + (p.nombre||p.cedula) + ' a las ' + (res.hora||'ahora') + '. Registro enviado al XLSX.');
     try { _lsBust('mo:'); } catch(_){}
     MO_LOADED = false;
     if (typeof moCargar === 'function') moCargar();
