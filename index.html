@@ -5182,7 +5182,23 @@ async function ejecDiariaCargar(force, fechaOverride){
       //  - El trigger 10 min del backend va procesando el histórico completo automáticamente
       try { jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); } catch(_){}
 
-      const fechasDisp = (d && Array.isArray(d.fechasDisponibles)) ? d.fechasDisponibles.slice().sort() : [];
+      // Normalizar fechasDisponibles a strings ISO yyyy-MM-dd
+      // (el backend puede devolver Date objects, que sort() ordena lexicográficamente — mal)
+      const _toISO = function(v){
+        if (typeof v === 'string'){
+          if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.substring(0,10);
+          const d2 = new Date(v);
+          if (!isNaN(d2.getTime())) return d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+          return v;
+        }
+        if (v instanceof Date && !isNaN(v.getTime())){
+          return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+        }
+        return String(v);
+      };
+      const fechasDisp = (d && Array.isArray(d.fechasDisponibles))
+        ? d.fechasDisponibles.map(_toISO).filter(function(x){ return /^\d{4}-\d{2}-\d{2}$/.test(x); }).sort()
+        : [];
       const ultDisp = fechasDisp.length ? fechasDisp[fechasDisp.length-1] : '—';
       const ultimas5 = fechasDisp.slice(-5).join(', ') || '—';
 
