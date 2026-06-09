@@ -5176,60 +5176,31 @@ async function ejecDiariaCargar(force, fechaOverride){
       || !_edTieneFechaSolicitada(d, fecha);
 
     if (necesitaSync){
-      const ultDisp = (d && Array.isArray(d.fechasDisponibles) && d.fechasDisponibles.length)
-        ? d.fechasDisponibles.slice().sort().slice(-1)[0]
-        : '—';
-      _edSetEstado('⏳ Sincronizando con Excel maestro…<br><span style="font-size:11px;color:#94a3b8">Buscando datos del ' + escapeHTML(formatFechaED ? formatFechaED(fecha) : fecha) + ' (último en sistema: ' + escapeHTML(ultDisp) + ')</span>');
+      // NUEVA LÓGICA RÁPIDA (sin polling 240s):
+      //  - Disparar force_sync_avance en BACKGROUND (fire-and-forget, no esperar)
+      //  - Mostrar inmediato la última fecha disponible con botón "Ver última" y "Reintentar"
+      //  - El trigger 10 min del backend va procesando el histórico completo automáticamente
+      try { jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); } catch(_){}
 
-      // 2) Disparar primer force_sync_avance
-      let syncDisparado = 0;
-      try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); syncDisparado++; } catch(_){}
+      const fechasDisp = (d && Array.isArray(d.fechasDisponibles)) ? d.fechasDisponibles.slice().sort() : [];
+      const ultDisp = fechasDisp.length ? fechasDisp[fechasDisp.length-1] : '—';
+      const ultimas5 = fechasDisp.slice(-5).join(', ') || '—';
 
-      // 3) Polling cada 8 s hasta 240 s = 30 iteraciones
-      const POLL_INTERVAL_MS = 8000;
-      const MAX_ITERS = 30;
-      const RE_TRIGGER_ITER = 11; // ~88 s → re-disparar el sync si no apareció
-      let resuelto = null;
-
-      for (let i = 0; i < MAX_ITERS; i++){
-        await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
-        const segs = (i+1) * (POLL_INTERVAL_MS / 1000);
-        _edSetEstado('⏳ Sincronizando… ' + segs + 's / 240s<br><span style="font-size:11px;color:#94a3b8">Esperando datos del ' + escapeHTML(fecha) + '</span>');
-
-        // Re-disparar sync a la mitad del intento si aún no apareció la fecha
-        if (i === RE_TRIGGER_ITER && syncDisparado < 2){
-          try { await jsonp(APPS_URL, {action:'force_sync_avance', _ts: Date.now()}); syncDisparado++; } catch(_){}
-        }
-
-        let probe;
-        try { probe = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()}); } catch(_){ continue; }
-        if (_edTieneFechaSolicitada(probe, fecha)){
-          // Verificar que la respuesta sea efectivamente para la fecha solicitada
-          // (el backend puede caer en fallback a la fecha anterior con datos)
-          if (probe.fechaUsada === fecha || (probe.items && probe.items.length > 0 && probe.fechaUsada === fecha)){
-            resuelto = probe;
-            break;
-          }
-          // Si la fecha está disponible pero el backend usó otra, forzar nuevamente con fecha explícita
-          // (esto cubre el caso donde el backend recién agregó la columna)
-          if (probe.fechasDisponibles.indexOf(fecha) >= 0){
-            resuelto = probe;
-            break;
-          }
-        }
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="8" style="padding:24px">' +
+          '<div style="text-align:center;color:#fbbf24;font-size:14px;font-weight:600;margin-bottom:6px">Sin datos para ' + escapeHTML(fecha) + ' todavía</div>' +
+          '<div style="text-align:center;color:#94a3b8;font-size:12px;line-height:1.6;margin-bottom:14px">' +
+            'Última fecha sincronizada: <code style="color:#34d399">' + escapeHTML(ultDisp) + '</code><br>' +
+            'Últimas 5: <code style="color:#94a3b8">' + escapeHTML(ultimas5) + '</code><br>' +
+            '<span style="font-size:11px">Sincronización en background — el trigger procesa el histórico cada 10 min.</span>' +
+          '</div>' +
+          '<div style="text-align:center">' +
+            (ultDisp !== '—' ? '<button onclick="ejecDiariaCargar(false,\'' + ultDisp + '\')" style="background:#34d399;color:#0f172a;border:none;padding:8px 14px;border-radius:6px;font-weight:600;font-size:12px;margin:0 4px;cursor:pointer">Ver ' + escapeHTML(ultDisp) + '</button>' : '') +
+            '<button onclick="ejecDiariaCargar(true,\'' + escapeHTML(fecha) + '\')" style="background:transparent;color:#94a3b8;border:1px solid #475569;padding:8px 14px;border-radius:6px;font-size:12px;margin:0 4px;cursor:pointer">Reintentar</button>' +
+          '</div>' +
+        '</td></tr>';
       }
-
-      if (!resuelto){
-        // Diagnóstico final: leer estado actual y mostrar info útil
-        let finalProbe;
-        try { finalProbe = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()}); } catch(_){}
-        const ultimas = (finalProbe && finalProbe.fechasDisponibles)
-          ? finalProbe.fechasDisponibles.slice().sort().slice(-5).join(', ')
-          : '—';
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="padding:20px"><div style="color:#fbbf24;text-align:center;font-size:13px;margin-bottom:8px">⚠ Sincronización incompleta — la fecha ' + escapeHTML(fecha) + ' no aparece en el sistema tras 4 minutos.</div><div style="color:#94a3b8;text-align:center;font-size:11.5px;line-height:1.5">Últimas fechas disponibles: <code>' + escapeHTML(ultimas) + '</code><br>Verifica que el archivo XLSX en Drive sí esté actualizado con los datos del ' + escapeHTML(fecha) + ' y vuelve a presionar Refrescar.</div></td></tr>';
-        return;
-      }
-      d = resuelto;
+      return;
     }
 
     if (!d || (d.error && !d.items)) {
