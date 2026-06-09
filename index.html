@@ -5272,6 +5272,14 @@ async function ejecDiariaCargar(force, fechaOverride){
           '</div>' +
         '</td></tr>';
       }
+      // FIX 2026-06-09: limpiar info residual del render anterior para evitar
+      // que el header diga "4 capítulos · 8 actividades" pero el body diga "Sin datos"
+      try {
+        var _resetIds = ['ed-tabla-info','ed-top5','ed-caps','ed-k-fecha','ed-k-acts','ed-k-vrdia','ed-k-meta'];
+        _resetIds.forEach(function(id){ var el = document.getElementById(id); if (el) { if (el.innerHTML !== undefined) el.innerHTML = ''; else el.textContent = ''; } });
+        EJEC_DIARIA_DATA = null;
+        EJEC_DIARIA_LOADED = false;
+      } catch(_){}
       return;
     }
 
