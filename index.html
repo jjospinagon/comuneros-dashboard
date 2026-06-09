@@ -5188,11 +5188,38 @@ async function ejecDiariaCargar(force, fechaOverride){
     // Normalizar d.fechaUsada a ISO (puede venir como Date object o string Date.toString())
     if (d && d.fechaUsada) d.fechaUsada = _edToISOSafe(d.fechaUsada);
 
-    // Lógica de "sin datos" SIMPLIFICADA (fix 2026-06-09):
-    //  Si el backend devuelve items con valores → RENDERIZAR (el render ya muestra
-    //  el aviso "sin datos para X, usando el último disponible" cuando fechaUsada != fecha).
-    //  Solo mostrar "Sin datos" cuando el backend NO devolvió ningún ítem.
-    const tieneItems = d && Array.isArray(d.items) && d.items.length > 0;
+    // FIX RAÍZ 2026-06-09: el backend a veces devuelve fechasDisponibles como
+    // Date.toString ("Fri Apr 03 2026...") sin normalizar a ISO. Y al hacer
+    // indexOf con la fecha ISO solicitada, falla → fechaUsada apunta a la última
+    // lexicográfica (no la última real) → items=0.
+    //
+    // Estrategia resiliente:
+    //  1) Normalizar fechasDisponibles a ISO en el frontend
+    //  2) Filtrar a fechas <= hoy
+    //  3) Si items=0 pero hay fechas válidas, AUTO-RETRY con la última ISO real
+    //     (sin recursión infinita: marcamos force=2 como bandera de "ya intentamos")
+    var tieneItems = d && Array.isArray(d.items) && d.items.length > 0;
+    if (!tieneItems && d && Array.isArray(d.fechasDisponibles) && d.fechasDisponibles.length && force !== 2){
+      var _toISO2 = function(v){
+        if (v instanceof Date && !isNaN(v.getTime())) return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+        if (typeof v === 'string'){
+          if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.substring(0,10);
+          var d3 = new Date(v);
+          if (!isNaN(d3.getTime())) return d3.getFullYear()+'-'+String(d3.getMonth()+1).padStart(2,'0')+'-'+String(d3.getDate()).padStart(2,'0');
+        }
+        return null;
+      };
+      var _hoyISO2 = (function(){ var h = new Date(); return h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0'); })();
+      var fechasIso = d.fechasDisponibles.map(_toISO2).filter(function(x){ return x && /^\d{4}-\d{2}-\d{2}$/.test(x) && x <= _hoyISO2; }).sort();
+      var ultimaReal = fechasIso.length ? fechasIso[fechasIso.length-1] : null;
+      if (ultimaReal && ultimaReal !== fecha){
+        // Auto-retry con la última fecha ISO real (no la lexicográfica que el backend eligió mal)
+        EJEC_DIARIA_FECHA = ultimaReal;
+        return ejecDiariaCargar(2, ultimaReal);  // force=2 = bandera de auto-retry, no recursar
+      }
+    }
+    // Re-evaluar tras posible retry
+    tieneItems = d && Array.isArray(d.items) && d.items.length > 0;
     const necesitaSync = !d
       || (d.error && !tieneItems)
       || !tieneItems;
