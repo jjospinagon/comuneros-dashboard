@@ -6540,8 +6540,11 @@ function moRender(){
     tbody.innerHTML = personas.map(p => {
       const fr = (p.frente||'').toUpperCase();
       const clsFr = fr.indexOf('OBRA')===0 ? 'obra' : (fr.indexOf('M.O')===0 ? 'mo' : (fr.indexOf('INTER')===0 ? 'inter' : ''));
+      // FIX 2026-06-09: botón "Cerrar jornada" para personas con ingreso pero sin salida (En obra)
+      var _enObra = !p.ausencia && p.ingreso && !p.salida;
+      var _btnCerrar = _enObra ? '<button type="button" class="mo-btn-cerrar" onclick="event.stopPropagation(); moCerrarJornada(\'' + (p.cedula||'').replace(/\x27/g,"\\\x27") + '\',\'' + escapeHTML(p.nombre||'') + '\')" style="margin-left:6px;background:#fbbf24;color:#0f172a;border:none;padding:3px 8px;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer">Cerrar jornada</button>' : '';
       const ausencia = p.ausencia ? '<span style="color:#ef4444;font-weight:700">' + escapeHTML(p.ausencia) + (p.motivoAusencia ? ' · ' + escapeHTML(p.motivoAusencia) : '') + '</span>'
-        : (p.salida ? '<span style="color:#34d399">✓ Cerró jornada</span>' : (p.ingreso ? '<span style="color:#22d3ee">📍 En obra</span>' : '—'));
+        : (p.salida ? '<span style="color:#34d399">✓ Cerró jornada</span>' : (p.ingreso ? '<span style="color:#22d3ee">📍 En obra</span>' + _btnCerrar : '—'));
       const fotoHtml = p.foto ? '<img class="foto-thumb" src="' + escapeHTML(p.foto) + '" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'"/>' : '<div class="foto-thumb"></div>';
       const tardanza = p.tardanzaMin > 0 ? '<div class="tardanza">+' + p.tardanzaMin + ' min tarde</div>' : '';
       const horas = p.horasTrabajadas !== null && p.horasTrabajadas !== undefined ? p.horasTrabajadas.toFixed(2) + ' h' : '—';
@@ -6605,6 +6608,42 @@ function moLimpiarFiltros(){
   MO_FILTRO_BUSCAR = '';
   const inp = document.getElementById('mo-search'); if (inp) inp.value = '';
   moRender();
+}
+
+// FIX 2026-06-09: cerrar jornada manual desde el cockpit MO
+async function moCerrarJornada(cedula, nombre){
+  if (!cedula) return;
+  if (!confirm('Cerrar jornada de ' + (nombre||cedula) + ' ahora?\n\nSe registrará la hora actual como hora de salida en el XLSX de registros.')) return;
+  var horaAhora = new Date();
+  var pad = function(n){ return n<10?'0'+n:''+n; };
+  var horaStr = pad(horaAhora.getHours()) + ':' + pad(horaAhora.getMinutes());
+  var fechaStr = horaAhora.getFullYear()+'-'+pad(horaAhora.getMonth()+1)+'-'+pad(horaAhora.getDate());
+  var registrador = '';
+  try {
+    var loginInfo = JSON.parse(localStorage.getItem(LOGIN_KEY)||'{}');
+    registrador = (loginInfo.nombre||'')+' '+(loginInfo.apellidos||'')+' <'+(loginInfo.correo||'')+'>';
+  } catch(_){}
+  try {
+    var res = await jsonp(APPS_URL, {
+      action: 'cerrar_jornada',
+      cedula: cedula,
+      fecha: fechaStr,
+      hora_salida: horaStr,
+      registrador: registrador,
+      _ts: Date.now()
+    });
+    if (!res || !res.ok) {
+      alert('No fue posible cerrar la jornada.\n' + ((res && res.error) || 'Endpoint cerrar_jornada no disponible en backend.\nRevisa instalación monaco_cerrar_jornada.gs en Apps Script.'));
+      return;
+    }
+    alert('✓ Jornada cerrada de ' + (nombre||cedula) + ' a las ' + horaStr + '. Registro enviado al XLSX.');
+    // Refrescar tabla MO
+    try { _lsBust('mo:'); } catch(_){}
+    MO_LOADED = false;
+    if (typeof moCargar === 'function') moCargar();
+  } catch(e){
+    alert('Error al cerrar jornada: ' + (e.message||String(e)));
+  }
 }
 
 async function moAbrirPersona(cedula){
