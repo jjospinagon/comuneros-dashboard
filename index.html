@@ -5606,14 +5606,29 @@ async function _edFetchContractMap(){
   try {
     var d = await jsonp(APPS_URL, {action:'indicadores', _ts:Date.now()});
     if (d){
-      // Buscar el último corte (clave DD-MM-YYYY más reciente)
-      var cortes = Object.keys(d).filter(function(k){ return /^\d{2}-\d{2}-\d{4}$/.test(k); }).sort();
+      // FIX 2026-06-09: sort CRONOLÓGICO de DD-MM-YYYY (no alfabético).
+      // El sort alfabético devolvía "31-12-2025" como último en vez del corte real más reciente.
+      var cortes = Object.keys(d).filter(function(k){ return /^\d{2}-\d{2}-\d{4}$/.test(k); })
+        .sort(function(a, b){
+          var pa = a.split('-'), pb = b.split('-');
+          var ka = pa[2]+pa[1]+pa[0], kb = pb[2]+pb[1]+pb[0];
+          return ka < kb ? -1 : ka > kb ? 1 : 0;
+        });
       var ultCorte = cortes[cortes.length-1];
       var acts = (d[ultCorte] && d[ultCorte].actividades) || [];
+      // FUSIÓN: tomar el MÁXIMO cant_contr entre todos los cortes (cubre actualizaciones de cantidades).
       var map = {};
-      acts.forEach(function(a){
-        if (a && a.item) map[String(a.item).trim()] = Number(a.cant_contr) || 0;
+      cortes.forEach(function(c){
+        var actsC = (d[c] && d[c].actividades) || [];
+        actsC.forEach(function(a){
+          if (a && a.item){
+            var k = String(a.item).trim();
+            var v = Number(a.cant_contr) || 0;
+            if (v > (map[k] || 0)) map[k] = v;
+          }
+        });
       });
+      try { console.log('[ED] cant_contr map: último corte=', ultCorte, '· items=', Object.keys(map).length, '· 2.07=', map['2.07']); } catch(_){}
       _ED_CONTRACT_MAP = map;
       _ED_CONTRACT_TS = Date.now();
       return map;
@@ -7696,12 +7711,4 @@ function rendRenderEficiencia(){
     const e = c.hhApu > 0 ? (c.hhApu / c.hhReal * 100) : 0;
     const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
     const w = Math.min(150, Math.max(2, e));
-    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:8px"><div style="width:80px;font-weight:600;color:#fff;font-size:12px">CAP '+c.cap+'</div><div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:'+(cls==='green'?'linear-gradient(90deg,#22c55e,#86efac)':cls==='yellow'?'linear-gradient(90deg,#fbbf24,#fcd34d)':'linear-gradient(90deg,#ef4444,#fca5a5)')+'"></div></div><div style="width:60px;text-align:right;font-weight:600;font-size:12px;color:'+(cls==='green'?'#86efac':cls==='yellow'?'#fcd34d':'#fca5a5')+'">'+e.toFixed(0)+'%</div></div>';
-  }).join('') || '<div style="color:#64748b;padding:14px">Sin datos APU para mostrar.</div>';
-}
-
-</script>
-
-</body>
-</html>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:8px"><div style="width:80px;font-weight:600;color:#fff;font-size:12px">CAP '+c.cap+'</div><div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:'+(cls==='green'?'linear-gradient(90deg,#22c55e,#86efac)':cls==='yellow'?'linear-gradient(90deg,#fbbf24,#fcd34d)':'linear-gradient(90deg,#ef4444,#fca5a5)')+'"></div></div><div style="width:60px;text-align:right;font-weight:600;font-si
