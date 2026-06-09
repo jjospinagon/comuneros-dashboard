@@ -5188,21 +5188,14 @@ async function ejecDiariaCargar(force, fechaOverride){
     // Normalizar d.fechaUsada a ISO (puede venir como Date object o string Date.toString())
     if (d && d.fechaUsada) d.fechaUsada = _edToISOSafe(d.fechaUsada);
 
-    // Lógica de "sin datos":
-    //  A) Backend no respondió o respondió con error sin items
-    //  B) La fecha solicitada NO está en fechasDisponibles (cronograma)
-    //  C) El backend hizo fallback (fechaUsada != fecha solicitada) Y los items vienen vacíos
-    //     → significa que ni la fecha pedida ni la fallback tienen avance real
-    //  ⚠ Si la fecha SÍ está disponible pero items vacío y fechaUsada == fecha solicitada,
-    //    eso es legítimo (día sin avance ejecutado, ej. domingo) → renderizar normal con 0
-    const fechaEnDisponibles = _edTieneFechaSolicitada(d, fecha);
-    const fallbackFallido = d && d.fechaUsada && d.fechaUsada !== fecha
-      && (!d.items || !d.items.length);
-
+    // Lógica de "sin datos" SIMPLIFICADA (fix 2026-06-09):
+    //  Si el backend devuelve items con valores → RENDERIZAR (el render ya muestra
+    //  el aviso "sin datos para X, usando el último disponible" cuando fechaUsada != fecha).
+    //  Solo mostrar "Sin datos" cuando el backend NO devolvió ningún ítem.
+    const tieneItems = d && Array.isArray(d.items) && d.items.length > 0;
     const necesitaSync = !d
-      || (d.error && (!d.items || !d.items.length))
-      || !fechaEnDisponibles
-      || fallbackFallido;
+      || (d.error && !tieneItems)
+      || !tieneItems;
 
     if (necesitaSync){
       // NUEVA LÓGICA RÁPIDA (sin polling 240s):
