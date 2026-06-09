@@ -7711,4 +7711,11 @@ function rendRenderEficiencia(){
     const e = c.hhApu > 0 ? (c.hhApu / c.hhReal * 100) : 0;
     const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
     const w = Math.min(150, Math.max(2, e));
-    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:8px"><div style="width:80px;font-weight:600;color:#fff;font-size:12px">CAP '+c.cap+'</div><div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:'+(cls==='green'?'linear-gradient(90deg,#22c55e,#86efac)':cls==='yellow'?'linear-gradient(90deg,#fbbf24,#fcd34d)':'linear-gradient(90deg,#ef4444,#fca5a5)')+'"></div></div><div style="width:60px;text-align:right;font-weight:600;font-si
+    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:8px"><div style="width:80px;font-weight:600;color:#fff;font-size:12px">CAP '+c.cap+'</div><div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:'+(cls==='green'?'linear-gradient(90deg,#22c55e,#86efac)':cls==='yellow'?'linear-gradient(90deg,#fbbf24,#fcd34d)':'linear-gradient(90deg,#ef4444,#fca5a5)')+'"></div></div><div style="width:60px;text-align:right;font-weight:600;font-size:12px;color:'+(cls==='green'?'#86efac':cls==='yellow'?'#fcd34d':'#fca5a5')+'">'+e.toFixed(0)+'%</div></div>';
+  }).join('') || '<div style="color:#64748b;padding:14px">Sin datos APU para mostrar.</div>';
+}
+
+</script>
+
+</body>
+</html>
