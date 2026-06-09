@@ -5478,10 +5478,13 @@ function ejecDiariaRender(){
     top5Div.innerHTML = top5.length ? top5.map((it, i) => {
       const pct = (it.vrDia||0) / top5MaxV * 100;
       const rankCls = i===0?'':(i===1?'r2':(i===2?'r3':'rN'));
+      // FIX 2026-06-09: fallback desc desde indicadores cuando catálogo XLSX la trae vacía
+      var _it5Key = String(it.item||'').trim();
+      var _it5Desc = (it.desc && String(it.desc).trim()) ? it.desc : ((_ED_DESC_MAP && _ED_DESC_MAP[_it5Key]) || '');
       return '<div class="top5-row">' +
         '<div class="top5-rank ' + rankCls + '">' + (i+1) + '</div>' +
         '<div class="top5-body">' +
-          '<div class="top5-desc" title="' + escapeHTML(it.desc||'') + '">' + escapeHTML(it.desc||'') + '</div>' +
+          '<div class="top5-desc" title="' + escapeHTML(_it5Desc) + '">' + escapeHTML(_it5Desc) + '</div>' +
           '<div class="top5-meta">' + escapeHTML(it.item||'') + ' · ' + escapeHTML(it.und||'') + ' · ' + fmt2.format(it.cantDia||0) + ' und</div>' +
           '<div class="top5-bar"><div style="width:' + pct.toFixed(1) + '%"></div></div>' +
         '</div>' +
@@ -5562,16 +5565,19 @@ function ejecDiariaRender(){
       // FIX 2026-06-09: si pctAcum no viene del backend, calcularlo desde el
       // map global de cantidades contractuales (cargado del endpoint indicadores)
       var pctAcumRatio = Number(it.pctAcum) || 0;
+      var _itemKey = String(it.item||'').trim();
       if (!pctAcumRatio && _ED_CONTRACT_MAP){
-        var cContr = Number(_ED_CONTRACT_MAP[String(it.item).trim()]) || 0;
+        var cContr = Number(_ED_CONTRACT_MAP[_itemKey]) || 0;
         if (cContr > 0) pctAcumRatio = (Number(it.cantAcum)||0) / cContr;
       }
+      // FIX 2026-06-09: fallback descripción desde endpoint indicadores cuando catálogo XLSX la trae vacía
+      var _descFinal = (it.desc && String(it.desc).trim()) ? it.desc : ((_ED_DESC_MAP && _ED_DESC_MAP[_itemKey]) || '');
       const pctAcum = pctAcumRatio * 100;
       const barClr = pctAcum >= 100 ? '#34d399' : (pctAcum >= 50 ? '#fbbf24' : '#22d3ee');
       const pctClamp = Math.min(pctAcum, 100);
       filas.push('<tr>' +
         '<td><span class="badge-cap">' + escapeHTML(it.item||'') + '</span></td>' +
-        '<td>' + escapeHTML(it.desc||'') + '</td>' +
+        '<td>' + escapeHTML(_descFinal) + '</td>' +
         '<td>' + escapeHTML(it.und||'') + '</td>' +
         '<td class="num"><span class="num-strong">' + fmt2.format(it.cantDia||0) + '</span></td>' +
         '<td class="num"><span class="num-strong">' + money(it.vrDia||0) + '</span></td>' +
@@ -5600,6 +5606,7 @@ var _ED_META_TTL = 5*60*1000;    // 5 min cache
 // FIX 2026-06-09: cache de cantidades contractuales por item para calcular pctAcum
 // cuando el backend no lo retorna (deploys viejos sin cantContractual)
 var _ED_CONTRACT_MAP = null;     // { item: cant_contr }
+var _ED_DESC_MAP = null;         // { item: actividad } - fallback descripciones cuando catálogo XLSX la trae vacía
 var _ED_CONTRACT_TS = 0;
 async function _edFetchContractMap(){
   if (_ED_CONTRACT_MAP && (Date.now()-_ED_CONTRACT_TS) < _ED_META_TTL) return _ED_CONTRACT_MAP;
@@ -5617,7 +5624,9 @@ async function _edFetchContractMap(){
       var ultCorte = cortes[cortes.length-1];
       var acts = (d[ultCorte] && d[ultCorte].actividades) || [];
       // FUSIÓN: tomar el MÁXIMO cant_contr entre todos los cortes (cubre actualizaciones de cantidades).
+      // Y la PRIMERA actividad (desc) no vacía por item — fallback cuando catálogo XLSX la trae vacía.
       var map = {};
+      var descMap = {};
       cortes.forEach(function(c){
         var actsC = (d[c] && d[c].actividades) || [];
         actsC.forEach(function(a){
@@ -5625,11 +5634,15 @@ async function _edFetchContractMap(){
             var k = String(a.item).trim();
             var v = Number(a.cant_contr) || 0;
             if (v > (map[k] || 0)) map[k] = v;
+            if (!descMap[k] && a.actividad && String(a.actividad).trim()){
+              descMap[k] = String(a.actividad).trim();
+            }
           }
         });
       });
-      try { console.log('[ED] cant_contr map: último corte=', ultCorte, '· items=', Object.keys(map).length, '· 2.07=', map['2.07']); } catch(_){}
+      try { console.log('[ED] cant_contr map: último corte=', ultCorte, '· items=', Object.keys(map).length, '· 2.07=', map['2.07'], '· 1.12 desc=', descMap['1.12']); } catch(_){}
       _ED_CONTRACT_MAP = map;
+      _ED_DESC_MAP = descMap;
       _ED_CONTRACT_TS = Date.now();
       return map;
     }
