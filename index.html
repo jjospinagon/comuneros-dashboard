@@ -5141,11 +5141,25 @@ function ejecDiariaAyerStr(){
        : d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
-/* Helper: ¿el response tiene la fecha solicitada en fechasDisponibles? */
+/* Helper: ¿el response tiene la fecha solicitada en fechasDisponibles?
+   Normaliza Date objects a ISO yyyy-MM-dd antes de comparar (backend devuelve Date). */
+function _edToISOSafe(v){
+  if (typeof v === 'string'){
+    if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.substring(0,10);
+    const d2 = new Date(v);
+    if (!isNaN(d2.getTime())) return d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+    return v;
+  }
+  if (v instanceof Date && !isNaN(v.getTime())){
+    return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+  }
+  return String(v);
+}
 function _edTieneFechaSolicitada(d, fechaSolicitada){
   if (!d) return false;
   if (!Array.isArray(d.fechasDisponibles) || !d.fechasDisponibles.length) return false;
-  return d.fechasDisponibles.indexOf(fechaSolicitada) >= 0;
+  const fechasISO = d.fechasDisponibles.map(_edToISOSafe);
+  return fechasISO.indexOf(fechaSolicitada) >= 0;
 }
 
 /* Helper: muestra estado de carga en la tabla */
