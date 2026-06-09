@@ -5930,12 +5930,10 @@ async function ejecDiariaRefrescar(){
   }
   EJEC_DIARIA_LAST_SYNC = Date.now();
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
-  // Auto-refresh en 60s para traer los datos del sync background
-  setTimeout(function(){
-    if (document.getElementById('screen-ejecdiaria') && document.getElementById('screen-ejecdiaria').classList.contains('active')){
-      _lsBust('ed'); EJEC_DIARIA_LOADED = false; ejecDiariaCargar(true, EJEC_DIARIA_FECHA);
-    }
-  }, 60000);
+  // FIX 2026-06-09: auto-refresh DESHABILITADO. Causaba flicker porque a los 60s
+  // recargaba y si la respuesta llegaba vacía (race condition) borraba los datos
+  // ya pintados con "Sin datos". El sync background ya actualiza el sheet espejo
+  // y la próxima vez que el usuario abra la pantalla obtendrá los datos frescos.
 }
 async function ejecDiariaCargarConBust(fecha){
   // Igual a ejecDiariaCargar(true, fecha) pero forzando nocache=1 en la primera petición
