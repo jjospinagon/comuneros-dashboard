@@ -5196,8 +5196,15 @@ async function ejecDiariaCargar(force, fechaOverride){
         }
         return String(v);
       };
+      // Solo fechas <= hoy (las futuras son del cronograma sin avance real ejecutado)
+      const _hoyISO = (function(){
+        const h = new Date();
+        return h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');
+      })();
       const fechasDisp = (d && Array.isArray(d.fechasDisponibles))
-        ? d.fechasDisponibles.map(_toISO).filter(function(x){ return /^\d{4}-\d{2}-\d{2}$/.test(x); }).sort()
+        ? d.fechasDisponibles.map(_toISO)
+            .filter(function(x){ return /^\d{4}-\d{2}-\d{2}$/.test(x) && x <= _hoyISO; })
+            .sort()
         : [];
       const ultDisp = fechasDisp.length ? fechasDisp[fechasDisp.length-1] : '—';
       const ultimas5 = fechasDisp.slice(-5).join(', ') || '—';
