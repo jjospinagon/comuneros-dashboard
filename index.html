@@ -5290,6 +5290,9 @@ async function ejecDiariaCargar(force, fechaOverride){
         picker.max = sorted[sorted.length-1];
       }
     }
+    // FIX 2026-06-09: precargar map de cantidades contractuales (no bloqueante)
+    // para que el render pueda calcular pctAcum cuando el backend no lo retorna
+    _edFetchContractMap().then(function(){ try{ ejecDiariaRender(); } catch(_){} }).catch(function(){});
     ejecDiariaRender();
   } catch(e){
     if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ Error: ' + escapeHTML(e.message||String(e)) + '</td></tr>';
@@ -5556,7 +5559,14 @@ function ejecDiariaRender(){
       '<span style="float:right;font-weight:600;color:#fff;font-size:11px">' + money(g.totalVrDia) + ' · ' + g.items.length + ' act.</span>' +
       '</td></tr>');
     g.items.forEach(it => {
-      const pctAcum = (it.pctAcum||0) * 100;
+      // FIX 2026-06-09: si pctAcum no viene del backend, calcularlo desde el
+      // map global de cantidades contractuales (cargado del endpoint indicadores)
+      var pctAcumRatio = Number(it.pctAcum) || 0;
+      if (!pctAcumRatio && _ED_CONTRACT_MAP){
+        var cContr = Number(_ED_CONTRACT_MAP[String(it.item).trim()]) || 0;
+        if (cContr > 0) pctAcumRatio = (Number(it.cantAcum)||0) / cContr;
+      }
+      const pctAcum = pctAcumRatio * 100;
       const barClr = pctAcum >= 100 ? '#34d399' : (pctAcum >= 50 ? '#fbbf24' : '#22d3ee');
       const pctClamp = Math.min(pctAcum, 100);
       filas.push('<tr>' +
@@ -5586,6 +5596,31 @@ var EJEC_DIARIA_MODO = 'dia';
 var EJEC_DIARIA_HASTA = '';
 var _ED_META_CACHE = null;       // { ts, cs }
 var _ED_META_TTL = 5*60*1000;    // 5 min cache
+
+// FIX 2026-06-09: cache de cantidades contractuales por item para calcular pctAcum
+// cuando el backend no lo retorna (deploys viejos sin cantContractual)
+var _ED_CONTRACT_MAP = null;     // { item: cant_contr }
+var _ED_CONTRACT_TS = 0;
+async function _edFetchContractMap(){
+  if (_ED_CONTRACT_MAP && (Date.now()-_ED_CONTRACT_TS) < _ED_META_TTL) return _ED_CONTRACT_MAP;
+  try {
+    var d = await jsonp(APPS_URL, {action:'indicadores', _ts:Date.now()});
+    if (d){
+      // Buscar el último corte (clave DD-MM-YYYY más reciente)
+      var cortes = Object.keys(d).filter(function(k){ return /^\d{2}-\d{2}-\d{4}$/.test(k); }).sort();
+      var ultCorte = cortes[cortes.length-1];
+      var acts = (d[ultCorte] && d[ultCorte].actividades) || [];
+      var map = {};
+      acts.forEach(function(a){
+        if (a && a.item) map[String(a.item).trim()] = Number(a.cant_contr) || 0;
+      });
+      _ED_CONTRACT_MAP = map;
+      _ED_CONTRACT_TS = Date.now();
+      return map;
+    }
+  } catch(_){}
+  return _ED_CONTRACT_MAP || {};
+}
 
 async function _edFetchCurvaProgramada(){
   if (_ED_META_CACHE && (Date.now()-_ED_META_CACHE.ts) < _ED_META_TTL) return _ED_META_CACHE.cs;
