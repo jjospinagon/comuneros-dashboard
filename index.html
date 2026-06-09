@@ -5185,9 +5185,18 @@ async function ejecDiariaCargar(force, fechaOverride){
     // 1) Probe inicial - SIEMPRE con _ts para evitar cache JSONP del navegador
     let d = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()});
 
+    // Normalizar d.fechaUsada a ISO (puede venir como Date object o string Date.toString())
+    if (d && d.fechaUsada) d.fechaUsada = _edToISOSafe(d.fechaUsada);
+    // Detectar fallback fallido: backend retornó una fechaUsada distinta a la solicitada
+    // y los items están vacíos → no hay datos reales para ninguna fecha
+    const fallbackVacio = d && d.fechaUsada && d.fechaUsada !== fecha
+      && (!d.items || !d.items.length);
+
     const necesitaSync = !d
       || (d.error && (!d.items || !d.items.length))
-      || !_edTieneFechaSolicitada(d, fecha);
+      || !_edTieneFechaSolicitada(d, fecha)
+      || fallbackVacio
+      || (!d.items || !d.items.length);
 
     if (necesitaSync){
       // NUEVA LÓGICA RÁPIDA (sin polling 240s):
