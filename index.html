@@ -2747,7 +2747,22 @@ function goTo(name){
       })();
     }
   }
-  if(name==='mo' && !MO_LOADED){ moCargar(); }
+  if(name==='mo'){
+    if (!MO_LOADED) { moCargar(); }
+    // Disparo force_sync_mo background al entrar (no esperar 60s) + activar auto-poll
+    try {
+      if (Date.now() - (MO_LAST_SYNC || 0) > 15000) {
+        jsonp(APPS_URL, {action:'force_sync_mo', _ts: Date.now()}).catch(function(){});
+        MO_LAST_SYNC = Date.now();
+        setTimeout(function(){
+          if (document.getElementById('screen-mo') && document.getElementById('screen-mo').classList.contains('active')){
+            _lsBust('mo'); MO_LOADED=false; moCargar(true, MO_FECHA);
+          }
+        }, 4000);
+      }
+    } catch(_){}
+    _moStartAutoPoll();
+  } else { _moStopAutoPoll(); }
   if(name==='maq' && !MAQ_LOADED){ maqCargar(); }
   if(name==='rendimientos' && !REND_LOADED){ rendCargar(); }
   // Indicadores: precargar OBRA en background para unificar KPIs avance económico/%
@@ -6379,7 +6394,7 @@ async function moCargar(force, fechaOverride){
       if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
       return;
     }
-    _lsSet('mo:' + fecha, d);
+    _lsSet('mo:' + fecha, d, 15000); // TTL 15s para MO (asistencia se actualiza rapido)
     MO_DATA = d;
     // FIX corrupción Drive.Files.copy: las horas vienen sumadas ~+3h04m sobre la real.
     // Detectamos el patrón (secuencia <2min entre personas consecutivas + todas > 9:30 AM)
@@ -6808,6 +6823,29 @@ function moIrHoy(){
   const picker = document.getElementById('mo-fecha-picker');
   if (picker) picker.value = hoy;
   moCargar(false, hoy);
+}
+
+// Auto-poll cada 30s mientras estas viendo MO en HOY
+var _MO_POLL_INTERVAL = null;
+function _moStartAutoPoll(){
+  if (_MO_POLL_INTERVAL) return;
+  _MO_POLL_INTERVAL = setInterval(function(){
+    try {
+      var sc = document.getElementById('screen-mo');
+      if (!sc || !sc.classList.contains('active')) { _moStopAutoPoll(); return; }
+      // Solo refresca si estas viendo el dia de hoy
+      var hoy = moHoyStr();
+      if (MO_FECHA !== hoy) return;
+      // Dispara force_sync + reload silencioso
+      jsonp(APPS_URL, {action:'force_sync_mo', _ts: Date.now()}).catch(function(){});
+      setTimeout(function(){
+        _lsBust('mo'); MO_LOADED=false; moCargar(true, MO_FECHA);
+      }, 3000);
+    } catch(_){}
+  }, 30000);
+}
+function _moStopAutoPoll(){
+  if (_MO_POLL_INTERVAL) { clearInterval(_MO_POLL_INTERVAL); _MO_POLL_INTERVAL = null; }
 }
 
 async function moRefrescar(){
