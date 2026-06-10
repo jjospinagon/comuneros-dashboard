@@ -6370,6 +6370,21 @@ const _FMT_CO = new Intl.DateTimeFormat('en-CA', { year:'numeric', month:'2-digi
 function _fechaCO(d){ return _FMT_CO.format(d || new Date()); }
 function moHoyStr(){ return _fechaCO(); }
 
+function _moFormatHoraFrac(s){
+  if (s === null || s === undefined || s === '') return '';
+  var str = String(s).trim();
+  if (/[A-Za-z:]/.test(str)) return str;
+  var f = parseFloat(str);
+  if (isNaN(f)) return str;
+  var frac = f - Math.floor(f);
+  var seg = Math.round(frac * 86400);
+  var h = Math.floor(seg / 3600);
+  var m = Math.floor((seg % 3600) / 60);
+  var hh = (h<10?'0':'')+h;
+  var mm = (m<10?'0':'')+m;
+  return hh + ':' + mm;
+}
+
 async function moCargar(force, fechaOverride){
   const tbody = document.querySelector('#mo-tabla tbody');
   let fecha = fechaOverride || MO_FECHA || moHoyStr();
@@ -6395,6 +6410,33 @@ async function moCargar(force, fechaOverride){
       return;
     }
     _lsSet('mo:' + fecha, d, 15000); // TTL 15s para MO (asistencia se actualiza rapido)
+    // FIX reingreso del mismo dia: cruzar con endpoint mo_eventos
+    try {
+      var ev = await jsonp(APPS_URL, {action:'mo_eventos', fecha:fecha, _ts:Date.now()});
+      if (ev && ev.ok && ev.personas) {
+        // Normalizar cedulas (vienen como "1.094950273E9" -> "1094950273")
+        var byCed = {};
+        Object.keys(ev.personas).forEach(function(c){
+          var cedNorm = String(Math.round(parseFloat(c))) || c;
+          byCed[cedNorm] = ev.personas[c];
+        });
+        // Mezclar con personas
+        if (d.personas) {
+          d.personas.forEach(function(p){
+            var cn = String((p.cedula||'')).trim();
+            var ent = byCed[cn] || byCed[String(Math.round(parseFloat(cn)))];
+            if (!ent) return;
+            // Solo aplicar si hubo reingreso o si estado en obra
+            if (ent.estado === 'EN_OBRA') {
+              p.salida = null; // pintar como En obra
+              p._reingreso = ent.reingreso;
+              p._ultimoIngresoHora = _moFormatHoraFrac(ent.eventos && ent.eventos.length ? ent.eventos[ent.eventos.length-1].hora : '');
+              p.ausencia = null;
+            }
+          });
+        }
+      }
+    } catch(_){ /* fallback silencioso */ }
     MO_DATA = d;
     // FIX corrupción Drive.Files.copy: las horas vienen sumadas ~+3h04m sobre la real.
     // Detectamos el patrón (secuencia <2min entre personas consecutivas + todas > 9:30 AM)
@@ -6561,8 +6603,11 @@ function moRender(){
       // FIX 2026-06-09: botón "Cerrar jornada" para personas con ingreso pero sin salida (En obra)
       var _enObra = !p.ausencia && p.ingreso && !p.salida;
       var _btnCerrar = _enObra ? '<button type="button" class="mo-btn-cerrar" onclick="event.stopPropagation(); moCerrarJornadaIdx(' + personas.indexOf(p) + ')" style="margin-left:6px;background:#fbbf24;color:#0f172a;border:none;padding:3px 8px;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer">Cerrar jornada</button>' : '';
+      var _enObraTxt = '📍 En obra';
+      if (p._reingreso) _enObraTxt = '🔁 En obra (reingreso ' + (p._ultimoIngresoHora||'') + ')';
+      else if (p._ultimoIngresoHora) _enObraTxt = '📍 En obra (' + p._ultimoIngresoHora + ')';
       const ausencia = p.ausencia ? '<span style="color:#ef4444;font-weight:700">' + escapeHTML(p.ausencia) + (p.motivoAusencia ? ' · ' + escapeHTML(p.motivoAusencia) : '') + '</span>'
-        : (p.salida ? '<span style="color:#34d399">✓ Cerró jornada</span>' : (p.ingreso ? '<span style="color:#22d3ee">📍 En obra</span>' + _btnCerrar : '—'));
+        : (p.salida ? '<span style="color:#34d399">✓ Cerró jornada</span>' : (p.ingreso ? '<span style="color:'+(p._reingreso?'#fbbf24':'#22d3ee')+'">'+_enObraTxt+'</span>' + _btnCerrar : '—'));
       const fotoHtml = p.foto ? '<img class="foto-thumb" src="' + escapeHTML(p.foto) + '" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'"/>' : '<div class="foto-thumb"></div>';
       const tardanza = p.tardanzaMin > 0 ? '<div class="tardanza">+' + p.tardanzaMin + ' min tarde</div>' : '';
       const horas = p.horasTrabajadas !== null && p.horasTrabajadas !== undefined ? p.horasTrabajadas.toFixed(2) + ' h' : '—';
