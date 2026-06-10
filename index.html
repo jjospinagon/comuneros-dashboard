@@ -6640,7 +6640,13 @@ async function moCerrarJornada(p){
       alert('No fue posible cerrar la jornada.\n' + ((res && res.error) || 'Backend no disponible. Reintenta en 30s.'));
       return;
     }
-    alert('OK Jornada cerrada de ' + (p.nombre||p.cedula) + ' a las ' + (res.hora||'ahora') + '. Registro enviado al XLSX.');
+    var destinoMsg = '';
+    if (res.destino === 'xlsx_original') {
+      destinoMsg = 'Registro enviado al XLSX original.';
+    } else if (res.destino === 'fallback_sheet') {
+      destinoMsg = '\n\nNOTA: el XLSX original no es accesible aun. El cierre quedo guardado en un Sheet temporal:\n' + (res.fallback_sheet_url||'') + '\n\nPara integracion directa con la app de registro, comparte el XLSX REGISTRO DE INGRESO Y SALIDAS con jjospinagon@gmail.com (permiso Editor).';
+    }
+    alert('OK Jornada cerrada de ' + (p.nombre||p.cedula) + ' a las ' + (res.hora||'ahora') + '.\n' + destinoMsg);
     try { _lsBust('mo:'); } catch(_){}
     MO_LOADED = false;
     if (typeof moCargar === 'function') moCargar();
