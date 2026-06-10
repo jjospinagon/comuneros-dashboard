@@ -6635,8 +6635,9 @@ async function moCerrarJornada(p){
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit;backdrop-filter:blur(4px)';
   overlay.innerHTML = '<div id="mo-cerrar-box" style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(34,211,238,.4);border-radius:16px;padding:34px 44px;text-align:center;color:#fff;min-width:340px;max-width:440px;box-shadow:0 30px 80px rgba(0,0,0,.6)">' +
     '<div style="font-size:32px;margin-bottom:14px;animation:edSpinSlow 1.4s linear infinite;display:inline-block">'+ '\u23F3' +'</div>' +
-    '<div style="font-size:15px;font-weight:600;margin-bottom:6px">Cerrando jornada de</div>' +
-    '<div style="font-size:14px;color:#fbbf24;font-weight:600;margin-bottom:20px">' + escapeHTML(p.nombre||p.cedula) + '</div>' +
+    '<div style="font-size:15px;font-weight:600;margin-bottom:6px">Registrando salida de</div>' +
+    '<div style="font-size:15px;color:#fbbf24;font-weight:700;margin-bottom:4px">' + escapeHTML(p.nombre||p.cedula) + '</div>' +
+    '<div style="font-size:11.5px;color:#94a3b8;font-weight:500;margin-bottom:20px;text-transform:uppercase;letter-spacing:.06em">' + escapeHTML(p.cargo||'(sin cargo)') + (p.frente ? ' · ' + escapeHTML(p.frente) : '') + '</div>' +
     '<div style="font-size:11px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em">Escribiendo al XLSX</div>' +
     '<div id="mo-cerrar-timer" style="font-size:38px;font-weight:800;color:#22d3ee;font-variant-numeric:tabular-nums;font-family:\'Space Grotesk\',sans-serif">0.0s</div>' +
     '<div style="font-size:10px;color:#64748b;margin-top:10px">El proceso puede tardar 8-15 segundos</div>' +
@@ -6680,8 +6681,9 @@ async function moCerrarJornada(p){
       ? '<span style="color:#34d399">XLSX original</span>'
       : '<span style="color:#fbbf24">Sheet temporal</span>';
     finishOverlay('<div style="font-size:42px;margin-bottom:10px;color:#34d399">'+'\u2713'+'</div>' +
-      '<div style="font-size:16px;font-weight:700;color:#34d399;margin-bottom:8px">Jornada cerrada</div>' +
-      '<div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:14px">' + escapeHTML(p.nombre||p.cedula) + '</div>' +
+      '<div style="font-size:16px;font-weight:700;color:#34d399;margin-bottom:8px">Salida registrada</div>' +
+      '<div style="font-size:13px;color:#fff;font-weight:700;margin-bottom:2px">' + escapeHTML(p.nombre||p.cedula) + '</div>' +
+      '<div style="font-size:11px;color:#94a3b8;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em">' + escapeHTML(p.cargo||'') + (p.frente ? ' · ' + escapeHTML(p.frente) : '') + '</div>' +
       '<div style="display:grid;grid-template-columns:auto auto;gap:6px 14px;font-size:11.5px;color:#cbd5e1;background:rgba(0,0,0,.25);padding:12px 16px;border-radius:8px;margin-bottom:14px;text-align:left">' +
         '<div style="color:#94a3b8">Hora</div><div style="font-weight:600">' + escapeHTML(res.hora||'') + '</div>' +
         '<div style="color:#94a3b8">Fecha</div><div style="font-weight:600">' + escapeHTML(res.fecha||'') + '</div>' +
