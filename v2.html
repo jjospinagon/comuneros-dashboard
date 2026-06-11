@@ -3167,6 +3167,9 @@ function hideBootLoader(){
 
 async function boot(){
   try{
+    // V2 FIX: garantizar Chart.js/ApexCharts ANTES de cualquier render
+    // (boot corre al instante con login recurrente y ganaba la carrera a las libs)
+    try { await _ensureLibs(); } catch(_){}
     setBootMsg('Cargando indicadores contractuales…');
     const ind = await jsonp(APPS_URL,{action:'indicadores'});
     if(!ind || ind._error) throw new Error((ind&&ind._error)||'Indicadores vacíos');
@@ -3908,6 +3911,7 @@ function calcAvanceCorte(corteData){
 async function renderCurvaS(){
   const ctx = document.getElementById('ind-chart-curvas');
   if(!ctx) return;
+  if(!window.Chart){ try{ await _ensureLibs(); }catch(_){} if(!window.Chart) return; }
 
   // PRIORIDAD: usar la curva S del dashboard de obra (calibrada con AVANCE DIARIO + FLUJO INTER,
   // cortada al ultimo domingo cerrado). Si OBRA_DATA aun no cargo, cargar y reintentar.
