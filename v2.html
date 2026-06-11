@@ -817,6 +817,26 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div class="cta">Ver ejecución del día <span class="arrow">→</span></div>
       </div>
 
+      <!-- CARD ANALISIS IA -->
+      <div class="menu-card ind" onclick="goTo('analisis')" style="background:linear-gradient(180deg,rgba(168,85,247,.07),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#a855f7,#22d3ee)">🧠</div>
+        <h2>Lectura IA</h2>
+        <p class="desc">Análisis narrativo automático de la obra: cronograma (SPI), costo (CPI/EAC), ritmo de los últimos 14 días y recomendaciones generadas por IA.</p>
+        <div class="illust">
+          <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.92">
+            <circle cx="100" cy="40" r="26" fill="rgba(168,85,247,.12)" stroke="rgba(168,85,247,.6)" stroke-width="1.5"/>
+            <path d="M84 44 h8 l5 -14 l7 24 l5 -12 h9" fill="none" stroke="#22d3ee" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="54" cy="20" r="3" fill="rgba(168,85,247,.9)"/>
+            <circle cx="148" cy="60" r="3" fill="rgba(34,211,238,.9)"/>
+            <circle cx="150" cy="18" r="2.5" fill="rgba(168,85,247,.6)"/>
+            <line x1="57" y1="22" x2="76" y2="31" stroke="rgba(168,85,247,.45)" stroke-width="1.2"/>
+            <line x1="124" y1="50" x2="145" y2="58" stroke="rgba(34,211,238,.45)" stroke-width="1.2"/>
+            <line x1="147" y1="20" x2="124" y2="29" stroke="rgba(168,85,247,.35)" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <div class="cta">Leer análisis <span class="arrow">→</span></div>
+      </div>
+
       <!-- CARD EJECUCION OBRA -->
       <div class="menu-card ind" onclick="goTo('obra')" style="background:linear-gradient(180deg,rgba(34,197,94,.05),rgba(20,26,55,.4))">
         <div class="icon" style="background:linear-gradient(135deg,#22c55e,#0ea5e9)">🏗️</div>
@@ -1120,13 +1140,13 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <h3 style="margin:0;font-size:15px;color:#e6ecff">📐 Valor Ganado (EVM)</h3>
     <span id="evm-sub" style="color:#8b9bd1;font-size:12px">calculando…</span>
   </div>
-  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="evm-grid">
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">SPI · cronograma</div><div id="evm-spi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-spi-sub" style="font-size:10.5px;color:#64748b">EV ÷ PV</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">CPI · costo</div><div id="evm-cpi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-cpi-sub" style="font-size:10.5px;color:#64748b">EV ÷ AC</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EV · valor ganado</div><div id="evm-ev" style="font-size:16px;font-weight:700;color:#22d3ee">—</div><div id="evm-ev-sub" style="font-size:10.5px;color:#64748b">ejecutado a tarifa contractual</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">PV · programado</div><div id="evm-pv" style="font-size:16px;font-weight:700;color:#10b981">—</div><div id="evm-pv-sub" style="font-size:10.5px;color:#64748b">curva S programada</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">AC · costo real</div><div id="evm-ac" style="font-size:16px;font-weight:700;color:#f59e0b">—</div><div id="evm-ac-sub" style="font-size:10.5px;color:#64748b">incurrido al corte</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EAC · proyección</div><div id="evm-eac" style="font-size:16px;font-weight:700;color:#c084fc">—</div><div id="evm-eac-sub" style="font-size:10.5px;color:#64748b">BAC ÷ CPI</div></div>
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="evm-grid" style="min-width:0">
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">SPI · cronograma</div><div id="evm-spi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-spi-sub" style="font-size:10.5px;color:#64748b">EV ÷ PV</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">CPI · costo</div><div id="evm-cpi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-cpi-sub" style="font-size:10.5px;color:#64748b">EV ÷ AC</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EV · valor ganado</div><div id="evm-ev" style="font-size:16px;font-weight:700;color:#22d3ee">—</div><div id="evm-ev-sub" style="font-size:10.5px;color:#64748b">ejecutado a tarifa contractual</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">PV · programado</div><div id="evm-pv" style="font-size:16px;font-weight:700;color:#10b981">—</div><div id="evm-pv-sub" style="font-size:10.5px;color:#64748b">curva S programada</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">AC · costo real</div><div id="evm-ac" style="font-size:16px;font-weight:700;color:#f59e0b">—</div><div id="evm-ac-sub" style="font-size:10.5px;color:#64748b">incurrido al corte</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EAC · proyección</div><div id="evm-eac" style="font-size:16px;font-weight:700;color:#c084fc">—</div><div id="evm-eac-sub" style="font-size:10.5px;color:#64748b">BAC ÷ CPI</div></div>
   </div>
   <div id="evm-var" style="margin-top:10px;font-size:12px;color:#94a3b8"></div>
 </div>
@@ -1602,6 +1622,22 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <div id="obra-secciones" style="display:flex;flex-direction:column;gap:18px">
       <div style="color:#94a3b8;text-align:center;padding:60px 20px">⏳ Cargando dashboard de obra…</div>
     </div>
+  </div>
+</div>
+
+<!-- ============ VISTA ANÁLISIS IA ============ -->
+<div class="screen" id="screen-analisis">
+  <div style="max-width:1060px;margin:0 auto;padding:26px 20px 60px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <button onclick="goTo('menu')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#cbd5e1;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px">← Menú</button>
+      <h1 style="margin:0;font-size:22px;color:#fff">🧠 Lectura IA de la obra</h1>
+      <span id="ai-ts" style="color:#8b9bd1;font-size:12px"></span>
+      <button onclick="analisisCargar(true)" style="background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.4);color:#67e8f9;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px">Refrescar</button>
+    </div>
+    <p style="color:#8b9bd1;font-size:13px;margin:0 0 16px">Análisis narrativo sobre los datos vivos del cockpit (EVM · avance diario · curva S) · Fuente: <span id="ai-fuente" style="color:#c084fc;font-weight:600">motor experto local</span></p>
+    <div id="ai-chips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div id="ai-cuerpo" style="background:rgba(14,20,45,.55);border:1px solid rgba(168,85,247,.3);border-radius:14px;padding:22px 24px;line-height:1.8;color:#dbe4ff;font-size:14.5px">⏳ Reuniendo señales de la obra…</div>
+    <div id="ai-gemini-nota" style="margin-top:14px;color:#64748b;font-size:12px"></div>
   </div>
 </div>
 
@@ -2804,6 +2840,7 @@ function _goToInner(name){
   if(name==='comunicaciones' && !CMS_LOADED){ cmsLoadData(); }
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
+  if(name==='analisis'){ try{ analisisCargar(); }catch(e){ console.warn('analisis:',e); } }
   if(name==='ejecdiaria'){
     if (!EJEC_DIARIA_LOADED){
       ejecDiariaCargar();
@@ -2864,6 +2901,157 @@ function goTo(name){
   if(name==='menu' || (window.Chart && window.ApexCharts)) return _goToInner(name);
   _ensureLibs().then(function(){ _goToInner(name); }, function(){ _goToInner(name); });
 }
+
+/* ====================== LECTURA IA (V2) ======================
+   Motor experto local SIEMPRE disponible + narrativa Gemini opcional
+   (Script Property GEMINI_API_KEY en Apps Script → endpoint analisis_ia). */
+var AI_LOADED=false, AI_SIG=null;
+
+function _aiF(n){ n=Math.round(Number(n)||0); return '$'+String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function _aiM(n){ var v=(Number(n)||0)/1e6; return '$'+v.toLocaleString('es-CO',{maximumFractionDigits:0})+'M'; }
+
+async function _aiSenales(){
+  // 1) Indicadores + Obra
+  if(!window.IND_DATA){ try{ var ind=await jsonp(APPS_URL,{action:'indicadores'}); if(ind&&!ind._error){ IND_DATA=ind; IND_CORTES=(typeof _cortesValidos==='function')?_cortesValidos(ind):[]; IND_LATEST=IND_CORTES[0]; IND_CURRENT=IND_CURRENT||IND_LATEST; } }catch(_){} }
+  if(typeof OBRA_DATA==='undefined'||!OBRA_DATA){ try{ var ob=await jsonp(APPS_URL,{action:'dashboard_obra_v2'}); if(ob&&!ob.error){ OBRA_DATA=(typeof obraNormalizarData==='function')?obraNormalizarData(ob):ob; } }catch(_){} }
+  var s={};
+  // 2) EVM (misma matemática del panel)
+  try{
+    var d=IND_DATA[IND_LATEST]; var totT=(d&&d.totales&&d.totales['COSTO TOTAL'])||{};
+    var bac=totT.total_contr||0, ev=totT.contr_corte||0, ac=totT.real_corte||0;
+    if(OBRA_DATA&&typeof OBRA_DATA.ejecutadoGlobal==='number'&&OBRA_DATA.ejecutadoGlobal>0){
+      var ratio=(ev>0)?(ac/ev):0; ev=OBRA_DATA.ejecutadoGlobal; ac=ev*ratio;
+    }
+    var pv=null,fechaCurva='';
+    var cs=OBRA_DATA&&OBRA_DATA.curvaS;
+    if(cs&&cs.programado&&cs.real){
+      var prog=cs.programado.slice(),maxP=0,i;
+      for(i=0;i<prog.length;i++){ if(typeof prog[i]==='number'&&prog[i]>maxP)maxP=prog[i]; }
+      var pf=(maxP>1.5)?prog.map(function(v){return typeof v==='number'?v/maxP:v;}):prog;
+      var idx=-1; for(i=cs.real.length-1;i>=0;i--){ if(cs.real[i]!=null&&!isNaN(cs.real[i])){idx=i;break;} }
+      if(idx>=0&&pf[idx]!=null){ pv=Number(pf[idx])*bac; fechaCurva=(cs.fechas&&cs.fechas[idx])||(cs.semanas&&cs.semanas[idx])||''; s.avancePct=Math.round((cs.real[idx]||0)*100*10)/10; }
+    }
+    s.bac=bac; s.ev=ev; s.ac=ac; s.pv=pv; s.fechaCurva=fechaCurva;
+    s.spi=(pv&&pv>0)?ev/pv:null; s.cpi=(ac&&ac>0)?ev/ac:null;
+    s.eac=(s.cpi&&s.cpi>0)?bac/s.cpi:null; s.cv=ev-ac; s.sv=(pv!=null)?ev-pv:null;
+    s.standby=(typeof STANDBY_PROVISIONAL_AL_CORTE==='number')?STANDBY_PROVISIONAL_AL_CORTE:0;
+  }catch(e){ console.warn('ai evm:',e); }
+  // 3) Ritmo últimos 14 días (avance_rango con fallback silencioso)
+  try{
+    var hoy=new Date(); var d1=hoy.toISOString().slice(0,10);
+    var d0=new Date(hoy.getTime()-13*86400000).toISOString().slice(0,10);
+    var rr=await Promise.race([
+      jsonp(APPS_URL,{action:'avance_rango',desde:d0,hasta:d1,_ts:Date.now()}),
+      new Promise(function(_,rej){ setTimeout(function(){rej(new Error('t/o'));},20000); })
+    ]);
+    if(rr&&rr.ok&&Array.isArray(rr.dias)&&rr.dias.length){
+      var dias=rr.dias.map(function(x){ var tot=0,caps={};
+        (x.data.items||[]).forEach(function(it){ var v=(typeof it.vrDia==='number')?it.vrDia:(Number(it.cantDia)||0)*(Number(it.vrUnit)||0); tot+=v; var c=String(it.capitulo||'?'); caps[c]=(caps[c]||0)+v; });
+        return {fecha:x.fecha,total:tot,nItems:(x.data.items||[]).length,caps:caps};
+      });
+      s.dias14=dias.length;
+      s.valor14=dias.reduce(function(a,b){return a+b.total;},0);
+      s.promDia=s.valor14/Math.max(1,dias.length);
+      var mejor=dias.slice().sort(function(a,b){return b.total-a.total;})[0];
+      s.mejorDia=mejor.fecha; s.mejorValor=mejor.total;
+      var capAgg={}; dias.forEach(function(x){ Object.keys(x.caps).forEach(function(c){ capAgg[c]=(capAgg[c]||0)+x.caps[c]; }); });
+      var capTop=Object.keys(capAgg).sort(function(a,b){return capAgg[b]-capAgg[a];})[0];
+      s.capTop=capTop; s.capTopValor=capAgg[capTop]||0;
+      var mitad=new Date(hoy.getTime()-7*86400000).toISOString().slice(0,10);
+      var sem1=dias.filter(function(x){return x.fecha<mitad;}).reduce(function(a,b){return a+b.total;},0);
+      var sem2=dias.filter(function(x){return x.fecha>=mitad;}).reduce(function(a,b){return a+b.total;},0);
+      s.sem1=sem1; s.sem2=sem2; s.tendencia=(sem1>0)?((sem2-sem1)/sem1*100):null;
+      s.ultimaFecha=dias[dias.length-1].fecha; s.ultimoValor=dias[dias.length-1].total;
+    }
+  }catch(e){ console.warn('ai ritmo:',e); }
+  return s;
+}
+
+function _aiMotor(s){
+  var p=[];
+  var semaforo = (s.spi!=null&&s.cpi!=null) ? (s.spi>=0.9&&s.cpi>=1?'🟢':(s.cpi>=1?'🟡':'🔴')) : '🟡';
+  // 1. Titular
+  var t1='<b>'+semaforo+' Estado general.</b> ';
+  if(s.spi!=null&&s.cpi!=null){
+    t1+='La obra presenta una situación <b>'+(s.cpi>=1.3&&s.spi<0.7?'mixta: muy rentable pero atrasada':(s.cpi>=1&&s.spi>=0.9?'favorable en costo y cronograma':(s.cpi<1?'crítica en costo':'de atraso controlable')))+'</b>. ';
+    if(s.avancePct!=null) t1+='Avance físico acumulado: <b>'+s.avancePct+'%</b> del contrato (corte curva '+s.fechaCurva+').';
+  } else t1+='Datos EVM incompletos en este momento; se muestra lo disponible.';
+  p.push(t1);
+  // 2. Cronograma
+  if(s.spi!=null){
+    var ritmoPct=Math.round(s.spi*100);
+    var t2='<b>📅 Cronograma (SPI '+s.spi.toFixed(2)+').</b> La obra avanza al <b>'+ritmoPct+'% del ritmo programado</b>: se ha ganado '+_aiM(s.ev)+' frente a '+_aiM(s.pv)+' planeados — brecha de <b>'+_aiM(Math.abs(s.sv))+'</b>. ';
+    if(s.promDia>0){ var diasRec=Math.abs(s.sv)/s.promDia; t2+='Al ritmo reciente ('+_aiM(s.promDia)+'/día con avance), cerrar esa brecha tomaría ~<b>'+Math.round(diasRec)+' días</b> adicionales de producción equivalente; si el atraso responde a stand-by y paros ya documentados, este SPI es el soporte cuantitativo para gestionar <b>reprogramación o prórroga</b> ante la interventoría.'; }
+    p.push(t2);
+  }
+  // 3. Costo
+  if(s.cpi!=null){
+    var t3='<b>💰 Costo (CPI '+s.cpi.toFixed(2)+').</b> ';
+    t3+=(s.cpi>=1?'Cada peso gastado produce <b>$'+s.cpi.toFixed(2)+'</b> a tarifa contractual: utilidad acumulada de <b>'+_aiM(s.cv)+'</b>. ':'Se está gastando más de lo que se gana: pérdida acumulada de '+_aiM(Math.abs(s.cv))+'. ');
+    if(s.eac!=null) t3+='El costo final proyectado (EAC) es <b>'+_aiM(s.eac)+'</b> frente a un BAC de '+_aiM(s.bac)+(s.bac-s.eac>0?' — margen proyectado de <b>'+_aiM(s.bac-s.eac)+'</b> si se mantiene la eficiencia.':' — sobrecosto proyectado de '+_aiM(s.eac-s.bac)+'.');
+    if(s.standby>0) t3+=' Nota: hay <b>'+_aiM(s.standby)+'</b> de stand-by de maquinaria descontados de la proyección.';
+    p.push(t3);
+  }
+  // 4. Ritmo reciente
+  if(s.dias14){
+    var t4='<b>⚡ Ritmo últimos 14 días.</b> Se reportó avance en <b>'+s.dias14+' días</b> por '+_aiM(s.valor14)+' (promedio '+_aiM(s.promDia)+'/día). El mejor día fue <b>'+s.mejorDia+'</b> con '+_aiM(s.mejorValor)+'. ';
+    if(s.capTop) t4+='El avance se concentra en el <b>Capítulo '+s.capTop+'</b> ('+_aiM(s.capTopValor)+' del período). ';
+    if(s.tendencia!=null){ var tt=Math.round(s.tendencia); t4+=(tt>=10?'La semana en curso <b>acelera +'+tt+'%</b> vs la anterior — buena tracción.':(tt<=-10?'La semana en curso <b>cae '+tt+'%</b> vs la anterior — revisar causas (clima, frentes, suministro).':'El ritmo semanal se mantiene estable ('+(tt>0?'+':'')+tt+'%).')); }
+    p.push(t4);
+  }
+  // 5. Recomendaciones
+  var rec=[];
+  if(s.spi!=null&&s.spi<0.8) rec.push('documentar formalmente las causas del atraso (stand-by, paros, lluvias) y radicar solicitud de reprogramación con este SPI como soporte');
+  if(s.cpi!=null&&s.cpi>=1.2&&s.spi!=null&&s.spi<0.8) rec.push('evaluar acelerar con más cuadrillas: el CPI '+s.cpi.toFixed(2)+' indica que hay margen económico para comprar tiempo');
+  if(s.tendencia!=null&&s.tendencia<=-10) rec.push('intervenir el frente del Capítulo '+ (s.capTop||'principal') +' esta semana para recuperar la caída de ritmo');
+  if(s.dias14&&s.dias14<8) rec.push('hubo solo '+s.dias14+' días con avance en 2 semanas: verificar continuidad de frentes y reporte del parte diario');
+  if(!rec.length) rec.push('mantener el ritmo y la disciplina del parte diario antes de las 19:00');
+  p.push('<b>🎯 Recomendaciones.</b> '+rec.map(function(r,i){return (i+1)+') '+r;}).join('; ')+'.');
+  return p;
+}
+
+function _aiChips(s){
+  var chips=[];
+  if(s.spi!=null) chips.push(['SPI '+s.spi.toFixed(2), s.spi>=0.9?'#10b981':(s.spi>=0.7?'#fbbf24':'#ef4444')]);
+  if(s.cpi!=null) chips.push(['CPI '+s.cpi.toFixed(2), s.cpi>=1?'#10b981':'#ef4444']);
+  if(s.avancePct!=null) chips.push(['Avance '+s.avancePct+'%','#22d3ee']);
+  if(s.eac!=null) chips.push(['EAC '+_aiM(s.eac),'#c084fc']);
+  if(s.dias14) chips.push([_aiM(s.promDia)+'/día','#f59e0b']);
+  return chips.map(function(c){ return '<span style="padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(0,0,0,.35);border:1px solid '+c[1]+';color:'+c[1]+'">'+c[0]+'</span>'; }).join('');
+}
+
+async function analisisCargar(force){
+  var body=document.getElementById('ai-cuerpo'); if(!body) return;
+  if(AI_LOADED&&!force) return;
+  body.innerHTML='⏳ Reuniendo señales de la obra…';
+  var s=await _aiSenales(); AI_SIG=s;
+  document.getElementById('ai-chips').innerHTML=_aiChips(s);
+  var parrafos=_aiMotor(s);
+  body.innerHTML=parrafos.map(function(x){return '<p style="margin:0 0 14px">'+x+'</p>';}).join('');
+  document.getElementById('ai-ts').textContent='generado '+new Date().toLocaleString('es-CO');
+  document.getElementById('ai-fuente').textContent='motor experto local';
+  AI_LOADED=true;
+  // Narrativa LLM (Gemini) si el backend la tiene configurada
+  try{
+    var compact={spi:s.spi!=null?+s.spi.toFixed(2):null,cpi:s.cpi!=null?+s.cpi.toFixed(2):null,
+      avancePct:s.avancePct,bacM:Math.round((s.bac||0)/1e6),evM:Math.round((s.ev||0)/1e6),pvM:s.pv!=null?Math.round(s.pv/1e6):null,
+      acM:Math.round((s.ac||0)/1e6),eacM:s.eac!=null?Math.round(s.eac/1e6):null,standbyM:Math.round((s.standby||0)/1e6),
+      dias14:s.dias14||0,valor14M:Math.round((s.valor14||0)/1e6),promDiaM:+(((s.promDia||0)/1e6).toFixed(1)),
+      mejorDia:s.mejorDia,capTop:s.capTop,tendenciaPct:s.tendencia!=null?Math.round(s.tendencia):null,fechaCurva:s.fechaCurva};
+    var r=await jsonp(APPS_URL,{action:'analisis_ia', s: JSON.stringify(compact), _ts:(force?Date.now():'')});
+    if(r&&r.ok&&r.texto){
+      var html=r.texto.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n\n+/g,'</p><p style="margin:0 0 14px">').replace(/\n/g,'<br>');
+      body.innerHTML='<p style="margin:0 0 14px">'+html+'</p><hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:16px 0">'+
+        '<details><summary style="cursor:pointer;color:#8b9bd1;font-size:12.5px">Ver lectura del motor local</summary><div style="margin-top:10px">'+parrafos.map(function(x){return '<p style="margin:0 0 12px">'+x+'</p>';}).join('')+'</div></details>';
+      document.getElementById('ai-fuente').textContent='Gemini ('+(r.fuente||'LLM')+') + motor local';
+      document.getElementById('ai-gemini-nota').textContent='';
+    } else if(r&&r.fallback){
+      document.getElementById('ai-gemini-nota').textContent='💡 Para narrativa con LLM real: agrega GEMINI_API_KEY (gratis en aistudio.google.com/apikey) en Propiedades del script de Apps Script. Mientras tanto, esta lectura la genera el motor experto local.';
+    }
+  }catch(_){}
+}
+
 
 /* ====================== DATA SHARED ====================== */
 let IND_DATA = null;          // todos los cortes contractuales
@@ -3021,8 +3209,8 @@ async function renderEVM(ev$, ac$, bac$, isLatest, _try){
     if(ac$>0){
       var cpi0=ev$/ac$;
       setT('evm-cpi',cpi0.toFixed(2)); _evmColor('evm-cpi',cpi0);
-      setT('evm-ev',money(ev$)); setT('evm-ac',money(ac$));
-      if(cpi0>0) setT('evm-eac',money(bac$/cpi0));
+      _evmSet('evm-ev',ev$); setT('evm-ac',money(ac$));
+      if(cpi0>0) _evmSet('evm-eac',bac$/cpi0);
     }
     return;
   }
@@ -3041,20 +3229,22 @@ async function renderEVM(ev$, ac$, bac$, isLatest, _try){
   var eac=(cpi&&cpi>0)?bac$/cpi:null;
   var cv=ev$-(ac$||0), sv=(pv$!=null)?ev$-pv$:null;
   var fecha=(cs.fechas&&cs.fechas[idx])||(cs.semanas&&cs.semanas[idx])||'';
-  setT('evm-sub','BAC '+money(bac$)+' · corte curva: '+fecha+(isLatest?'':' · corte histórico'));
+  setT('evm-sub','BAC '+_evmMon(bac$)+' · corte curva: '+fecha+(isLatest?'':' · corte histórico'));
   setT('evm-spi',spi!=null?spi.toFixed(2):'—'); if(spi!=null)_evmColor('evm-spi',spi);
   setT('evm-spi-sub',spi!=null?(spi>=1?'adelantado':'atrasado')+' vs programa':'EV ÷ PV');
   setT('evm-cpi',cpi!=null?cpi.toFixed(2):'—'); if(cpi!=null)_evmColor('evm-cpi',cpi);
   setT('evm-cpi-sub',cpi!=null?(cpi>=1?'gana':'pierde')+' $'+Math.abs(cv/1e6).toFixed(0)+'M vs costo':'EV ÷ AC');
   setT('evm-ev',money(ev$));
-  setT('evm-pv',pv$!=null?money(pv$):'—');
-  setT('evm-ac',money(ac$||0));
-  setT('evm-eac',eac!=null?money(eac):'—');
+  _evmSet('evm-pv',pv$);
+  _evmSet('evm-ac',ac$||0);
+  _evmSet('evm-eac',eac);
   var vEl=document.getElementById('evm-var');
-  if(vEl) vEl.innerHTML='CV (costo): <b style="color:'+(cv>=0?'#10b981':'#ef4444')+'">'+moneyC(cv)+'</b> &nbsp;·&nbsp; '+
-    (sv!=null?('SV (cronograma): <b style="color:'+(sv>=0?'#10b981':'#ef4444')+'">'+moneyC(sv)+'</b> &nbsp;·&nbsp; '):'')+
-    (eac!=null?('EAC vs BAC: <b style="color:'+((bac$-eac)>=0?'#10b981':'#ef4444')+'">'+moneyC(bac$-eac)+'</b>'):'');
+  if(vEl) vEl.innerHTML='CV (costo): <b style="color:'+(cv>=0?'#10b981':'#ef4444')+'">'+(cv<0?'-':'')+_evmMon(Math.abs(cv))+'</b> &nbsp;·&nbsp; '+
+    (sv!=null?('SV (cronograma): <b style="color:'+(sv>=0?'#10b981':'#ef4444')+'">'+(sv<0?'-':'')+_evmMon(Math.abs(sv))+'</b> &nbsp;·&nbsp; '):'')+
+    (eac!=null?('EAC vs BAC: <b style="color:'+((bac$-eac)>=0?'#10b981':'#ef4444')+'">'+((bac$-eac)<0?'-':'')+_evmMon(Math.abs(bac$-eac))+'</b>'):'');
 }
+function _evmMon(n){ if(n==null||isNaN(n)) return '—'; return '$'+((Number(n)||0)/1e6).toLocaleString('es-CO',{maximumFractionDigits:0})+' M'; }
+function _evmSet(id,n){ var e=document.getElementById(id); if(!e) return; e.textContent=_evmMon(n); e.title=(n!=null&&!isNaN(n))?('$'+Math.round(n).toLocaleString('es-CO')):''; }
 function _evmColor(id,v){
   var e=document.getElementById(id); if(!e) return;
   e.style.color = v>=1 ? '#10b981' : (v>=0.9 ? '#fbbf24' : '#ef4444');
