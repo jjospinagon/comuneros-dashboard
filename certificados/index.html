@@ -550,6 +550,64 @@ function preprocesarImagen(file){
   });
 }
 
+// --- Motor 0: Proxy IA compartido (Apps Script + Groq) ---
+// Pega aquí la URL /exec del Apps Script lector_cedula_proxy.gs.
+// Con esto la lectura IA funciona en CUALQUIER dispositivo sin configurar keys.
+var PROXY_IA='https://script.google.com/macros/s/AKfycbyL0orAFpxh3e6hJ125bBjPe58flVysV9zh9wz5Lp3buIA12KbQ-Pc5HIP0Cw7v9JyPJQ/exec';
+
+// Redimensiona a color (para IA de visión) y comprime a JPEG dataURL
+function aJpeg(origen,maxW){
+  return Promise.resolve(origen).then(function(src){
+    if(src instanceof HTMLCanvasElement){
+      var esc=Math.min(1,maxW/src.width);
+      if(esc>=1) return src.toDataURL('image/jpeg',0.85);
+      var c=document.createElement('canvas');
+      c.width=Math.round(src.width*esc); c.height=Math.round(src.height*esc);
+      c.getContext('2d').drawImage(src,0,0,c.width,c.height);
+      return c.toDataURL('image/jpeg',0.85);
+    }
+    return new Promise(function(res,rej){
+      var img=new Image();
+      img.onload=function(){
+        var esc=Math.min(1,maxW/img.width);
+        var c=document.createElement('canvas');
+        c.width=Math.round(img.width*esc); c.height=Math.round(img.height*esc);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        URL.revokeObjectURL(img.src);
+        res(c.toDataURL('image/jpeg',0.85));
+      };
+      img.onerror=rej;
+      img.src=URL.createObjectURL(src);
+    });
+  });
+}
+
+function extraerProxy(files){
+  var imgs=[], cad=Promise.resolve();
+  Array.prototype.forEach.call(files,function(f){
+    cad=cad.then(function(){
+      var esPdf=(f.type==='application/pdf')||/\.pdf$/i.test(f.name);
+      if(esPdf) return pdfACanvases(f).then(function(cs){
+        var c2=Promise.resolve();
+        cs.forEach(function(c){ c2=c2.then(function(){ return aJpeg(c,1280).then(function(u){ imgs.push(u); }); }); });
+        return c2;
+      });
+      return aJpeg(f,1280).then(function(u){ imgs.push(u); });
+    });
+  });
+  return cad.then(function(){
+    return fetch(PROXY_IA,{method:'POST',body:JSON.stringify({imagenes:imgs})});
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(o){
+    if(o.error) throw new Error(o.error);
+    return { cedula:(o.cedula||'').replace(/\D/g,''),
+             fecha:/^\d{4}-\d{2}-\d{2}$/.test(o.fecha_expedicion||'')?o.fecha_expedicion:'',
+             nombre:quitarTildes(o.nombre||'').toUpperCase().trim() };
+  });
+}
+
 // --- Motor 1: Gemini (si hay API key) ---
 function extraerGemini(files,key){
   var parts=[{text:'Lee estas fotos de una cedula de ciudadania colombiana. Responde UNICAMENTE un JSON valido, sin texto adicional ni markdown: {"nombre":"NOMBRES APELLIDOS","cedula":"solo digitos sin puntos","fecha_expedicion":"AAAA-MM-DD"}. Si un dato no es visible, usa cadena vacia.'}];
@@ -643,16 +701,27 @@ function extraerOCR(files){
 function leerCedula(files){
   if(!files || !files.length) return;
   var key=limpia($('gemKey').value);
-  estadoOcr(key ? '🤖 Analizando con IA…' : '🔍 Iniciando lectura OCR…');
-  var motor = key ? extraerGemini(files,key) : extraerOCR(files);
-  motor.then(aplicarDatos).catch(function(e){
-    if(key){
-      estadoOcr('⚠️ Falló la IA ('+e.message+'). Probando OCR local…');
-      extraerOCR(files).then(aplicarDatos).catch(function(){ estadoOcr('❌ No se pudo leer. Digita los datos manualmente.'); });
-    } else {
-      estadoOcr('❌ No se pudo leer ('+e.message+'). Verifica tu conexión o digita manualmente.');
-    }
-  });
+  var aOCR=function(msj){
+    estadoOcr(msj||'🔍 Leyendo con OCR local…');
+    return extraerOCR(files).then(aplicarDatos)
+      .catch(function(){ estadoOcr('❌ No se pudo leer. Digita los datos manualmente.'); });
+  };
+  if(PROXY_IA){
+    estadoOcr('🤖 Analizando con IA…');
+    extraerProxy(files).then(aplicarDatos).catch(function(e){
+      if(key){
+        estadoOcr('⚠️ Proxy falló. Probando con tu key…');
+        extraerGemini(files,key).then(aplicarDatos)
+          .catch(function(){ aOCR('⚠️ IA no disponible. Usando OCR local…'); });
+      } else aOCR('⚠️ IA no disponible ('+e.message+'). Usando OCR local…');
+    });
+  } else if(key){
+    estadoOcr('🤖 Analizando con IA…');
+    extraerGemini(files,key).then(aplicarDatos)
+      .catch(function(e){ aOCR('⚠️ Falló la IA ('+e.message+'). Usando OCR local…'); });
+  } else {
+    aOCR();
+  }
   $('fotoCam').value=''; $('fotoGal').value='';
 }
 
