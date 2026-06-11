@@ -4138,7 +4138,7 @@ function populateAPUSelect(){
   // Pre-seleccionar el ítem con más materiales
   let best = null, bestN = 0;
   items.forEach(k => { const n=(APU_DATA[k].materiales||[]).length; if(n>bestN){bestN=n; best=k;} });
-  if(best){ sel.value = best; renderAPURadar(best); }
+  if(best){ sel.value = best; setTimeout(function(){ try{ renderAPURadar(best); }catch(e){ console.warn('radar inicial:', e); } }, 80); } // defer: deja asentar el layout del grid antes de medir el canvas
 }
 function renderAPURadar(item){
   if(!APU_DATA || !item || !APU_DATA[item]) return;
