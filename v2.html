@@ -29,6 +29,18 @@
     .lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
     .lg\:grid-cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}
   }
+  /* ===== V2: tabs .tb globales (antes caian al gris nativo del navegador) ===== */
+  .ti{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+  button.tb{background:rgba(20,26,55,.6) !important;border:1px solid rgba(255,255,255,.12) !important;color:#94a3b8 !important;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+  button.tb:hover{color:#e2e8f0 !important;border-color:rgba(99,102,241,.55) !important}
+  button.tb.active{background:rgba(59,130,246,.2) !important;border-color:rgba(59,130,246,.6) !important;color:#fff !important}
+  body.light button.tb{background:#ffffff !important;border-color:#cbd5e1 !important;color:#475569 !important}
+  body.light button.tb:hover{color:#0f172a !important;border-color:#0284c7 !important}
+  body.light button.tb.active{background:#e0f2fe !important;border-color:#0284c7 !important;color:#075985 !important}
+  /* banners verdes translucidos legibles en modo dia */
+  body.light [style*="background:rgba(16,185,129,.1)"]{background:#ecfdf5 !important;border-left-color:#059669 !important}
+  body.light [style*="color:#a7f3d0"]{color:#065f46 !important}
+  body.light [style*="color:#a7f3d0"] strong{color:#064e3b !important}
   /* ===== V2: colores de texto (reemplazo Tailwind) ===== */
   .text-amber-400{color:#fbbf24}.text-blue-400{color:#60a5fa}.text-cyan-400{color:#22d3ee}
   .text-emerald-400{color:#34d399}.text-green-400{color:#4ade80}.text-purple-400{color:#c084fc}.text-red-400{color:#f87171}
@@ -2929,13 +2941,43 @@ async function _aiSenales(){
       for(i=0;i<prog.length;i++){ if(typeof prog[i]==='number'&&prog[i]>maxP)maxP=prog[i]; }
       var pf=(maxP>1.5)?prog.map(function(v){return typeof v==='number'?v/maxP:v;}):prog;
       var idx=-1; for(i=cs.real.length-1;i>=0;i--){ if(cs.real[i]!=null&&!isNaN(cs.real[i])){idx=i;break;} }
-      if(idx>=0&&pf[idx]!=null){ pv=Number(pf[idx])*bac; fechaCurva=(cs.fechas&&cs.fechas[idx])||(cs.semanas&&cs.semanas[idx])||''; s.avancePct=Math.round((cs.real[idx]||0)*100*10)/10; }
+      var idxPV=_evmIdxSemanaActual(cs); if(idxPV<0||pf[idxPV]==null) idxPV=idx;
+      if(idxPV>=0&&pf[idxPV]!=null){ pv=Number(pf[idxPV])*bac; fechaCurva=(cs.fechas&&cs.fechas[idxPV])||(cs.semanas&&cs.semanas[idxPV])||''; }
+      s.avancePct=(bac>0&&ev>0)?Math.round(ev/bac*1000)/10:null; // EV/BAC = % real acumulado (igual al dashboard de obra)
     }
     s.bac=bac; s.ev=ev; s.ac=ac; s.pv=pv; s.fechaCurva=fechaCurva;
     s.spi=(pv&&pv>0)?ev/pv:null; s.cpi=(ac&&ac>0)?ev/ac:null;
     s.eac=(s.cpi&&s.cpi>0)?bac/s.cpi:null; s.cv=ev-ac; s.sv=(pv!=null)?ev-pv:null;
     s.standby=(typeof STANDBY_PROVISIONAL_AL_CORTE==='number')?STANDBY_PROVISIONAL_AL_CORTE:0;
   }catch(e){ console.warn('ai evm:',e); }
+  // 2b) Avance fisico por capitulo (corte vigente de INDICADORES)
+  try{
+    var dd=IND_DATA[IND_LATEST]; var acts=(dd&&dd.actividades)||[];
+    var capF={};
+    acts.forEach(function(a){
+      var c=String(a.cat_id||a.categoria||String(a.item||'').split('.')[0]||'?');
+      if(!capF[c]) capF[c]={cap:c, contr:0, ejec:0};
+      var tc=Number(a.total_contr)||((Number(a.cant_contr)||0)*(Number(a.costo_contr)||0));
+      var pe=Number(a.pct_ejec)||0; if(pe>1.5) pe=pe/100;
+      capF[c].contr+=tc; capF[c].ejec+=tc*Math.min(pe,2);
+    });
+    var capsFis=Object.keys(capF).map(function(k){var x=capF[k]; x.pct=x.contr>0?x.ejec/x.contr*100:0; return x;})
+      .filter(function(x){return x.contr>0;}).sort(function(a,b){return b.contr-a.contr;});
+    s.capsFis=capsFis.slice(0,8);
+    var rez=capsFis.filter(function(x){return x.pct<10 && x.contr>(s.bac||1)*0.05;});
+    s.capsRezagados=rez.slice(0,3);
+  }catch(e){ console.warn('ai caps:',e); }
+  // 2c) Reloj del contrato (fin 2026-12-05)
+  try{
+    var fin=new Date('2026-12-05T00:00:00'); var hoyD=new Date();
+    var diasCal=Math.max(0,Math.round((fin-hoyD)/86400000));
+    s.diasRestantes=diasCal;
+    s.diasHabiles=Math.round(diasCal*6/7); // L-S
+    if(s.bac&&s.ev!=null){
+      var faltante=s.bac-s.ev; s.faltante=faltante;
+      s.ritmoRequerido=s.diasHabiles>0?faltante/s.diasHabiles:null;
+    }
+  }catch(e){}
   // 3) Ritmo últimos 14 días (avance_rango con fallback silencioso)
   try{
     var hoy=new Date(); var d1=hoy.toISOString().slice(0,10);
@@ -2998,6 +3040,30 @@ function _aiMotor(s){
     if(s.capTop) t4+='El avance se concentra en el <b>Capítulo '+s.capTop+'</b> ('+_aiM(s.capTopValor)+' del período). ';
     if(s.tendencia!=null){ var tt=Math.round(s.tendencia); t4+=(tt>=10?'La semana en curso <b>acelera +'+tt+'%</b> vs la anterior — buena tracción.':(tt<=-10?'La semana en curso <b>cae '+tt+'%</b> vs la anterior — revisar causas (clima, frentes, suministro).':'El ritmo semanal se mantiene estable ('+(tt>0?'+':'')+tt+'%).')); }
     p.push(t4);
+  }
+  // 4b. Avance fisico por capitulo
+  if(s.capsFis&&s.capsFis.length){
+    var det=s.capsFis.slice(0,5).map(function(c){ return 'Cap '+c.cap+': <b>'+c.pct.toFixed(1)+'%</b> ('+_aiM(c.ejec)+' de '+_aiM(c.contr)+')'; }).join(' · ');
+    var t4b='<b>🧱 Avance físico por capítulo.</b> '+det+'.';
+    if(s.capsRezagados&&s.capsRezagados.length){
+      t4b+=' Capítulos de peso aún sin arrancar o muy rezagados: <b>'+s.capsRezagados.map(function(c){return 'Cap '+c.cap+' ('+c.pct.toFixed(1)+'% de '+_aiM(c.contr)+')';}).join(', ')+'</b> — concentran el riesgo de cronograma hacia adelante.';
+    }
+    p.push(t4b);
+  }
+  // 4c. Reloj del contrato
+  if(s.diasRestantes!=null&&s.ritmoRequerido!=null){
+    var t4c='<b>⏳ Reloj del contrato.</b> Quedan <b>'+s.diasRestantes+' días calendario</b> (~'+s.diasHabiles+' hábiles) hasta el fin contractual (05-dic-2026) y falta por ejecutar <b>'+_aiM(s.faltante)+'</b> ('+(s.bac?(100-(s.ev/s.bac*100)).toFixed(1):'—')+'% del contrato). ';
+    t4c+='Eso exige un ritmo de <b>'+_aiM(s.ritmoRequerido)+'/día hábil</b>';
+    if(s.promDia>0){
+      var mult=s.ritmoRequerido/s.promDia;
+      t4c+=' — es decir <b>'+mult.toFixed(1)+'× el ritmo actual</b> ('+_aiM(s.promDia)+'/día). ';
+      if(mult>1.3){
+        var diasAlRitmo=Math.round(s.faltante/s.promDia);
+        var fechaProy=new Date(Date.now()+diasAlRitmo*(7/6)*86400000);
+        t4c+='Al ritmo actual la obra terminaría hacia <b>'+fechaProy.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'})+'</b>: sin aceleración o reprogramación, el plazo no alcanza.';
+      } else { t4c+='El ritmo actual es suficiente si se sostiene.'; }
+    }
+    p.push(t4c);
   }
   // 5. Recomendaciones
   var rec=[];
@@ -3209,7 +3275,7 @@ async function renderEVM(ev$, ac$, bac$, isLatest, _try){
     if(ac$>0){
       var cpi0=ev$/ac$;
       setT('evm-cpi',cpi0.toFixed(2)); _evmColor('evm-cpi',cpi0);
-      _evmSet('evm-ev',ev$); setT('evm-ac',money(ac$));
+      _evmSet('evm-ev',ev$); _evmSet('evm-ac',ac$);
       if(cpi0>0) _evmSet('evm-eac',bac$/cpi0);
     }
     return;
@@ -3222,19 +3288,22 @@ async function renderEVM(ev$, ac$, bac$, isLatest, _try){
   var idx=-1;
   for(var j=cs.real.length-1;j>=0;j--){ if(cs.real[j]!=null && !isNaN(cs.real[j])){ idx=j; break; } }
   if(idx<0){ setT('evm-sub','sin avance real en curva S'); return; }
-  var pvFrac=(progF[idx]!=null && !isNaN(progF[idx]))?Number(progF[idx]):null;
+  // FIX 2026-06-11: PV = programado de la SEMANA ACTUAL (igual que el dashboard de obra),
+  // no el de la última semana cerrada — alineado con la hoja DASHBOARD del XLSX.
+  var idxPV=_evmIdxSemanaActual(cs); if(idxPV<0||progF[idxPV]==null) idxPV=idx;
+  var pvFrac=(progF[idxPV]!=null && !isNaN(progF[idxPV]))?Number(progF[idxPV]):null;
   var pv$=(pvFrac!=null)?pvFrac*bac$:null;
   var spi=(pv$&&pv$>0)?ev$/pv$:null;
   var cpi=(ac$&&ac$>0)?ev$/ac$:null;
   var eac=(cpi&&cpi>0)?bac$/cpi:null;
   var cv=ev$-(ac$||0), sv=(pv$!=null)?ev$-pv$:null;
-  var fecha=(cs.fechas&&cs.fechas[idx])||(cs.semanas&&cs.semanas[idx])||'';
+  var fecha=(cs.fechas&&cs.fechas[idxPV])||(cs.semanas&&cs.semanas[idxPV])||'';
   setT('evm-sub','BAC '+_evmMon(bac$)+' · corte curva: '+fecha+(isLatest?'':' · corte histórico'));
   setT('evm-spi',spi!=null?spi.toFixed(2):'—'); if(spi!=null)_evmColor('evm-spi',spi);
   setT('evm-spi-sub',spi!=null?(spi>=1?'adelantado':'atrasado')+' vs programa':'EV ÷ PV');
   setT('evm-cpi',cpi!=null?cpi.toFixed(2):'—'); if(cpi!=null)_evmColor('evm-cpi',cpi);
   setT('evm-cpi-sub',cpi!=null?(cpi>=1?'gana':'pierde')+' $'+Math.abs(cv/1e6).toFixed(0)+'M vs costo':'EV ÷ AC');
-  setT('evm-ev',money(ev$));
+  _evmSet('evm-ev',ev$);
   _evmSet('evm-pv',pv$);
   _evmSet('evm-ac',ac$||0);
   _evmSet('evm-eac',eac);
@@ -3242,6 +3311,20 @@ async function renderEVM(ev$, ac$, bac$, isLatest, _try){
   if(vEl) vEl.innerHTML='CV (costo): <b style="color:'+(cv>=0?'#10b981':'#ef4444')+'">'+(cv<0?'-':'')+_evmMon(Math.abs(cv))+'</b> &nbsp;·&nbsp; '+
     (sv!=null?('SV (cronograma): <b style="color:'+(sv>=0?'#10b981':'#ef4444')+'">'+(sv<0?'-':'')+_evmMon(Math.abs(sv))+'</b> &nbsp;·&nbsp; '):'')+
     (eac!=null?('EAC vs BAC: <b style="color:'+((bac$-eac)>=0?'#10b981':'#ef4444')+'">'+((bac$-eac)<0?'-':'')+_evmMon(Math.abs(bac$-eac))+'</b>'):'');
+}
+/* Semana de la curva S que contiene HOY (fechas tipo "08-06-26 a 14-06-26") */
+function _evmIdxSemanaActual(cs){
+  try{
+    var hoy=new Date(); var f=(cs&&cs.fechas)||[];
+    for(var i=0;i<f.length;i++){
+      var m=String(f[i]||'').match(/^(\d{2})-(\d{2})-(\d{2})\s*a\s*(\d{2})-(\d{2})-(\d{2})$/);
+      if(!m) continue;
+      var ini=new Date(2000+(+m[3]), (+m[2])-1, +m[1]);
+      var fin=new Date(2000+(+m[6]), (+m[5])-1, +m[4], 23,59,59);
+      if(hoy>=ini && hoy<=fin) return i;
+    }
+  }catch(_){}
+  return -1;
 }
 function _evmMon(n){ if(n==null||isNaN(n)) return '—'; return '$'+((Number(n)||0)/1e6).toLocaleString('es-CO',{maximumFractionDigits:0})+' M'; }
 function _evmSet(id,n){ var e=document.getElementById(id); if(!e) return; e.textContent=_evmMon(n); e.title=(n!=null&&!isNaN(n))?('$'+Math.round(n).toLocaleString('es-CO')):''; }
