@@ -113,10 +113,10 @@
       <label>O escanear el documento con la cámara (frente y luego respaldo)</label>
       <div class="fila">
         <div><button class="btn-s" style="width:100%" onclick="document.getElementById('fotoCam').click()">📷 Tomar foto</button></div>
-        <div><button class="btn-s" style="width:100%" onclick="document.getElementById('fotoGal').click()">🖼️ Cargar fotos</button></div>
+        <div><button class="btn-s" style="width:100%" onclick="document.getElementById('fotoGal').click()">🖼️ Cargar fotos / PDF</button></div>
       </div>
       <input type="file" id="fotoCam" accept="image/*" capture="environment" class="oculto" onchange="leerCedula(this.files)">
-      <input type="file" id="fotoGal" accept="image/*" multiple class="oculto" onchange="leerCedula(this.files)">
+      <input type="file" id="fotoGal" accept="image/*,application/pdf" multiple class="oculto" onchange="leerCedula(this.files)">
       <div id="ocrEstado" style="font-size:12.5px;color:#666;margin-top:6px;"></div>
       <details style="margin-top:6px;">
         <summary style="font-size:12px;color:#888;cursor:pointer;">⚙️ Lectura con IA avanzada (opcional)</summary>
@@ -496,7 +496,8 @@ function extraerGemini(files,key){
   var parts=[{text:'Lee estas fotos de una cedula de ciudadania colombiana. Responde UNICAMENTE un JSON valido, sin texto adicional ni markdown: {"nombre":"NOMBRES APELLIDOS","cedula":"solo digitos sin puntos","fecha_expedicion":"AAAA-MM-DD"}. Si un dato no es visible, usa cadena vacia.'}];
   var lecturas=Array.prototype.map.call(files,function(f){
     return archivoB64(f).then(function(b64){
-      parts.push({inline_data:{mime_type:f.type||'image/jpeg',data:b64}});
+      var mime=f.type||((/\.pdf$/i.test(f.name))?'application/pdf':'image/jpeg');
+      parts.push({inline_data:{mime_type:mime,data:b64}});
     });
   });
   return Promise.all(lecturas).then(function(){
@@ -516,6 +517,41 @@ function extraerGemini(files,key){
   });
 }
 
+// --- PDF → imágenes (pdf.js) para poder pasarlo por OCR ---
+function cargarLib(src, listo){
+  return new Promise(function(res,rej){
+    if(listo()) return res();
+    var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+function pdfACanvases(file){
+  return cargarLib('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+                   function(){ return !!window.pdfjsLib; })
+  .then(function(){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    return new Promise(function(res,rej){
+      var r=new FileReader();
+      r.onload=function(e){ res(e.target.result); };
+      r.onerror=rej; r.readAsArrayBuffer(file);
+    });
+  })
+  .then(function(buf){ return pdfjsLib.getDocument({data:buf}).promise; })
+  .then(function(doc){
+    var paginas=[], n=Math.min(doc.numPages,3);
+    for(var i=1;i<=n;i++) paginas.push(i);
+    return Promise.all(paginas.map(function(num){
+      return doc.getPage(num).then(function(pg){
+        var vp=pg.getViewport({scale:2.5});
+        var c=document.createElement('canvas');
+        c.width=vp.width; c.height=vp.height;
+        return pg.render({canvasContext:c.getContext('2d'), viewport:vp}).promise
+               .then(function(){ return c; });
+      });
+    }));
+  });
+}
+
 // --- Motor 2: OCR local Tesseract (sin clave, gratuito) ---
 function extraerOCR(files){
   return cargarScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js')
@@ -524,10 +560,20 @@ function extraerOCR(files){
     var cadena=Promise.resolve();
     Array.prototype.forEach.call(files,function(f,i){
       cadena=cadena.then(function(){
-        estadoOcr('🔍 Leyendo foto '+(i+1)+' de '+files.length+'… (puede tardar unos segundos)');
-        return Tesseract.recognize(f,'spa').then(function(res){
-          var d=parsearCedula(res.data.text);
-          for(var k in d){ if(d[k] && !acumulado[k]) acumulado[k]=d[k]; }
+        estadoOcr('🔍 Leyendo archivo '+(i+1)+' de '+files.length+'… (puede tardar unos segundos)');
+        var esPdf=(f.type==='application/pdf')||/\.pdf$/i.test(f.name);
+        var fuentes=esPdf ? pdfACanvases(f) : Promise.resolve([f]);
+        return fuentes.then(function(lista){
+          var c2=Promise.resolve();
+          lista.forEach(function(img){
+            c2=c2.then(function(){
+              return Tesseract.recognize(img,'spa').then(function(res){
+                var d=parsearCedula(res.data.text);
+                for(var k in d){ if(d[k] && !acumulado[k]) acumulado[k]=d[k]; }
+              });
+            });
+          });
+          return c2;
         });
       });
     });
