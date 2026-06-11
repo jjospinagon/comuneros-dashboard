@@ -2950,22 +2950,20 @@ async function _aiSenales(){
     s.eac=(s.cpi&&s.cpi>0)?bac/s.cpi:null; s.cv=ev-ac; s.sv=(pv!=null)?ev-pv:null;
     s.standby=(typeof STANDBY_PROVISIONAL_AL_CORTE==='number')?STANDBY_PROVISIONAL_AL_CORTE:0;
   }catch(e){ console.warn('ai evm:',e); }
-  // 2b) Avance fisico por capitulo (corte vigente de INDICADORES)
+  // 2b) Avance fisico por capitulo AL DIA (hoja DASHBOARD via OBRA_DATA.actividades)
   try{
-    var dd=IND_DATA[IND_LATEST]; var acts=(dd&&dd.actividades)||[];
+    var actsO=(typeof OBRA_DATA!=='undefined'&&OBRA_DATA&&OBRA_DATA.actividades)||[];
     var capF={};
-    acts.forEach(function(a){
-      var c=String(a.cat_id||a.categoria||String(a.item||'').split('.')[0]||'?');
-      if(!capF[c]) capF[c]={cap:c, contr:0, ejec:0};
-      var tc=Number(a.total_contr)||((Number(a.cant_contr)||0)*(Number(a.costo_contr)||0));
-      var pe=Number(a.pct_ejec)||0; if(pe>1.5) pe=pe/100;
-      capF[c].contr+=tc; capF[c].ejec+=tc*Math.min(pe,2);
+    actsO.forEach(function(a){
+      var c=String(a.cap||'?').trim(); if(!c||c==='?') return;
+      if(!capF[c]) capF[c]={cap:c.replace(/^(\d+)\..*$/,'$1'), nombre:c, contr:0, ejec:0};
+      capF[c].contr+=Number(a.vrTotal)||0;
+      capF[c].ejec+=Number(a.vrEjec)||0;
     });
     var capsFis=Object.keys(capF).map(function(k){var x=capF[k]; x.pct=x.contr>0?x.ejec/x.contr*100:0; return x;})
       .filter(function(x){return x.contr>0;}).sort(function(a,b){return b.contr-a.contr;});
     s.capsFis=capsFis.slice(0,8);
-    var rez=capsFis.filter(function(x){return x.pct<10 && x.contr>(s.bac||1)*0.05;});
-    s.capsRezagados=rez.slice(0,3);
+    s.capsRezagados=capsFis.filter(function(x){return x.pct<12 && x.contr>(s.bac||1)*0.05;}).slice(0,3);
   }catch(e){ console.warn('ai caps:',e); }
   // 2c) Reloj del contrato (fin 2026-12-05)
   try{
