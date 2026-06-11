@@ -4061,8 +4061,22 @@ document.addEventListener('DOMContentLoaded', function(){
       handleLogin();
     });
   }
+  // V2: visitante recurrente entra directo — la visita se registra igual en bitacora (background)
+  try{
+    var prev = JSON.parse(localStorage.getItem(LOGIN_KEY)||'null');
+    if (prev && prev.nombre && prev.correo && EMAIL_REGEX.test(prev.correo)){
+      var ov = document.getElementById('login-overlay'); if(ov) ov.style.display='none';
+      jsonp(APPS_URL,{
+        action:'registrar_ingreso',
+        nombre:prev.nombre, apellidos:prev.apellidos||'', correo:prev.correo,
+        ua:((navigator.userAgent||'')+' [recurrente]').slice(0,200),
+        url:location.href.slice(0,200)
+      }).catch(function(){});
+      boot();
+    }
+  }catch(_){}
 });
-/* boot() se llama solo al login exitoso */
+/* boot() corre al login exitoso o al reingreso de visitante recurrente (V2) */
 
 /* ====================== COMUNICACIONES (G3 monaco) ====================== */
 let CMS_LOADED = false;
