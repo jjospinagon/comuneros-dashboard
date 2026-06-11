@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Certificados de Antecedentes — Colombia</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --azul:#1a3a6b; --azul2:#2c5aa0; --verde:#1e8e3e; --rojo:#c0392b;
+    --gris:#f4f6f9; --borde:#d8dee8; --texto:#222; --nar:#e67e22;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; font-family:'Segoe UI',Roboto,Arial,sans-serif; background:var(--gris); color:var(--texto); font-size:15px;}
+  header{background:var(--azul); color:#fff; padding:14px 16px; position:sticky; top:0; z-index:10;}
+  header h1{margin:0; font-size:17px; font-weight:600;}
+  header p{margin:2px 0 0; font-size:12px; opacity:.85;}
+  main{max-width:760px; margin:0 auto; padding:12px;}
+  .card{background:#fff; border:1px solid var(--borde); border-radius:10px; padding:14px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .card h2{margin:0 0 10px; font-size:15px; color:var(--azul);}
+  label{display:block; font-size:12px; font-weight:600; color:#555; margin:8px 0 3px;}
+  input[type=text],input[type=date],textarea,select{
+    width:100%; padding:11px; border:1px solid var(--borde); border-radius:8px; font-size:16px; background:#fff;
+  }
+  input:focus,textarea:focus{outline:2px solid var(--azul2); border-color:transparent;}
+  .fila{display:flex; gap:10px; flex-wrap:wrap;}
+  .fila>div{flex:1; min-width:140px;}
+  .chk{display:flex; align-items:center; gap:10px; padding:10px 8px; border-radius:8px; cursor:pointer; border:1px solid transparent;}
+  .chk:active{background:#eef3fb;}
+  .chk input{width:20px; height:20px; accent-color:var(--azul2); flex-shrink:0;}
+  .chk span{font-size:14px;}
+  .chk small{display:block; color:#777; font-size:11px;}
+  button{border:0; border-radius:8px; padding:12px 16px; font-size:15px; font-weight:600; cursor:pointer;}
+  .btn-p{background:var(--azul2); color:#fff; width:100%;}
+  .btn-v{background:var(--verde); color:#fff;}
+  .btn-s{background:#e8edf5; color:var(--azul); font-size:13px; padding:8px 12px;}
+  .btn-zip{background:var(--nar); color:#fff; width:100%;}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  .oculto{display:none;}
+  .aviso{background:#fff8e6; border:1px solid #f0d890; border-radius:8px; padding:10px; font-size:12.5px; color:#7a5c00; margin:10px 0;}
+  /* tarjetas de certificado */
+  .cert{border:1px solid var(--borde); border-radius:10px; padding:12px; margin-bottom:10px; background:#fff;}
+  .cert.listo{border-color:var(--verde); background:#f2faf4;}
+  .cert h3{margin:0 0 4px; font-size:14px; color:var(--azul);}
+  .cert .ent{font-size:11.5px; color:#777; margin-bottom:8px;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0;}
+  .chip{background:#eef3fb; border:1px dashed var(--azul2); color:var(--azul); border-radius:20px; padding:6px 12px; font-size:13px; cursor:pointer; user-select:none;}
+  .chip:active{background:var(--azul2); color:#fff;}
+  .chip b{font-weight:700;}
+  .cert .acciones{display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;}
+  .cert .acciones a{flex:1; min-width:150px; text-decoration:none;}
+  .cert .acciones a button{width:100%;}
+  .pasos{font-size:12px; color:#666; margin:6px 0 0; padding-left:18px;}
+  .pasos li{margin-bottom:2px;}
+  .marca{display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; color:#444; cursor:pointer;}
+  .marca input{width:22px; height:22px; accent-color:var(--verde);}
+  /* progreso */
+  .prog{height:10px; background:#e3e8f0; border-radius:6px; overflow:hidden; margin:8px 0;}
+  .prog div{height:100%; background:var(--verde); width:0%; transition:width .3s;}
+  .prog-txt{font-size:12.5px; color:#555; text-align:center;}
+  /* lote */
+  .tabs{display:flex; gap:6px; margin-bottom:12px;}
+  .tabs button{flex:1; background:#dfe6f0; color:#445;}
+  .tabs button.act{background:var(--azul); color:#fff;}
+  .persona{display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid var(--borde); border-radius:8px; margin-bottom:6px; background:#fff; cursor:pointer;}
+  .persona.sel{border-color:var(--azul2); background:#eef3fb;}
+  .persona .pi{font-size:13.5px;}
+  .persona .pi small{display:block; color:#888; font-size:11.5px;}
+  .badge{font-size:11px; padding:3px 8px; border-radius:10px; background:#e3e8f0; color:#555;}
+  .badge.ok{background:#d9f2e0; color:var(--verde);}
+  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#222; color:#fff; padding:10px 18px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .25s; pointer-events:none; z-index:99;}
+  .toast.ver{opacity:.95;}
+  .zona-arch{border:2px dashed var(--borde); border-radius:10px; padding:14px; text-align:center; color:#777; font-size:13px; margin:8px 0;}
+  .arch-item{display:flex; justify-content:space-between; font-size:12.5px; padding:5px 8px; background:#f4f6f9; border-radius:6px; margin-bottom:4px;}
+  .arch-item span:last-child{color:#999;}
+  footer{text-align:center; font-size:11px; color:#999; padding:14px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>📋 Certificados de Antecedentes</h1>
+  <p>Procuraduría · Contraloría · Policía · RNMC · REDAM · Delitos Sexuales</p>
+</header>
+<main>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button id="tabInd" class="act" onclick="modo('ind')">👤 Individual</button>
+    <button id="tabLote" onclick="modo('lote')">👥 Lote</button>
+  </div>
+
+  <!-- LOTE -->
+  <div id="secLote" class="card oculto">
+    <h2>Lista de personal</h2>
+    <label>Pegar lista (una persona por línea): <b>Cédula ; Fecha expedición (DD/MM/AAAA) ; Nombre</b></label>
+    <textarea id="txtLote" rows="4" placeholder="1098765432;15/03/2010;JUAN PEREZ GOMEZ&#10;52123456;01/08/2005;MARIA LOPEZ RUIZ"></textarea>
+    <div style="margin-top:8px;"><button class="btn-s" onclick="cargarLote()">➕ Cargar lista</button>
+    <button class="btn-s" onclick="limpiarLote()">🗑️ Limpiar</button></div>
+    <div id="listaPersonas" style="margin-top:10px;"></div>
+    <p style="font-size:11.5px;color:#888;margin:6px 0 0;">Tip: desde Excel copia las 3 columnas y pégalas aquí (acepta TAB o punto y coma como separador). Toca una persona para cargar sus datos al formulario.</p>
+  </div>
+
+  <!-- DATOS -->
+  <div class="card">
+    <h2>1. Datos de la persona</h2>
+    <label>Nombre completo</label>
+    <input type="text" id="nombre" placeholder="JUAN PEREZ GOMEZ" autocapitalize="characters">
+    <div class="fila">
+      <div>
+        <label>Cédula de ciudadanía</label>
+        <input type="text" id="cedula" inputmode="numeric" placeholder="1098765432">
+      </div>
+      <div>
+        <label>Fecha de expedición</label>
+        <input type="date" id="fexp">
+      </div>
+    </div>
+  </div>
+
+  <!-- CERTIFICADOS -->
+  <div class="card">
+    <h2>2. Certificados a tramitar</h2>
+    <div id="listaChk"></div>
+    <div id="datosEntidad" class="oculto" style="border-top:1px dashed var(--borde); margin-top:8px; padding-top:8px;">
+      <div class="aviso">⚠️ La consulta de <b>inhabilidades por delitos sexuales</b> (Ley 1918/2018) exige el NIT y la razón social de la empresa o entidad que realiza la consulta.</div>
+      <div class="fila">
+        <div>
+          <label>NIT de la empresa (sin dígito de verificación)</label>
+          <input type="text" id="nit" inputmode="numeric" placeholder="900123456">
+        </div>
+        <div>
+          <label>Razón social / Empresa a la que va dirigido</label>
+          <input type="text" id="razon" placeholder="CONSTRUCTORA XYZ S.A.S." autocapitalize="characters">
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn-s" onclick="marcarTodos(true)">Marcar todos</button>
+      <button class="btn-s" onclick="marcarTodos(false)">Desmarcar</button>
+    </div>
+  </div>
+
+  <button class="btn-p" onclick="generar()">▶ Generar lista de trámite</button>
+
+  <!-- TRAMITE -->
+  <div id="secTramite" class="oculto" style="margin-top:12px;">
+    <div class="card">
+      <h2>3. Tramitar (toca cada chip para copiar el dato)</h2>
+      <div class="prog"><div id="barra"></div></div>
+      <div class="prog-txt" id="progTxt"></div>
+      <div id="certs"></div>
+    </div>
+
+    <!-- ZIP -->
+    <div class="card">
+      <h2>4. Empaquetar certificados (ZIP)</h2>
+      <p style="font-size:12.5px;color:#666;margin:0 0 8px;">Cuando hayas descargado todos los PDF, selecciónalos aquí y genera un único archivo comprimido con el nombre y la cédula de la persona.</p>
+      <div class="zona-arch" onclick="document.getElementById('archivos').click()">
+        📎 Toca aquí para seleccionar los PDF descargados
+        <input type="file" id="archivos" multiple accept=".pdf,.png,.jpg,.jpeg" class="oculto" onchange="listarArchivos()">
+      </div>
+      <div id="listaArch"></div>
+      <button class="btn-zip" id="btnZip" onclick="generarZip()" disabled>📦 Generar ZIP</button>
+      <p style="font-size:11px;color:#999;margin:6px 0 0;">Nota: el navegador genera .zip (equivalente al .rar y aceptado universalmente).</p>
+    </div>
+  </div>
+
+</main>
+<div class="toast" id="toast"></div>
+<footer>Consultas gratuitas en portales oficiales del Estado colombiano. Verifica siempre que la URL sea .gov.co</footer>
+
+<script>
+'use strict';
+// ============ CATÁLOGO DE CERTIFICADOS ============
+var CERTS = [
+  {
+    id:'proc', nombre:'Antecedentes Disciplinarios — Procuraduría',
+    ent:'Procuraduría General de la Nación (SIRI)',
+    url:'https://www.procuraduria.gov.co/pages/certificado-antecedentes.aspx',
+    datos:['cedula'],
+    pasos:['Clic en "Generar certificado de antecedentes"','Tipo: Cédula de Ciudadanía → pega el número','Resuelve la pregunta de seguridad y descarga el PDF']
+  },
+  {
+    id:'cont', nombre:'Antecedentes Fiscales — Contraloría',
+    ent:'Contraloría General de la República',
+    url:'https://www.contraloria.gov.co/web/guest/persona-natural',
+    datos:['cedula'],
+    pasos:['Selecciona "Persona natural"','Pega la cédula y genera el certificado PDF']
+  },
+  {
+    id:'poli', nombre:'Antecedentes Judiciales — Policía Nacional',
+    ent:'Policía Nacional de Colombia',
+    url:'https://antecedentes.policia.gov.co:7005/WebJudicial/',
+    datos:['cedula'],
+    pasos:['Acepta términos → Cédula de Ciudadanía','Pega el número, resuelve el captcha y consulta','Usa "Imprimir / Guardar como PDF" para conservar la evidencia']
+  },
+  {
+    id:'rnmc', nombre:'Medidas Correctivas (RNMC) — Policía',
+    ent:'Registro Nacional de Medidas Correctivas — Ley 1801/2016',
+    url:'https://srvcnpc.policia.gov.co/PSC/frm_cnp_consulta.aspx',
+    datos:['cedula','fexp'],
+    pasos:['Tipo: Cédula de Ciudadanía → pega el número','Ingresa la fecha de expedición si la solicita','Resuelve el código de verificación y descarga/imprime el PDF']
+  },
+  {
+    id:'redam', nombre:'Deudores Alimentarios (REDAM)',
+    ent:'Ministerio de Justicia — Ley 2097/2021',
+    url:'https://redam.gov.co/',
+    datos:['cedula'],
+    pasos:['Entra a "Consulta ciudadana" / certificado','Pega la cédula y genera el certificado PDF']
+  },
+  {
+    id:'sex', nombre:'Inhabilidades por Delitos Sexuales',
+    ent:'Policía Nacional — DIJIN/INTERPOL — Ley 1918/2018',
+    url:'https://inhabilidades.policia.gov.co:8080/',
+    datos:['cedula','fexp','nit','razon'],
+    pasos:['Tipo: Cédula de Ciudadanía → pega el número','Ingresa la fecha de expedición del documento','Pega el NIT y la razón social de la empresa que consulta','Resuelve el captcha, consulta y guarda el PDF']
+  }
+];
+
+var ST = { personas:[], sel:-1 };
+
+// ============ UTILIDADES ============
+function $(id){ return document.getElementById(id); }
+function toast(msg){
+  var t=$('toast'); t.textContent=msg; t.classList.add('ver');
+  setTimeout(function(){ t.classList.remove('ver'); },1600);
+}
+function copiar(txt,etq){
+  function fallback(){
+    var ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('✓ Copiado: '+etq); }
+    catch(e){ toast('No se pudo copiar'); }
+    document.body.removeChild(ta);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ toast('✓ Copiado: '+etq); }, fallback);
+  } else fallback();
+}
+function fechaCo(iso){ // AAAA-MM-DD -> DD/MM/AAAA
+  if(!iso) return '';
+  var p=iso.split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : iso;
+}
+function fechaIso(co){ // DD/MM/AAAA -> AAAA-MM-DD
+  var p=co.trim().split(/[\/\-\.]/);
+  if(p.length===3 && p[2].length===4) return p[2]+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[0]).slice(-2);
+  if(p.length===3 && p[0].length===4) return p[0]+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[2]).slice(-2);
+  return '';
+}
+function limpia(s){ return (s||'').toString().trim(); }
+
+// ============ CHECKBOXES ============
+function pintarChecks(){
+  var h='';
+  CERTS.forEach(function(c){
+    h+='<label class="chk"><input type="checkbox" id="chk_'+c.id+'" checked onchange="toggleEntidad()">'+
+       '<span>'+c.nombre+'<small>'+c.ent+'</small></span></label>';
+  });
+  $('listaChk').innerHTML=h;
+  toggleEntidad();
+}
+function toggleEntidad(){
+  var sexo=$('chk_sex') && $('chk_sex').checked;
+  $('datosEntidad').classList.toggle('oculto', !sexo);
+}
+function marcarTodos(v){
+  CERTS.forEach(function(c){ $('chk_'+c.id).checked=v; });
+  toggleEntidad();
+}
+
+// ============ MODO / LOTE ============
+function modo(m){
+  $('tabInd').classList.toggle('act', m==='ind');
+  $('tabLote').classList.toggle('act', m==='lote');
+  $('secLote').classList.toggle('oculto', m!=='lote');
+}
+function cargarLote(){
+  var lineas=$('txtLote').value.split('\n');
+  lineas.forEach(function(l){
+    l=l.trim(); if(!l) return;
+    var p=l.split(/[;\t]/).map(limpia);
+    if(p.length<2) return;
+    ST.personas.push({ cedula:p[0].replace(/\D/g,''), fexp:fechaIso(p[1]||''), nombre:(p[2]||'').toUpperCase(), listo:false });
+  });
+  $('txtLote').value='';
+  pintarPersonas();
+  guardar();
+}
+function limpiarLote(){
+  if(confirm('¿Borrar toda la lista de personal?')){ ST.personas=[]; ST.sel=-1; pintarPersonas(); guardar(); }
+}
+function pintarPersonas(){
+  var h='';
+  ST.personas.forEach(function(pp,i){
+    h+='<div class="persona'+(i===ST.sel?' sel':'')+'" onclick="selPersona('+i+')">'+
+       '<div class="pi"><b>'+(pp.nombre||'(sin nombre)')+'</b><small>CC '+pp.cedula+' · Exp: '+(fechaCo(pp.fexp)||'—')+'</small></div>'+
+       '<span class="badge'+(pp.listo?' ok':'')+'">'+(pp.listo?'✓ Completo':'Pendiente')+'</span></div>';
+  });
+  $('listaPersonas').innerHTML = h || '<p style="font-size:12.5px;color:#999;">Sin personas cargadas.</p>';
+}
+function selPersona(i){
+  ST.sel=i;
+  var p=ST.personas[i];
+  $('nombre').value=p.nombre; $('cedula').value=p.cedula; $('fexp').value=p.fexp;
+  pintarPersonas();
+  generar();
+  window.scrollTo({top:0,behavior:'smooth'});
+  toast('Cargado: '+(p.nombre||p.cedula));
+}
+
+// ============ GENERAR TRÁMITE ============
+function generar(){
+  var ced=limpia($('cedula').value).replace(/\D/g,'');
+  var nom=limpia($('nombre').value).toUpperCase();
+  var fx=$('fexp').value;
+  if(!ced){ toast('Ingresa la cédula'); $('cedula').focus(); return; }
+  if(!nom){ toast('Ingresa el nombre'); $('nombre').focus(); return; }
+
+  var sel=CERTS.filter(function(c){ return $('chk_'+c.id).checked; });
+  if(!sel.length){ toast('Selecciona al menos un certificado'); return; }
+
+  if($('chk_sex').checked){
+    if(!fx){ toast('Delitos sexuales requiere la fecha de expedición'); $('fexp').focus(); return; }
+    if(!limpia($('nit').value) || !limpia($('razon').value)){
+      toast('Delitos sexuales requiere NIT y razón social'); $('nit').focus(); return;
+    }
+  }
+
+  var datos={ cedula:ced, fexp:fechaCo(fx), nit:limpia($('nit').value), razon:limpia($('razon').value).toUpperCase() };
+  var etq={ cedula:'Cédula', fexp:'Fecha exp.', nit:'NIT', razon:'Razón social' };
+
+  var h='';
+  sel.forEach(function(c){
+    var chips='';
+    c.datos.forEach(function(d){
+      if(datos[d]) chips+='<span class="chip" onclick="copiar(\''+datos[d].replace(/'/g,"\\'")+'\',\''+etq[d]+'\')">'+etq[d]+': <b>'+datos[d]+'</b> 📋</span>';
+    });
+    var pasos=''; c.pasos.forEach(function(s){ pasos+='<li>'+s+'</li>'; });
+    h+='<div class="cert" id="cert_'+c.id+'">'+
+       '<h3>'+c.nombre+'</h3><div class="ent">'+c.ent+'</div>'+
+       '<div class="chips">'+chips+'</div>'+
+       '<ol class="pasos">'+pasos+'</ol>'+
+       '<div class="acciones">'+
+       '<a href="'+c.url+'" target="_blank" rel="noopener"><button class="btn-v">🌐 Abrir portal</button></a>'+
+       '<label class="marca"><input type="checkbox" id="ok_'+c.id+'" onchange="actualizar()"> PDF descargado</label>'+
+       '</div></div>';
+  });
+  $('certs').innerHTML=h;
+  $('secTramite').classList.remove('oculto');
+  actualizar();
+  $('secTramite').scrollIntoView({behavior:'smooth'});
+}
+
+function actualizar(){
+  var sel=CERTS.filter(function(c){ return $('chk_'+c.id) && $('chk_'+c.id).checked && $('cert_'+c.id); });
+  var ok=0;
+  sel.forEach(function(c){
+    var v=$('ok_'+c.id).checked;
+    $('cert_'+c.id).classList.toggle('listo', v);
+    if(v) ok++;
+  });
+  var pct = sel.length ? Math.round(ok*100/sel.length) : 0;
+  $('barra').style.width=pct+'%';
+  $('progTxt').textContent = ok+' de '+sel.length+' certificados descargados ('+pct+'%)';
+  if(ST.sel>=0 && ST.personas[ST.sel]){
+    ST.personas[ST.sel].listo = (ok===sel.length && sel.length>0);
+    pintarPersonas(); guardar();
+  }
+  if(ok===sel.length && sel.length>0) toast('🎉 ¡Todos descargados! Genera el ZIP abajo.');
+}
+
+// ============ ZIP ============
+function listarArchivos(){
+  var fs=$('archivos').files, h='';
+  for(var i=0;i<fs.length;i++){
+    h+='<div class="arch-item"><span>📄 '+fs[i].name+'</span><span>'+(fs[i].size/1024).toFixed(0)+' KB</span></div>';
+  }
+  $('listaArch').innerHTML=h;
+  $('btnZip').disabled = fs.length===0;
+}
+function generarZip(){
+  var fs=$('archivos').files;
+  if(!fs.length){ toast('Selecciona los PDF primero'); return; }
+  if(typeof JSZip==='undefined'){ toast('Sin conexión: no se pudo cargar el compresor'); return; }
+  var nom=limpia($('nombre').value).toUpperCase().replace(/[^A-ZÑ0-9 ]/g,'').replace(/ +/g,'_') || 'CERTIFICADOS';
+  var ced=limpia($('cedula').value).replace(/\D/g,'');
+  var zipName=nom+'_CC'+ced+'.zip';
+  $('btnZip').disabled=true; $('btnZip').textContent='⏳ Comprimiendo...';
+  var zip=new JSZip();
+  var carpeta=zip.folder(nom+'_CC'+ced);
+  var pend=fs.length;
+  Array.prototype.forEach.call(fs, function(f){
+    var r=new FileReader();
+    r.onload=function(e){
+      carpeta.file(f.name, e.target.result);
+      if(--pend===0){
+        zip.generateAsync({type:'blob', compression:'DEFLATE'}).then(function(blob){
+          var a=document.createElement('a');
+          a.href=URL.createObjectURL(blob); a.download=zipName;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+          $('btnZip').disabled=false; $('btnZip').textContent='📦 Generar ZIP';
+          toast('✓ Generado: '+zipName);
+        });
+      }
+    };
+    r.readAsArrayBuffer(f);
+  });
+}
+
+// ============ PERSISTENCIA ============
+function guardar(){
+  try{
+    localStorage.setItem('certApp', JSON.stringify({
+      personas:ST.personas, nit:$('nit').value, razon:$('razon').value
+    }));
+  }catch(e){}
+}
+function cargar(){
+  try{
+    var d=JSON.parse(localStorage.getItem('certApp')||'{}');
+    if(d.personas){ ST.personas=d.personas; pintarPersonas(); }
+    if(d.nit) $('nit').value=d.nit;
+    if(d.razon) $('razon').value=d.razon;
+  }catch(e){}
+}
+$('nit').addEventListener('change', guardar);
+$('razon').addEventListener('change', guardar);
+
+pintarChecks();
+cargar();
+</script>
+</body>
+</html>
