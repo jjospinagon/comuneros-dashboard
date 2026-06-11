@@ -2706,6 +2706,20 @@ function jsonp(url, params){
   });
 }
 
+/* ===== Fuente de datos de OBRA: JSON estatico de GitHub Actions (rapido,
+   sin timeouts de Apps Script) con fallback al endpoint GAS ===== */
+async function _obraSrc(force){
+  try{
+    var r = await fetch('./obra_data.json' + (force ? ('?t='+Date.now()) : ''), {cache: force ? 'no-store' : 'default'});
+    if (r.ok){
+      var d = await r.json();
+      if (d && Array.isArray(d.actividades) && d.actividades.length && d.curvaS){ d._github = true; return d; }
+    }
+  }catch(_){}
+  var p = {action:'dashboard_obra_v2'}; if (force) p._ts = Date.now();
+  return jsonp(APPS_URL, p);
+}
+
 /* ================== CACHE LOCALSTORAGE 60s ==================
    Acelera navegación entre módulos. Refrescar limpia y re-pide.
    ============================================================ */
@@ -2898,7 +2912,7 @@ function _goToInner(name){
   if(name==='indicadores' && !OBRA_LOADED){
     (async function(){
       try{
-        var d = await jsonp(APPS_URL, {action:'dashboard_obra_v2'});
+        var d = await _obraSrc();
         if(d && !d.error){ OBRA_DATA = (typeof obraNormalizarData==='function') ? obraNormalizarData(d) : d; OBRA_LOADED = true;
           // Re-render si Indicadores ya está montado (sobrescribe KPIs económicos con fuente Obra)
           if (IND_DATA && IND_CURRENT){ try{ renderIndCorte(); }catch(_){ } }
@@ -2925,7 +2939,7 @@ function _aiM(n){ var v=(Number(n)||0)/1e6; return '$'+v.toLocaleString('es-CO',
 async function _aiSenales(){
   // 1) Indicadores + Obra
   if(!window.IND_DATA){ try{ var ind=await jsonp(APPS_URL,{action:'indicadores'}); if(ind&&!ind._error){ IND_DATA=ind; IND_CORTES=(typeof _cortesValidos==='function')?_cortesValidos(ind):[]; IND_LATEST=IND_CORTES[0]; IND_CURRENT=IND_CURRENT||IND_LATEST; } }catch(_){} }
-  if(typeof OBRA_DATA==='undefined'||!OBRA_DATA){ try{ var ob=await jsonp(APPS_URL,{action:'dashboard_obra_v2'}); if(ob&&!ob.error){ OBRA_DATA=(typeof obraNormalizarData==='function')?obraNormalizarData(ob):ob; } }catch(_){} }
+  if(typeof OBRA_DATA==='undefined'||!OBRA_DATA){ try{ var ob=await _obraSrc(); if(ob&&!ob.error){ OBRA_DATA=(typeof obraNormalizarData==='function')?obraNormalizarData(ob):ob; } }catch(_){} }
   var s={};
   // 2) EVM (misma matemática del panel)
   try{
@@ -3900,7 +3914,7 @@ async function renderCurvaS(){
   let obraCs = (typeof OBRA_DATA !== 'undefined' && OBRA_DATA && OBRA_DATA.curvaS) ? OBRA_DATA.curvaS : null;
   if (!obraCs) {
     try {
-      const d = await jsonp(APPS_URL, {action:'dashboard_obra_v2'});
+      const d = await _obraSrc();
       if (d && d.curvaS) { OBRA_DATA = (typeof obraNormalizarData==='function') ? obraNormalizarData(d) : d; obraCs = d.curvaS; }
     } catch(e) { /* sin red, seguimos con fallback */ }
   }
@@ -4983,8 +4997,7 @@ async function obraCargar(force){
   }
   cont.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:60px 20px">⏳ Cargando dashboard de obra…</div>';
   try{
-    const params = force ? {action:'dashboard_obra_v2', _ts: Date.now()} : {action:'dashboard_obra_v2'};
-    const d = await jsonp(APPS_URL, params);
+    const d = await _obraSrc(force);
     if(d.error){
       cont.innerHTML = '<div style="color:#ef4444;padding:20px">❌ '+escapeHTML(d.error)+'</div>';
       return;
@@ -5530,7 +5543,7 @@ async function indRefrescarConSync(){
       IND_LATEST = IND_CORTES[0]; IND_CURRENT = IND_LATEST;
       _lsSet('ind', ind);
     }
-    var obraD = await jsonp(APPS_URL, {action:'dashboard_obra_v2', _ts: Date.now()});
+    var obraD = await _obraSrc(true);
     if (obraD && !obraD.error){
       OBRA_DATA = (typeof obraNormalizarData==='function') ? obraNormalizarData(obraD) : obraD;
       OBRA_LOADED = true; _lsSet('obra', obraD);
