@@ -1115,6 +1115,21 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <!-- Curva S + Pareto FASE B -->
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" id="ind-curvas-grid">
       <div class="panel">
+<div id="evm-panel" style="margin:0 0 18px;padding:16px 18px;background:rgba(14,20,45,.55);border:1px solid rgba(99,102,241,.25);border-radius:14px">
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <h3 style="margin:0;font-size:15px;color:#e6ecff">📐 Valor Ganado (EVM)</h3>
+    <span id="evm-sub" style="color:#8b9bd1;font-size:12px">calculando…</span>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="evm-grid">
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">SPI · cronograma</div><div id="evm-spi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-spi-sub" style="font-size:10.5px;color:#64748b">EV ÷ PV</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">CPI · costo</div><div id="evm-cpi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-cpi-sub" style="font-size:10.5px;color:#64748b">EV ÷ AC</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EV · valor ganado</div><div id="evm-ev" style="font-size:16px;font-weight:700;color:#22d3ee">—</div><div id="evm-ev-sub" style="font-size:10.5px;color:#64748b">ejecutado a tarifa contractual</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">PV · programado</div><div id="evm-pv" style="font-size:16px;font-weight:700;color:#10b981">—</div><div id="evm-pv-sub" style="font-size:10.5px;color:#64748b">curva S programada</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">AC · costo real</div><div id="evm-ac" style="font-size:16px;font-weight:700;color:#f59e0b">—</div><div id="evm-ac-sub" style="font-size:10.5px;color:#64748b">incurrido al corte</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EAC · proyección</div><div id="evm-eac" style="font-size:16px;font-weight:700;color:#c084fc">—</div><div id="evm-eac-sub" style="font-size:10.5px;color:#64748b">BAC ÷ CPI</div></div>
+  </div>
+  <div id="evm-var" style="margin-top:10px;font-size:12px;color:#94a3b8"></div>
+</div>
         <h3 style="font-size:13px;font-weight:700;margin:0 0 12px;color:#fff">Curva S · Avance acumulado por corte</h3>
         <div style="position:relative;height:280px"><canvas id="ind-chart-curvas"></canvas></div>
       </div>
@@ -2989,6 +3004,62 @@ window.addEventListener('DOMContentLoaded', () => {
   if(af) af.addEventListener('input', renderActividades);
 });
 
+
+/* ====================== EVM · VALOR GANADO (V2) ======================
+   EV = contractual al corte (fuente Obra si corte vigente) · AC = costo real
+   PV = curva S programada (FLUJO INTER) en el último punto con avance real
+   SPI=EV/PV · CPI=EV/AC · EAC=BAC/CPI · CV=EV-AC · SV=EV-PV */
+async function renderEVM(ev$, ac$, bac$, isLatest, _try){
+  var grid=document.getElementById('evm-panel'); if(!grid) return;
+  var setT=function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+  if(!bac$ || !ev$){ setT('evm-sub','sin datos del corte'); return; }
+  var cs=(typeof OBRA_DATA!=='undefined' && OBRA_DATA && OBRA_DATA.curvaS)?OBRA_DATA.curvaS:null;
+  if(!cs || !cs.programado || !cs.real){
+    if((_try||0)<4){ setTimeout(function(){ try{renderEVM(ev$,ac$,bac$,isLatest,(_try||0)+1);}catch(_){} },2500); }
+    else setT('evm-sub','curva programada no disponible · solo CPI');
+    // CPI sí se puede sin PV:
+    if(ac$>0){
+      var cpi0=ev$/ac$;
+      setT('evm-cpi',cpi0.toFixed(2)); _evmColor('evm-cpi',cpi0);
+      setT('evm-ev',money(ev$)); setT('evm-ac',money(ac$));
+      if(cpi0>0) setT('evm-eac',money(bac$/cpi0));
+    }
+    return;
+  }
+  // normalizar programado (puede venir absoluto en COP)
+  var prog=cs.programado.slice(), maxP=0;
+  for(var i=0;i<prog.length;i++){ if(typeof prog[i]==='number'&&prog[i]>maxP) maxP=prog[i]; }
+  var progF=(maxP>1.5)?prog.map(function(v){return (typeof v==='number')?v/maxP:v;}):prog;
+  // último punto con avance real
+  var idx=-1;
+  for(var j=cs.real.length-1;j>=0;j--){ if(cs.real[j]!=null && !isNaN(cs.real[j])){ idx=j; break; } }
+  if(idx<0){ setT('evm-sub','sin avance real en curva S'); return; }
+  var pvFrac=(progF[idx]!=null && !isNaN(progF[idx]))?Number(progF[idx]):null;
+  var pv$=(pvFrac!=null)?pvFrac*bac$:null;
+  var spi=(pv$&&pv$>0)?ev$/pv$:null;
+  var cpi=(ac$&&ac$>0)?ev$/ac$:null;
+  var eac=(cpi&&cpi>0)?bac$/cpi:null;
+  var cv=ev$-(ac$||0), sv=(pv$!=null)?ev$-pv$:null;
+  var fecha=(cs.fechas&&cs.fechas[idx])||(cs.semanas&&cs.semanas[idx])||'';
+  setT('evm-sub','BAC '+money(bac$)+' · corte curva: '+fecha+(isLatest?'':' · corte histórico'));
+  setT('evm-spi',spi!=null?spi.toFixed(2):'—'); if(spi!=null)_evmColor('evm-spi',spi);
+  setT('evm-spi-sub',spi!=null?(spi>=1?'adelantado':'atrasado')+' vs programa':'EV ÷ PV');
+  setT('evm-cpi',cpi!=null?cpi.toFixed(2):'—'); if(cpi!=null)_evmColor('evm-cpi',cpi);
+  setT('evm-cpi-sub',cpi!=null?(cpi>=1?'gana':'pierde')+' $'+Math.abs(cv/1e6).toFixed(0)+'M vs costo':'EV ÷ AC');
+  setT('evm-ev',money(ev$));
+  setT('evm-pv',pv$!=null?money(pv$):'—');
+  setT('evm-ac',money(ac$||0));
+  setT('evm-eac',eac!=null?money(eac):'—');
+  var vEl=document.getElementById('evm-var');
+  if(vEl) vEl.innerHTML='CV (costo): <b style="color:'+(cv>=0?'#10b981':'#ef4444')+'">'+moneyC(cv)+'</b> &nbsp;·&nbsp; '+
+    (sv!=null?('SV (cronograma): <b style="color:'+(sv>=0?'#10b981':'#ef4444')+'">'+moneyC(sv)+'</b> &nbsp;·&nbsp; '):'')+
+    (eac!=null?('EAC vs BAC: <b style="color:'+((bac$-eac)>=0?'#10b981':'#ef4444')+'">'+moneyC(bac$-eac)+'</b>'):'');
+}
+function _evmColor(id,v){
+  var e=document.getElementById(id); if(!e) return;
+  e.style.color = v>=1 ? '#10b981' : (v>=0.9 ? '#fbbf24' : '#ef4444');
+}
+
 function renderIndCorte(){
   const d = IND_DATA[IND_CURRENT];
   const isLatest = (IND_CURRENT === IND_LATEST);
@@ -3063,6 +3134,7 @@ function renderIndCorte(){
   // FASE B
   try{ renderKpisAvanzados(); }catch(e){console.warn('kpis avanzados:',e);}
   try{ renderCurvaS(); }catch(e){console.warn('curva S:',e);}
+  try{ renderEVM(contrShow, realAlCorte, totalProy, isLatest); }catch(e){console.warn('evm:',e);}
   try{ renderPareto(); }catch(e){console.warn('pareto:',e);}
   // Radar APU (lazy)
   try{ loadAPUs(); }catch(e){console.warn('APUs:',e);}
@@ -8049,6 +8121,11 @@ function rendRenderEficiencia(){
   }).join('') || '<div style="color:#64748b;padding:14px">Sin datos APU para mostrar.</div>';
 }
 
+
+/* ====================== PWA (V2) ====================== */
+if ('serviceWorker' in navigator) {
+  try { navigator.serviceWorker.register('./sw.js'); } catch(_){}
+}
 </script>
 
 </body>
