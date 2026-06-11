@@ -2867,6 +2867,16 @@ function _goToInner(name){
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
   if(name==='analisis'){ try{ analisisCargar(); }catch(e){ console.warn('analisis:',e); } }
+  if(name==='indicadores'){
+    // FIX: el radar APU se pintaba durante boot con la pestaña oculta (canvas 0x0); repintar al entrar
+    setTimeout(function(){
+      try{
+        var c=document.getElementById('ind-chart-radar');
+        var s=document.getElementById('apu-item-select');
+        if(c && c.width===0 && s && s.value && typeof renderAPURadar==='function') renderAPURadar(s.value);
+      }catch(_){}
+    }, 150);
+  }
   if(name==='ejecdiaria'){
     if (!EJEC_DIARIA_LOADED){
       ejecDiariaCargar();
