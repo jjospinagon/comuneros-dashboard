@@ -115,7 +115,7 @@
         <div><button class="btn-s" style="width:100%" onclick="document.getElementById('fotoCam').click()">📷 Tomar foto</button></div>
         <div><button class="btn-s" style="width:100%" onclick="document.getElementById('fotoGal').click()">🖼️ Cargar fotos / PDF</button></div>
       </div>
-      <input type="file" id="fotoCam" accept="image/*" capture="environment" class="oculto" onchange="leerCedula(this.files)">
+      <input type="file" id="fotoCam" accept="image/*" capture="environment" class="oculto" onchange="fotoTomada(this.files)">
       <input type="file" id="fotoGal" accept="image/*,application/pdf" multiple class="oculto" onchange="leerCedula(this.files)">
       <div id="ocrEstado" style="font-size:12.5px;color:#666;margin-top:6px;"></div>
       <details style="margin-top:6px;">
@@ -696,6 +696,26 @@ function extraerOCR(files){
     });
     return cadena.then(function(){ return acumulado; });
   });
+}
+
+// Flujo guiado de cámara: frente → respaldo → analiza ambas juntas
+var FOTOS=[];
+function fotoTomada(files){
+  if(!files||!files.length) return;
+  FOTOS.push(files[0]);
+  $('fotoCam').value='';
+  if(FOTOS.length===1){
+    estadoOcr('✅ <b>Frente capturado.</b> Ahora toma el <b>respaldo</b> (donde está la fecha de expedición).'+
+      '<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">'+
+      '<button class="btn-s" onclick="document.getElementById(&quot;fotoCam&quot;).click()">📷 Tomar respaldo</button>'+
+      '<button class="btn-s" onclick="leerFotos()">✓ Leer solo con esta</button></div>');
+  } else {
+    leerFotos();
+  }
+}
+function leerFotos(){
+  var fs=FOTOS.slice(); FOTOS=[];
+  leerCedula(fs);
 }
 
 function leerCedula(files){
