@@ -38,7 +38,6 @@
   button:disabled{opacity:.45; cursor:not-allowed;}
   .oculto{display:none;}
   .aviso{background:#fff8e6; border:1px solid #f0d890; border-radius:8px; padding:10px; font-size:12.5px; color:#7a5c00; margin:10px 0;}
-  /* tarjetas de certificado */
   .cert{border:1px solid var(--borde); border-radius:10px; padding:12px; margin-bottom:10px; background:#fff;}
   .cert.listo{border-color:var(--verde); background:#f2faf4;}
   .cert h3{margin:0 0 4px; font-size:14px; color:var(--azul);}
@@ -54,11 +53,9 @@
   .pasos li{margin-bottom:2px;}
   .marca{display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; color:#444; cursor:pointer;}
   .marca input{width:22px; height:22px; accent-color:var(--verde);}
-  /* progreso */
   .prog{height:10px; background:#e3e8f0; border-radius:6px; overflow:hidden; margin:8px 0;}
   .prog div{height:100%; background:var(--verde); width:0%; transition:width .3s;}
   .prog-txt{font-size:12.5px; color:#555; text-align:center;}
-  /* lote */
   .tabs{display:flex; gap:6px; margin-bottom:12px;}
   .tabs button{flex:1; background:#dfe6f0; color:#445;}
   .tabs button.act{background:var(--azul); color:#fff;}
@@ -83,13 +80,11 @@
 </header>
 <main>
 
-  <!-- TABS -->
   <div class="tabs">
     <button id="tabInd" class="act" onclick="modo('ind')">👤 Individual</button>
     <button id="tabLote" onclick="modo('lote')">👥 Lote</button>
   </div>
 
-  <!-- LOTE -->
   <div id="secLote" class="card oculto">
     <h2>Lista de personal</h2>
     <label>Pegar lista (una persona por línea): <b>Cédula ; Fecha expedición (DD/MM/AAAA) ; Nombre</b></label>
@@ -100,7 +95,6 @@
     <p style="font-size:11.5px;color:#888;margin:6px 0 0;">Tip: desde Excel copia las 3 columnas y pégalas aquí (acepta TAB o punto y coma como separador). Toca una persona para cargar sus datos al formulario.</p>
   </div>
 
-  <!-- DATOS -->
   <div class="card">
     <h2>1. Datos de la persona</h2>
     <label>Nombre completo</label>
@@ -115,9 +109,24 @@
         <input type="date" id="fexp">
       </div>
     </div>
+    <div style="border-top:1px dashed var(--borde); margin-top:12px; padding-top:10px;">
+      <label>O escanear el documento con la cámara (frente y luego respaldo)</label>
+      <div class="fila">
+        <div><button class="btn-s" style="width:100%" onclick="document.getElementById('fotoCam').click()">📷 Tomar foto</button></div>
+        <div><button class="btn-s" style="width:100%" onclick="document.getElementById('fotoGal').click()">🖼️ Cargar fotos</button></div>
+      </div>
+      <input type="file" id="fotoCam" accept="image/*" capture="environment" class="oculto" onchange="leerCedula(this.files)">
+      <input type="file" id="fotoGal" accept="image/*" multiple class="oculto" onchange="leerCedula(this.files)">
+      <div id="ocrEstado" style="font-size:12.5px;color:#666;margin-top:6px;"></div>
+      <details style="margin-top:6px;">
+        <summary style="font-size:12px;color:#888;cursor:pointer;">⚙️ Lectura con IA avanzada (opcional)</summary>
+        <label>API key de Google Gemini — mejora mucho la precisión. Se guarda solo en este dispositivo.</label>
+        <input type="text" id="gemKey" placeholder="AIza..." autocomplete="off">
+      </details>
+      <p style="font-size:11px;color:#999;margin:6px 0 0;">La info detectada se carga en los campos de arriba: <b>revísala siempre</b> antes de generar el trámite.</p>
+    </div>
   </div>
 
-  <!-- CERTIFICADOS -->
   <div class="card">
     <h2>2. Certificados a tramitar</h2>
     <div id="listaChk"></div>
@@ -142,7 +151,6 @@
 
   <button class="btn-p" onclick="generar()">▶ Generar lista de trámite</button>
 
-  <!-- TRAMITE -->
   <div id="secTramite" class="oculto" style="margin-top:12px;">
     <div class="card">
       <h2>3. Tramitar (toca cada chip para copiar el dato)</h2>
@@ -151,7 +159,6 @@
       <div id="certs"></div>
     </div>
 
-    <!-- ZIP -->
     <div class="card">
       <h2>4. Empaquetar certificados (ZIP)</h2>
       <p style="font-size:12.5px;color:#666;margin:0 0 8px;">Cuando hayas descargado todos los PDF, selecciónalos aquí y genera un único archivo comprimido con el nombre y la cédula de la persona.</p>
@@ -238,11 +245,11 @@ function copiar(txt,etq){
     navigator.clipboard.writeText(txt).then(function(){ toast('✓ Copiado: '+etq); }, fallback);
   } else fallback();
 }
-function fechaCo(iso){ // AAAA-MM-DD -> DD/MM/AAAA
+function fechaCo(iso){
   if(!iso) return '';
   var p=iso.split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : iso;
 }
-function fechaIso(co){ // DD/MM/AAAA -> AAAA-MM-DD
+function fechaIso(co){
   var p=co.trim().split(/[\/\-\.]/);
   if(p.length===3 && p[2].length===4) return p[2]+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[0]).slice(-2);
   if(p.length===3 && p[0].length===4) return p[0]+'-'+('0'+p[1]).slice(-2)+'-'+('0'+p[2]).slice(-2);
@@ -409,11 +416,146 @@ function generarZip(){
   });
 }
 
+// ============ LECTURA DE CÉDULA (FOTO → DATOS) ============
+function estadoOcr(t){ $('ocrEstado').innerHTML=t; }
+
+function cargarScript(src){
+  return new Promise(function(res,rej){
+    if(window.Tesseract) return res();
+    var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+function archivoB64(f){
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(e){ res(e.target.result.split(',')[1]); };
+    r.onerror=rej; r.readAsDataURL(f);
+  });
+}
+function quitarTildes(s){
+  return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+
+var MESES={ENE:'01',FEB:'02',MAR:'03',ABR:'04',MAY:'05',JUN:'06',JUL:'07',AGO:'08',SEP:'09',SET:'09',OCT:'10',NOV:'11',DIC:'12'};
+
+// Aplica solo los datos encontrados (no borra lo ya diligenciado con otra foto)
+function aplicarDatos(d){
+  var puestos=[];
+  if(d.cedula){ $('cedula').value=d.cedula; puestos.push('cédula'); }
+  if(d.fecha){ $('fexp').value=d.fecha; puestos.push('fecha exp.'); }
+  if(d.nombre){ $('nombre').value=d.nombre; puestos.push('nombre'); }
+  estadoOcr(puestos.length
+    ? '✅ Detectado: <b>'+puestos.join(', ')+'</b>. Revisa los campos y corrige si hace falta.'
+    : '⚠️ No se detectaron datos. Intenta con mejor luz, foto recta y sin reflejos.');
+}
+
+// --- Parser del texto OCR de una cédula colombiana (ambos formatos) ---
+function parsearCedula(texto){
+  var d={}, T=quitarTildes(texto).toUpperCase();
+  var lineas=T.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+
+  // 1) Número: grupo de 6-11 dígitos (admite puntos); descarta posibles fechas
+  var candidatos=[];
+  (T.match(/\d[\d\.\s]{4,14}\d/g)||[]).forEach(function(m){
+    var n=m.replace(/[^\d]/g,'');
+    if(n.length>=6 && n.length<=11 && !/^(19|20)\d{6}$/.test(n)) candidatos.push(n);
+  });
+  if(candidatos.length){
+    candidatos.sort(function(a,b){ return b.length-a.length; });
+    d.cedula=candidatos[0];
+  }
+
+  // 2) Fecha de expedición: DD-MMM-AAAA o DD/MM/AAAA cerca de "EXPEDI"
+  var zona=T, ix=T.indexOf('EXPEDI');
+  if(ix>=0) zona=T.slice(Math.max(0,ix-120), ix+120);
+  var m=zona.match(/(\d{1,2})[\s\-\/\.]+([A-Z]{3}|\d{1,2})[\s\-\/\.]+((19|20)\d{2})/);
+  if(!m) m=T.match(/(\d{1,2})[\s\-\/\.]+([A-Z]{3})[\s\-\/\.]+((19|20)\d{2})/);
+  if(m){
+    var mes=MESES[m[2]]||('0'+m[2]).slice(-2);
+    if(/^\d{2}$/.test(mes) && +mes>=1 && +mes<=12)
+      d.fecha=m[3]+'-'+mes+'-'+('0'+m[1]).slice(-2);
+  }
+
+  // 3) Nombre: líneas de solo letras adyacentes a las etiquetas APELLIDOS / NOMBRES
+  function esTexto(l){
+    return /^[A-ZÑ ]{3,40}$/.test(l) &&
+      !/(REPUBLICA|COLOMBIA|IDENTIFICACION|PERSONAL|CEDULA|CIUDADANIA|APELLIDOS|NOMBRES|FECHA|LUGAR|NACIMIENTO|EXPEDICION|REGISTRADOR|NACIONAL|NUIP|SEXO|GS|RH|ESTATURA|INDICE|DERECHO)/.test(l);
+  }
+  var ape='', nom='';
+  lineas.forEach(function(l,i){
+    if(/^APELLIDOS$/.test(l)){ ape=esTexto(lineas[i-1]||'')?lineas[i-1]:(esTexto(lineas[i+1]||'')?lineas[i+1]:''); }
+    if(/^NOMBRES$/.test(l)){ nom=esTexto(lineas[i-1]||'')?lineas[i-1]:(esTexto(lineas[i+1]||'')?lineas[i+1]:''); }
+  });
+  if(nom||ape) d.nombre=(nom+' '+ape).trim();
+  return d;
+}
+
+// --- Motor 1: Gemini (si hay API key) ---
+function extraerGemini(files,key){
+  var parts=[{text:'Lee estas fotos de una cedula de ciudadania colombiana. Responde UNICAMENTE un JSON valido, sin texto adicional ni markdown: {"nombre":"NOMBRES APELLIDOS","cedula":"solo digitos sin puntos","fecha_expedicion":"AAAA-MM-DD"}. Si un dato no es visible, usa cadena vacia.'}];
+  var lecturas=Array.prototype.map.call(files,function(f){
+    return archivoB64(f).then(function(b64){
+      parts.push({inline_data:{mime_type:f.type||'image/jpeg',data:b64}});
+    });
+  });
+  return Promise.all(lecturas).then(function(){
+    return fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:parts}]})
+    });
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){
+    var t=j.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim();
+    var o=JSON.parse(t);
+    return { cedula:(o.cedula||'').replace(/\D/g,''),
+             fecha:/^\d{4}-\d{2}-\d{2}$/.test(o.fecha_expedicion||'')?o.fecha_expedicion:'',
+             nombre:quitarTildes(o.nombre||'').toUpperCase().trim() };
+  });
+}
+
+// --- Motor 2: OCR local Tesseract (sin clave, gratuito) ---
+function extraerOCR(files){
+  return cargarScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js')
+  .then(function(){
+    var acumulado={};
+    var cadena=Promise.resolve();
+    Array.prototype.forEach.call(files,function(f,i){
+      cadena=cadena.then(function(){
+        estadoOcr('🔍 Leyendo foto '+(i+1)+' de '+files.length+'… (puede tardar unos segundos)');
+        return Tesseract.recognize(f,'spa').then(function(res){
+          var d=parsearCedula(res.data.text);
+          for(var k in d){ if(d[k] && !acumulado[k]) acumulado[k]=d[k]; }
+        });
+      });
+    });
+    return cadena.then(function(){ return acumulado; });
+  });
+}
+
+function leerCedula(files){
+  if(!files || !files.length) return;
+  var key=limpia($('gemKey').value);
+  estadoOcr(key ? '🤖 Analizando con IA…' : '🔍 Iniciando lectura OCR…');
+  var motor = key ? extraerGemini(files,key) : extraerOCR(files);
+  motor.then(aplicarDatos).catch(function(e){
+    if(key){
+      estadoOcr('⚠️ Falló la IA ('+e.message+'). Probando OCR local…');
+      extraerOCR(files).then(aplicarDatos).catch(function(){ estadoOcr('❌ No se pudo leer. Digita los datos manualmente.'); });
+    } else {
+      estadoOcr('❌ No se pudo leer ('+e.message+'). Verifica tu conexión o digita manualmente.');
+    }
+  });
+  $('fotoCam').value=''; $('fotoGal').value='';
+}
+
 // ============ PERSISTENCIA ============
 function guardar(){
   try{
     localStorage.setItem('certApp', JSON.stringify({
-      personas:ST.personas, nit:$('nit').value, razon:$('razon').value
+      personas:ST.personas, nit:$('nit').value, razon:$('razon').value, gemKey:$('gemKey').value
     }));
   }catch(e){}
 }
@@ -423,10 +565,12 @@ function cargar(){
     if(d.personas){ ST.personas=d.personas; pintarPersonas(); }
     if(d.nit) $('nit').value=d.nit;
     if(d.razon) $('razon').value=d.razon;
+    if(d.gemKey) $('gemKey').value=d.gemKey;
   }catch(e){}
 }
 $('nit').addEventListener('change', guardar);
 $('razon').addEventListener('change', guardar);
+$('gemKey').addEventListener('change', guardar);
 
 pintarChecks();
 cargar();
