@@ -575,6 +575,12 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 <style>@keyframes edSpinSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
 </head>
 <body>
+<!-- ============ FAB NAVEGACION ENTRE MODULOS (V2) ============ -->
+<div id="fab-nav" style="position:fixed;right:18px;bottom:18px;z-index:9000;display:none">
+  <div id="fab-menu" style="display:none;position:absolute;right:0;bottom:64px;border-radius:14px;padding:8px;min-width:235px;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(14px)"></div>
+  <button id="fab-btn" onclick="fabToggle(event)" title="Ir a otro módulo" aria-label="Navegación rápida" style="width:54px;height:54px;border-radius:50%;border:1px solid rgba(34,211,238,.55);background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;font-size:22px;cursor:pointer;box-shadow:0 10px 30px rgba(14,165,233,.45);display:flex;align-items:center;justify-content:center">⊞</button>
+</div>
+
 <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar modo día/noche" aria-label="Cambiar tema">🌙</button>
 
 <!-- ============ LOGIN GATE (v3 — HUD CONSTELACIÓN) ============ -->
@@ -830,7 +836,8 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       </div>
 
       <!-- CARD ANALISIS IA -->
-      <div class="menu-card ind" onclick="goTo('analisis')" style="background:linear-gradient(180deg,rgba(168,85,247,.07),rgba(20,26,55,.4))">
+      <div class="menu-card ind" style="background:linear-gradient(180deg,rgba(168,85,247,.07),rgba(20,26,55,.4));position:relative;cursor:default;opacity:.55">
+        <div style="position:absolute;top:12px;right:12px;z-index:3;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.6);color:#fbbf24;font-size:10.5px;font-weight:800;letter-spacing:.12em;padding:5px 10px;border-radius:999px;text-transform:uppercase">🚧 En construcción</div>
         <div class="icon" style="background:linear-gradient(135deg,#a855f7,#22d3ee)">🧠</div>
         <h2>Lectura IA</h2>
         <p class="desc">Análisis narrativo automático de la obra: cronograma (SPI), costo (CPI/EAC), ritmo de los últimos 14 días y recomendaciones generadas por IA.</p>
@@ -2934,6 +2941,7 @@ function _goToInner(name){
 
 
 function goTo(name){
+  try{ fabSync(name); }catch(_){}
   if(name==='menu' || (window.Chart && window.ApexCharts)) return _goToInner(name);
   _ensureLibs().then(function(){ _goToInner(name); }, function(){ _goToInner(name); });
 }
@@ -3140,6 +3148,58 @@ async function analisisCargar(force){
   }catch(_){}
 }
 
+
+/* ====================== FAB NAVEGACION (V2) ====================== */
+var FAB_VISTAS=[
+  ['menu','🏠','Menú principal'],
+  ['ejecdiaria','📅','Ejecución Diaria'],
+  ['obra','🏗️','Ejecución de Obra'],
+  ['rendimientos','⚙️','Rendimientos'],
+  ['maq','🚜','Maquinaria'],
+  ['mo','👷','Mano de Obra'],
+  ['inventario','📦','Inventario'],
+  ['indicadores','📊','Indicadores'],
+  ['contrato','📑','Contrato'],
+  ['comunicaciones','📨','Comunicaciones'],
+  ['fotos','📷','Fotos']
+];
+function fabSync(name){
+  var f=document.getElementById('fab-nav');
+  if(f) f.style.display=(name==='menu')?'none':'block';
+  var m=document.getElementById('fab-menu'); if(m) m.style.display='none';
+}
+function fabToggle(ev){
+  if(ev) ev.stopPropagation();
+  var m=document.getElementById('fab-menu');
+  if(m.style.display==='none'){ fabRender(); m.style.display='block'; }
+  else m.style.display='none';
+}
+function fabRender(){
+  var light=document.body.classList.contains('light');
+  var m=document.getElementById('fab-menu');
+  m.style.background=light?'rgba(255,255,255,.98)':'rgba(10,14,39,.97)';
+  m.style.border='1px solid '+(light?'#cbd5e1':'rgba(99,102,241,.45)');
+  var cur=(document.querySelector('.screen.active')||{}).id||'';
+  m.innerHTML=FAB_VISTAS.map(function(v){
+    var act=cur==='screen-'+v[0];
+    var col=act?'#0ea5e9':(light?'#334155':'#dbe4ff');
+    var bg=act?(light?'rgba(14,165,233,.1)':'rgba(34,211,238,.12)'):'transparent';
+    return '<div onclick="fabGo(\''+v[0]+'\')" style="display:flex;align-items:center;gap:11px;padding:9px 13px;border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;color:'+col+';background:'+bg+'" '+
+      'onmouseover="this.style.background=\''+(light?'rgba(14,165,233,.12)':'rgba(99,102,241,.2)')+'\'" '+
+      'onmouseout="this.style.background=\''+bg+'\'">'+
+      '<span style="font-size:17px">'+v[1]+'</span>'+v[2]+(act?' <span style="margin-left:auto;font-size:10px">●</span>':'')+'</div>';
+  }).join('');
+}
+function fabGo(name){
+  var m=document.getElementById('fab-menu'); if(m) m.style.display='none';
+  goTo(name);
+}
+document.addEventListener('click', function(e){
+  var f=document.getElementById('fab-nav');
+  if(f && f.style.display!=='none' && !f.contains(e.target)){
+    var m=document.getElementById('fab-menu'); if(m) m.style.display='none';
+  }
+});
 
 /* ====================== DATA SHARED ====================== */
 let IND_DATA = null;          // todos los cortes contractuales
