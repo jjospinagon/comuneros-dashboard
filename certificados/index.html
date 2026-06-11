@@ -451,44 +451,103 @@ function aplicarDatos(d){
 }
 
 // --- Parser del texto OCR de una cédula colombiana (ambos formatos) ---
+// Validado contra cédulas reales (formato amarillo y digital 2023)
 function parsearCedula(texto){
-  var d={}, T=quitarTildes(texto).toUpperCase();
-  var lineas=T.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  var d={}, raw=quitarTildes(texto), T=raw.toUpperCase();
+  var HOY=new Date().getFullYear(); var m;
 
-  // 1) Número: grupo de 6-11 dígitos (admite puntos); descarta posibles fechas
-  var candidatos=[];
-  (T.match(/\d[\d\.\s]{4,14}\d/g)||[]).forEach(function(m){
-    var n=m.replace(/[^\d]/g,'');
-    if(n.length>=6 && n.length<=11 && !/^(19|20)\d{6}$/.test(n)) candidatos.push(n);
-  });
-  if(candidatos.length){
-    candidatos.sort(function(a,b){ return b.length-a.length; });
-    d.cedula=candidatos[0];
+  // 1) Número: candidatos puntuados (etiqueta NUMERO/NUIP, línea máquina,
+  //    penaliza seriales que inician en 0). Si el mejor puntaje es <=0 se descarta.
+  var pts={}; var reNum=/\d[\d.,]{4,15}\d/g;
+  while((m=reNum.exec(T))!==null){
+    var n=m[0].replace(/\D/g,'');
+    if(n.length<6||n.length>11||/^(19|20)\d{6}$/.test(n)) continue;
+    var p=pts[n]||0;
+    var antes=T.slice(Math.max(0,m.index-45),m.index);
+    if(/NU[MVN]ERO|NUIP/.test(antes)) p+=4;
+    if(new RegExp('M-?'+n).test(T)) p+=3;
+    if(n.charAt(0)==='0') p-=3;
+    if(n.length>=8&&n.length<=10) p+=1;
+    pts[n]=p;
+  }
+  var mejorN='',mejorP=-99;
+  for(var k in pts){ if(pts[k]>mejorP||(pts[k]===mejorP&&k.length>mejorN.length)){mejorP=pts[k];mejorN=k;} }
+  if(mejorN&&mejorP>0) d.cedula=mejorN;
+
+  // 2) Fecha de expedición: tolera año partido ("201 1"), excluye fechas futuras
+  //    (expiración) y la de nacimiento (año mínimo cuando hay varias).
+  var fechas=[]; var reF=/(\d{1,2})[\s\-\/\.]+([A-Z]{3}|\d{1,2})[\s\-\/\.]+((?:19|20)\s?\d\s?\d)\b/g;
+  while((m=reF.exec(T))!==null){
+    var a=m[3].replace(/\s/g,'');
+    var mes=MESES[m[2]]||(/^\d+$/.test(m[2])?('0'+m[2]).slice(-2):'');
+    var dia=parseInt(m[1],10);
+    if(!mes||+mes<1||+mes>12||dia<1||dia>31) continue;
+    var desp=T.slice(m.index+m[0].length, m.index+m[0].length+70);
+    var ant=T.slice(Math.max(0,m.index-70),m.index);
+    var pf=0;
+    if(desp.indexOf('EXPEDI')>=0) pf+=2;
+    if(ant.indexOf('EXPEDI')>=0) pf+=2;
+    if(ant.slice(-45).indexOf('NACIMIENTO')>=0) pf-=2;
+    fechas.push({iso:a+'-'+mes+'-'+('0'+dia).slice(-2), a:+a, p:pf});
+  }
+  fechas=fechas.filter(function(f){ return f.a<=HOY+1; });
+  if(fechas.length>1 && T.indexOf('NACIMIENTO')>=0){
+    var amin=Math.min.apply(null,fechas.map(function(f){return f.a;}));
+    var resto=fechas.filter(function(f){return f.a>amin;});
+    if(resto.length) fechas=resto;
+  }
+  if(fechas.length){
+    fechas.sort(function(x,y){ return (y.p-x.p)||(y.a-x.a); });
+    d.fecha=fechas[0].iso;
   }
 
-  // 2) Fecha de expedición: DD-MMM-AAAA o DD/MM/AAAA cerca de "EXPEDI"
-  var zona=T, ix=T.indexOf('EXPEDI');
-  if(ix>=0) zona=T.slice(Math.max(0,ix-120), ix+120);
-  var m=zona.match(/(\d{1,2})[\s\-\/\.]+([A-Z]{3}|\d{1,2})[\s\-\/\.]+((19|20)\d{2})/);
-  if(!m) m=T.match(/(\d{1,2})[\s\-\/\.]+([A-Z]{3})[\s\-\/\.]+((19|20)\d{2})/);
-  if(m){
-    var mes=MESES[m[2]]||('0'+m[2]).slice(-2);
-    if(/^\d{2}$/.test(mes) && +mes>=1 && +mes<=12)
-      d.fecha=m[3]+'-'+mes+'-'+('0'+m[1]).slice(-2);
+  // 3) Nombre: solo palabras 100% MAYÚSCULAS adyacentes a APELLIDOS/NOMBRES
+  var lineas=raw.split('\n').filter(function(l){return l.trim();});
+  var RUIDO=/REPUBLICA|COLOMBIA|IDENTIFICACION|PERSONAL|CEDULA|CIUDADANIA|APELLIDOS|NOMBRES|FECHA|LUGAR|NACIMIENTO|EXPEDICION|EXPIRACION|REGISTRADOR|NACIONAL|NUIP|NUMERO|SEXO|ESTATURA|INDICE|DERECHO|FIRMA|NACIONALIDAD/;
+  function valorLinea(l){
+    var toks=(l||'').split(/[^A-Za-zÑñ]+/).filter(function(t){return /^[A-ZÑ]{2,}$/.test(t);});
+    var v=toks.join(' ');
+    return (v.length>=3&&v.length<=40&&!RUIDO.test(v))?v:'';
   }
-
-  // 3) Nombre: líneas de solo letras adyacentes a las etiquetas APELLIDOS / NOMBRES
-  function esTexto(l){
-    return /^[A-ZÑ ]{3,40}$/.test(l) &&
-      !/(REPUBLICA|COLOMBIA|IDENTIFICACION|PERSONAL|CEDULA|CIUDADANIA|APELLIDOS|NOMBRES|FECHA|LUGAR|NACIMIENTO|EXPEDICION|REGISTRADOR|NACIONAL|NUIP|SEXO|GS|RH|ESTATURA|INDICE|DERECHO)/.test(l);
-  }
-  var ape='', nom='';
+  var ape='',nom='';
   lineas.forEach(function(l,i){
-    if(/^APELLIDOS$/.test(l)){ ape=esTexto(lineas[i-1]||'')?lineas[i-1]:(esTexto(lineas[i+1]||'')?lineas[i+1]:''); }
-    if(/^NOMBRES$/.test(l)){ nom=esTexto(lineas[i-1]||'')?lineas[i-1]:(esTexto(lineas[i+1]||'')?lineas[i+1]:''); }
+    var L=quitarTildes(l).toUpperCase();
+    if(L.indexOf('APELLIDOS')>=0 && L.trim().length<25 && !ape){
+      ape=(i>0?valorLinea(lineas[i-1]):'')||((i+1<lineas.length)?valorLinea(lineas[i+1]):'');
+    }
+    if(/\bNOMBRES\b/.test(L) && L.trim().length<25 && !nom){
+      nom=(i>0?valorLinea(lineas[i-1]):'')||((i+1<lineas.length)?valorLinea(lineas[i+1]):'');
+    }
   });
   if(nom||ape) d.nombre=(nom+' '+ape).trim();
   return d;
+}
+
+// --- Preprocesado de fotos: reduce tamaño + escala de grises + contraste ---
+function preprocesarImagen(file){
+  return new Promise(function(res,rej){
+    var img=new Image();
+    img.onload=function(){
+      var esc=Math.min(1, 1700/img.width);
+      var c=document.createElement('canvas');
+      c.width=Math.round(img.width*esc); c.height=Math.round(img.height*esc);
+      var x=c.getContext('2d');
+      x.drawImage(img,0,0,c.width,c.height);
+      try{
+        var dd=x.getImageData(0,0,c.width,c.height), p=dd.data;
+        for(var i=0;i<p.length;i+=4){
+          var g=0.299*p[i]+0.587*p[i+1]+0.114*p[i+2];
+          g=(g-110)*1.6+128; g=g<0?0:(g>255?255:g);
+          p[i]=p[i+1]=p[i+2]=g;
+        }
+        x.putImageData(dd,0,0);
+      }catch(e){}
+      URL.revokeObjectURL(img.src);
+      res(c);
+    };
+    img.onerror=rej;
+    img.src=URL.createObjectURL(file);
+  });
 }
 
 // --- Motor 1: Gemini (si hay API key) ---
@@ -562,7 +621,7 @@ function extraerOCR(files){
       cadena=cadena.then(function(){
         estadoOcr('🔍 Leyendo archivo '+(i+1)+' de '+files.length+'… (puede tardar unos segundos)');
         var esPdf=(f.type==='application/pdf')||/\.pdf$/i.test(f.name);
-        var fuentes=esPdf ? pdfACanvases(f) : Promise.resolve([f]);
+        var fuentes=esPdf ? pdfACanvases(f) : preprocesarImagen(f).then(function(c){ return [c]; });
         return fuentes.then(function(lista){
           var c2=Promise.resolve();
           lista.forEach(function(img){
