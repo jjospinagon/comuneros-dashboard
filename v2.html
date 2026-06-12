@@ -576,9 +576,9 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 </head>
 <body>
 <!-- ============ FAB NAVEGACION ENTRE MODULOS (V2) ============ -->
-<div id="fab-nav" style="position:fixed;right:18px;bottom:18px;z-index:9000;display:none">
-  <div id="fab-menu" style="display:none;position:absolute;right:0;bottom:64px;border-radius:14px;padding:8px;min-width:235px;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(14px)"></div>
-  <button id="fab-btn" onclick="fabToggle(event)" title="Ir a otro módulo" aria-label="Navegación rápida" style="width:54px;height:54px;border-radius:50%;border:1px solid rgba(34,211,238,.55);background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;font-size:22px;cursor:pointer;box-shadow:0 10px 30px rgba(14,165,233,.45);display:flex;align-items:center;justify-content:center">⊞</button>
+<div id="fab-nav" style="position:fixed;right:14px;top:72px;z-index:9000">
+  <div id="fab-menu" style="display:none;position:absolute;right:0;top:60px;border-radius:14px;padding:8px;min-width:235px;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(14px)"></div>
+  <button id="fab-btn" onclick="fabToggle(event)" title="Ir a otro módulo" aria-label="Navegación rápida" style="width:46px;height:46px;border-radius:50%;border:1px solid rgba(34,211,238,.55);background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 8px 24px rgba(14,165,233,.45);display:flex;align-items:center;justify-content:center">⊞</button>
 </div>
 
 <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar modo día/noche" aria-label="Cambiar tema">🌙</button>
@@ -3167,8 +3167,7 @@ var FAB_VISTAS=[
   ['fotos','📷','Fotos']
 ];
 function fabSync(name){
-  var f=document.getElementById('fab-nav');
-  if(f) f.style.display=(name==='menu')?'none':'block';
+  // el boton es permanente (como el interruptor dia/noche); solo se cierra el panel al navegar
   var m=document.getElementById('fab-menu'); if(m) m.style.display='none';
 }
 function fabToggle(ev){
