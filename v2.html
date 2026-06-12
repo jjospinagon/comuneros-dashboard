@@ -2785,6 +2785,9 @@ function _edDiasAtrasISO(n){ var t=new Date(); t.setDate(t.getDate()-n); return 
 function _edCacheTTL(f){ return (f < _edDiasAtrasISO(7)) ? 24*3600*1000 : 10*60*1000; } // dias cerrados 24h · recientes 10min
 function _edCacheGet(f){ return _lsGet('ed_dia:'+f); }
 function _edCacheSet(f,d){ try{ _lsSet('ed_dia:'+f, d, _edCacheTTL(f)); }catch(_){} }
+function _edCacheSetNeg(f,neg){ // negativos del dia en curso: solo 60s (el residente puede cargar en cualquier momento)
+  try{ var hoyI=_edDiasAtrasISO(0); _lsSet('ed_dia:'+f, neg, (f>=hoyI)? 60000 : _edCacheTTL(f)); }catch(_){}
+}
 async function _edFetchDia(f){
   var hit=_edCacheGet(f); if(hit) return hit;
   var d=null;
@@ -2794,7 +2797,7 @@ async function _edFetchDia(f){
     try{ delete d.fechasDisponibles; }catch(_){}
     _edCacheSet(f,d); return d;
   }
-  if(d && !d.error){ var neg={fecha:f,fechaUsada:f,items:[],_noData:true}; _edCacheSet(f,neg); return neg; }
+  if(d && !d.error){ var neg={fecha:f,fechaUsada:f,items:[],_noData:true}; _edCacheSetNeg(f,neg); return neg; }
   return null;
 }
 function forceSyncThrottled(act,extra){
@@ -6449,7 +6452,7 @@ async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
         chunk.forEach(function(f){
           if (_have[f]) return;
           var neg = {fecha:f, fechaUsada:f, items:[], _noData:true};
-          _edCacheSet(f, neg);
+          _edCacheSetNeg(f, neg);
           resultados.push({fecha:f, data:neg}); _have[f]=1;
         });
         if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⚡ '+Object.keys(_have).length+' / '+fechas.length+' días (rango rápido)…</td></tr>';
