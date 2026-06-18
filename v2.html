@@ -1793,6 +1793,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
           <div style="font-size:10.5px;color:#94a3b8;margin-top:3px">del costo total del proyecto</div>
         </div>
         <div style="width:220px;max-width:46vw">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:3px;font-weight:600"><span>ejecutado vs meta</span><span id="ed-pct-proy-cumpl">—</span></div>
           <div style="height:10px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden">
             <div id="ed-pct-proy-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#a855f7,#22d3ee);border-radius:6px;transition:width .4s"></div>
           </div>
@@ -6015,11 +6016,18 @@ function ejecDiariaRender(){
     var ejEl   = document.getElementById('ed-pct-proy-ej');
     var totEl  = document.getElementById('ed-pct-proy-tot');
     var detEl  = document.getElementById('ed-pct-proy-detalle');
+    var cumplEl = document.getElementById('ed-pct-proy-cumpl');
     if (lblEl) lblEl.textContent = esPeriodo ? 'Avance acumulado del periodo' : 'Avance del día';
     if (ejEl)  ejEl.textContent  = moneyShort(valSel || 0);
-    if (totEl) totEl.textContent = totalProy ? moneyShort(totalProy) : '$—';
+    // Meta en $ del rango (2,5%/sem → 0,4545% por día laborable equiv.)
+    var _rDesde = esPeriodo ? d._periodo.desde : (d.fechaUsada || d.fecha);
+    var _rHasta = esPeriodo ? d._periodo.hasta : (d.fechaUsada || d.fecha);
+    var _equiv  = _edDiasLaborablesEquiv(_rDesde, _rHasta) || (esPeriodo ? 0 : 1);
+    var metaVal = (2.5 / 5.5) / 100 * _equiv * totalProy; // meta en pesos del rango
+    if (totEl) totEl.textContent = metaVal ? ('meta ' + moneyShort(metaVal)) : '$—';
     if (!totalProy || !valSel){
       if (barEl) barEl.style.width = '0%';
+      if (cumplEl) cumplEl.textContent = '—';
       if (!totalProy){
         if (valEl) valEl.innerHTML = '<span class="ed-spin"></span>';
         if (detEl) detEl.textContent = 'Cargando total del proyecto…';
@@ -6029,14 +6037,26 @@ function ejecDiariaRender(){
       }
       return;
     }
+    // % grande = avance respecto al TOTAL del proyecto (se mantiene)
     var pct = valSel / totalProy * 100;
     if (valEl) valEl.textContent = pct.toFixed(2) + '%';
-    if (barEl) barEl.style.width = Math.min(100, pct).toFixed(2) + '%';
+    // Barra = ejecutado vs META diaria (en pesos), no vs proyecto
+    var cumpl = metaVal > 0 ? (valSel / metaVal * 100) : 0;
+    if (barEl){
+      barEl.style.width = Math.min(100, cumpl).toFixed(1) + '%';
+      barEl.style.background = cumpl >= 100
+        ? 'linear-gradient(90deg,#10b981,#34d399)'
+        : (cumpl >= 70 ? 'linear-gradient(90deg,#a855f7,#22d3ee)' : 'linear-gradient(90deg,#ef4444,#f59e0b)');
+    }
+    if (cumplEl){
+      cumplEl.textContent = metaVal > 0 ? (cumpl.toFixed(0) + '% de la meta') : '—';
+      cumplEl.style.color = cumpl >= 100 ? '#34d399' : (cumpl >= 70 ? '#cbd5e1' : '#f87171');
+    }
     if (detEl){
       var det = esPeriodo
         ? (d._periodo.diasConDatos + ' días con avance · ' + formatFechaED(d._periodo.desde) + ' → ' + formatFechaED(d._periodo.hasta))
         : ('Día ' + (fechaFmt || ''));
-      detEl.textContent = det + ' · ' + moneyShort(valSel) + ' de ' + moneyShort(totalProy);
+      detEl.textContent = det + ' · ejecutado ' + moneyShort(valSel) + ' · ' + pct.toFixed(2) + '% de ' + moneyShort(totalProy) + ' (proyecto)';
     }
   })();
 
@@ -6111,14 +6131,15 @@ function ejecDiariaRender(){
     var metaPct  = equiv * DAILY_PCT;          // % del proyecto que se debió ejecutar
     var metaVal  = metaPct / 100 * totalProy;  // meta en $ (mismo base que el total del proyecto)
     var real     = Number(c.total) || 0;       // ejecutado con AIU+PMT+PMA (igual base que el cajón %)
+    var _fmtP = function(x){ return x.toFixed(3).replace('.', ','); };
     kMeta.textContent = moneyShort(metaVal);
-    kMetaS.textContent = metaPct.toFixed(3).replace('.', ',') + '% del proyecto · ' + equivTxt + ' día(s) lab. × 0,4545%';
+    kMetaS.textContent = _fmtP(metaPct) + '% del proyecto · ' + equivTxt + ' día(s) lab. × 0,4545%';
     if (metaVal > 0){
-      var pct = real / metaVal * 100;
+      var pct = real / metaVal * 100;               // % de cumplimiento (real ÷ meta)
+      var avancePct = real / totalProy * 100;        // avance real respecto al proyecto
       kCumpl.textContent = pct.toFixed(0) + '%';
-      kCumplS.textContent = (real >= metaVal)
-        ? ('✓ supera la meta · +' + moneyShort(real - metaVal))
-        : ('⚠ déficit ' + moneyShort(metaVal - real));
+      kCumplS.textContent = 'real ' + _fmtP(avancePct) + '% · meta ' + _fmtP(metaPct) + '% · ' +
+        (real >= metaVal ? ('+' + moneyShort(real - metaVal)) : ('⚠ −' + moneyShort(metaVal - real)));
       kCumpl.style.color = real >= metaVal ? '#10b981' : (pct >= 70 ? '#fbbf24' : '#ef4444');
     } else {
       kCumpl.textContent = '—';
