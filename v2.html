@@ -1769,6 +1769,26 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div class="ed-kpi" style="--acc:#10b981"><div class="l">Cumplimiento meta</div><div class="v" id="ed-k-cumpl">—</div><div class="s" id="ed-k-cumpl-s">real ÷ meta</div></div>
     </div>
 
+    <!-- Cajón: % acumulado del periodo respecto al total del proyecto -->
+    <div class="ed-panel" id="ed-pct-proy-box" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-left:3px solid #a855f7;background:linear-gradient(180deg,rgba(168,85,247,.10),rgba(0,0,0,.6))">
+      <div style="min-width:200px">
+        <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700">📊 <span id="ed-pct-proy-lbl">Avance del día</span> · respecto al total del proyecto</div>
+        <div style="font-size:11.5px;color:#64748b;margin-top:4px" id="ed-pct-proy-detalle">—</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+        <div style="text-align:right">
+          <div style="font-size:34px;font-weight:800;color:#a855f7;font-family:'Space Grotesk',sans-serif;line-height:1" id="ed-pct-proy-val">—</div>
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:3px">del costo total del proyecto</div>
+        </div>
+        <div style="width:220px;max-width:46vw">
+          <div style="height:10px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden">
+            <div id="ed-pct-proy-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#a855f7,#22d3ee);border-radius:6px;transition:width .4s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-top:4px"><span id="ed-pct-proy-ej">$—</span><span id="ed-pct-proy-tot">$—</span></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Panel: Ganancia / Pérdida del día vs Corte de Indicadores -->
     <div class="ed-panel" id="ed-corte-panel" style="margin-bottom:14px;display:none">
       <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px">
@@ -5852,6 +5872,23 @@ async function ejecDiariaCargar(force, fechaOverride){
   }
 }
 
+/* Costo total vigente del proyecto desde IND_DATA (corte actual).
+   Devuelve 0 si Indicadores aún no ha cargado. */
+function _edTotalProyecto(){
+  try{
+    if (!window.IND_DATA || typeof IND_DATA !== 'object') return 0;
+    var corte = (typeof IND_CURRENT !== 'undefined' && IND_CURRENT) ||
+                (typeof IND_LATEST !== 'undefined' && IND_LATEST) || null;
+    if (!corte || !IND_DATA[corte]){
+      var ks = Object.keys(IND_DATA).filter(function(k){ return /^\d{2}-\d{2}-\d{4}$/.test(k); }).sort();
+      corte = ks.length ? ks[ks.length-1] : null;
+    }
+    if (!corte || !IND_DATA[corte]) return 0;
+    var totT = (IND_DATA[corte].totales && IND_DATA[corte].totales['COSTO TOTAL']) || {};
+    return Number(totT.total_contr) || 0;
+  }catch(_){ return 0; }
+}
+
 function ejecDiariaRender(){
   const d = EJEC_DIARIA_DATA;
   if (!d) return;
@@ -5904,6 +5941,40 @@ function ejecDiariaRender(){
     setL('ed-kl-total', 'TOTAL ' + suf + ' (con AIU+PMT+PMA)');
     setL('ed-th-cantdia', 'Cant. ' + suf);
     setL('ed-th-vrdia', 'Valor ' + suf);
+  })();
+
+  // === CAJÓN: % acumulado del periodo/día respecto al total del proyecto ===
+  (function(){
+    var box = document.getElementById('ed-pct-proy-box');
+    if (!box) return;
+    var valSel    = Number((d.costos && d.costos.total) || 0); // TOTAL ejecutado (con AIU+PMT+PMA)
+    var totalProy = _edTotalProyecto();
+    var lblEl  = document.getElementById('ed-pct-proy-lbl');
+    var valEl  = document.getElementById('ed-pct-proy-val');
+    var barEl  = document.getElementById('ed-pct-proy-bar');
+    var ejEl   = document.getElementById('ed-pct-proy-ej');
+    var totEl  = document.getElementById('ed-pct-proy-tot');
+    var detEl  = document.getElementById('ed-pct-proy-detalle');
+    if (lblEl) lblEl.textContent = esPeriodo ? 'Avance acumulado del periodo' : 'Avance del día';
+    if (ejEl)  ejEl.textContent  = moneyShort(valSel || 0);
+    if (totEl) totEl.textContent = totalProy ? moneyShort(totalProy) : '$—';
+    if (!totalProy || !valSel){
+      if (valEl) valEl.textContent = '—';
+      if (barEl) barEl.style.width = '0%';
+      if (detEl) detEl.textContent = totalProy
+        ? 'Sin valor ejecutado en la selección'
+        : 'Cargando total del proyecto…';
+      return;
+    }
+    var pct = valSel / totalProy * 100;
+    if (valEl) valEl.textContent = pct.toFixed(2) + '%';
+    if (barEl) barEl.style.width = Math.min(100, pct).toFixed(2) + '%';
+    if (detEl){
+      var det = esPeriodo
+        ? (d._periodo.diasConDatos + ' días con avance · ' + formatFechaED(d._periodo.desde) + ' → ' + formatFechaED(d._periodo.hasta))
+        : ('Día ' + (fechaFmt || ''));
+      detEl.textContent = det + ' · ' + moneyShort(valSel) + ' de ' + moneyShort(totalProy);
+    }
   })();
 
   // === GANANCIA / PÉRDIDA vs CORTE DE INDICADORES ===
