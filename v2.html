@@ -1723,8 +1723,20 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   body.light #screen-ejecdiaria .ed-chip{color:#475569}
   body.light #screen-ejecdiaria .ed-chip:hover{background:rgba(0,0,0,.05);color:#0f172a}
   body.light #screen-ejecdiaria .ed-chip.active{background:rgba(168,85,247,.20);color:#7c3aed;box-shadow:inset 0 0 0 1px rgba(168,85,247,.5)}
+  @keyframes edspin{to{transform:rotate(360deg)}}
+  #screen-ejecdiaria .ed-spin{display:inline-block;width:22px;height:22px;border:3px solid rgba(168,85,247,.25);border-top-color:#a855f7;border-radius:50%;animation:edspin .8s linear infinite;vertical-align:middle}
+  #screen-ejecdiaria #ed-pct-proy-box.cargando{opacity:.85}
+  /* Overlay de carga sobre la zona de KPIs durante carga de periodo */
+  #screen-ejecdiaria .ed-load-ov{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(10,14,39,.72);backdrop-filter:blur(2px)}
+  #screen-ejecdiaria .ed-load-ov.show{display:flex}
+  #screen-ejecdiaria .ed-load-ov .ed-spin{width:46px;height:46px;border-width:5px}
+  #screen-ejecdiaria .ed-load-ov .msg{color:#e2e8f0;font-size:14px;font-weight:600;letter-spacing:.3px}
+  #screen-ejecdiaria .ed-load-ov .sub{color:#94a3b8;font-size:12px;margin-top:-6px}
+  body.light #screen-ejecdiaria .ed-load-ov{background:rgba(241,245,249,.78)}
+  body.light #screen-ejecdiaria .ed-load-ov .msg{color:#0f172a}
 </style>
 <div class="screen" id="screen-ejecdiaria">
+  <div class="ed-load-ov" id="ed-load-ov"><div class="ed-spin"></div><div class="msg" id="ed-load-msg">Cargando…</div><div class="sub" id="ed-load-sub"></div></div>
   <div class="wrap">
     <div class="topbar">
       <button class="back-btn" onclick="goTo('menu')">← Menú</button>
@@ -2914,20 +2926,23 @@ function _goToInner(name){
       // Auto-refresh silencioso: pasaron >2min desde el último sync → forzar fresh
       setTimeout(function(){ try { ejecDiariaRefrescar(); } catch(_){} }, 200);
     }
-    // Auto-fetch IND_DATA en background si no está cargado (para panel Δ vs corte)
-    if (!window.IND_DATA){
+    // Auto-fetch IND_DATA en background si no está cargado (para panel Δ vs corte y cajón % proyecto)
+    if (typeof IND_DATA === 'undefined' || !IND_DATA){
       (async function(){
         try {
           var ind = await jsonp(APPS_URL, {action:'indicadores'});
           if (ind && !ind._error){
             IND_DATA = ind;
             IND_CORTES = (typeof _cortesValidos==='function') ? _cortesValidos(ind) : [];
-            IND_LATEST = IND_CORTES[0]; IND_CURRENT = IND_LATEST;
-            // Re-render ejec diaria si ya hay data, para que el panel Δ vs corte aparezca
+            IND_LATEST = IND_CORTES[0]; IND_CURRENT = IND_CURRENT || IND_LATEST;
+            // Re-render ejec diaria si ya hay data, para que el panel Δ vs corte y el cajón % proyecto aparezcan
             if (EJEC_DIARIA_DATA){ try { ejecDiariaRender(); } catch(_){} }
           }
         } catch(_){}
       })();
+    } else if (EJEC_DIARIA_DATA){
+      // IND_DATA ya disponible → repintar para que el cajón % del proyecto muestre el porcentaje
+      setTimeout(function(){ try { ejecDiariaRender(); } catch(_){} }, 60);
     }
   }
   if(name==='mo'){
@@ -5876,7 +5891,7 @@ async function ejecDiariaCargar(force, fechaOverride){
    Devuelve 0 si Indicadores aún no ha cargado. */
 function _edTotalProyecto(){
   try{
-    if (!window.IND_DATA || typeof IND_DATA !== 'object') return 0;
+    if (typeof IND_DATA === 'undefined' || !IND_DATA || typeof IND_DATA !== 'object') return 0;
     var corte = (typeof IND_CURRENT !== 'undefined' && IND_CURRENT) ||
                 (typeof IND_LATEST !== 'undefined' && IND_LATEST) || null;
     if (!corte || !IND_DATA[corte]){
@@ -5889,9 +5904,32 @@ function _edTotalProyecto(){
   }catch(_){ return 0; }
 }
 
+/* Overlay de carga (reloj de arena / spinner) para la pantalla de Ejecución Diaria */
+function _edLoadShow(msg, sub){
+  var ov = document.getElementById('ed-load-ov');
+  if (ov){
+    var m = document.getElementById('ed-load-msg'); if (m) m.textContent = msg || 'Cargando…';
+    var s = document.getElementById('ed-load-sub'); if (s) s.textContent = sub || '';
+    ov.classList.add('show');
+  }
+  var box = document.getElementById('ed-pct-proy-box');
+  if (box){
+    box.classList.add('cargando');
+    var v = document.getElementById('ed-pct-proy-val'); if (v) v.innerHTML = '<span class="ed-spin"></span>';
+    var d = document.getElementById('ed-pct-proy-detalle'); if (d) d.textContent = msg || 'Cargando…';
+    var b = document.getElementById('ed-pct-proy-bar'); if (b) b.style.width = '0%';
+  }
+}
+function _edLoadSub(sub){ var s = document.getElementById('ed-load-sub'); if (s) s.textContent = sub || ''; }
+function _edLoadHide(){
+  var ov = document.getElementById('ed-load-ov'); if (ov) ov.classList.remove('show');
+  var box = document.getElementById('ed-pct-proy-box'); if (box) box.classList.remove('cargando');
+}
+
 function ejecDiariaRender(){
   const d = EJEC_DIARIA_DATA;
   if (!d) return;
+  try { _edLoadHide(); } catch(_){}
   const esPeriodo = !!d._periodo;
   const fechaSolicitada = d.fecha || '';
   const fechaUsada = d.fechaUsada || fechaSolicitada;
@@ -5959,11 +5997,14 @@ function ejecDiariaRender(){
     if (ejEl)  ejEl.textContent  = moneyShort(valSel || 0);
     if (totEl) totEl.textContent = totalProy ? moneyShort(totalProy) : '$—';
     if (!totalProy || !valSel){
-      if (valEl) valEl.textContent = '—';
       if (barEl) barEl.style.width = '0%';
-      if (detEl) detEl.textContent = totalProy
-        ? 'Sin valor ejecutado en la selección'
-        : 'Cargando total del proyecto…';
+      if (!totalProy){
+        if (valEl) valEl.innerHTML = '<span class="ed-spin"></span>';
+        if (detEl) detEl.textContent = 'Cargando total del proyecto…';
+      } else {
+        if (valEl) valEl.textContent = '—';
+        if (detEl) detEl.textContent = 'Sin valor ejecutado en la selección';
+      }
       return;
     }
     var pct = valSel / totalProy * 100;
@@ -6487,9 +6528,11 @@ function ejecDiariaCambiarFechaHasta(fecha){
 
 async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
   var tbody = document.querySelector('#ed-tabla tbody');
+  try { _edLoadShow('Calculando ' + (etiqueta || 'período') + '…', formatFechaED(desde) + '  →  ' + formatFechaED(hasta)); } catch(_){}
   if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando '+escapeHTML(etiqueta||'')+' '+escapeHTML(desde)+' → '+escapeHTML(hasta)+'…</td></tr>';
   var fechas = _edListarFechas(desde, hasta);
   if (!fechas.length){
+    try { _edLoadHide(); } catch(_){}
     if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">Rango inválido</td></tr>';
     return;
   }
@@ -6525,6 +6568,7 @@ async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
           _edCacheSetNeg(f, neg);
           resultados.push({fecha:f, data:neg}); _have[f]=1;
         });
+        try { _edLoadSub(Object.keys(_have).length + ' / ' + fechas.length + ' días'); } catch(_){}
         if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⚡ '+Object.keys(_have).length+' / '+fechas.length+' días (rango rápido)…</td></tr>';
       }
       faltan = [];
@@ -6540,6 +6584,7 @@ async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
       var slice = faltan.slice(i, i+BATCH);
       var resp = await Promise.all(slice.map(function(f){ return _edFetchDia(f); }));
       for (var j=0; j<resp.length; j++){ resultados.push({fecha:slice[j], data:resp[j]}); _have[slice[j]]=1; }
+      try { _edLoadSub(Object.keys(_have).length + ' / ' + fechas.length + ' días'); } catch(_){}
       if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ '+Object.keys(_have).length+' / '+fechas.length+' días procesados…</td></tr>';
     }
   }
