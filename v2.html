@@ -1734,6 +1734,23 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-ejecdiaria .ed-load-ov .sub{color:#94a3b8;font-size:12px;margin-top:-6px}
   body.light #screen-ejecdiaria .ed-load-ov{background:rgba(241,245,249,.78)}
   body.light #screen-ejecdiaria .ed-load-ov .msg{color:#0f172a}
+  /* ===== Responsive móvil · cajón % proyecto / meta ===== */
+  @media(max-width:640px){
+    #screen-ejecdiaria .wrap{padding:10px}
+    #screen-ejecdiaria #ed-pct-proy-box{flex-direction:column !important;align-items:stretch !important;gap:10px !important;padding:14px !important}
+    #screen-ejecdiaria #ed-pct-proy-box > div{min-width:0 !important;width:100% !important}
+    /* contenedor derecho: % + barra en columna, a lo ancho */
+    #screen-ejecdiaria #ed-pct-proy-box > div:last-child{flex-direction:column !important;align-items:stretch !important;gap:12px !important}
+    /* bloque del % grande: alinear a la izquierda y achicar un poco */
+    #screen-ejecdiaria #ed-pct-proy-box > div:last-child > div:first-child{text-align:left !important}
+    #screen-ejecdiaria #ed-pct-proy-val{font-size:30px !important}
+    /* barra: ancho completo del contenedor */
+    #screen-ejecdiaria #ed-pct-proy-box > div:last-child > div:last-child{width:100% !important;max-width:none !important}
+  }
+  @media(max-width:380px){
+    #screen-ejecdiaria #ed-pct-proy-val{font-size:26px !important}
+    #screen-ejecdiaria .topbar-title{font-size:14px}
+  }
 </style>
 <div class="screen" id="screen-ejecdiaria">
   <div class="ed-load-ov" id="ed-load-ov"><div class="ed-spin"></div><div class="msg" id="ed-load-msg">Cargando…</div><div class="sub" id="ed-load-sub"></div></div>
