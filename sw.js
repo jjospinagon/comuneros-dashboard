@@ -1,7 +1,7 @@
 /* Cockpit Comuneros · Service Worker v1
    - Network-first para recursos del mismo origen (siempre fresco; offline = último cacheado)
    - NUNCA intercepta script.google.com (JSONP) ni CDNs externas */
-const CACHE = 'cockpit-v2-1';
+const CACHE = 'cockpit-v2-2';
 const SHELL = ['./', './index.html', './v2.html', './manifest.json'];
 
 self.addEventListener('install', e => {

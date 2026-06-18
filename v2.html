@@ -5760,6 +5760,7 @@ async function ejecDiariaCargar(force, fechaOverride){
     }
   }
 
+  try { _edLoadShow('Cargando avance…', formatFechaED(fecha)); } catch(_){}
   try {
     // 1) Probe inicial - SIEMPRE con _ts para evitar cache JSONP del navegador
     let d = await jsonp(APPS_URL, {action:'avance_diario', fecha: fecha, _ts: Date.now()});
@@ -5805,6 +5806,7 @@ async function ejecDiariaCargar(force, fechaOverride){
       || !tieneItems;
 
     if (necesitaSync){
+      try { _edLoadHide(); } catch(_){}
       // NUEVA LÓGICA RÁPIDA (sin polling 240s):
       //  - Disparar force_sync_avance en BACKGROUND (fire-and-forget, no esperar)
       //  - Mostrar inmediato la última fecha disponible con botón "Ver última" y "Reintentar"
@@ -5864,6 +5866,7 @@ async function ejecDiariaCargar(force, fechaOverride){
     }
 
     if (!d || (d.error && !d.items)) {
+      try { _edLoadHide(); } catch(_){}
       if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
       return;
     }
@@ -5883,6 +5886,7 @@ async function ejecDiariaCargar(force, fechaOverride){
     _edFetchContractMap().then(function(){ try{ ejecDiariaRender(); } catch(_){} }).catch(function(){});
     ejecDiariaRender();
   } catch(e){
+    try { _edLoadHide(); } catch(_){}
     if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:20px;text-align:center">❌ Error: ' + escapeHTML(e.message||String(e)) + '</td></tr>';
   }
 }
@@ -5901,6 +5905,24 @@ function _edTotalProyecto(){
     if (!corte || !IND_DATA[corte]) return 0;
     var totT = (IND_DATA[corte].totales && IND_DATA[corte].totales['COSTO TOTAL']) || {};
     return Number(totT.total_contr) || 0;
+  }catch(_){ return 0; }
+}
+
+/* Días laborables equivalentes en un rango: L-V = 1,0 · Sáb = 0,5 · Dom = 0.
+   Una semana completa = 5,5 días equivalentes (base para la meta de 2,5%/semana). */
+function _edDiasLaborablesEquiv(desde, hasta){
+  try{
+    var d0 = _edParseFecha(desde), d1 = _edParseFecha(hasta);
+    if (!d0 || !d1) return 0;
+    if (d0.getTime() > d1.getTime()){ var t = d0; d0 = d1; d1 = t; }
+    var eq = 0, cur = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate());
+    var fin = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+    while (cur.getTime() <= fin.getTime()){
+      var wd = cur.getDay(); // 0=Dom … 6=Sáb
+      if (wd === 6) eq += 0.5; else if (wd !== 0) eq += 1;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return eq;
   }catch(_){ return 0; }
 }
 
@@ -6066,39 +6088,42 @@ function ejecDiariaRender(){
     }).join('');
   })();
 
-  // === META PROGRAMADA y CUMPLIMIENTO (async) ===
+  // === META PROGRAMADA y CUMPLIMIENTO (2,5%/semana → 0,4545% por día laborable) ===
   (function(){
     var kMeta = document.getElementById('ed-k-meta');
     var kMetaS = document.getElementById('ed-k-meta-s');
     var kCumpl = document.getElementById('ed-k-cumpl');
     var kCumplS = document.getElementById('ed-k-cumpl-s');
     if (!kMeta) return;
-    kMeta.textContent = '⏳';
-    kCumpl.textContent = '⏳';
+    var DAILY_PCT = 2.5 / 5.5; // 0,4545% por día laborable (semana = 5,5 días equiv.)
+    var totalProy = _edTotalProyecto();
     var rangoDesde = esPeriodo ? d._periodo.desde : (d.fechaUsada || d.fecha);
     var rangoHasta = esPeriodo ? d._periodo.hasta : (d.fechaUsada || d.fecha);
-    _edCalcularMetaPeriodo(rangoDesde, rangoHasta).then(function(res){
-      var meta = res.meta || 0;
-      var real = Number(c.directo)||0; // comparable a meta (que es costo directo programado)
-      kMeta.textContent = moneyShort(meta);
-      kMetaS.textContent = esPeriodo
-        ? ('FLUJO · '+res.dias+' día(s) laborable(s)')
-        : 'FLUJO ÷ días lab. de la semana';
-      if (meta > 0){
-        var pct = (real / meta) * 100;
-        kCumpl.textContent = pct.toFixed(0) + '%';
-        kCumplS.textContent = (real >= meta)
-          ? ('✓ supera la meta · +'+moneyShort(real-meta))
-          : ('⚠ déficit '+moneyShort(meta-real));
-        kCumpl.style.color = real >= meta ? '#10b981' : (pct >= 70 ? '#fbbf24' : '#ef4444');
-      } else {
-        kCumpl.textContent = '—';
-        kCumplS.textContent = 'sin meta programada';
-      }
-    }).catch(function(){
-      kMeta.textContent = '—';
+    if (!totalProy){
+      kMeta.innerHTML = '<span class=\"ed-spin\"></span>';
+      kMetaS.textContent = 'cargando total del proyecto…';
       kCumpl.textContent = '—';
-    });
+      kCumplS.textContent = 'real ÷ meta';
+      return;
+    }
+    var equiv   = _edDiasLaborablesEquiv(rangoDesde, rangoHasta) || (esPeriodo ? 0 : 1);
+    var equivTxt = (equiv % 1 === 0) ? String(equiv) : equiv.toFixed(1);
+    var metaPct  = equiv * DAILY_PCT;          // % del proyecto que se debió ejecutar
+    var metaVal  = metaPct / 100 * totalProy;  // meta en $ (mismo base que el total del proyecto)
+    var real     = Number(c.total) || 0;       // ejecutado con AIU+PMT+PMA (igual base que el cajón %)
+    kMeta.textContent = moneyShort(metaVal);
+    kMetaS.textContent = metaPct.toFixed(3).replace('.', ',') + '% del proyecto · ' + equivTxt + ' día(s) lab. × 0,4545%';
+    if (metaVal > 0){
+      var pct = real / metaVal * 100;
+      kCumpl.textContent = pct.toFixed(0) + '%';
+      kCumplS.textContent = (real >= metaVal)
+        ? ('✓ supera la meta · +' + moneyShort(real - metaVal))
+        : ('⚠ déficit ' + moneyShort(metaVal - real));
+      kCumpl.style.color = real >= metaVal ? '#10b981' : (pct >= 70 ? '#fbbf24' : '#ef4444');
+    } else {
+      kCumpl.textContent = '—';
+      kCumplS.textContent = 'real ÷ meta';
+    }
   })();
 
   // Desglose AIU + PMT + PMA
