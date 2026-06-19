@@ -276,6 +276,25 @@
 }
 
 /* ============================================================
+   FIX MÓVIL · botones flotantes globales sin superposición
+   En móvil, #theme-toggle (🌙) y #fab-nav (⊞) chocaban con los
+   controles del header de cada pantalla (Refrescar, Ayer, fecha…).
+   Se reubican apilados en la esquina INFERIOR derecha, fuera de
+   la franja del header. Escritorio queda intacto.
+   ============================================================ */
+@media (max-width: 768px) {
+  /* FAB de navegación → inferior derecha */
+  #fab-nav   { top:auto !important; bottom:80px !important; right:12px !important; }
+  #fab-btn   { width:50px !important; height:50px !important; }
+  /* El menú del FAB abre hacia ARRIBA (antes top:60px) */
+  #fab-menu  { top:auto !important; bottom:62px !important; right:0 !important;
+               max-height:64vh; overflow-y:auto; }
+  /* Toggle de tema → debajo del FAB, misma esquina */
+  #theme-toggle { top:auto !important; bottom:18px !important; right:14px !important;
+                  width:46px !important; height:46px !important; }
+}
+
+/* ============================================================
    MODO DÍA (light) — overrides cuando body.light está activo
    La vista por defecto es NOCTURNA (sin cambios).
 ============================================================ */
