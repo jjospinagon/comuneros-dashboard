@@ -5984,6 +5984,24 @@ function _edLoadHide(){
   var ov = document.getElementById('ed-load-ov'); if (ov) ov.classList.remove('show');
   var box = document.getElementById('ed-pct-proy-box'); if (box) box.classList.remove('cargando');
 }
+// Modo RANGO en espera: oculta el reloj y pide explícitamente ambas fechas.
+function _edRangoPrompt(vD, vH){
+  try { _edLoadHide(); } catch(_){}
+  var falta = (!vD ? 'la fecha de inicio' : '') +
+              ((!vD && !vH) ? ' y ' : '') +
+              (!vH ? 'la fecha de fin' : '');
+  var msg = falta ? ('Selecciona ' + falta + ' para calcular el rango.')
+                  : 'Selecciona el rango de fechas (inicio y fin).';
+  var tbody = document.querySelector('#ed-tabla tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">📅 ' + msg + '</td></tr>';
+  var box = document.getElementById('ed-pct-proy-box');
+  if (box){
+    box.classList.remove('cargando');
+    var v = document.getElementById('ed-pct-proy-val'); if (v) v.textContent = '—';
+    var d = document.getElementById('ed-pct-proy-detalle'); if (d) d.textContent = msg;
+    var b = document.getElementById('ed-pct-proy-bar'); if (b) b.style.width = '0%';
+  }
+}
 
 function ejecDiariaRender(){
   const d = EJEC_DIARIA_DATA;
@@ -6573,10 +6591,11 @@ function ejecDiariaSetModo(modo){
   if (modo==='cust'){
     if (lblHasta) lblHasta.style.display = 'flex';
     if (lblDesdeIco) lblDesdeIco.textContent = '🟢';
-    // Si no hay hasta, inicializar = picker actual
+    // RANGO: NO autocompletar "hasta". Se exige que el usuario fije
+    // explícitamente fecha de inicio Y fin; sólo entonces se carga y
+    // aparece el reloj. (FIX 2026-06-19)
     var pHasta = document.getElementById('ed-fecha-picker-hasta');
-    if (pHasta && !pHasta.value) pHasta.value = EJEC_DIARIA_FECHA || _edFmtFecha(new Date());
-    EJEC_DIARIA_HASTA = pHasta ? pHasta.value : EJEC_DIARIA_FECHA;
+    EJEC_DIARIA_HASTA = (pHasta && pHasta.value) ? pHasta.value : '';
   } else {
     if (lblHasta) lblHasta.style.display = 'none';
     if (lblDesdeIco) lblDesdeIco.textContent = '📆';
@@ -6593,12 +6612,21 @@ function ejecDiariaRecargarSegunModo(){
   } else if (EJEC_DIARIA_MODO === 'mes'){
     var r2 = _edRangoMes(base); if (r2) ejecDiariaCargarPeriodo(r2.desde, r2.hasta, 'Mes');
   } else if (EJEC_DIARIA_MODO === 'cust'){
-    var hasta = EJEC_DIARIA_HASTA || base;
-    var desde = base, ha = hasta;
-    if (_edParseFecha(desde) && _edParseFecha(ha) && _edParseFecha(desde).getTime() > _edParseFecha(ha).getTime()){
+    // RANGO: exigir AMBAS fechas (inicio y fin) válidas antes de cargar.
+    var pD = document.getElementById('ed-fecha-picker');
+    var pH = document.getElementById('ed-fecha-picker-hasta');
+    var vD = (pD && pD.value) ? pD.value : (EJEC_DIARIA_FECHA || '');
+    var vH = (pH && pH.value) ? pH.value : (EJEC_DIARIA_HASTA || '');
+    if (!vD || !vH || !_edParseFecha(vD) || !_edParseFecha(vH)){
+      _edRangoPrompt(vD, vH);   // sin reloj hasta tener ambas fechas
+      return;
+    }
+    var desde = vD, ha = vH;
+    if (_edParseFecha(desde).getTime() > _edParseFecha(ha).getTime()){
       var tmp = desde; desde = ha; ha = tmp;
     }
-    ejecDiariaCargarPeriodo(desde, ha, 'Rango');
+    EJEC_DIARIA_FECHA = desde; EJEC_DIARIA_HASTA = ha;
+    ejecDiariaCargarPeriodo(desde, ha, 'Rango');   // aquí sí aparece el reloj
   }
 }
 
