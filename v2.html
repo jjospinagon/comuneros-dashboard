@@ -6040,6 +6040,8 @@ function _edRenderChartRango(d, esPeriodo){
   var labels  = serie.map(function(s){ return formatFechaED(s.fecha).replace(/\s+\d{4}$/, ''); }); // "12 jun"
   var pctEjec = serie.map(function(s){ return +((s.ejec / totalProy) * 100).toFixed(4); });
   var pctMeta = serie.map(function(s){ return +((2.5 / 5.5) * s.peso).toFixed(4); }); // L-V 0,4545% · Sáb 0,227% · Dom 0
+  var ejecVals = serie.map(function(s){ return Number(s.ejec)||0; }); // valor en pesos del día (para etiquetas)
+  var muchos = serie.length > 16; // rotar etiquetas si hay muchos días
   var barColors = serie.map(function(s, i){
     var meta = pctMeta[i], ej = pctEjec[i];
     if (meta <= 0) return 'rgba(99,102,241,.55)';
@@ -6056,12 +6058,46 @@ function _edRenderChartRango(d, esPeriodo){
       { label: '% ejecución del día', data: pctEjec, backgroundColor: barColors, borderRadius: 3, order: 2 },
       { label: '% meta diaria', data: pctMeta, type: 'line', borderColor: '#10b981', borderWidth: 2, borderDash: [5,4], pointRadius: 0, tension: 0, fill: false, order: 1 }
     ]},
+    plugins: [{
+      // Etiqueta con el VALOR EN PESOS encima de cada barra
+      id: 'edMoneyLabels',
+      afterDatasetsDraw: function(chart){
+        var meta0 = chart.getDatasetMeta(0);
+        if (!meta0 || !meta0.data) return;
+        var ctx = chart.ctx;
+        ctx.save();
+        ctx.font = '700 ' + (muchos ? 8 : 9.5) + 'px Inter, system-ui, sans-serif';
+        ctx.fillStyle = light ? '#0f172a' : '#e2e8f0';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        meta0.data.forEach(function(bar, i){
+          var v = ejecVals[i];
+          if (!v || v <= 0) return;
+          var txt = moneyShort(v);
+          if (muchos){
+            ctx.save();
+            ctx.translate(bar.x, bar.y - 4);
+            ctx.rotate(-Math.PI/2);
+            ctx.textAlign = 'left';
+            ctx.fillText(txt, 0, 3);
+            ctx.restore();
+          } else {
+            ctx.fillText(txt, bar.x, bar.y - 4);
+          }
+        });
+        ctx.restore();
+      }
+    }],
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: muchos ? 46 : 22 } },
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { labels: { color: tick, font: { size: 11 }, usePointStyle: true } },
-        tooltip: { callbacks: { label: function(c){ return c.dataset.label + ': ' + Number(c.parsed.y).toFixed(3) + '%'; } } }
+        tooltip: { callbacks: { label: function(c){
+          if (c.datasetIndex === 0){ return '% ejecución: ' + Number(c.parsed.y).toFixed(3) + '%  ·  ' + moneyShort(ejecVals[c.dataIndex] || 0); }
+          return c.dataset.label + ': ' + Number(c.parsed.y).toFixed(3) + '%';
+        } } }
       },
       scales: {
         x: { grid: { color: grid }, ticks: { color: tick, font: { size: 10 }, maxRotation: 60, autoSkip: true, maxTicksLimit: 31 } },
