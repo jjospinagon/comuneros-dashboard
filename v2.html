@@ -6873,7 +6873,38 @@ async function maqCargar(force){
   }
 }
 
+/* ============================================================
+   FIX 2026-06-22 · Stand-by del SÁBADO = 2,5 h (no 5 h).
+   El backend (control_maquinaria) entrega standByBase=5 todos los
+   días, incluido sábado. Regla real: la jornada del sábado es 2,5 h,
+   así que si la máquina trabaja >= 2,5 h NO se paga stand-by, y si
+   trabaja < 2,5 h se paga el excedente (2,5 − horas trabajadas).
+   Se ajusta SOLO en sábados donde el backend ya reconoció stand-by
+   (hsb>0); se respetan festivos/ausencias (hsb=0). Idempotente.
+   ============================================================ */
+function _maqFixSabadoStandby(d){
+  if (!d || !Array.isArray(d.maquinas)) return d;
+  var BASE_SAB = 2.5;
+  d.maquinas.forEach(function(m){
+    var tarifa = m.tarifa || 0;
+    (m.registros || []).forEach(function(r){
+      var p = (r.fecha || '').split('-');
+      var esSab = (p.length === 3)
+        ? (new Date(+p[0], +p[1]-1, +p[2]).getDay() === 6)
+        : /^s[áa]b/i.test(r.dia || '');
+      if (!esSab) return;
+      if ((r.horasPagarStandBy || 0) <= 0) return; // respeta festivos/ausencias
+      var nuevo = Math.max(0, BASE_SAB - (r.totalHoras || 0));
+      r.standByBase = BASE_SAB;
+      r.horasPagarStandBy = +nuevo.toFixed(2);
+      r.costoStandBy = Math.round(r.horasPagarStandBy * tarifa);
+    });
+  });
+  return d;
+}
+
 function _maqAfterLoad(d){
+  _maqFixSabadoStandby(d); // corrige stand-by del sábado (2,5 h) antes de render
   if (!MAQ_F_DESDE || !MAQ_F_HASTA) {
     const fmin = d.maquinas.reduce((a,m)=>!a||(m.primeraFecha && m.primeraFecha < a)?(m.primeraFecha||a):a, null);
     const fmax = d.maquinas.reduce((a,m)=>!a||(m.ultimaFecha && m.ultimaFecha > a)?(m.ultimaFecha||a):a, null);
@@ -8695,24 +8726,4 @@ function rendRenderEficiencia(){
     }
     return '<tr><td><strong>'+it.item+'</strong></td><td>'+escapeHTML(it.desc||'').substring(0,40)+'</td><td>'+fmt2.format(it.cant)+'</td><td>'+(it.und||'')+'</td><td>'+fmt0.format(Math.round(it.hhReal))+'</td><td>'+(it.hhApu ? fmt0.format(Math.round(it.hhApu)) : '—')+'</td><td>'+pill+'</td><td style="font-size:11px">'+estado+'</td></tr>';
   }).join('') + '</tbody>';
-  document.getElementById('rc-tabla').innerHTML = th + tbody;
-
-  // Por capítulo
-  const capsArr = Object.values(aggCap).sort((a,b)=>String(a.cap).localeCompare(String(b.cap), undefined, {numeric:true}));
-  document.getElementById('rc-cap').innerHTML = capsArr.map(c => {
-    const e = c.hhApu > 0 ? (c.hhApu / c.hhReal * 100) : 0;
-    const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
-    const w = Math.min(150, Math.max(2, e));
-    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:8px"><div style="width:80px;font-weight:600;color:#fff;font-size:12px">CAP '+c.cap+'</div><div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:'+(cls==='green'?'linear-gradient(90deg,#22c55e,#86efac)':cls==='yellow'?'linear-gradient(90deg,#fbbf24,#fcd34d)':'linear-gradient(90deg,#ef4444,#fca5a5)')+'"></div></div><div style="width:60px;text-align:right;font-weight:600;font-size:12px;color:'+(cls==='green'?'#86efac':cls==='yellow'?'#fcd34d':'#fca5a5')+'">'+e.toFixed(0)+'%</div></div>';
-  }).join('') || '<div style="color:#64748b;padding:14px">Sin datos APU para mostrar.</div>';
-}
-
-
-/* ====================== PWA (V2) ====================== */
-if ('serviceWorker' in navigator) {
-  try { navigator.serviceWorker.register('./sw.js'); } catch(_){}
-}
-</script>
-
-</body>
-</html>
+  doc
