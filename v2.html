@@ -1838,6 +1838,16 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       </div>
     </div>
 
+    <!-- Panel SOLO RANGO: gráfico día a día · % ejecución vs % meta -->
+    <div class="ed-panel" id="ed-rango-chart-panel" style="margin-bottom:14px;display:none">
+      <h3 style="font-size:13px;font-weight:700;margin:0 0 4px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <span>📈 Ejecución vs Meta por día</span>
+        <span id="ed-rango-chart-info" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
+      </h3>
+      <div style="font-size:11px;color:#64748b;margin-bottom:10px">% del costo total del proyecto ejecutado cada día (barras) vs meta diaria programada (línea verde): L-V 0,455% · Sáb 0,227% · Dom 0%. Barra verde = cumple meta, ámbar = cerca, roja = por debajo.</div>
+      <div style="position:relative;height:300px;width:100%"><canvas id="ed-rango-chart"></canvas></div>
+    </div>
+
     <!-- Panel: Ganancia / Pérdida del día vs Corte de Indicadores -->
     <div class="ed-panel" id="ed-corte-panel" style="margin-bottom:14px;display:none">
       <h3 style="font-size:13px;font-weight:700;margin:0 0 8px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px">
@@ -5987,6 +5997,9 @@ function _edLoadHide(){
 // Modo RANGO en espera: oculta el reloj y pide explícitamente ambas fechas.
 function _edRangoPrompt(vD, vH){
   try { _edLoadHide(); } catch(_){}
+  var _gp = document.getElementById('ed-rango-chart-panel');
+  if (_gp) _gp.style.display = 'none';
+  if (typeof ED_RANGO_CHART !== 'undefined' && ED_RANGO_CHART){ try { ED_RANGO_CHART.destroy(); } catch(_){} ED_RANGO_CHART = null; }
   var falta = (!vD ? 'la fecha de inicio' : '') +
               ((!vD && !vH) ? ' y ' : '') +
               (!vH ? 'la fecha de fin' : '');
@@ -6001,6 +6014,61 @@ function _edRangoPrompt(vD, vH){
     var d = document.getElementById('ed-pct-proy-detalle'); if (d) d.textContent = msg;
     var b = document.getElementById('ed-pct-proy-bar'); if (b) b.style.width = '0%';
   }
+}
+
+// Gráfico día a día: % ejecución vs % meta (visible SOLO en modo Rango/periodo)
+let ED_RANGO_CHART = null;
+function _edRenderChartRango(d, esPeriodo){
+  var panel = document.getElementById('ed-rango-chart-panel');
+  if (!panel) return;
+  var serie = d && d._serieDias;
+  if (!esPeriodo || !serie || !serie.length){
+    panel.style.display = 'none';
+    if (ED_RANGO_CHART){ try { ED_RANGO_CHART.destroy(); } catch(_){} ED_RANGO_CHART = null; }
+    return;
+  }
+  panel.style.display = 'block';
+  var info   = document.getElementById('ed-rango-chart-info');
+  var canvas = document.getElementById('ed-rango-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  var totalProy = _edTotalProyecto();
+  if (!totalProy){
+    if (info) info.textContent = 'Cargando total del proyecto…';
+    if (ED_RANGO_CHART){ try { ED_RANGO_CHART.destroy(); } catch(_){} ED_RANGO_CHART = null; }
+    return;
+  }
+  var labels  = serie.map(function(s){ return formatFechaED(s.fecha).replace(/\s+\d{4}$/, ''); }); // "12 jun"
+  var pctEjec = serie.map(function(s){ return +((s.ejec / totalProy) * 100).toFixed(4); });
+  var pctMeta = serie.map(function(s){ return +((2.5 / 5.5) * s.peso).toFixed(4); }); // L-V 0,4545% · Sáb 0,227% · Dom 0
+  var barColors = serie.map(function(s, i){
+    var meta = pctMeta[i], ej = pctEjec[i];
+    if (meta <= 0) return 'rgba(99,102,241,.55)';
+    return ej >= meta ? 'rgba(16,185,129,.78)' : (ej >= meta * 0.7 ? 'rgba(245,158,11,.78)' : 'rgba(239,68,68,.72)');
+  });
+  var light = document.body.classList.contains('light');
+  var grid  = light ? 'rgba(15,23,42,.08)' : 'rgba(255,255,255,.07)';
+  var tick  = light ? '#475569' : '#94a3b8';
+  if (info) info.textContent = serie.length + ' días · ' + serie.filter(function(s){ return s.ejec > 0; }).length + ' con avance';
+  if (ED_RANGO_CHART){ try { ED_RANGO_CHART.destroy(); } catch(_){} ED_RANGO_CHART = null; }
+  ED_RANGO_CHART = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [
+      { label: '% ejecución del día', data: pctEjec, backgroundColor: barColors, borderRadius: 3, order: 2 },
+      { label: '% meta diaria', data: pctMeta, type: 'line', borderColor: '#10b981', borderWidth: 2, borderDash: [5,4], pointRadius: 0, tension: 0, fill: false, order: 1 }
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: tick, font: { size: 11 }, usePointStyle: true } },
+        tooltip: { callbacks: { label: function(c){ return c.dataset.label + ': ' + Number(c.parsed.y).toFixed(3) + '%'; } } }
+      },
+      scales: {
+        x: { grid: { color: grid }, ticks: { color: tick, font: { size: 10 }, maxRotation: 60, autoSkip: true, maxTicksLimit: 31 } },
+        y: { grid: { color: grid }, ticks: { color: tick, font: { size: 10 }, callback: function(v){ return v + '%'; } }, beginAtZero: true }
+      }
+    }
+  });
 }
 
 function ejecDiariaRender(){
@@ -6113,6 +6181,9 @@ function ejecDiariaRender(){
       detEl.textContent = det + ' · ejecutado ' + moneyShort(valSel) + ' · ' + pct.toFixed(2) + '% de ' + moneyShort(totalProy) + ' (proyecto)';
     }
   })();
+
+  // === GRÁFICO RANGO: % ejecución vs % meta por día (solo periodo) ===
+  try { _edRenderChartRango(d, esPeriodo); } catch(_){}
 
   // === GANANCIA / PÉRDIDA vs CORTE DE INDICADORES ===
   (function(){
@@ -6774,6 +6845,17 @@ async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
     _generado: '',
     _periodo: {desde:desde, hasta:hasta, dias:fechas.length, diasConDatos:diasConDatos, etiqueta:etiqueta||''}
   };
+  // Serie día a día (para gráfico ejecución vs meta en modo Rango)
+  var _totByFecha = {};
+  resultados.forEach(function(r){
+    var _dd = r.data;
+    if (_dd && _dd.fechaUsada === r.fecha && _dd.costos){ _totByFecha[r.fecha] = Number(_dd.costos.total)||0; }
+  });
+  dataAgregada._serieDias = fechas.map(function(f){
+    var _dt = _edParseFecha(f); var _wd = _dt ? _dt.getDay() : 1;
+    var _peso = (_wd===6) ? 0.5 : (_wd===0 ? 0 : 1); // L-V=1 · Sáb=0,5 · Dom=0
+    return { fecha: f, ejec: _totByFecha[f]||0, peso: _peso };
+  });
   EJEC_DIARIA_DATA = dataAgregada;
   EJEC_DIARIA_LOADED = true;
   ejecDiariaRender();
