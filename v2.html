@@ -1190,6 +1190,14 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <h3 style="margin:0;font-size:15px;color:#e6ecff">📐 Valor Ganado (EVM)</h3>
     <span id="evm-sub" style="color:#8b9bd1;font-size:12px">calculando…</span>
   </div>
+  <style>
+    /* FIX EVM: 6 tarjetas en medio panel quedaban de ~80px (texto cortado, M en otra línea).
+       Pasamos a 3 columnas (más anchas) y evitamos el salto de línea del valor. */
+    #evm-grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+    @media(max-width:520px){#evm-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important}}
+    #evm-grid > div > div:nth-child(2){white-space:nowrap}
+    #evm-grid > div > div:first-child{letter-spacing:.03em}
+  </style>
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="evm-grid" style="min-width:0">
     <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">SPI · cronograma</div><div id="evm-spi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-spi-sub" style="font-size:10.5px;color:#64748b">EV ÷ PV</div></div>
     <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">CPI · costo</div><div id="evm-cpi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-cpi-sub" style="font-size:10.5px;color:#64748b">EV ÷ AC</div></div>
