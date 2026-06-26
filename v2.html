@@ -11,6 +11,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Íconos de línea inline (sin dependencia de CDN, offline-safe) */
+  .ic{display:inline-block;vertical-align:middle;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .menu-card .icon{color:#fff}
+  .menu-card .icon .ic{width:22px;height:22px}
+  #login-overlay .v3-node{color:#fff}
+  #login-overlay .v3-node .ic{width:26px;height:26px}
+  @media(max-width:480px){#login-overlay .v3-node .ic{width:22px;height:22px}}
+  /* Accesibilidad: respeta a quien pide menos movimiento (perf + batería en móvil) */
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;animation-delay:0ms !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+  }
+</style>
 
 
 <style>
