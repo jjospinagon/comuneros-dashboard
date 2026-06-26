@@ -295,6 +295,18 @@
 }
 
 /* ============================================================
+   FIX ESCRITORIO · reservar la franja superior derecha
+   En escritorio, #theme-toggle (top:14) y #fab-nav (top:72) viven
+   fijos arriba-derecha y tapaban los controles del header (Refrescar
+   en el topbar, y el badge/gen debajo). Se reserva ~76px a la derecha
+   de los headers para que nada quede debajo de los botones.
+   ============================================================ */
+@media (min-width: 769px) {
+  .topbar { padding-right: 76px; }
+  .screen:not(#screen-menu) header { padding-right: 76px; }
+}
+
+/* ============================================================
    MODO DÍA (light) — overrides cuando body.light está activo
    La vista por defecto es NOCTURNA (sin cambios).
 ============================================================ */
