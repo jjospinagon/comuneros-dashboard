@@ -324,7 +324,7 @@
 }
 #theme-toggle:hover{transform:scale(1.08);box-shadow:0 6px 22px rgba(251,191,36,.45)}
 body.light #theme-toggle{
-  background:#ffffff;border-color:rgba(15,23,42,.15);color:#0ea5e9;
+  background:#ffffff;border-color:rgba(15,23,42,.15);color:#22d3ee;
   box-shadow:0 4px 18px rgba(15,23,42,.15),0 0 0 2px rgba(14,165,233,.18);
 }
 body.light #theme-toggle:hover{box-shadow:0 6px 22px rgba(14,165,233,.35)}
@@ -339,13 +339,13 @@ body.light .v3-form{background:rgba(255,255,255,.95) !important;border-color:rgb
 body.light .v3-form *{color:#0f172a !important}
 body.light .v3-form input{background:#f8fafc !important;border-color:rgba(15,23,42,.12) !important;color:#0f172a !important}
 body.light .v3-form input::placeholder{color:#94a3b8 !important}
-body.light .v3-form button[type=submit],body.light .v3-form .btn-primary{background:linear-gradient(135deg,#0ea5e9,#0284c7) !important;color:#fff !important;border:0}
+body.light .v3-form button[type=submit],body.light .v3-form .btn-primary{background:linear-gradient(135deg,#22d3ee,#0284c7) !important;color:#fff !important;border:0}
 
 /* Menú principal */
 body.light .menu-card{background:rgba(255,255,255,.95) !important;border:1px solid rgba(15,23,42,.08) !important;box-shadow:0 4px 14px rgba(15,23,42,.05)}
 body.light .menu-card *{color:#0f172a !important}
 body.light .menu-card .desc{color:#475569 !important}
-body.light .menu-card .cta{color:#0ea5e9 !important}
+body.light .menu-card .cta{color:#22d3ee !important}
 body.light .menu-card:hover{box-shadow:0 10px 30px rgba(15,23,42,.12);transform:translateY(-2px)}
 body.light .topbar-title,body.light .topbar-meta{color:#0f172a !important}
 body.light .topbar-meta{color:#475569 !important}
@@ -415,7 +415,7 @@ body.light input[type=date]::-webkit-datetime-edit-year-field{color:#0f172a !imp
 
 /* Chips / badges */
 body.light .ed-chip,body.light .mo-chip,body.light .maq-chip,body.light [class*="-chip"]{background:#fff !important;border-color:rgba(15,23,42,.12) !important;color:#475569 !important}
-body.light [class*="-chip"].active,body.light .mo-chip.active,body.light .maq-chip.active{background:#0ea5e9 !important;border-color:#0284c7 !important;color:#fff !important}
+body.light [class*="-chip"].active,body.light .mo-chip.active,body.light .maq-chip.active{background:#22d3ee !important;border-color:#0284c7 !important;color:#fff !important}
 
 /* Pantallas específicas - bordes header */
 body.light header{border-bottom-color:rgba(15,23,42,.08) !important}
@@ -613,7 +613,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 <!-- ============ FAB NAVEGACION ENTRE MODULOS (V2) ============ -->
 <div id="fab-nav" style="position:fixed;right:14px;top:72px;z-index:9000">
   <div id="fab-menu" style="display:none;position:absolute;right:0;top:60px;border-radius:14px;padding:8px;min-width:235px;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(14px)"></div>
-  <button id="fab-btn" onclick="fabToggle(event)" title="Ir a otro módulo" aria-label="Navegación rápida" style="width:46px;height:46px;border-radius:50%;border:1px solid rgba(34,211,238,.55);background:linear-gradient(135deg,#0ea5e9,#a855f7);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 8px 24px rgba(14,165,233,.45);display:flex;align-items:center;justify-content:center">⊞</button>
+  <button id="fab-btn" onclick="fabToggle(event)" title="Ir a otro módulo" aria-label="Navegación rápida" style="width:46px;height:46px;border-radius:50%;border:1px solid rgba(34,211,238,.55);background:linear-gradient(135deg,#22d3ee,#a855f7);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 8px 24px rgba(14,165,233,.45);display:flex;align-items:center;justify-content:center">⊞</button>
 </div>
 
 <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar modo día/noche" aria-label="Cambiar tema">🌙</button>
@@ -675,7 +675,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     /* Posición de los 6 nodos en círculo (radio ~158 desde centro 190,190) */
     /* 0° → contrato (E), 60° SE → obra, 120° NE → kpis, 180° NW → inventario, 240° SW → comunicaciones, 300° W → fotos */
     #login-overlay .v3-node.n1{top:159px;right:-12px;background:linear-gradient(135deg,#a855f7,#22d3ee)}
-    #login-overlay .v3-node.n2{top:30px;right:39px;background:linear-gradient(135deg,#22c55e,#0ea5e9)}
+    #login-overlay .v3-node.n2{top:30px;right:39px;background:linear-gradient(135deg,#22c55e,#22d3ee)}
     #login-overlay .v3-node.n3{top:30px;left:39px;background:linear-gradient(135deg,#22d3ee,#22d3ee)}
     #login-overlay .v3-node.n4{top:159px;left:-12px;background:linear-gradient(135deg,#10b981,#22d3ee)}
     #login-overlay .v3-node.n5{bottom:30px;left:39px;background:linear-gradient(135deg,#a855f7,#ef4444)}
@@ -893,7 +893,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 
       <!-- CARD EJECUCION OBRA -->
       <div class="menu-card ind" onclick="goTo('obra')" style="background:linear-gradient(180deg,rgba(34,197,94,.05),rgba(20,26,55,.4))">
-        <div class="icon" style="background:linear-gradient(135deg,#22c55e,#0ea5e9)">🏗️</div>
+        <div class="icon" style="background:linear-gradient(135deg,#22c55e,#22d3ee)">🏗️</div>
         <h2>Ejecución de Obra</h2>
         <p class="desc">Dashboard de control de obra desde la hoja DASHBOARD del XLSX maestro: indicadores ejecutivos, avance por capítulo / responsable, curva S semanal.</p>
         <div class="illust">
@@ -1995,7 +1995,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <input type="date" id="maq-fdesde" title="Fecha desde"/>
       <span style="color:#94a3b8">→</span>
       <input type="date" id="maq-fhasta" title="Fecha hasta"/>
-      <button onclick="maqAplicarFiltros()" style="background:linear-gradient(135deg,#22d3ee,#0ea5e9);border:0;color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">🔍 Aplicar</button>
+      <button onclick="maqAplicarFiltros()" style="background:linear-gradient(135deg,#22d3ee,#22d3ee);border:0;color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">🔍 Aplicar</button>
       <button class="maq-chip" onclick="maqRangoPreset('hoy')">Hoy</button>
       <button class="maq-chip" onclick="maqRangoPreset('semana')">Semana</button>
       <button class="maq-chip" onclick="maqRangoPreset('mes')">Mes</button>
@@ -3290,7 +3290,7 @@ function fabRender(){
   var cur=(document.querySelector('.screen.active')||{}).id||'';
   m.innerHTML=FAB_VISTAS.map(function(v){
     var act=cur==='screen-'+v[0];
-    var col=act?'#0ea5e9':(light?'#334155':'#dbe4ff');
+    var col=act?'#22d3ee':(light?'#334155':'#dbe4ff');
     var bg=act?(light?'rgba(14,165,233,.1)':'rgba(34,211,238,.12)'):'transparent';
     return '<div onclick="fabGo(\''+v[0]+'\')" style="display:flex;align-items:center;gap:11px;padding:9px 13px;border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;color:'+col+';background:'+bg+'" '+
       'onmouseover="this.style.background=\''+(light?'rgba(14,165,233,.12)':'rgba(99,102,241,.2)')+'\'" '+
@@ -3768,7 +3768,7 @@ function invRenderConsCharts(){
     document.getElementById('inv-chart-cat-cons').innerHTML='<p style="color:#94a3b8;text-align:center;padding:40px">Cargando consolidado…</p>';
     return;
   }
-  const palette=['#22c55e','#22d3ee','#a855f7','#ef4444','#f59e0b','#22d3ee','#a855f7','#10b981','#a855f7','#0ea5e9','#f59e0b','#84cc16'];
+  const palette=['#22c55e','#22d3ee','#a855f7','#ef4444','#f59e0b','#22d3ee','#a855f7','#10b981','#a855f7','#22d3ee','#f59e0b','#84cc16'];
   INV_CHARTS.catC = donutGen('inv-chart-cat-cons', INV_CONS.valorPorCategoria.map(d=>d[0]), INV_CONS.valorPorCategoria.map(d=>d[1]), palette);
   INV_CHARTS.topC = barH('inv-chart-top10-cons', INV_CONS.top10, '#22c55e', 'valor');
   INV_CHARTS.undC = colChart('inv-chart-und-cons', INV_CONS.valorPorUnidad, '#10b981');
@@ -5402,7 +5402,7 @@ function obraAplicarFiltros(){
   const kpis = document.getElementById('obra-kpis');
   const kpisHTML = [
     {label:'VALOR TOTAL FILTRADO', value: obraMoney(vrTotal), color:'#22c55e'},
-    {label:'VALOR EJECUTADO', value: obraMoney(vrEjec), color:'#0ea5e9'},
+    {label:'VALOR EJECUTADO', value: obraMoney(vrEjec), color:'#22d3ee'},
     {label:'VALOR PROGRAMADO S'+semanaActual, value: obraMoney(vrProg), color:'#f59e0b'},
     {label:'% AVANCE REAL', value: (pctReal*100).toFixed(2)+'%', color:(pctReal>=pctProg?'#22c55e':'#ef4444')},
     {label:'% AVANCE PROGRAMADO S'+semanaActual, value: (pctProg*100).toFixed(2)+'%', color:'#a855f7'},
@@ -5418,7 +5418,7 @@ function obraAplicarFiltros(){
   const opHTML = '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:6px">' + [
     {label:'ACT. FILTRADAS', value: filtradas.length, color:'#94a3b8'},
     {label:'COMPLETADAS (100%)', value: completadas, color:'#22c55e'},
-    {label:'EN CURSO', value: enCurso, color:'#0ea5e9'},
+    {label:'EN CURSO', value: enCurso, color:'#22d3ee'},
     {label:'PENDIENTES', value: pendientes, color:'#f59e0b'},
     {label:'VALOR PENDIENTE', value: obraMoney(vrPendiente), color:'#ef4444'},
     {label:'% COMPLETITUD', value: (pctCompletitud*100).toFixed(1)+'%', color:'#a855f7'}
@@ -5462,7 +5462,7 @@ function obraAplicarFiltros(){
     const r = porResp[re];
     return {resp:re, n:r.n, vrTotal:r.vrTotal, vrEjec:r.vrEjec, pct: r.vrTotal>0?r.vrEjec/r.vrTotal:0};
   });
-  let respHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">👥 Avance por responsable</h3><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Responsable</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Act</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Total</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Ejec</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;min-width:140px">% Avance</th></tr></thead><tbody>';
+  let respHTML = '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #22d3ee"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">👥 Avance por responsable</h3><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.1)"><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Responsable</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Act</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Total</th><th style="padding:8px 10px;text-align:right;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px">Vr Ejec</th><th style="padding:8px 10px;text-align:left;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.5px;min-width:140px">% Avance</th></tr></thead><tbody>';
   respRows.forEach(r => {
     const bar = Math.min(100, Math.max(0, r.pct*100));
     const barColor = bar >= 80 ? '#22c55e' : bar >= 40 ? '#f59e0b' : '#ef4444';
@@ -5596,13 +5596,13 @@ function obraAplicarFiltros(){
   // Donut por responsable
   if (respRows.length && typeof Chart !== 'undefined'){
     const dId = 'donut_' + Date.now();
-    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #0ea5e9"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🍩 Distribución por responsable (Vr Total)</h3><div style="position:relative;height:320px;max-width:500px;margin:0 auto"><canvas id="'+dId+'"></canvas></div></div>';
+    sec.innerHTML += '<div class="panel" style="background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-top:3px solid #22d3ee"><h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:#fff">🍩 Distribución por responsable (Vr Total)</h3><div style="position:relative;height:320px;max-width:500px;margin:0 auto"><canvas id="'+dId+'"></canvas></div></div>';
     setTimeout(() => {
       const ctx = document.getElementById(dId);
       if (!ctx) return;
       new Chart(ctx, {
         type: 'doughnut',
-        data: { labels: respRows.map(r => r.resp), datasets: [{ data: respRows.map(r => r.vrTotal), backgroundColor: ['#22c55e','#0ea5e9','#f59e0b','#ef4444','#a855f7','#22d3ee','#a855f7','#a855f7'] }] },
+        data: { labels: respRows.map(r => r.resp), datasets: [{ data: respRows.map(r => r.vrTotal), backgroundColor: ['#22c55e','#22d3ee','#f59e0b','#ef4444','#a855f7','#22d3ee','#a855f7','#a855f7'] }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position:'right', labels: { color:'#cbd5e1', font:{size:11} } } } }
       });
     }, 100);
@@ -8762,7 +8762,7 @@ function rendRenderFisica(){
     else bins[4]++;
   });
   const maxBin = Math.max(...bins, 1);
-  const colors = ['#ef4444','#f59e0b','#fbbf24','#22c55e','#0ea5e9'];
+  const colors = ['#ef4444','#f59e0b','#fbbf24','#22c55e','#22d3ee'];
   document.getElementById('rf-hist').innerHTML = bins.map((v,i) =>
     '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:11px;color:#cbd5e1;font-weight:600">'+v+'</div><div style="width:100%;background:'+colors[i]+';border-radius:4px 4px 0 0;height:'+(v/maxBin*120)+'px;min-height:2px"></div></div>'
   ).join('');
