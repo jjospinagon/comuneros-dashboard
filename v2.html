@@ -7421,7 +7421,11 @@ async function moCargar(force, fechaOverride){
             if (!ent) return;
             // Solo aplicar si hubo reingreso o si estado en obra
             if (ent.estado === 'EN_OBRA') {
-              p.salida = null; // pintar como En obra
+              // FIX cierre manual (2026-06-26): solo borrar la salida si hubo REINGRESO
+              // real por escaneo. Si no, respetar la salida del Excel — puede ser un
+              // cierre desde el cockpit que mo_eventos aun no propago — para que la
+              // persona no reaparezca como "laborando".
+              if (ent.reingreso) p.salida = null;
               p._reingreso = ent.reingreso;
               p._ultimoIngresoHora = _moFormatHoraFrac(ent.eventos && ent.eventos.length ? ent.eventos[ent.eventos.length-1].hora : '');
               p.ausencia = null;
@@ -7430,6 +7434,20 @@ async function moCargar(force, fechaOverride){
         }
       }
     } catch(_){ /* fallback silencioso */ }
+    // Cierres manuales hechos en esta sesion del cockpit: prevalecen aunque
+    // mano_obra / mo_eventos aun no hayan propagado el evento de salida (evita
+    // que la persona reaparezca como "laborando" justo despues del cierre).
+    try {
+      var _fUsada = d.fechaUsada || d.fecha || fecha;
+      if (d.personas) d.personas.forEach(function(p){
+        var c = MO_CIERRES_LOCALES[String((p.cedula||'')).trim()];
+        if (c && c.fecha === _fUsada){
+          if (!p.salida) p.salida = c.hora || '—';
+          p._reingreso = false;
+          p.ausencia = null;
+        }
+      });
+    } catch(_){}
     MO_DATA = d;
     // FIX corrupción Drive.Files.copy: las horas vienen sumadas ~+3h04m sobre la real.
     // Detectamos el patrón (secuencia <2min entre personas consecutivas + todas > 9:30 AM)
@@ -7668,6 +7686,10 @@ function moLimpiarFiltros(){
 
 // FIX 2026-06-09: cerrar jornada manual desde el cockpit MO
 var MO_PERSONAS_VISIBLES = [];
+// Memoria de cierres manuales hechos en esta sesion (cedula -> {fecha, hora}).
+// Garantiza que un cierre desde el cockpit se mantenga aunque el backend tarde
+// en propagar el evento de salida a mo_eventos.
+var MO_CIERRES_LOCALES = {};
 function moCerrarJornadaIdx(idx){
   var p = MO_PERSONAS_VISIBLES[idx];
   if (!p) { alert('Persona no encontrada en cache. Refresca la pagina.'); return; }
@@ -7744,10 +7766,14 @@ async function moCerrarJornada(p){
         '<div style="color:#94a3b8">Tiempo</div><div style="font-weight:600;color:#22d3ee">' + elapsed + 's</div>' +
       '</div>' +
       '<div style="font-size:10.5px;color:#94a3b8">Esta ventana se cierra sola</div>');
+    try { MO_CIERRES_LOCALES[String(p.cedula).trim()] = { fecha: (typeof moHoyStr==='function'?moHoyStr():(res.fecha||'')), hora: res.hora || '' }; } catch(_){}
     dismiss(3500);
     try { _lsBust('mo:'); } catch(_){}
     MO_LOADED = false;
+    // Doble recarga: a los 3.5s (UX inmediata) y a los 12s (para alcanzar la
+    // propagacion del backend). La memoria local mantiene el cierre entre ambas.
     setTimeout(function(){ if (typeof moCargar === 'function') moCargar(); }, 3500);
+    setTimeout(function(){ if (typeof moCargar === 'function') moCargar(); }, 12000);
   } catch(e){
     finishOverlay('<div style="font-size:36px;margin-bottom:12px">'+'\u274C'+'</div>' +
       '<div style="font-size:15px;font-weight:600;color:#ef4444;margin-bottom:10px">Error inesperado</div>' +
