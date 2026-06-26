@@ -132,7 +132,7 @@
   .menu-card .cta .arrow{transition:transform .25s}
   .menu-card:hover .cta .arrow{transform:translateX(6px)}
 
-  .menu-footer{margin-top:36px;text-align:center;color:#64748b;font-size:11.5px}
+  .menu-footer{margin-top:36px;text-align:center;color:#94a3b8;font-size:11.5px}
   .menu-status-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#10b981;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:600}
   .menu-status-pill .dot{width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;animation:pulse 2s ease infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -292,6 +292,10 @@
   /* Toggle de tema → debajo del FAB, misma esquina */
   #theme-toggle { top:auto !important; bottom:18px !important; right:14px !important;
                   width:46px !important; height:46px !important; }
+  /* Tap targets cómodos para dedo: chips de filtro y pestañas de inventario */
+  .mo-chip, .ed-chip, .maq-chip, #screen-inventario .tb {
+    min-height:34px; display:inline-flex; align-items:center; box-sizing:border-box;
+  }
 }
 
 /* ============================================================
@@ -334,7 +338,7 @@ body.light .v3-overlay{background:linear-gradient(180deg,#e2e8f0,#f1f5f9) !impor
 body.light .v3-form{background:rgba(255,255,255,.95) !important;border-color:rgba(15,23,42,.08) !important;color:#0f172a;box-shadow:0 10px 40px rgba(15,23,42,.08)}
 body.light .v3-form *{color:#0f172a !important}
 body.light .v3-form input{background:#f8fafc !important;border-color:rgba(15,23,42,.12) !important;color:#0f172a !important}
-body.light .v3-form input::placeholder{color:#64748b !important}
+body.light .v3-form input::placeholder{color:#94a3b8 !important}
 body.light .v3-form button[type=submit],body.light .v3-form .btn-primary{background:linear-gradient(135deg,#0ea5e9,#0284c7) !important;color:#fff !important;border:0}
 
 /* Menú principal */
@@ -365,9 +369,9 @@ body.light [style*="color:#fff"],body.light [style*="color:#ffffff"]{color:#0f17
 /* Fondos sticky de tablas dentro de paneles */
 body.light th[style*="background:rgba(20"],body.light th[style*="background:rgba(15"]{background:#f1f5f9 !important}
 body.light [class*="-kpi"]{background:#ffffff !important;border-color:rgba(15,23,42,.08) !important;color:#0f172a}
-body.light [class*="-kpi"] .l,body.light [class*="-kpi"] .label{color:#64748b !important}
+body.light [class*="-kpi"] .l,body.light [class*="-kpi"] .label{color:#94a3b8 !important}
 body.light [class*="-kpi"] .v,body.light [class*="-kpi"] .value{color:#0f172a !important}
-body.light [class*="-kpi"] .s,body.light [class*="-kpi"] .sub{color:#64748b !important}
+body.light [class*="-kpi"] .s,body.light [class*="-kpi"] .sub{color:#94a3b8 !important}
 
 /* Tablas */
 body.light table{color:#0f172a}
@@ -418,7 +422,7 @@ body.light header{border-bottom-color:rgba(15,23,42,.08) !important}
 
 /* Indicadores específicos: textos secundarios */
 body.light [style*="color:#94a3b8"],body.light [style*="color:#cbd5e1"]{color:#475569 !important}
-body.light [style*="color:#64748b"]{color:#6b7280 !important}
+body.light [style*="color:#94a3b8"]{color:#6b7280 !important}
 body.light [style*="color:#fff"]:not([class*="badge"]):not([class*="-kpi"] .v){}
 
 /* Topbar / barras */
@@ -431,7 +435,7 @@ body.light .foto-thumb{border-color:rgba(14,165,233,.3) !important;background:#e
 body.light #mo-persona-modal{background:rgba(15,23,42,.5)}
 body.light #mo-persona-modal .mp-card{background:#fff !important;border-color:rgba(15,23,42,.08) !important;color:#0f172a !important}
 body.light #mo-persona-modal .mp-card *{color:#0f172a}
-body.light #mo-persona-modal .mp-card [style*="color:#94a3b8"]{color:#64748b !important}
+body.light #mo-persona-modal .mp-card [style*="color:#94a3b8"]{color:#94a3b8 !important}
 body.light #mo-persona-modal .mp-kpi{background:#f8fafc !important;border-color:rgba(15,23,42,.08) !important}
 body.light #mo-persona-modal th{background:#f1f5f9 !important}
 
@@ -470,7 +474,7 @@ body.light .badge-cap{background:rgba(251,191,36,.18) !important;color:#b45309 !
 }
 .rend-kpi .l{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:6px}
 .rend-kpi .v{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:4px}
-.rend-kpi .s{font-size:10.5px;color:#64748b;font-weight:500}
+.rend-kpi .s{font-size:10.5px;color:#94a3b8;font-weight:500}
 .rend-panel{
   background:rgba(20,26,55,.6);backdrop-filter:blur(10px);
   border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px 18px;
@@ -496,12 +500,12 @@ body.light .badge-cap{background:rgba(251,191,36,.18) !important;color:#b45309 !
 /* Modo día */
 body.light .rend-chip{background:#fff !important;border-color:rgba(15,23,42,.1) !important;color:#475569 !important}
 body.light .rend-chip.active{background:linear-gradient(135deg,#f472b6,#a855f7) !important;color:#fff !important;border-color:transparent !important}
-body.light .rend-tab{color:#64748b !important}
+body.light .rend-tab{color:#94a3b8 !important}
 body.light .rend-tab.active{color:#db2777 !important;border-bottom-color:#db2777 !important}
 body.light .rend-kpi{background:#ffffff !important;border-color:rgba(15,23,42,.08) !important;box-shadow:0 1px 3px rgba(15,23,42,.04)}
-body.light .rend-kpi .l{color:#64748b !important}
+body.light .rend-kpi .l{color:#94a3b8 !important}
 body.light .rend-kpi .v{color:#0f172a !important}
-body.light .rend-kpi .s{color:#64748b !important}
+body.light .rend-kpi .s{color:#94a3b8 !important}
 body.light .rend-panel{background:#ffffff !important;border-color:rgba(15,23,42,.08) !important;box-shadow:0 1px 3px rgba(15,23,42,.04)}
 body.light .rend-panel h3{color:#0f172a !important}
 body.light #screen-rendimientos table{color:#1e293b !important}
@@ -558,7 +562,7 @@ body.light [style*="color:#9ca3af"],
 body.light [style*="color:#a1a1aa"]{
   color:#475569 !important;
 }
-body.light [style*="color:#64748b"],
+body.light [style*="color:#94a3b8"],
 body.light [style*="color:#6b7280"]{
   color:#475569 !important;
 }
@@ -1199,12 +1203,12 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     #evm-grid > div > div:first-child{letter-spacing:.03em}
   </style>
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="evm-grid" style="min-width:0">
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">SPI · cronograma</div><div id="evm-spi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-spi-sub" style="font-size:10.5px;color:#64748b">EV ÷ PV</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">CPI · costo</div><div id="evm-cpi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-cpi-sub" style="font-size:10.5px;color:#64748b">EV ÷ AC</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EV · valor ganado</div><div id="evm-ev" style="font-size:16px;font-weight:700;color:#22d3ee">—</div><div id="evm-ev-sub" style="font-size:10.5px;color:#64748b">ejecutado a tarifa contractual</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">PV · programado</div><div id="evm-pv" style="font-size:16px;font-weight:700;color:#10b981">—</div><div id="evm-pv-sub" style="font-size:10.5px;color:#64748b">curva S programada</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">AC · costo real</div><div id="evm-ac" style="font-size:16px;font-weight:700;color:#f59e0b">—</div><div id="evm-ac-sub" style="font-size:10.5px;color:#64748b">incurrido al corte</div></div>
-    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EAC · proyección</div><div id="evm-eac" style="font-size:16px;font-weight:700;color:#c084fc">—</div><div id="evm-eac-sub" style="font-size:10.5px;color:#64748b">BAC ÷ CPI</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">SPI · cronograma</div><div id="evm-spi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-spi-sub" style="font-size:10.5px;color:#94a3b8">EV ÷ PV</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">CPI · costo</div><div id="evm-cpi" style="font-size:22px;font-weight:800;color:#cbd5e1">—</div><div id="evm-cpi-sub" style="font-size:10.5px;color:#94a3b8">EV ÷ AC</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EV · valor ganado</div><div id="evm-ev" style="font-size:16px;font-weight:700;color:#22d3ee">—</div><div id="evm-ev-sub" style="font-size:10.5px;color:#94a3b8">ejecutado a tarifa contractual</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">PV · programado</div><div id="evm-pv" style="font-size:16px;font-weight:700;color:#10b981">—</div><div id="evm-pv-sub" style="font-size:10.5px;color:#94a3b8">curva S programada</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">AC · costo real</div><div id="evm-ac" style="font-size:16px;font-weight:700;color:#f59e0b">—</div><div id="evm-ac-sub" style="font-size:10.5px;color:#94a3b8">incurrido al corte</div></div>
+    <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:10px 12px;min-width:0;overflow:hidden"><div style="font-size:10px;letter-spacing:.1em;color:#8b9bd1;text-transform:uppercase">EAC · proyección</div><div id="evm-eac" style="font-size:16px;font-weight:700;color:#c084fc">—</div><div id="evm-eac-sub" style="font-size:10.5px;color:#94a3b8">BAC ÷ CPI</div></div>
   </div>
   <div id="evm-var" style="margin-top:10px;font-size:12px;color:#94a3b8"></div>
 </div>
@@ -1533,10 +1537,10 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     </header>
 
     <div class="grid contrato-kpis" style="display:grid;gap:14px">
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #22d3ee"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Contrato</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">023 de 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Obra civil</div></div>
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Entidad</div><div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px;line-height:1.25">EMPRESA PARA EL DESARROLLO TERRITORIAL</div><div style="font-size:11px;color:#64748b;margin-top:2px">Quindío</div></div>
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #f59e0b"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Contratista</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">CONSORCIO INFRARED COMUNEROS 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Consorcio de obra</div></div>
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #a855f7"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Interventoría</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">UT INTERCOMUNEROS 2025</div><div style="font-size:11px;color:#64748b;margin-top:2px">Interventoría externa</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #22d3ee"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Contrato</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">023 de 2025</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">Obra civil</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Entidad</div><div style="font-size:13px;font-weight:700;color:#fff;margin-top:4px;line-height:1.25">EMPRESA PARA EL DESARROLLO TERRITORIAL</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">Quindío</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #f59e0b"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Contratista</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">CONSORCIO INFRARED COMUNEROS 2025</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">Consorcio de obra</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #a855f7"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Interventoría</div><div style="font-size:12.5px;font-weight:700;color:#fff;margin-top:4px;line-height:1.2">UT INTERCOMUNEROS 2025</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">Interventoría externa</div></div>
     </div>
 
     <div class="grid contrato-cols2" style="display:grid;gap:14px;margin-top:14px">
@@ -1554,7 +1558,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 
       <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px">
         <h3 style="font-size:14px;font-weight:700;margin:0 0 6px;color:#fff">🗂️ Documentos oficiales</h3>
-        <div style="font-size:11px;color:#64748b;margin-bottom:10px">Click para abrir en Google Drive · acceso restringido</div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">Click para abrir en Google Drive · acceso restringido</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <a href="https://drive.google.com/file/d/1Ok8cp5YRdhcyEeIO_43OBNKcpl2-APMi/view" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;color:#cbd5e1"><div style="font-size:22px">📊</div><div style="flex:1"><div style="font-weight:600;font-size:12.5px;color:#fff">PPTO PTA 1 — INFRARED</div><div style="font-size:11px;color:#94a3b8">Presupuesto oficial · xlsx · 7.95 MB</div></div></a>
           <a href="https://drive.google.com/file/d/13xp6JAeFPhC0aCqOC1bVCBCmuLM5Zde-/view" target="_blank" style="text-decoration:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;color:#cbd5e1"><div style="font-size:22px">📄</div><div style="flex:1"><div style="font-weight:600;font-size:12.5px;color:#fff">MGA COMUNEROS</div><div style="font-size:11px;color:#94a3b8">Metodología General Ajustada · pdf · 253 KB</div></div></a>
@@ -1577,7 +1581,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-comunicaciones .kpi-i{background:rgba(20,26,55,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;border-left:3px solid var(--acc,#22d3ee)}
   #screen-comunicaciones .kpi-i .label{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
   #screen-comunicaciones .kpi-i .value{font-size:24px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;margin-top:4px}
-  #screen-comunicaciones .kpi-i .sub{font-size:11px;color:#64748b;margin-top:2px}
+  #screen-comunicaciones .kpi-i .sub{font-size:11px;color:#94a3b8;margin-top:2px}
   #screen-comunicaciones .grid{display:grid;gap:14px}
   #screen-comunicaciones .kpis5{grid-template-columns:repeat(5,minmax(0,1fr))}
   @media(max-width:1100px){#screen-comunicaciones .kpis5{grid-template-columns:repeat(3,1fr)}}
@@ -1620,7 +1624,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Año</div><select id="cms-anio" class="filter-input"><option value="">Todos</option></select></div>
         <div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Mes</div><select id="cms-mes" class="filter-input"><option value="">Todos</option></select></div>
       </div>
-      <div style="font-size:11px;color:#64748b;margin-top:8px"><span id="cms-count">—</span> resultados</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:8px"><span id="cms-count">—</span> resultados</div>
     </div>
 
     <div class="grid cms-main-grid" style="display:grid;gap:14px">
@@ -1633,7 +1637,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div style="overflow:auto">
           <table id="cms-table">
             <thead><tr><th>Fecha</th><th>Fuente</th><th>Tipo</th><th>Consecutivo</th><th>Asunto</th><th>Estado</th></tr></thead>
-            <tbody><tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando oficios…</td></tr></tbody>
+            <tbody><tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando oficios…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1660,7 +1664,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <h2 style="margin:0;font-size:13px;color:#94a3b8;font-weight:400">Hoja DASHBOARD del XLSX maestro · indicadores, avance por capítulo / responsable, curva S</h2>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <span id="obra-gen" style="font-size:11px;color:#64748b">—</span>
+        <span id="obra-gen" style="font-size:11px;color:#94a3b8">—</span>
         <button onclick="obraRefrescarConSync()" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#34d399;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">Refrescar</button>
         <a href="https://docs.google.com/spreadsheets/d/1KCl2nQ8M3h50282sLXIKqMmTlGbdJzv2/edit" target="_blank" style="background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.35);color:#38bdf8;padding:6px 12px;border-radius:8px;font-size:12px;text-decoration:none;font-weight:600">📊 Abrir XLSX</a>
       </div>
@@ -1695,7 +1699,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <p style="color:#8b9bd1;font-size:13px;margin:0 0 16px">Análisis narrativo sobre los datos vivos del cockpit (EVM · avance diario · curva S) · Fuente: <span id="ai-fuente" style="color:#c084fc;font-weight:600">motor experto local</span></p>
     <div id="ai-chips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
     <div id="ai-cuerpo" style="background:rgba(14,20,45,.55);border:1px solid rgba(168,85,247,.3);border-radius:14px;padding:22px 24px;line-height:1.8;color:#dbe4ff;font-size:14.5px">⏳ Reuniendo señales de la obra…</div>
-    <div id="ai-gemini-nota" style="margin-top:14px;color:#64748b;font-size:12px"></div>
+    <div id="ai-gemini-nota" style="margin-top:14px;color:#94a3b8;font-size:12px"></div>
   </div>
 </div>
 
@@ -1712,7 +1716,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-ejecdiaria .ed-kpi{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 16px;border-left:3px solid var(--acc,#fbbf24)}
   #screen-ejecdiaria .ed-kpi .l{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
   #screen-ejecdiaria .ed-kpi .v{font-size:22px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;margin-top:4px}
-  #screen-ejecdiaria .ed-kpi .s{font-size:11px;color:#64748b;margin-top:2px}
+  #screen-ejecdiaria .ed-kpi .s{font-size:11px;color:#94a3b8;margin-top:2px}
   #screen-ejecdiaria .ed-panel{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;overflow:hidden}
   #screen-ejecdiaria .ed-tbl-wrap{overflow-x:auto}
   #screen-ejecdiaria table{width:100%;border-collapse:collapse;font-size:12px;min-width:780px}
@@ -1825,7 +1829,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <h1 id="ed-h1">Avance diario</h1>
         <h2>Solo actividades con avance &gt; 0 · datos de la hoja AVANCE DIARIO · valores en pesos colombianos</h2>
       </div>
-      <span id="ed-gen" style="font-size:11px;color:#64748b">—</span>
+      <span id="ed-gen" style="font-size:11px;color:#94a3b8">—</span>
     </header>
 
     <div class="ed-kpis">
@@ -1841,7 +1845,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <div class="ed-panel" id="ed-pct-proy-box" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-left:3px solid #a855f7;background:linear-gradient(180deg,rgba(168,85,247,.10),rgba(0,0,0,.6))">
       <div style="min-width:200px">
         <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700">📊 <span id="ed-pct-proy-lbl">Avance del día</span> · respecto al total del proyecto</div>
-        <div style="font-size:11.5px;color:#64748b;margin-top:4px" id="ed-pct-proy-detalle">—</div>
+        <div style="font-size:11.5px;color:#94a3b8;margin-top:4px" id="ed-pct-proy-detalle">—</div>
       </div>
       <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
         <div style="text-align:right">
@@ -1853,7 +1857,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
           <div style="height:10px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden">
             <div id="ed-pct-proy-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#a855f7,#22d3ee);border-radius:6px;transition:width .4s"></div>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-top:4px"><span id="ed-pct-proy-ej">$—</span><span id="ed-pct-proy-tot">$—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:4px"><span id="ed-pct-proy-ej">$—</span><span id="ed-pct-proy-tot">$—</span></div>
         </div>
       </div>
     </div>
@@ -1864,7 +1868,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <span>📈 Ejecución vs Meta por día</span>
         <span id="ed-rango-chart-info" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
       </h3>
-      <div style="font-size:11px;color:#64748b;margin-bottom:10px">% del costo total del proyecto ejecutado cada día (barras) vs meta diaria programada (línea verde): L-V 0,455% · Sáb 0,227% · Dom 0%. Barra verde = cumple meta, ámbar = cerca, roja = por debajo.</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">% del costo total del proyecto ejecutado cada día (barras) vs meta diaria programada (línea verde): L-V 0,455% · Sáb 0,227% · Dom 0%. Barra verde = cumple meta, ámbar = cerca, roja = por debajo.</div>
       <div style="position:relative;height:300px;width:100%"><canvas id="ed-rango-chart"></canvas></div>
     </div>
 
@@ -1875,7 +1879,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <span id="ed-corte-info" style="font-size:11px;color:#94a3b8;font-weight:500"></span>
       </h3>
       <div id="ed-corte-desglose" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:8px"></div>
-      <div style="font-size:10.5px;color:#64748b">Compara <b>cantidad ejecutada × costo real unitario del corte</b> (precio actualizado) con <b>cantidad ejecutada × precio del avance</b>. Δ &gt; 0 = más ingreso real que el registrado en avance.</div>
+      <div style="font-size:10.5px;color:#94a3b8">Compara <b>cantidad ejecutada × costo real unitario del corte</b> (precio actualizado) con <b>cantidad ejecutada × precio del avance</b>. Δ &gt; 0 = más ingreso real que el registrado en avance.</div>
     </div>
 
     <!-- Panel desglose AIU + PMT + PMA -->
@@ -1918,7 +1922,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
             </tr>
           </thead>
           <tbody>
-            <tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando avance del día…</td></tr>
+            <tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando avance del día…</td></tr>
           </tbody>
         </table>
       </div>
@@ -1944,7 +1948,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-maq .maq-kpi{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px 14px;border-left:3px solid var(--acc,#f59e0b)}
   #screen-maq .maq-kpi .l{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
   #screen-maq .maq-kpi .v{font-size:22px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;margin-top:4px}
-  #screen-maq .maq-kpi .s{font-size:10.5px;color:#64748b;margin-top:2px}
+  #screen-maq .maq-kpi .s{font-size:10.5px;color:#94a3b8;margin-top:2px}
   #screen-maq .maq-grid-detail{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
   @media(max-width:1100px){#screen-maq .maq-grid-detail{grid-template-columns:1fr}}
   #screen-maq .maq-panel{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px}
@@ -1983,13 +1987,13 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <h1>Operación de maquinaria pesada</h1>
         <h2>Tarifa stand-by: Retro 312 $170.000/h · Retro 305 $150.000/h · Minicargador $150.000/h</h2>
       </div>
-      <span id="maq-gen" style="font-size:11px;color:#64748b">—</span>
+      <span id="maq-gen" style="font-size:11px;color:#94a3b8">—</span>
     </header>
 
     <div class="maq-filters">
       <span class="lbl">Período</span>
       <input type="date" id="maq-fdesde" title="Fecha desde"/>
-      <span style="color:#64748b">→</span>
+      <span style="color:#94a3b8">→</span>
       <input type="date" id="maq-fhasta" title="Fecha hasta"/>
       <button onclick="maqAplicarFiltros()" style="background:linear-gradient(135deg,#22d3ee,#0ea5e9);border:0;color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">🔍 Aplicar</button>
       <button class="maq-chip" onclick="maqRangoPreset('hoy')">Hoy</button>
@@ -2030,7 +2034,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
               <th>Labor</th>
             </tr>
           </thead>
-          <tbody><tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando…</td></tr></tbody>
+          <tbody><tr><td colspan="11" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -2057,7 +2061,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
               <th>Distribución → ítems</th>
             </tr>
           </thead>
-          <tbody><tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">⏳ Calculando…</td></tr></tbody>
+          <tbody><tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">⏳ Calculando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -2076,7 +2080,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-mo .mo-kpi{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px 14px;border-left:3px solid var(--acc,#a855f7)}
   #screen-mo .mo-kpi .l{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
   #screen-mo .mo-kpi .v{font-size:22px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif;letter-spacing:-.5px;margin-top:4px}
-  #screen-mo .mo-kpi .s{font-size:10.5px;color:#64748b;margin-top:2px}
+  #screen-mo .mo-kpi .s{font-size:10.5px;color:#94a3b8;margin-top:2px}
   #screen-mo .mo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
   @media(max-width:900px){#screen-mo .mo-grid{grid-template-columns:1fr}}
   #screen-mo .mo-panel{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;overflow:hidden}
@@ -2108,7 +2112,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-mo .mo-tab{background:transparent;border:0;color:#94a3b8;padding:10px 18px;cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit}
   #screen-mo .mo-tab:hover{color:#cbd5e1}
   #screen-mo .mo-tab.active{color:#a855f7;border-bottom-color:#a855f7}
-  body.light #screen-mo .mo-tab{color:#64748b !important}
+  body.light #screen-mo .mo-tab{color:#94a3b8 !important}
   body.light #screen-mo .mo-tab.active{color:#7c3aed !important;border-bottom-color:#7c3aed !important}
   #screen-mo tr.clickable{cursor:pointer}
   #mo-persona-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;z-index:9999;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
@@ -2154,7 +2158,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <h1 id="mo-h1">Asistencia y horas trabajadas</h1>
         <h2>Jornada base L-V 8h (7:30-12:00 + 1:00-4:30) · Sáb 4h (7:30-11:30) · Dom: descanso</h2>
       </div>
-      <span id="mo-gen" style="font-size:11px;color:#64748b">—</span>
+      <span id="mo-gen" style="font-size:11px;color:#94a3b8">—</span>
     </header>
 
     <!-- TABS -->
@@ -2219,7 +2223,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
             </tr>
           </thead>
           <tbody>
-            <tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando personal…</td></tr>
+            <tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando personal…</td></tr>
           </tbody>
         </table>
       </div>
@@ -2301,7 +2305,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Selecciona una ventana para cargar el catálogo</td></tr>
+              <tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">Selecciona una ventana para cargar el catálogo</td></tr>
             </tbody>
           </table>
         </div>
@@ -2340,7 +2344,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <div style="overflow-x:auto">
       <table id="mp-tabla">
         <thead><tr><th>Fecha</th><th>Día</th><th class="num">Ingreso</th><th class="num">Salida</th><th class="num">Horas</th><th class="num">Extras</th><th>Estado</th><th>Notas</th></tr></thead>
-        <tbody><tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">⏳ Cargando…</td></tr></tbody>
+        <tbody><tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">⏳ Cargando…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -2362,10 +2366,10 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     </header>
 
     <div class="grid" style="display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px">
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #f59e0b"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Total fotos</div><div style="font-size:24px;font-weight:700;color:#fff;margin-top:4px">3,995</div><div style="font-size:11px;color:#64748b;margin-top:2px">indexadas</div></div>
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #ef4444"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Años</div><div style="font-size:24px;font-weight:700;color:#fff;margin-top:4px">2</div><div style="font-size:11px;color:#64748b;margin-top:2px">2025 - 2026</div></div>
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #22d3ee"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Fuente</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Google Drive</div><div style="font-size:11px;color:#64748b;margin-top:2px">sincronización directa</div></div>
-      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Navegación</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Año / Mes / Semana</div><div style="font-size:11px;color:#64748b;margin-top:2px">estructura nativa</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #f59e0b"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Total fotos</div><div style="font-size:24px;font-weight:700;color:#fff;margin-top:4px">3,995</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">indexadas</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #ef4444"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Años</div><div style="font-size:24px;font-weight:700;color:#fff;margin-top:4px">2</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">2025 - 2026</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #22d3ee"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Fuente</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Google Drive</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">sincronización directa</div></div>
+      <div class="panel" style="background:rgba(20,26,55,.6);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;border-left:3px solid #10b981"><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Navegación</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:4px">Año / Mes / Semana</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">estructura nativa</div></div>
     </div>
 
     <!-- Visor de fotos propio (sin iframe) -->
@@ -2384,7 +2388,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
           <span id="fotos-count" style="font-size:11px;color:#94a3b8"></span>
         </div>
         <div id="fotos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-content:start">
-          <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#64748b;font-size:13px">Elige un año/mes/semana en el panel de la izquierda para ver las fotos.</div>
+          <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#94a3b8;font-size:13px">Elige un año/mes/semana en el panel de la izquierda para ver las fotos.</div>
         </div>
       </div>
     </div>
@@ -2956,7 +2960,7 @@ function _refreshFreshness(){
     if (!k) return;
     var age = _lsAge(k);
     n.textContent = age == null ? '' : _formatAge(age);
-    n.style.color = (age != null && age > 300) ? '#fbbf24' : '#64748b';
+    n.style.color = (age != null && age > 300) ? '#fbbf24' : '#94a3b8';
   });
 }
 function _startFreshnessTimer(){
@@ -3394,7 +3398,7 @@ function renderIndCorteSelect(){
 let ACT_ROWS = [];
 // Helper: pinta valor con flecha + color verde/rojo según signo (gana=verde, pierde=rojo)
 function dirCell(val, fmt, goodIsPositive){
-  if(val == null || val === '' || isNaN(Number(val))) return '<span style="color:#64748b">—</span>';
+  if(val == null || val === '' || isNaN(Number(val))) return '<span style="color:#94a3b8">—</span>';
   const v = Number(val);
   const good = goodIsPositive === false ? (v < 0) : (v > 0);
   const bad  = goodIsPositive === false ? (v > 0) : (v < 0);
@@ -3800,7 +3804,7 @@ function invLoadTablaPagina(){
     page: INV_PAGE,
     size: INV_PAGE_SIZE
   };
-  document.getElementById('inv-tbody-maestra').innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">Cargando…</td></tr>';
+  document.getElementById('inv-tbody-maestra').innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">Cargando…</td></tr>';
   jsonp(APPS_URL, params).then(data=>{
     renderTablaPagina(data); _tablaLoading=false;
   }).catch(e=>{
@@ -4533,7 +4537,7 @@ function showAlertDetail(key){
   cols.forEach(c => { html += '<th style="text-align:left;padding:8px 10px;color:#94a3b8;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08)">' + esc(c) + '</th>'; });
   html += '</tr></thead><tbody>';
   if(!rows.length){
-    html += '<tr><td colspan="' + Math.max(1, cols.length) + '" style="text-align:center;padding:24px;color:#64748b">Sin registros para mostrar</td></tr>';
+    html += '<tr><td colspan="' + Math.max(1, cols.length) + '" style="text-align:center;padding:24px;color:#94a3b8">Sin registros para mostrar</td></tr>';
   } else {
     rows.forEach(r => {
       html += '<tr>';
@@ -4620,7 +4624,7 @@ const CMS_STATE = { items:[], indice:{}, fuente:'', tipo:'', anio:'', mes:'', q:
 async function cmsLoadData(force){
   CMS_LOADED = true;
   const tbody = document.getElementById('cms-table').querySelector('tbody');
-  if(force) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">⏳ Recargando…</td></tr>';
+  if(force) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8">⏳ Recargando…</td></tr>';
   try{
     const d = await jsonp(APPS_URL, {action:'comunicaciones'});
     if(!d || !d.items){
@@ -4689,7 +4693,7 @@ function cmsAplicarFiltros(){
 function cmsRenderTabla(arr){
   const tbody = document.getElementById('cms-table').querySelector('tbody');
   if(!arr.length){
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b">Sin resultados con los filtros aplicados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8">Sin resultados con los filtros aplicados.</td></tr>';
     return;
   }
   const fc = {obra:'#a855f7', interventoria:'#ef4444'};
@@ -4706,7 +4710,7 @@ function cmsRenderTabla(arr){
       <td>${cmsEscape((x.asunto||'').substring(0,70))}</td>
       <td>${cmsEscape(x.estado||'')}</td>
     </tr>`;
-  }).join('') + (arr.length>300?`<tr><td colspan="6" style="text-align:center;padding:10px;color:#64748b">… ${arr.length-300} más. Refina filtros.</td></tr>`:'');
+  }).join('') + (arr.length>300?`<tr><td colspan="6" style="text-align:center;padding:10px;color:#94a3b8">… ${arr.length-300} más. Refina filtros.</td></tr>`:'');
 }
 
 function cmsRenderArbol(){
@@ -4719,11 +4723,11 @@ function cmsRenderArbol(){
     const meses = Object.keys(CMS_STATE.indice[a]||{}).sort().reverse();
     let totalAnio = 0;
     meses.forEach(m => Object.keys(CMS_STATE.indice[a][m]||{}).forEach(d => { totalAnio += CMS_STATE.indice[a][m][d].length; }));
-    html += `<div style="margin-bottom:10px"><div class="tree-year" onclick="cmsFiltrarAnio('${a}')">📅 ${a} <span style="color:#64748b;font-weight:400">(${totalAnio})</span></div>`;
+    html += `<div style="margin-bottom:10px"><div class="tree-year" onclick="cmsFiltrarAnio('${a}')">📅 ${a} <span style="color:#94a3b8;font-weight:400">(${totalAnio})</span></div>`;
     meses.forEach(m => {
       let total = 0;
       Object.keys(CMS_STATE.indice[a][m]||{}).forEach(d => { total += CMS_STATE.indice[a][m][d].length; });
-      html += `<div class="tree-month" onclick="cmsFiltrarMes('${a}','${m}')">└ ${m} · ${nm[m]} <span style="color:#64748b">(${total})</span></div>`;
+      html += `<div class="tree-month" onclick="cmsFiltrarMes('${a}','${m}')">└ ${m} · ${nm[m]} <span style="color:#94a3b8">(${total})</span></div>`;
     });
     html += '</div>';
   });
@@ -4765,7 +4769,7 @@ function cmsShowOficio(id){
     <div style="margin-top:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div style="font-size:12px;color:#94a3b8;font-weight:600">📄 Documento del oficio</div>
-        <div id="cms-pdf-meta" style="font-size:11px;color:#64748b"></div>
+        <div id="cms-pdf-meta" style="font-size:11px;color:#94a3b8"></div>
       </div>
       <div id="cms-pdf-viewer" style="background:#0f1428;border:1px solid rgba(255,255,255,.08);border-radius:8px;min-height:560px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-style:italic;font-size:12.5px">
         ⏳ Localizando documento en Drive…
@@ -4927,7 +4931,7 @@ function fotosRenderArbol(){
     const meses = Object.keys(idx[a].meses || {}).sort().reverse();
     const totalAnio = FOTOS_STATE.totales.anios[a] || 0;
     const expanded = FOTOS_STATE.anioActual === a;
-    html += `<div style="margin-bottom:10px"><div onclick="fotosSeleccionarAnio('${a}')" style="font-weight:700;color:${expanded?'#22d3ee':'#cbd5e1'};cursor:pointer;padding:5px 0">📅 ${a} <span style="color:#64748b;font-weight:400">(${totalAnio})</span></div>`;
+    html += `<div style="margin-bottom:10px"><div onclick="fotosSeleccionarAnio('${a}')" style="font-weight:700;color:${expanded?'#22d3ee':'#cbd5e1'};cursor:pointer;padding:5px 0">📅 ${a} <span style="color:#94a3b8;font-weight:400">(${totalAnio})</span></div>`;
     if(expanded){
       meses.forEach(m => {
         const mesObj = idx[a].meses[m] || {};
@@ -4941,7 +4945,7 @@ function fotosRenderArbol(){
         const activeMes = FOTOS_STATE.filtroMes === m;
         const expandedMes = FOTOS_STATE.mesActual === m;
         const caret = expandedMes ? '▼' : '▶';
-        html += `<div onclick="fotosFiltrarMes('${m}')" style="padding:3px 0 3px 14px;color:${activeMes?'#10b981':'#cbd5e1'};cursor:pointer;font-size:11.5px">${caret} ${m} · ${nm[m]||''} <span style="color:#64748b">(${totalMes})</span></div>`;
+        html += `<div onclick="fotosFiltrarMes('${m}')" style="padding:3px 0 3px 14px;color:${activeMes?'#10b981':'#cbd5e1'};cursor:pointer;font-size:11.5px">${caret} ${m} · ${nm[m]||''} <span style="color:#94a3b8">(${totalMes})</span></div>`;
         // Semanas anidadas DEL MES (calculadas desde items cargados)
         if(expandedMes){
           // Prioridad: usar idx[a].meses[m].semanas del índice (siempre disponible).
@@ -4955,7 +4959,7 @@ function fotosRenderArbol(){
           const semanas = Object.keys(semanasMes).sort();
           semanas.forEach(w => {
             const activeSem = FOTOS_STATE.filtroSemana === w;
-            html += `<div onclick="fotosFiltrarSemana('${w}')" style="padding:2px 0 2px 30px;color:${activeSem?'#f59e0b':'#cbd5e1'};cursor:pointer;font-size:11px">└ Sem ${w} <span style="color:#64748b">(${semanasMes[w]})</span></div>`;
+            html += `<div onclick="fotosFiltrarSemana('${w}')" style="padding:2px 0 2px 30px;color:${activeSem?'#f59e0b':'#cbd5e1'};cursor:pointer;font-size:11px">└ Sem ${w} <span style="color:#94a3b8">(${semanasMes[w]})</span></div>`;
           });
         }
       });
@@ -5006,7 +5010,7 @@ function fotosFiltrarSemana(w){
 function fotosLimpiarGrid(){
   document.getElementById('fotos-titulo').textContent = '📷 Selecciona un año/mes/semana';
   document.getElementById('fotos-count').textContent = '';
-  document.getElementById('fotos-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#64748b;font-size:13px">Elige un año/mes/semana en el panel de la izquierda para ver las fotos.</div>';
+  document.getElementById('fotos-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#94a3b8;font-size:13px">Elige un año/mes/semana en el panel de la izquierda para ver las fotos.</div>';
 }
 
 function fotosRenderGrid(){
@@ -5025,7 +5029,7 @@ function fotosRenderGrid(){
   document.getElementById('fotos-titulo').textContent = titulo;
   document.getElementById('fotos-count').textContent = arr.length + ' fotos';
   const grid = document.getElementById('fotos-grid');
-  if(!arr.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#64748b">Sin fotos en este rango.</div>'; return; }
+  if(!arr.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8">Sin fotos en este rango.</div>'; return; }
   const LIMIT = 200;
   const slice = arr.slice(0, LIMIT);
   // Cascada de URLs alternativas - si una falla, intenta la siguiente
@@ -5813,7 +5817,7 @@ function _edSetEstado(html){
    5) En error, mostrar última fecha disponible vs solicitada para diagnóstico */
 async function ejecDiariaCargar(force, fechaOverride){
   const tbody = document.querySelector('#ed-tabla tbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando avance…</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando avance…</td></tr>';
   let fecha = fechaOverride || EJEC_DIARIA_FECHA || ejecDiariaAyerStr();
   EJEC_DIARIA_FECHA = fecha;
 
@@ -6284,7 +6288,7 @@ function ejecDiariaRender(){
       return '<div style="background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;border-left:3px solid '+x.color+(x.bold?';box-shadow:0 0 0 1px '+x.color+'33':'')+'">'+
         '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700">'+x.l+'</div>'+
         '<div style="font-size:'+(x.bold?'18px':'16px')+';font-weight:700;color:'+(x.bold?x.color:'#fff')+';font-family:Space Grotesk,sans-serif;margin-top:3px">'+money(x.v)+'</div>'+
-        '<div style="font-size:10px;color:#64748b;margin-top:2px">'+x.s+'</div>'+
+        '<div style="font-size:10px;color:#94a3b8;margin-top:2px">'+x.s+'</div>'+
       '</div>';
     }).join('');
   })();
@@ -6346,7 +6350,7 @@ function ejecDiariaRender(){
     ].map(x => '<div style="background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;border-left:3px solid ' + x.color + (x.bold?';box-shadow:0 0 0 1px '+x.color+'33':'') + '">' +
       '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700">' + x.l + '</div>' +
       '<div style="font-size:' + (x.bold?'19px':'17px') + ';font-weight:700;color:#fff;font-family:Space Grotesk,sans-serif;margin-top:3px">' + money(x.v) + '</div>' +
-      '<div style="font-size:10px;color:#64748b;margin-top:2px">' + x.s + '</div>' +
+      '<div style="font-size:10px;color:#94a3b8;margin-top:2px">' + x.s + '</div>' +
     '</div>').join('');
   }
 
@@ -6382,7 +6386,7 @@ function ejecDiariaRender(){
         '</div>' +
         '<div class="top5-val">' + money(it.vrDia||0) + '</div>' +
       '</div>';
-    }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
+    }).join('') : '<div style="color:#94a3b8;text-align:center;padding:20px">Sin datos</div>';
   }
 
   // === DONUT por capítulo (SVG) ===
@@ -6435,12 +6439,12 @@ function ejecDiariaRender(){
         '<div class="barcap-bar"><div class="barcap-fill" style="width:' + pct.toFixed(1) + '%"></div></div>' +
         '<div class="barcap-val">' + money(g.totalVrDia) + ' <span style="color:#94a3b8;font-weight:400">(' + pctTotal.toFixed(1) + '%)</span></div>' +
       '</div>';
-    }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
+    }).join('') : '<div style="color:#94a3b8;text-align:center;padding:20px">Sin datos</div>';
   }
 
   const tbody = document.querySelector('#ed-tabla tbody');
   if (!items.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">Sin actividades con avance en este día.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">Sin actividades con avance en este día.</td></tr>';
     return;
   }
   const filas = [];
@@ -6766,7 +6770,7 @@ function ejecDiariaCambiarFechaHasta(fecha){
 async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
   var tbody = document.querySelector('#ed-tabla tbody');
   try { _edLoadShow('Calculando ' + (etiqueta || 'período') + '…', formatFechaED(desde) + '  →  ' + formatFechaED(hasta)); } catch(_){}
-  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando '+escapeHTML(etiqueta||'')+' '+escapeHTML(desde)+' → '+escapeHTML(hasta)+'…</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando '+escapeHTML(etiqueta||'')+' '+escapeHTML(desde)+' → '+escapeHTML(hasta)+'…</td></tr>';
   var fechas = _edListarFechas(desde, hasta);
   if (!fechas.length){
     try { _edLoadHide(); } catch(_){}
@@ -6806,7 +6810,7 @@ async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
           resultados.push({fecha:f, data:neg}); _have[f]=1;
         });
         try { _edLoadSub(Object.keys(_have).length + ' / ' + fechas.length + ' días'); } catch(_){}
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⚡ '+Object.keys(_have).length+' / '+fechas.length+' días (rango rápido)…</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">⚡ '+Object.keys(_have).length+' / '+fechas.length+' días (rango rápido)…</td></tr>';
       }
       faltan = [];
     } catch(e){
@@ -6822,7 +6826,7 @@ async function ejecDiariaCargarPeriodo(desde, hasta, etiqueta){
       var resp = await Promise.all(slice.map(function(f){ return _edFetchDia(f); }));
       for (var j=0; j<resp.length; j++){ resultados.push({fecha:slice[j], data:resp[j]}); _have[slice[j]]=1; }
       try { _edLoadSub(Object.keys(_have).length + ' / ' + fechas.length + ' días'); } catch(_){}
-      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#64748b">⏳ '+Object.keys(_have).length+' / '+fechas.length+' días procesados…</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">⏳ '+Object.keys(_have).length+' / '+fechas.length+' días procesados…</td></tr>';
     }
   }
   // Agregar: sumar items por (item, desc, und) usando vrUnit del primer día encontrado
@@ -6993,7 +6997,7 @@ async function maqCargar(force){
       _maqAfterLoad(cached); return;
     }
   }
-  if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando…</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando…</td></tr>';
   try {
     const params = {action:'control_maquinaria'};
     if (force) params._ts = Date.now();
@@ -7144,7 +7148,7 @@ function maqRender(){
     cardsDiv.innerHTML = maqsAgg.map(m => {
       const opsHtml = m._ops.length ? m._ops.slice(0,3).map(o =>
         '<div class="maq-mini-kpi"><span style="color:#94a3b8">' + escapeHTML(o.nombre) + '</span><span class="v">' + o.horas.toFixed(1) + ' h · ' + o.dias + ' d</span></div>'
-      ).join('') : '<div style="color:#64748b;text-align:center;padding:8px">Sin operadores</div>';
+      ).join('') : '<div style="color:#94a3b8;text-align:center;padding:8px">Sin operadores</div>';
       const clsM = m.id === '312' ? '' : (m.id === '305' ? 'm305' : 'mmini');
       return '<div class="maq-panel">' +
         '<h3><span><span class="badge-maq ' + clsM + '">' + m.id + '</span> ' + escapeHTML(m.nombre) + '</span><span class="tarifa">$' + (m.tarifa).toLocaleString('es-CO') + '/h</span></h3>' +
@@ -7164,7 +7168,7 @@ function maqRender(){
   todosRegs.sort((a,b) => a.fecha.localeCompare(b.fecha));
   document.getElementById('maq-tbl-info').textContent = '· ' + todosRegs.length + ' registros';
   if (!todosRegs.length) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:#64748b">Sin registros en el período seleccionado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:30px;color:#94a3b8">Sin registros en el período seleccionado.</td></tr>';
   } else {
     tbody.innerHTML = todosRegs.map(r => {
       const clsT = /LABORAL/i.test(r.tipo) ? 'lab' : (/FESTIVO/i.test(r.tipo) ? 'fes' : 'no');
@@ -7236,7 +7240,7 @@ async function maqRenderCorrelaciones(maqsAgg){
   });
   var claves = Object.keys(bucket).sort(); // ascendente
   if (!claves.length){
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b">Sin registros para correlacionar en el período seleccionado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#94a3b8">Sin registros para correlacionar en el período seleccionado.</td></tr>';
     if (info) info.textContent = '';
     return;
   }
@@ -7281,9 +7285,9 @@ async function maqRenderCorrelaciones(maqsAgg){
     var dist = [];
     grupo305.forEach(function(it){ if (d305[it]>0) dist.push('<span style="background:rgba(34,211,238,.18);color:#22d3ee;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-right:4px;display:inline-block;margin-bottom:2px">'+it+': '+moneyShort(d305[it])+'</span>'); });
     grupoMini.forEach(function(it){ if (dMini[it]>0) dist.push('<span style="background:rgba(168,85,247,.18);color:#a855f7;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-right:4px;display:inline-block;margin-bottom:2px">'+it+': '+moneyShort(dMini[it])+'</span>'); });
-    if (!dist.length) dist.push('<span style="color:#64748b;font-size:10.5px">sin avance Cap 2 referenciado</span>');
+    if (!dist.length) dist.push('<span style="color:#94a3b8;font-size:10.5px">sin avance Cap 2 referenciado</span>');
     return '<tr>'+
-      '<td><b>'+escapeHTML(fmtJue(k))+'</b><div style="color:#64748b;font-size:10.5px">'+b.regs+' reg.</div></td>'+
+      '<td><b>'+escapeHTML(fmtJue(k))+'</b><div style="color:#94a3b8;font-size:10.5px">'+b.regs+' reg.</div></td>'+
       '<td class="num">'+b.ht.toFixed(1)+' h</td>'+
       '<td class="num" style="color:#fbbf24">'+b.sb.toFixed(1)+' h</td>'+
       '<td class="num" style="color:#22d3ee">'+money(b.costo305)+'</td>'+
@@ -7361,7 +7365,7 @@ async function moCargar(force, fechaOverride){
       moRender(); return;
     }
   }
-  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Cargando personal…</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando personal…</td></tr>';
   try {
     const params = {action:'mano_obra', fecha: fecha};
     if (force) params._ts = Date.now();
@@ -7537,7 +7541,7 @@ function moRender(){
     return '<div class="mo-bar"><div class="lbl"><span class="badge-fr ' + cls + '">' + escapeHTML(f.frente||'—') + '</span></div>' +
       '<div class="barwrap"><div class="barfill" style="width:' + pct.toFixed(1) + '%"></div></div>' +
       '<div class="val">' + f.count + ' · ' + (f.horas||0).toFixed(1) + 'h</div></div>';
-  }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
+  }).join('') : '<div style="color:#94a3b8;text-align:center;padding:20px">Sin datos</div>';
 
   // Por cargo
   const porCargo = {};
@@ -7549,13 +7553,13 @@ function moRender(){
     return '<div class="mo-bar"><div class="lbl">' + escapeHTML(c.cargo||'—') + '</div>' +
       '<div class="barwrap"><div class="barfill" style="width:' + pct.toFixed(1) + '%;background:linear-gradient(90deg,#22d3ee,#34d399)"></div></div>' +
       '<div class="val">' + c.count + '</div></div>';
-  }).join('') : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos</div>';
+  }).join('') : '<div style="color:#94a3b8;text-align:center;padding:20px">Sin datos</div>';
 
   // Tabla personas
   document.getElementById('mo-total-personas').textContent = '· ' + personas.length + ' persona' + (personas.length===1?'':'s') + (allPersonas.length !== personas.length ? ' (filtrado de ' + allPersonas.length + ')' : '');
   const tbody = document.querySelector('#mo-tabla tbody');
   if (!personas.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Sin registros que coincidan con los filtros.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">Sin registros que coincidan con los filtros.</td></tr>';
   } else {
     MO_PERSONAS_VISIBLES = personas;
     tbody.innerHTML = personas.map(p => {
@@ -7576,14 +7580,14 @@ function moRender(){
       const ced = (p.cedula||'').replace(/'/g, "\\'");
       return '<tr class="clickable" onclick="moAbrirPersona(\'' + ced + '\')">' +
         '<td>' + fotoHtml + '</td>' +
-        '<td><div style="font-weight:600;color:#fff">' + escapeHTML(p.nombre||'') + '</div><div style="font-size:10.5px;color:#64748b">' + escapeHTML(p.cedula||'') + '</div></td>' +
+        '<td><div style="font-weight:600;color:#fff">' + escapeHTML(p.nombre||'') + '</div><div style="font-size:10.5px;color:#94a3b8">' + escapeHTML(p.cedula||'') + '</div></td>' +
         '<td><span class="badge-fr ' + clsFr + '">' + escapeHTML(p.frente||'—') + '</span></td>' +
         '<td>' + escapeHTML(p.cargo||'—') + '</td>' +
         '<td class="num">' + escapeHTML(p.ingreso||'—') + tardanza + '</td>' +
         '<td class="num">' + escapeHTML(p.salida||'—') + '</td>' +
         '<td class="num"><span style="font-weight:700;color:#fff">' + horas + '</span></td>' +
         '<td class="num">' + extras + '</td>' +
-        '<td>' + (p.fueraRango ? '<span class="pill-rango fuera">FUERA</span>' + (p.motivoRango ? '<div style="font-size:10.5px;color:#64748b;margin-top:2px">' + escapeHTML(p.motivoRango) + '</div>' : '') : '<span class="pill-rango ok">OK</span>') + '</td>' +
+        '<td>' + (p.fueraRango ? '<span class="pill-rango fuera">FUERA</span>' + (p.motivoRango ? '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">' + escapeHTML(p.motivoRango) + '</div>' : '') : '<span class="pill-rango ok">OK</span>') + '</td>' +
         '<td>' + ausencia + '</td>' +
       '</tr>';
     }).join('');
@@ -7600,9 +7604,9 @@ function moRender(){
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:32px">' +
         '<div style="font-size:10.5px;color:#cbd5e1;font-weight:700">' + (dd.ingresos||0) + '</div>' +
         '<div style="width:24px;height:' + h.toFixed(1) + '%;min-height:4px;background:' + color + ';border-radius:4px 4px 0 0;cursor:pointer" title="' + dd.fecha + ': ' + (dd.ingresos||0) + ' ingresos" onclick="moCambiarFecha(\'' + dd.fecha + '\')"></div>' +
-        '<div style="font-size:10px;color:#64748b">' + dd.fecha.slice(5) + '</div>' +
+        '<div style="font-size:10px;color:#94a3b8">' + dd.fecha.slice(5) + '</div>' +
       '</div>';
-    }).join('') + '</div>' : '<div style="color:#64748b;text-align:center;padding:20px">Sin datos históricos</div>';
+    }).join('') + '</div>' : '<div style="color:#94a3b8;text-align:center;padding:20px">Sin datos históricos</div>';
 }
 
 function moAplicarFiltros(personas){
@@ -7661,7 +7665,7 @@ async function moCerrarJornada(p){
     '<div style="font-size:11.5px;color:#94a3b8;font-weight:500;margin-bottom:20px;text-transform:uppercase;letter-spacing:.06em">' + escapeHTML(p.cargo||'(sin cargo)') + (p.frente ? ' · ' + escapeHTML(p.frente) : '') + '</div>' +
     '<div style="font-size:11px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em">Escribiendo al XLSX</div>' +
     '<div id="mo-cerrar-timer" style="font-size:38px;font-weight:800;color:#22d3ee;font-variant-numeric:tabular-nums;font-family:\'Space Grotesk\',sans-serif">0.0s</div>' +
-    '<div style="font-size:10px;color:#64748b;margin-top:10px">El proceso puede tardar 8-15 segundos</div>' +
+    '<div style="font-size:10px;color:#94a3b8;margin-top:10px">El proceso puede tardar 8-15 segundos</div>' +
   '</div>';
   document.body.appendChild(overlay);
 
@@ -7711,7 +7715,7 @@ async function moCerrarJornada(p){
         '<div style="color:#94a3b8">Destino</div><div style="font-weight:600">' + destino + '</div>' +
         '<div style="color:#94a3b8">Tiempo</div><div style="font-weight:600;color:#22d3ee">' + elapsed + 's</div>' +
       '</div>' +
-      '<div style="font-size:10.5px;color:#64748b">Esta ventana se cierra sola</div>');
+      '<div style="font-size:10.5px;color:#94a3b8">Esta ventana se cierra sola</div>');
     dismiss(3500);
     try { _lsBust('mo:'); } catch(_){}
     MO_LOADED = false;
@@ -7732,7 +7736,7 @@ async function moAbrirPersona(cedula){
   document.getElementById('mp-nombre').textContent = 'Cargando…';
   document.getElementById('mp-meta').textContent = '—';
   ['mp-dias','mp-horas','mp-extras','mp-prom','mp-tard','mp-fr','mp-aus'].forEach(id => document.getElementById(id).textContent = '—');
-  document.querySelector('#mp-tabla tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">⏳ Cargando histórico…</td></tr>';
+  document.querySelector('#mp-tabla tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">⏳ Cargando histórico…</td></tr>';
   document.getElementById('mp-grafico').innerHTML = '';
   try {
     const d = await jsonp(APPS_URL, {action:'mano_obra_persona', cedula: cedula});
@@ -7776,14 +7780,14 @@ async function moAbrirPersona(cedula){
         return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:30px">' +
           '<div style="font-size:9.5px;color:#cbd5e1">' + (hh ? hh.toFixed(1) : (dd.ausencia?'A':'·')) + '</div>' +
           '<div style="width:22px;height:' + altPct.toFixed(1) + '%;min-height:3px;background:' + color + ';border-radius:3px 3px 0 0" title="' + dd.fecha + ': ' + hh.toFixed(2) + 'h"></div>' +
-          '<div style="font-size:9px;color:#64748b">' + dd.fecha.slice(5) + '</div>' +
+          '<div style="font-size:9px;color:#94a3b8">' + dd.fecha.slice(5) + '</div>' +
         '</div>';
-      }).join('') + '</div>' : '<div style="color:#64748b;text-align:center;padding:20px">Sin jornadas registradas</div>';
+      }).join('') + '</div>' : '<div style="color:#94a3b8;text-align:center;padding:20px">Sin jornadas registradas</div>';
 
     // Tabla detalle
     const tbody = document.querySelector('#mp-tabla tbody');
     if (!dias.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">Sin registros</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">Sin registros</td></tr>';
     } else {
       tbody.innerHTML = dias.slice().reverse().map(dd => {
         const horas = dd.horasTrabajadas !== null && dd.horasTrabajadas !== undefined ? dd.horasTrabajadas.toFixed(2)+'h' : '—';
@@ -7793,7 +7797,7 @@ async function moAbrirPersona(cedula){
           : (dd.salida ? '<span style="color:#34d399">Cerró</span>' : (dd.ingreso ? '<span style="color:#22d3ee">En obra</span>' : '—'));
         const notas = [];
         if (dd.fueraRango) notas.push('<span class="pill-rango fuera">FUERA</span>');
-        if (dd.motivoRango) notas.push('<span style="font-size:10px;color:#64748b">' + escapeHTML(dd.motivoRango) + '</span>');
+        if (dd.motivoRango) notas.push('<span style="font-size:10px;color:#94a3b8">' + escapeHTML(dd.motivoRango) + '</span>');
         if (dd.motivoAusencia) notas.push('<span style="font-size:10px;color:#fbbf24">' + escapeHTML(dd.motivoAusencia) + '</span>');
         return '<tr>' +
           '<td>' + escapeHTML(dd.fecha) + '</td>' +
@@ -7962,7 +7966,7 @@ async function trabCargar(){
   }
 
   infoEl.textContent = '⏳ Cargando…';
-  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">⏳ Construyendo catálogo… (primera carga: ~15-30s)</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">⏳ Construyendo catálogo… (primera carga: ~15-30s)</td></tr>';
 
   // 2) Determinar fechas (ordenadas DESC → cargar primero los días recientes)
   const hoy = new Date();
@@ -8092,7 +8096,7 @@ function trabRender(){
     `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">` +
       `<div><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Ratio actual</div><div style="font-size:24px;font-weight:700;color:${ratioOK?'#86efac':'#fca5a5'};font-family:Space Grotesk,sans-serif">1 : ${ratioReal}</div></div>` +
       `<div><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Ratio ideal APU</div><div style="font-size:24px;font-weight:700;color:#cbd5e1;font-family:Space Grotesk,sans-serif">1 : 2.00</div></div>` +
-      `<div><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">CE teóricas</div><div style="font-size:24px;font-weight:700;color:#a855f7;font-family:Space Grotesk,sans-serif">${ceTeoricas.toFixed(1)}</div><div style="font-size:11px;color:#64748b">cuadrillas posibles</div></div>` +
+      `<div><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">CE teóricas</div><div style="font-size:24px;font-weight:700;color:#a855f7;font-family:Space Grotesk,sans-serif">${ceTeoricas.toFixed(1)}</div><div style="font-size:11px;color:#94a3b8">cuadrillas posibles</div></div>` +
       `<div><div style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px">Estado</div><div style="font-size:14px;font-weight:700;color:${ratioOK?'#86efac':'#fca5a5'};margin-top:4px">${ratioOK?'✓ Balanceado':'⚠ Desbalanceado'}</div></div>` +
     `</div>`;
 
@@ -8155,7 +8159,7 @@ function trabRenderTabla(){
     `· ${filtrados.length} de ${total} trabajadores · ${TRAB_CATALOGO.totalDias} días con datos`;
 
   if (filtrados.length === 0){
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#64748b">Sin coincidencias.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">Sin coincidencias.</td></tr>';
     return;
   }
   const parts = new Array(filtrados.length);
@@ -8194,7 +8198,7 @@ function trabFiltrarCargo(c){
 
 function _trabRenderDonut(elId, data){
   const total = data.reduce((a,b) => a + b.value, 0);
-  if (total === 0){ document.getElementById(elId).innerHTML = '<div style="color:#64748b">Sin datos</div>'; return; }
+  if (total === 0){ document.getElementById(elId).innerHTML = '<div style="color:#94a3b8">Sin datos</div>'; return; }
   const r = 55, c = 2 * Math.PI * r;
   let offset = 0;
   const segments = data.map(d => {
@@ -8640,7 +8644,7 @@ function rendRenderConsolidado(){
   const top5 = conApu.slice(0, 5);
   const bot5 = conApu.slice(-5).reverse();
   const renderRanking = (arr, type) => {
-    if (arr.length === 0) return '<div style="color:#64748b;padding:14px 0">Sin datos para ranking</div>';
+    if (arr.length === 0) return '<div style="color:#94a3b8;padding:14px 0">Sin datos para ranking</div>';
     return arr.map(it => {
       const e = it.eficiencia;
       const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
@@ -8689,7 +8693,7 @@ function rendRenderConsolidado(){
         '<text x="'+(w-pad.r)+'" y="'+(h-8)+'" text-anchor="end" fill="#94a3b8" font-size="9.5">'+D[D.length-1].fecha.substring(5)+'</text>' +
       '</svg>';
   } else {
-    document.getElementById('rk-trend').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:12px">Necesita ≥ 2 días para mostrar tendencia</div>';
+    document.getElementById('rk-trend').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px">Necesita ≥ 2 días para mostrar tendencia</div>';
   }
 
   // Tabla resumen
@@ -8873,7 +8877,7 @@ function rendRenderEficiencia(){
     const cls = e >= 100 ? 'green' : e >= 85 ? 'yellow' : 'red';
     const w = Math.min(150, Math.max(2, e));
     return '<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:8px"><div style="width:80px;font-weight:600;color:#fff;font-size:12px">CAP '+c.cap+'</div><div style="flex:1;background:rgba(255,255,255,.06);border-radius:4px;height:14px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:'+(cls==='green'?'linear-gradient(90deg,#22c55e,#86efac)':cls==='yellow'?'linear-gradient(90deg,#fbbf24,#fcd34d)':'linear-gradient(90deg,#ef4444,#fca5a5)')+'"></div></div><div style="width:60px;text-align:right;font-weight:600;font-size:12px;color:'+(cls==='green'?'#86efac':cls==='yellow'?'#fcd34d':'#fca5a5')+'">'+e.toFixed(0)+'%</div></div>';
-  }).join('') || '<div style="color:#64748b;padding:14px">Sin datos APU para mostrar.</div>';
+  }).join('') || '<div style="color:#94a3b8;padding:14px">Sin datos APU para mostrar.</div>';
 }
 
 
