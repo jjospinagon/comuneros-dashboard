@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- Redirección a la versión vigente del cockpit (v2). index.html es legado.
+     Garantiza que la raíz del sitio, los atajos antiguos y el start_url del PWA
+     siempre abran v2.html (con menú flotante e ingreso unificados). -->
+<script>location.replace('v2.html' + location.search + location.hash);</script>
+<meta http-equiv="refresh" content="0; url=v2.html">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=5.0">
 <meta name="referrer" content="no-referrer">
