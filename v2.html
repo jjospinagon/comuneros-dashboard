@@ -695,7 +695,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     #login-overlay .v3-hud svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
     #login-overlay .v3-hud svg.lines line{stroke:rgba(34,211,238,.32);stroke-width:1;stroke-dasharray:5 5;animation:v3LineFlow 18s linear infinite}
 
-    /* Centro: logo M */
+    /* Centro: logo C */
     #login-overlay .v3-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;display:flex;align-items:center;justify-content:center;animation:v3MGlow 3s ease-in-out infinite;z-index:3}
     #login-overlay .v3-center::before{content:"";position:absolute;inset:-12px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.15) 0%,transparent 70%);z-index:-1}
 
@@ -775,7 +775,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <span>Cockpit Contractual</span>
     </div>
 
-    <!-- HUD circular: anillos + logo M centrado + 6 nodos orbitales -->
+    <!-- HUD circular: anillos + logo C centrado + 6 nodos orbitales -->
     <div class="v3-hud">
       <div class="v3-ring r4"></div>
       <div class="v3-ring r1"></div>
@@ -793,7 +793,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         </g>
       </svg>
 
-      <!-- Centro: logo M -->
+      <!-- Centro: logo C -->
       <div class="v3-center">
         <svg viewBox="0 0 260 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -809,15 +809,12 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
             </radialGradient>
           </defs>
           <g stroke="url(#v3MStroke)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="45" y1="210" x2="45" y2="30"/>
-            <line x1="45" y1="30" x2="130" y2="135"/>
-            <line x1="130" y1="135" x2="215" y2="30"/>
-            <line x1="215" y1="30" x2="215" y2="210"/>
+            <path d="M 185.3 185.9 A 86 86 0 1 1 185.3 54.1"/>
           </g>
           <g stroke="#ecfeff" stroke-width="1.5">
-            <circle cx="45" cy="30" r="9" fill="url(#v3DotCore)"/>
-            <circle cx="215" cy="30" r="9" fill="url(#v3DotCore)"/>
-            <circle cx="130" cy="135" r="9" fill="url(#v3DotCore)"/>
+            <circle cx="185.3" cy="54.1" r="9" fill="url(#v3DotCore)"/>
+            <circle cx="185.3" cy="185.9" r="9" fill="url(#v3DotCore)"/>
+            <circle cx="44" cy="120" r="9" fill="url(#v3DotCore)"/>
           </g>
         </svg>
       </div>
@@ -843,10 +840,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div class="v3-mini-m">
           <svg width="20" height="18" viewBox="0 0 260 240">
             <g stroke="#22d3ee" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="45" y1="210" x2="45" y2="30"/>
-              <line x1="45" y1="30" x2="130" y2="135"/>
-              <line x1="130" y1="135" x2="215" y2="30"/>
-              <line x1="215" y1="30" x2="215" y2="210"/>
+              <path d="M 185.3 185.9 A 86 86 0 1 1 185.3 54.1"/>
             </g>
           </svg>
         </div>
@@ -2316,7 +2310,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       </div>
 
       <div class="mo-panel">
-        <h3>📋 Catálogo Maestro <span id="trab-tabla-info" style="color:#94a3b8;font-weight:400;font-size:11px"></span></h3>
+        <h3>📋 Catálogo Caestro <span id="trab-tabla-info" style="color:#94a3b8;font-weight:400;font-size:11px"></span></h3>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
           <input type="text" id="trab-search" placeholder="🔍 Buscar por nombre o cédula…" oninput="trabSearchDebounced()" style="flex:1;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;font-family:inherit;outline:none;max-width:320px">
           <span style="font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;align-self:center">Cargo:</span>
