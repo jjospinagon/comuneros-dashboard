@@ -9353,14 +9353,14 @@ if ('serviceWorker' in navigator) {
       doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(13,27,62); doc.text('Resumen por máquina',M,y); y+=6;
       doc.autoTable({
         startY:y+4,
-        head:[['Máquina','Tarifa $/h','H. trabajadas','Valor trabajadas','H. stand-by','¿Stand-by?','Valor stand-by','Total máquina']],
+        head:[['Máquina','Tarifa $/h','H. trabajadas','Valor trabajadas','H. stand-by','¿Stand-by?','Valor stand-by','Total']],
         body: maqs.map(function(m){ return [m.nombre,_money(m.tarifa),_h(m.ht),_money(m.valTrab),_h(m.sb),(m.sb>0?('Sí ('+m.diasSB+' d)'):'No'),_money(m.csb),_money(m.total)]; }),
         foot:[['TOTAL','',_h(TH),_money(TVT),_h(TSB),'',_money(TCSB),_money(TTOT)]],
         theme:'grid', margin:{left:M,right:M},
         styles:{font:'helvetica',fontSize:7.8,cellPadding:3.4,overflow:'linebreak',textColor:[15,23,42],lineColor:[203,213,225],lineWidth:0.3},
         headStyles:{fillColor:[13,27,62],textColor:[255,255,255],fontStyle:'bold',halign:'center',fontSize:7.6},
         footStyles:{fillColor:[219,228,240],textColor:[13,27,62],fontStyle:'bold',halign:'center'},
-        columnStyles:{0:{halign:'left',cellWidth:96},1:{halign:'right',cellWidth:60},2:{halign:'right',cellWidth:64},3:{halign:'right',cellWidth:74,fontStyle:'bold'},4:{halign:'right',cellWidth:58},5:{halign:'center',cellWidth:58},6:{halign:'right',cellWidth:72,fontStyle:'bold'},7:{halign:'right'}},
+        columnStyles:{0:{halign:'left',cellWidth:86},1:{halign:'right',cellWidth:52},2:{halign:'right',cellWidth:56},3:{halign:'right',cellWidth:70,fontStyle:'bold'},4:{halign:'right',cellWidth:50},5:{halign:'center',cellWidth:54},6:{halign:'right',cellWidth:70,fontStyle:'bold'},7:{halign:'right',cellWidth:70,fontStyle:'bold'}},
         didParseCell:function(dd){ if(dd.section==='body'&&dd.column.index===5){ var t=(dd.cell.raw||'')+''; dd.cell.styles.textColor = t.indexOf('Sí')===0?[194,116,10]:[15,157,110]; dd.cell.styles.fontStyle='bold'; } }
       });
       y=doc.lastAutoTable.finalY+16;
