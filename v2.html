@@ -9343,7 +9343,7 @@ if ('serviceWorker' in navigator) {
       var y=84;
       doc.setTextColor(71,85,105); doc.setFont('helvetica','normal'); doc.setFontSize(8.2);
       var meto='Metodología: las horas trabajadas y el stand-by provienen del control diario de maquinaria. El stand-by es el tiempo pagado en que la máquina permaneció disponible sin operar. '+
-        'La jornada base del sábado es 2,5 h: si la máquina trabaja ≥ 2,5 h no se paga stand-by, y si trabaja menos se paga el excedente. Valor = horas × tarifa de cada máquina '+
+        'La jornada base del sábado es 2,5 h: si la máquina trabaja 2,5 h o más no se paga stand-by, y si trabaja menos se paga el excedente. Valor = horas x tarifa de cada máquina '+
         '(Retro CAT 312 $170.000/h · Retro CAT 305 $150.000/h · Minicargador $150.000/h).';
       var ml=doc.splitTextToSize(meto,PW-2*M); doc.text(ml,M,y); y+=ml.length*9.6+8;
       var img=chartDataURL(maqs);
