@@ -1,7 +1,7 @@
 /* Cockpit Comuneros · Service Worker v1
    - Network-first para recursos del mismo origen (siempre fresco; offline = último cacheado)
    - NUNCA intercepta script.google.com (JSONP) ni CDNs externas */
-const CACHE = 'cockpit-v3-5';
+const CACHE = 'cockpit-v3-6';
 const SHELL = ['./', './index.html', './v2.html', './manifest.json',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
