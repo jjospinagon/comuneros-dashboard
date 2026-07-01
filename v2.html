@@ -3575,7 +3575,7 @@ async function informeGenerar(){
                 var v=ds.data[pi]; if(v==null) return;
                 if(pi%cada!==0 && pi!==nL-1) return;
                 ctx.fillStyle=(di===0?'#64748b':'#0369a1');
-                ctx.fillText('$'+v+' M', pt.x, pt.y+(di===0?-6:12));
+                ctx.fillText(Number(v).toFixed(1)+'%', pt.x, pt.y+(di===0?-6:12));
               });
             });
             ctx.restore();
