@@ -3354,11 +3354,14 @@ function _infM(n){ return '$'+((Number(n)||0)/1e6).toLocaleString('es-CO',{maxim
 function _infDias(d0,d1){ var out=[],c=new Date(d0+'T00:00:00'); var f=new Date(d1+'T00:00:00'); while(c<=f){ out.push(c.toISOString().slice(0,10)); c=new Date(c.getTime()+86400000);} return out; }
 
 async function _infAvanceRango(d0,d1){
-  var fechas=_infDias(d0,d1), res=[];
-  for(var i=0;i<fechas.length;i+=31){
-    var a=fechas[i], b=fechas[Math.min(i+30,fechas.length-1)];
-    try{ var r=await jsonp(APPS_URL,{action:'avance_rango',desde:a,hasta:b,_ts:Date.now()}); (r.dias||[]).forEach(function(d){res.push(d);}); }catch(e){}
+  var fechas=_infDias(d0,d1), chunks=[];
+  for(var i=0;i<fechas.length;i+=7) chunks.push([fechas[i], fechas[Math.min(i+6,fechas.length-1)]]);
+  async function pide(a,b){
+    try{ return await jsonp(APPS_URL,{action:'avance_rango',desde:a,hasta:b,_ts:Date.now()}); }
+    catch(e){ try{ return await jsonp(APPS_URL,{action:'avance_rango',desde:a,hasta:b,_ts:Date.now()}); }catch(e2){ return {dias:[]}; } }
   }
+  var partes=await Promise.all(chunks.map(function(c){ return pide(c[0],c[1]); }));
+  var res=[]; partes.forEach(function(r){ (r&&r.dias||[]).forEach(function(d){ res.push(d); }); });
   return res;
 }
 
@@ -3397,8 +3400,9 @@ async function informeGenerar(){
 
     // ---- mano de obra del periodo ----
     var moD=((mo&&mo.diaria)||[]).filter(function(x){return x.fecha>=d0&&x.fecha<=d1;});
-    var moTot=moD.reduce(function(a,b){return a+(Number(b.ingresos)||0);},0);
-    var moPico=moD.reduce(function(a,b){return Math.max(a,Number(b.ingresos)||0);},0);
+    var _moN=function(x){ return (typeof x.mo==='number')? x.mo : (Number(x.ingresos)||0); };
+    var moTot=moD.reduce(function(a,b){return a+_moN(b);},0);
+    var moPico=moD.reduce(function(a,b){return Math.max(a,_moN(b));},0);
     var moProm=moD.length? (moTot/moD.length):0;
 
     // ---- maquinaria del periodo ----
@@ -3419,7 +3423,10 @@ async function informeGenerar(){
       return [a+'-'+p(m)+'-'+p(di), a+'-'+p(m)+'-'+p(df)]; };
     var fotos=fotosAll.filter(function(x){ var r=_fw(x); return r[0]<=d1 && r[1]>=d0; });
     fotos.sort(function(a,b){return a.f<b.f?-1:1;});
-    var sel=[]; if(fotos.length){ var paso=Math.max(1,Math.floor(fotos.length/8)); for(var i=0;i<fotos.length&&sel.length<8;i+=paso) sel.push(fotos[i]); }
+    var porSem={};
+    fotos.forEach(function(x){ var k=x.a+'-'+x.m+'-S'+Number(x.w); if(!porSem[k]) porSem[k]={a:x.a,m:x.m,w:Number(x.w),arr:[]}; porSem[k].arr.push(x); });
+    var semKeys=Object.keys(porSem).sort();
+    var MESES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
     // ---- HTML del documento ----
     var kpi=function(l,v,s){ return '<div class="inf-kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; };
@@ -3433,11 +3440,13 @@ async function informeGenerar(){
       kpi('% del contrato (período)', bac? (totalPer/bac*100).toFixed(2)+'%' : '—', 'sobre BAC '+_infM(bac))+
       kpi('Avance acumulado obra', ((k.pctReal||0)*100).toFixed(2)+'%', 'programado '+((k.pctProg||0)*100).toFixed(2)+'% · SPI '+(k.spi||0).toFixed(2))+
       '</div>'+
-      '<h3>📊 Avance por días</h3><div style="height:220px"><canvas id="inf-chart"></canvas></div>'+
+      '<h3>📊 Avance por días</h3>'+
+      (porDia.length? '<div style="height:230px"><canvas id="inf-chart"></canvas></div>'
+        : '<div style="color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;font-size:12px">Sin datos de avance diario en este período (verifica que los días estén cargados en AVANCE DIARIO).</div>')+
       '<h3>🧱 Avance por capítulo en el período</h3>'+
       '<table><tr><th>Capítulo</th><th style="text-align:right">Actividades·día</th><th style="text-align:right">Valor período</th><th style="text-align:right">% del período</th></tr>'+
       capsArr.map(function(c){ return '<tr><td>Cap '+c.cap+'</td><td style="text-align:right">'+c.n+'</td><td style="text-align:right">'+_infM(c.valor)+'</td><td style="text-align:right">'+(totalPer?(c.valor/totalPer*100).toFixed(1):'0')+'%</td></tr>'; }).join('')+'</table>'+
-      '<h3>👷 Mano de obra</h3>'+
+      '<h3>👷 Mano de obra (solo frente M.O — excluye interventoría y personal de obra)</h3>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
       kpi('Promedio personal/día', moProm.toFixed(1), moD.length+' días con registro')+
       kpi('Pico de personal', String(moPico), 'máximo en un día')+
@@ -3448,19 +3457,34 @@ async function informeGenerar(){
         '<tr style="font-weight:700;background:#f8fafc"><td>TOTAL</td><td></td><td style="text-align:right">'+mqHrs.toFixed(1)+'</td><td style="text-align:right">'+mqSbH.toFixed(1)+'</td><td style="text-align:right">'+_infM(mqSb$)+'</td></tr></table>')
         : '<div style="color:#64748b;font-size:12px">Sin registros de maquinaria en el período.</div>')+
       '<h3>📷 Registro fotográfico del período ('+fotos.length+' fotos)</h3>'+
-      (sel.length? ('<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+
-        sel.map(function(x){ return '<div style="text-align:center"><img src="https://drive.google.com/thumbnail?id='+x.i+'&sz=w400" style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" onerror="this.parentElement.style.display=\'none\'"><div style="font-size:9.5px;color:#64748b;margin-top:2px">Sem '+Number(x.w)+' · '+['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(x.m)]+'</div></div>'; }).join('')+'</div>')
-        : '<div style="color:#64748b;font-size:12px">Sin fotos registradas en el período.</div>')+
+      (semKeys.length? semKeys.map(function(k){
+        var g=porSem[k]; var n=g.arr.length; var take=Math.min(4,n);
+        var paso=Math.max(1,Math.floor(n/take)); var pick=[];
+        for(var i2=0;i2<n&&pick.length<take;i2+=paso) pick.push(g.arr[i2]);
+        return '<div style="font-size:11.5px;font-weight:700;color:#334155;margin:10px 0 5px">Semana '+g.w+' · '+MESES[Number(g.m)]+' '+g.a+' <span style="font-weight:400;color:#94a3b8">('+n+' fotos)</span></div>'+
+          '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+
+          pick.map(function(x){ return '<img src="https://drive.google.com/thumbnail?id='+x.i+'&sz=w400" style="width:100%;height:105px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" onerror="this.style.display=\'none\'">'; }).join('')+'</div>';
+      }).join('') : '<div style="color:#64748b;font-size:12px">Sin fotos registradas en el período.</div>')+
       '<p style="color:#94a3b8;font-size:10px;margin-top:18px;border-top:1px solid #e2e8f0;padding-top:8px">Generado automáticamente desde el Cockpit Comuneros · Fuentes: AVANCE DIARIO, hoja DASHBOARD, registros de asistencia y maquinaria, Drive fotográfico · '+new Date().toLocaleString('es-CO')+'</p>';
 
     doc.innerHTML=html;
     // chart de barras por dia
     try{
-      if(INF_CHART) INF_CHART.destroy();
-      INF_CHART=new Chart(document.getElementById('inf-chart'),{ type:'bar',
-        data:{ labels:porDia.map(function(d){return d.fecha.slice(5);}), datasets:[{label:'Millones COP', data:porDia.map(function(d){return Math.round(d.valor/1e5)/10;}), backgroundColor:'#0ea5e9'}]},
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#475569',font:{size:9}}}, y:{ticks:{color:'#475569'}, grid:{color:'#e2e8f0'}} } }
-      });
+      if(INF_CHART){ INF_CHART.destroy(); INF_CHART=null; }
+      var cEl=document.getElementById('inf-chart');
+      if(cEl && porDia.length){
+        INF_CHART=new Chart(cEl,{ type:'bar',
+          data:{ labels:porDia.map(function(d){return d.fecha.slice(5);}), datasets:[{label:'Millones COP', data:porDia.map(function(d){return Math.round(d.valor/1e5)/10;}), backgroundColor:'#0ea5e9'}]},
+          options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:18}}, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#475569',font:{size:9}}}, y:{ticks:{color:'#475569'}, grid:{color:'#e2e8f0'}} } },
+          plugins:[{ id:'lblInf', afterDatasetsDraw:function(ch){
+            var ctx=ch.ctx; ctx.save(); ctx.fillStyle='#0f172a'; ctx.font='bold 10px Arial'; ctx.textAlign='center';
+            ch.data.datasets.forEach(function(ds,di){ ch.getDatasetMeta(di).data.forEach(function(bar,bi){
+              var val=ds.data[bi]; if(val==null) return; ctx.fillText('$'+val+' M', bar.x, bar.y-5);
+            });});
+            ctx.restore();
+          }}]
+        });
+      }
     }catch(e){ console.warn('inf chart:',e); }
     document.getElementById('inf-pdf').style.display='inline-block';
   }catch(e){
