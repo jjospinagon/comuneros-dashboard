@@ -3532,13 +3532,14 @@ async function informeGenerar(){
       '<div style="font-size:12px;color:#475569">Reposición de Redes de Alcantarillado · Barrio Comuneros, Montenegro (Quindío)<br>Contrato 023 de 2025 · CONSORCIO INFRARED COMUNEROS 2025</div></div>'+
       '<div style="text-align:right;font-size:11px;color:#64748b">Período<br><b style="font-size:13px;color:#0f172a">'+fmtF(d0)+' — '+fmtF(d1)+'</b><br>Generado: '+new Date().toLocaleDateString('es-CO')+'</div></div>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">'+
-      kpi('Ejecutado en el período', _infM(totalPer), porDia.length+' días con avance · prom. '+_infM(porDia.length?totalPer/porDia.length:0)+'/día')+
+      kpi('Ejecutado en el período', _infM(totalPer), porDia.length+' días con avance · prom. '+_infM(porDia.length?totalPer/porDia.length:0)+'/día · incluye AIU y planes')+
       kpi('% del contrato (período)', bac? (totalPer/bac*100).toFixed(2)+'%' : '—', 'sobre BAC '+_infM(bac))+
       kpi('Avance acumulado obra', ((k.pctReal||0)*100).toFixed(2)+'%', 'programado '+((k.pctProg||0)*100).toFixed(2)+'% · SPI '+(k.spi||0).toFixed(2))+
       kpi('Programado del período', _infM(pvPer), 'según curva S contractual')+
       kpi('SPI del período', spiPer!=null? spiPer.toFixed(2) : '—', spiPer!=null? (spiPer>=1?'al día o adelantado':'ritmo por debajo del programa') : 'sin programa en el rango')+
       kpi('Desviación del período', _infM(totalPer-pvPer), (totalPer>=pvPer?'a favor':'en contra')+' vs programado')+
       '</div>'+
+      '<div style="margin-top:8px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:7px 11px;font-size:11.5px;color:#713f12"><b>Nota:</b> todos los valores ejecutados y programados de este informe <b>incluyen AIU y planes</b> (valores contractuales plenos).</div>'+
       '<h3>📊 Avance por días</h3>'+
       (porDia.length? '<div style="height:230px"><canvas id="inf-chart"></canvas></div>'
         : '<div style="color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;font-size:12px">Sin datos de avance diario en este período (verifica que los días estén cargados en AVANCE DIARIO).</div>')+
@@ -3547,7 +3548,7 @@ async function informeGenerar(){
       '<h3>🧱 Avance por capítulo en el período</h3>'+
       '<table><tr><th>Capítulo</th><th style="text-align:right">Actividades·día</th><th style="text-align:right">Valor período</th><th style="text-align:right">% del período</th></tr>'+
       capsArr.map(function(c){ return '<tr><td>Cap '+c.cap+'</td><td style="text-align:right">'+c.n+'</td><td style="text-align:right">'+_infM(c.valor)+'</td><td style="text-align:right">'+(totalPer?(c.valor/totalPer*100).toFixed(1):'0')+'%</td></tr>'; }).join('')+'</table>'+
-      '<h3>🔧 Detalle de actividades ejecutadas en el período ('+acts.length+' ítems)</h3>'+
+      '<h3>🔧 Detalle de actividades ejecutadas en el período ('+acts.length+' ítems · valores con AIU y planes)</h3>'+
       (acts.length? ('<table><tr><th>Ítem</th><th>Descripción</th><th>Und</th><th style="text-align:right">Cant. período</th><th style="text-align:right">Valor período</th><th style="text-align:right">% acum. ítem</th></tr>'+
         actsRows+
         '<tr style="font-weight:700;background:#f8fafc"><td colspan="4">TOTAL PERÍODO</td><td style="text-align:right">'+_infM(totalPer)+'</td><td></td></tr></table>')
@@ -3571,7 +3572,7 @@ async function informeGenerar(){
           '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+
           pick.map(function(x){ return '<img src="https://drive.google.com/thumbnail?id='+x.i+'&sz=w400" style="width:100%;height:105px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" onerror="this.style.display=\'none\'">'; }).join('')+'</div>';
       }).join('') : '<div style="color:#64748b;font-size:12px">Sin fotos registradas en el período.</div>')+
-      '<p style="color:#94a3b8;font-size:10px;margin-top:18px;border-top:1px solid #e2e8f0;padding-top:8px">Generado automáticamente desde el Cockpit Comuneros · Fuentes: AVANCE DIARIO, hoja DASHBOARD, registros de asistencia y maquinaria, Drive fotográfico · '+new Date().toLocaleString('es-CO')+'</p>';
+      '<p style="color:#94a3b8;font-size:10px;margin-top:18px;border-top:1px solid #e2e8f0;padding-top:8px">Generado automáticamente desde el Cockpit Comuneros · Valores ejecutados/programados incluyen AIU y planes · Fuentes: AVANCE DIARIO, hoja DASHBOARD, registros de asistencia y maquinaria, Drive fotográfico · '+new Date().toLocaleString('es-CO')+'</p>';
 
     doc.innerHTML=html;
     // chart de barras por dia
