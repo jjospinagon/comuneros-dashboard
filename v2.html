@@ -3783,18 +3783,22 @@ async function informeGenerar(){
             {label:'Programado', data:curvaPV, borderColor:'#94a3b8', backgroundColor:'transparent', borderDash:[6,4], pointRadius:0, tension:.25},
             {label:'Ejecutado', data:curvaEV, borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,.08)', fill:true, pointRadius:2, tension:.25}
           ]},
-          options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:16,right:26}},
+          options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:22,right:52,left:14,bottom:4}},
             plugins:{legend:{labels:{color:'#475569',boxWidth:18}}},
-            scales:{ x:{ticks:{color:'#475569',font:{size:9},maxTicksLimit:10}}, y:{ticks:{color:'#475569'}, grid:{color:'#e2e8f0'}} } },
+            scales:{ x:{ticks:{color:'#475569',font:{size:9},maxTicksLimit:10}, offset:true}, y:{grace:'15%', ticks:{color:'#475569'}, grid:{color:'#e2e8f0'}} } },
           plugins:[{ id:'lblS', afterDatasetsDraw:function(ch){
-            var ctx=ch.ctx; ctx.save(); ctx.font='bold 9.5px Arial'; ctx.textAlign='center';
+            var ctx=ch.ctx; ctx.save(); ctx.font='bold 9.5px Arial';
             ch.data.datasets.forEach(function(ds,di){
               var meta=ch.getDatasetMeta(di);
               meta.data.forEach(function(pt,pi){
                 var v=ds.data[pi]; if(v==null) return;
                 if(pi%cada!==0 && pi!==nL-1) return;
+                var dx=0;
+                if(pi===0){ ctx.textAlign='left'; dx=5; }
+                else if(pi===nL-1){ ctx.textAlign='left'; dx=8; }
+                else { ctx.textAlign='center'; }
                 ctx.fillStyle=(di===0?'#64748b':'#0369a1');
-                ctx.fillText(Number(v).toFixed(1)+'%', pt.x, pt.y+(di===0?-6:12));
+                ctx.fillText(Number(v).toFixed(1)+'%', pt.x+dx, pt.y+(di===0?-8:16));
               });
             });
             ctx.restore();
