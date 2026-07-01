@@ -1783,7 +1783,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <input type="date" id="inf-desde" style="padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#141a37;color:#fff">
       <input type="date" id="inf-hasta" style="padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#141a37;color:#fff">
       <button onclick="informeGenerar()" id="inf-btn" style="background:linear-gradient(90deg,#10b981,#0ea5e9);border:none;color:#fff;padding:9px 18px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">Generar</button>
-      <button onclick="window.print()" id="inf-pdf" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.5);color:#fca5a5;padding:9px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">⬇ Descargar PDF</button>
+      <button onclick="informePdf()" id="inf-pdf" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.5);color:#fca5a5;padding:9px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">⬇ Descargar PDF</button>
     </div>
     <div id="informe-doc"><div style="text-align:center;color:#64748b;padding:60px 20px">Selecciona un rango de fechas y pulsa <b>Generar</b>.<br><span style="font-size:12px">El informe incluye avance por días, mano de obra, maquinaria, capítulos y fotos del período.</span></div></div>
   </div>
@@ -3370,6 +3370,162 @@ async function _infAvanceRango(d0,d1){
   return res;
 }
 
+var _infPdfLibsP=null;
+function _infPdfLibs(){
+  if(_infPdfLibsP) return _infPdfLibsP;
+  function ld(src){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=function(){rej(new Error('lib: '+src));}; document.head.appendChild(s); }); }
+  _infPdfLibsP=(async function(){
+    if(!(window.jspdf&&window.jspdf.jsPDF)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if(!(window.jspdf.jsPDF.API&&window.jspdf.jsPDF.API.autoTable)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+  })();
+  return _infPdfLibsP;
+}
+
+async function informePdf(){
+  var L=window.INF_LAST;
+  if(!L){ alert('Primero genera el informe.'); return; }
+  var btn=document.getElementById('inf-pdf'); btn.disabled=true; var txt0=btn.textContent; btn.textContent='⏳ Armando PDF…';
+  try{
+    await _infPdfLibs();
+    var MESN=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var fmtF=function(s){ var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+    var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({unit:'pt',format:'a4'});
+    var PW=doc.internal.pageSize.getWidth(), PH=doc.internal.pageSize.getHeight(), M=40;
+    function header(){
+      doc.setFillColor(13,27,62); doc.rect(0,0,PW,64,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+      doc.text('INFORME EJECUTIVO DE OBRA',M,27);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(196,214,238);
+      doc.text('Reposición de Redes de Alcantarillado · Barrio Comuneros, Montenegro (Quindío) — Contrato 023 de 2025',M,43);
+      doc.setFontSize(8.4); doc.setTextColor(150,180,222);
+      doc.text('Período: '+fmtF(L.d0)+'  a  '+fmtF(L.d1)+'        CONSORCIO INFRARED COMUNEROS 2025        Generado: '+new Date().toLocaleDateString('es-CO'),M,56);
+    }
+    function nueva(){ doc.addPage(); header(); return 84; }
+    header(); var y=84;
+    // nota AIU
+    doc.setTextColor(120,80,10); doc.setFontSize(8.6); doc.setFont('helvetica','bold');
+    doc.text('Todos los valores ejecutados y programados de este informe INCLUYEN AIU y planes (valores contractuales plenos).',M,y); y+=16;
+    // KPIs
+    var kp=[
+      ['Ejecutado en el período', _infM(L.totalPer)],
+      ['% del contrato (período)', L.bac? (L.totalPer/L.bac*100).toFixed(2)+'%':'—'],
+      ['Avance acumulado obra', ((L.k.pctReal||0)*100).toFixed(2)+'% (prog. '+((L.k.pctProg||0)*100).toFixed(2)+'%)'],
+      ['Programado del período', _infM(L.pvPer)],
+      ['SPI del período', L.spiPer!=null? L.spiPer.toFixed(2):'—'],
+      ['Desviación del período', _infM(L.totalPer-L.pvPer)]
+    ];
+    doc.autoTable({ startY:y, margin:{left:M,right:M}, theme:'grid',
+      head:[['Indicador','Valor','Indicador','Valor']],
+      body:[[kp[0][0],kp[0][1],kp[3][0],kp[3][1]],[kp[1][0],kp[1][1],kp[4][0],kp[4][1]],[kp[2][0],kp[2][1],kp[5][0],kp[5][1]]],
+      styles:{fontSize:8.6,cellPadding:4}, headStyles:{fillColor:[14,116,144]}, columnStyles:{1:{fontStyle:'bold'},3:{fontStyle:'bold'}} });
+    y=doc.lastAutoTable.finalY+14;
+    // graficas
+    function addChart(ch,titulo){
+      if(!ch) return;
+      try{
+        var url=ch.toBase64Image('image/png',1);
+        var iw=PW-2*M, ih=iw*(ch.height/ch.width);
+        if(y+ih+20>PH-40){ y=nueva(); }
+        doc.setTextColor(15,23,42); doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+        doc.text(titulo,M,y); y+=8;
+        doc.setFillColor(255,255,255); doc.rect(M,y,iw,ih,'F');
+        doc.addImage(url,'PNG',M,y,iw,ih); y+=ih+14;
+      }catch(e){ console.warn('chart pdf:',e); }
+    }
+    addChart(window.INF_CHART,'Avance por días (millones COP)');
+    addChart(window.INF_SCHART,'Curva S — avance acumulado de obra (% del contrato)');
+    // capitulos
+    if(y>PH-160) y=nueva();
+    doc.setTextColor(15,23,42); doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+    doc.text('Avance por capítulo en el período',M,y); y+=6;
+    doc.autoTable({ startY:y, margin:{left:M,right:M},
+      head:[['Capítulo','Actividades·día','Valor período','% del período']],
+      body:L.capsArr.map(function(c){ return [(L.capNames[c.cap]||('Cap '+c.cap)), c.n, _infM(c.valor), (L.totalPer?(c.valor/L.totalPer*100).toFixed(1):'0')+'%']; }),
+      styles:{fontSize:8.4,cellPadding:3.5}, headStyles:{fillColor:[13,27,62]},
+      columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'}} });
+    y=doc.lastAutoTable.finalY+14;
+    // detalle actividades con separadores de capitulo
+    if(y>PH-140) y=nueva();
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(15,23,42);
+    doc.text('Detalle de actividades ejecutadas ('+L.acts.length+' ítems · valores con AIU y planes)',M,y); y+=6;
+    var body=[]; var lastC=null;
+    L.acts.forEach(function(a){
+      var cn=String(a.item).split('.')[0];
+      if(cn!==lastC){ lastC=cn;
+        var sub=0; L.acts.forEach(function(x){ if(String(x.item).split('.')[0]===cn) sub+=x.valor; });
+        body.push([{content:(L.capNames[cn]||('CAPÍTULO '+cn))+'   ·   '+_infM(sub), colSpan:6, styles:{fillColor:[224,242,254], textColor:[7,89,133], fontStyle:'bold'}}]);
+      }
+      body.push([a.item, a.desc, a.und, a.cant.toLocaleString('es-CO',{maximumFractionDigits:2}), _infM(a.valor), (a.pctAcum*100).toFixed(1)+'%']);
+    });
+    body.push([{content:'TOTAL PERÍODO', colSpan:4, styles:{fontStyle:'bold'}},{content:_infM(L.totalPer), styles:{fontStyle:'bold', halign:'right'}},'']);
+    doc.autoTable({ startY:y, margin:{left:M,right:M},
+      head:[['Ítem','Descripción','Und','Cant.','Valor','% acum.']],
+      body:body, styles:{fontSize:7.6,cellPadding:3}, headStyles:{fillColor:[13,27,62]},
+      columnStyles:{0:{cellWidth:34},1:{cellWidth:230},2:{cellWidth:30},3:{halign:'right',cellWidth:55},4:{halign:'right',cellWidth:60},5:{halign:'right',cellWidth:44}} });
+    y=doc.lastAutoTable.finalY+14;
+    // mano de obra + maquinaria
+    if(y>PH-150) y=nueva();
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(15,23,42);
+    doc.text('Mano de obra (solo frente M.O — excluye interventoría y personal de obra)',M,y); y+=6;
+    doc.autoTable({ startY:y, margin:{left:M,right:M},
+      head:[['Promedio personal/día','Pico de personal','Ingresos totales (persona·día)','Días con registro']],
+      body:[[L.moProm.toFixed(1), L.moPico, L.moTot, L.moDias]],
+      styles:{fontSize:8.6,cellPadding:4,halign:'center'}, headStyles:{fillColor:[14,116,144]} });
+    y=doc.lastAutoTable.finalY+14;
+    if(y>PH-150) y=nueva();
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(15,23,42);
+    doc.text('Maquinaria',M,y); y+=6;
+    if(L.mqRows.length){
+      doc.autoTable({ startY:y, margin:{left:M,right:M},
+        head:[['Máquina','Días','Hr. trabajadas','Hr. stand-by','$ Stand-by']],
+        body:L.mqRows.map(function(m){ return [m.nombre, m.dias, m.hrs.toFixed(1), m.sbh.toFixed(1), _infPesos(m.sb)]; })
+          .concat([[{content:'TOTAL',styles:{fontStyle:'bold'}},'',{content:L.mqHrs.toFixed(1),styles:{fontStyle:'bold',halign:'right'}},{content:L.mqSbH.toFixed(1),styles:{fontStyle:'bold',halign:'right'}},{content:_infPesos(L.mqSb),styles:{fontStyle:'bold',halign:'right'}}]]),
+        styles:{fontSize:8.4,cellPadding:3.5}, headStyles:{fillColor:[13,27,62]},
+        columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}} });
+      y=doc.lastAutoTable.finalY+14;
+    } else { doc.setFont('helvetica','normal'); doc.setFontSize(8.6); doc.setTextColor(100,116,139); doc.text('Sin registros de maquinaria en el período.',M,y+8); y+=24; }
+    // fotos
+    if(L.fotosPicks.length){
+      btn.textContent='⏳ Trayendo fotos…';
+      var todosIds=[]; L.fotosPicks.forEach(function(g){ todosIds=todosIds.concat(g.ids); });
+      var imgs={};
+      for(var i=0;i<todosIds.length;i+=5){
+        var lote=todosIds.slice(i,i+5).join(',');
+        try{ var rB=await jsonp(APPS_URL,{action:'foto_b64',ids:lote,_ts:Date.now()}); if(rB&&rB.imgs) Object.keys(rB.imgs).forEach(function(kk){ imgs[kk]=rB.imgs[kk]; }); }
+        catch(e){ try{ var rB2=await jsonp(APPS_URL,{action:'foto_b64',ids:lote,_ts:Date.now()}); if(rB2&&rB2.imgs) Object.keys(rB2.imgs).forEach(function(kk){ imgs[kk]=rB2.imgs[kk]; }); }catch(e2){} }
+        btn.textContent='⏳ Fotos '+Math.min(i+5,todosIds.length)+'/'+todosIds.length+'…';
+      }
+      btn.textContent='⏳ Armando PDF…';
+      y=nueva();
+      doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(15,23,42);
+      doc.text('Registro fotográfico del período ('+L.nFotos+' fotos en Drive)',M,y); y+=14;
+      var gw=(PW-2*M-3*8)/4, gh=gw*0.75;
+      L.fotosPicks.forEach(function(g){
+        if(y+gh+34>PH-36) y=nueva();
+        doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(51,65,85);
+        doc.text('Semana '+g.w+' · '+MESN[g.m]+' '+g.a+'  ('+g.total+' fotos)',M,y); y+=8;
+        var x=M, filaY=y;
+        g.ids.forEach(function(id,idx){
+          if(idx>0 && idx%4===0){ filaY+=gh+8; x=M; if(filaY+gh>PH-36){ var yy=nueva(); filaY=yy; } }
+          var dd=imgs[id];
+          if(dd){ try{ doc.addImage(dd,'PNG',x,filaY,gw,gh); }catch(e){ try{ doc.addImage(dd,'JPEG',x,filaY,gw,gh); }catch(e2){} } }
+          x+=gw+8;
+        });
+        y=filaY+gh+16;
+      });
+    }
+    // pie de pagina
+    var nP=doc.internal.getNumberOfPages();
+    for(var p2=1;p2<=nP;p2++){ doc.setPage(p2);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.4); doc.setTextColor(148,163,184);
+      doc.text('Cockpit Comuneros · Valores incluyen AIU y planes · Fuentes: AVANCE DIARIO, DASHBOARD, asistencia, maquinaria, Drive fotográfico',M,PH-18);
+      doc.text(p2+' / '+nP,PW-M,PH-18,{align:'right'});
+    }
+    doc.save('INFORME_EJECUTIVO_'+L.d0+'_a_'+L.d1+'.pdf');
+  }catch(e){ alert('Error generando PDF: '+(e.message||e)); console.error(e); }
+  btn.disabled=false; btn.textContent=txt0;
+}
+
 window.addEventListener('beforeprint', function(){
   var doc=document.getElementById('informe-doc');
   if(!doc || document.getElementById('inf-print-root')) return;
@@ -3642,6 +3798,22 @@ async function informeGenerar(){
         });
       }
     }catch(e){ console.warn('scurve:',e); }
+    // snapshot para el PDF nativo
+    try{
+      var fotosPicksPdf=[];
+      semKeys.forEach(function(kk2){
+        var g2=porSem[kk2]; var n2=g2.arr.length;
+        var take2=Math.min(n2, Math.max(4, Math.ceil(8/semKeys.length)));
+        var paso2=Math.max(1,Math.floor(n2/take2)); var pk2=[];
+        for(var i3=0;i3<n2&&pk2.length<take2;i3+=paso2) pk2.push(g2.arr[i3].i);
+        fotosPicksPdf.push({w:g2.w, m:Number(g2.m), a:g2.a, total:n2, ids:pk2});
+      });
+      window.INF_LAST={ d0:d0, d1:d1, totalPer:totalPer, pvPer:pvPer, spiPer:spiPer, bac:bac, k:k,
+        porDia:porDia, capsArr:capsArr, acts:acts, capNames:capNames,
+        moProm:moProm, moPico:moPico, moTot:moTot, moDias:moD.length,
+        mqRows:mqRows, mqHrs:mqHrs, mqSbH:mqSbH, mqSb:mqSb$,
+        nFotos:fotos.length, fotosPicks:fotosPicksPdf };
+    }catch(e){ console.warn('snapshot pdf:',e); }
     document.getElementById('inf-pdf').style.display='inline-block';
   }catch(e){
     doc.innerHTML='<div style="color:#dc2626;padding:40px;text-align:center">Error generando el informe: '+escapeHTML(e.message||String(e))+'</div>';
