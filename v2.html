@@ -3480,6 +3480,19 @@ async function informeGenerar(){
     // orden natural por numero de item (1.02 < 1.11 < 2.01 < 3.2 < 3.13)
     var _iKey=function(s){ return String(s).split('.').map(function(x){return ('00000'+(parseInt(x,10)||0)).slice(-5);}).join('.'); };
     acts.sort(function(a,b){ var ka=_iKey(a.item), kb=_iKey(b.item); return ka<kb?-1:(ka>kb?1:0); });
+    // nombres de capitulos desde el maestro
+    var capNames={};
+    if(od&&od.actividades){ od.actividades.forEach(function(a){ var c=String(a.cap||''); var n=(c.split('.')[0]||'').trim(); if(n!=='' && !capNames[n]) capNames[n]=c; }); }
+    // filas con separador de capitulo
+    var actsRows=''; var _lastCap=null;
+    acts.forEach(function(a){
+      var cn=String(a.item).split('.')[0];
+      var sub=0; acts.forEach(function(x){ if(String(x.item).split('.')[0]===cn) sub+=x.valor; });
+      if(cn!==_lastCap){ _lastCap=cn;
+        actsRows+='<tr><td colspan="4" style="background:#e0f2fe;color:#075985;font-weight:800;font-size:11.5px">'+escapeHTML(capNames[cn]||('CAPÍTULO '+cn))+'</td><td style="background:#e0f2fe;color:#075985;font-weight:800;text-align:right">'+_infM(sub)+'</td><td style="background:#e0f2fe"></td></tr>';
+      }
+      actsRows+='<tr><td>'+a.item+'</td><td>'+escapeHTML(a.desc)+'</td><td>'+a.und+'</td><td style="text-align:right">'+a.cant.toLocaleString('es-CO',{maximumFractionDigits:2})+'</td><td style="text-align:right">'+_infM(a.valor)+'</td><td style="text-align:right">'+(a.pctAcum*100).toFixed(1)+'%</td></tr>';
+    });
 
     // ---- mano de obra del periodo ----
     var moD=((mo&&mo.diaria)||[]).filter(function(x){return x.fecha>=d0&&x.fecha<=d1;});
@@ -3536,7 +3549,7 @@ async function informeGenerar(){
       capsArr.map(function(c){ return '<tr><td>Cap '+c.cap+'</td><td style="text-align:right">'+c.n+'</td><td style="text-align:right">'+_infM(c.valor)+'</td><td style="text-align:right">'+(totalPer?(c.valor/totalPer*100).toFixed(1):'0')+'%</td></tr>'; }).join('')+'</table>'+
       '<h3>🔧 Detalle de actividades ejecutadas en el período ('+acts.length+' ítems)</h3>'+
       (acts.length? ('<table><tr><th>Ítem</th><th>Descripción</th><th>Und</th><th style="text-align:right">Cant. período</th><th style="text-align:right">Valor período</th><th style="text-align:right">% acum. ítem</th></tr>'+
-        acts.map(function(a){ return '<tr><td>'+a.item+'</td><td>'+escapeHTML(a.desc)+'</td><td>'+a.und+'</td><td style="text-align:right">'+a.cant.toLocaleString('es-CO',{maximumFractionDigits:2})+'</td><td style="text-align:right">'+_infM(a.valor)+'</td><td style="text-align:right">'+(a.pctAcum*100).toFixed(1)+'%</td></tr>'; }).join('')+
+        actsRows+
         '<tr style="font-weight:700;background:#f8fafc"><td colspan="4">TOTAL PERÍODO</td><td style="text-align:right">'+_infM(totalPer)+'</td><td></td></tr></table>')
         : '<div style="color:#64748b;font-size:12px">Sin actividades registradas en el período.</div>')+
       '<h3>👷 Mano de obra (solo frente M.O — excluye interventoría y personal de obra)</h3>'+
