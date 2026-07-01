@@ -1062,6 +1062,26 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div class="cta">Ver dashboard completo <span class="arrow">→</span></div>
       </div>
 
+      <!-- CARD INFORME EJECUTIVO -->
+      <div class="menu-card ind" onclick="goTo('informe')" style="background:linear-gradient(180deg,rgba(16,185,129,.07),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#10b981,#0ea5e9)">🧾</div>
+        <h2>Informe Ejecutivo</h2>
+        <p class="desc">Genera el informe del período que elijas: avance por días, mano de obra, maquinaria, capítulos y registro fotográfico. Descargable en PDF.</p>
+        <div class="illust">
+          <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.92">
+            <rect x="62" y="8" width="76" height="64" rx="5" fill="rgba(16,185,129,.1)" stroke="rgba(16,185,129,.6)" stroke-width="1.5"/>
+            <line x1="72" y1="22" x2="128" y2="22" stroke="rgba(16,185,129,.8)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="72" y1="32" x2="118" y2="32" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+            <line x1="72" y1="39" x2="122" y2="39" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+            <rect x="72" y="47" width="10" height="16" fill="rgba(14,165,233,.7)"/>
+            <rect x="86" y="52" width="10" height="11" fill="rgba(16,185,129,.7)"/>
+            <rect x="100" y="44" width="10" height="19" fill="rgba(139,92,246,.7)"/>
+            <rect x="114" y="49" width="10" height="14" fill="rgba(245,158,11,.7)"/>
+          </svg>
+        </div>
+        <div class="cta">Generar informe <span class="arrow">→</span></div>
+      </div>
+
       <!-- CARD CONTRATO -->
       <div class="menu-card ind" onclick="goTo('contrato')" style="background:linear-gradient(180deg,rgba(34,211,238,.05),rgba(20,26,55,.4))">
         <div class="icon" style="background:linear-gradient(135deg,#a855f7,#22d3ee)"><svg class="ic"><use href="#ic-file"></use></svg></div>
@@ -1728,6 +1748,40 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <div id="ai-chips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
     <div id="ai-cuerpo" style="background:rgba(14,20,45,.55);border:1px solid rgba(168,85,247,.3);border-radius:14px;padding:22px 24px;line-height:1.8;color:#dbe4ff;font-size:14.5px">⏳ Reuniendo señales de la obra…</div>
     <div id="ai-gemini-nota" style="margin-top:14px;color:#94a3b8;font-size:12px"></div>
+  </div>
+</div>
+
+<!-- ============ VISTA INFORME EJECUTIVO ============ -->
+<style>
+  @media print {
+    body * { visibility: hidden !important; }
+    #informe-doc, #informe-doc * { visibility: visible !important; }
+    #informe-doc { position: absolute !important; left: 0; top: 0; width: 100%; margin: 0; box-shadow: none !important; }
+    #fab-nav, #theme-toggle { display: none !important; }
+  }
+  #informe-doc { background:#ffffff; color:#0f172a; border-radius:12px; padding:28px 32px; max-width:860px; margin:0 auto; box-shadow:0 20px 60px rgba(0,0,0,.35); }
+  #informe-doc h1 { font-size:20px; margin:0; }
+  #informe-doc h3 { font-size:14px; margin:20px 0 8px; color:#0f172a; border-bottom:2px solid #e2e8f0; padding-bottom:4px; }
+  #informe-doc table { border-collapse:collapse; width:100%; font-size:12px; }
+  #informe-doc th { background:#f1f5f9; padding:6px 8px; text-align:left; }
+  #informe-doc td { padding:5px 8px; border-bottom:1px solid #e2e8f0; }
+  .inf-kpi { padding:10px 12px; background:#f8fafc; border-radius:10px; border-left:4px solid #0ea5e9; }
+  .inf-kpi .l { font-size:9.5px; letter-spacing:.1em; color:#64748b; text-transform:uppercase; }
+  .inf-kpi .v { font-size:18px; font-weight:800; color:#0f172a; }
+  .inf-kpi .s { font-size:10.5px; color:#64748b; }
+</style>
+<div class="screen" id="screen-informe">
+  <div style="max-width:920px;margin:0 auto;padding:24px 16px 60px">
+    <div class="no-print" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <button onclick="goTo('menu')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#cbd5e1;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px">← Menú</button>
+      <h1 style="margin:0;font-size:20px;color:#fff">🧾 Informe Ejecutivo</h1>
+      <span style="color:#8b9bd1;font-size:12px">elige el período →</span>
+      <input type="date" id="inf-desde" style="padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#141a37;color:#fff">
+      <input type="date" id="inf-hasta" style="padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#141a37;color:#fff">
+      <button onclick="informeGenerar()" id="inf-btn" style="background:linear-gradient(90deg,#10b981,#0ea5e9);border:none;color:#fff;padding:9px 18px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">Generar</button>
+      <button onclick="window.print()" id="inf-pdf" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.5);color:#fca5a5;padding:9px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">⬇ Descargar PDF</button>
+    </div>
+    <div id="informe-doc"><div style="text-align:center;color:#64748b;padding:60px 20px">Selecciona un rango de fechas y pulsa <b>Generar</b>.<br><span style="font-size:12px">El informe incluye avance por días, mano de obra, maquinaria, capítulos y fotos del período.</span></div></div>
   </div>
 </div>
 
@@ -3010,6 +3064,12 @@ function _goToInner(name){
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
   if(name==='analisis'){ try{ analisisCargar(); }catch(e){ console.warn('analisis:',e); } }
+  if(name==='informe'){
+    try{
+      var dh=document.getElementById('inf-hasta'), dd=document.getElementById('inf-desde');
+      if(dh&&!dh.value){ var t=new Date(); dh.value=t.toISOString().slice(0,10); var w=new Date(t-6*86400000); dd.value=w.toISOString().slice(0,10); }
+    }catch(_){}
+  }
   if(name==='indicadores'){
     // FIX: el radar APU se pintaba durante boot con la pestaña oculta (canvas 0x0); repintar al entrar
     setTimeout(function(){
@@ -3288,6 +3348,124 @@ async function analisisCargar(force){
 }
 
 
+/* ====================== INFORME EJECUTIVO POR RANGO (V2) ====================== */
+var INF_CHART=null;
+function _infM(n){ return '$'+((Number(n)||0)/1e6).toLocaleString('es-CO',{maximumFractionDigits:1})+' M'; }
+function _infDias(d0,d1){ var out=[],c=new Date(d0+'T00:00:00'); var f=new Date(d1+'T00:00:00'); while(c<=f){ out.push(c.toISOString().slice(0,10)); c=new Date(c.getTime()+86400000);} return out; }
+
+async function _infAvanceRango(d0,d1){
+  var fechas=_infDias(d0,d1), res=[];
+  for(var i=0;i<fechas.length;i+=31){
+    var a=fechas[i], b=fechas[Math.min(i+30,fechas.length-1)];
+    try{ var r=await jsonp(APPS_URL,{action:'avance_rango',desde:a,hasta:b,_ts:Date.now()}); (r.dias||[]).forEach(function(d){res.push(d);}); }catch(e){}
+  }
+  return res;
+}
+
+async function informeGenerar(){
+  var d0=document.getElementById('inf-desde').value, d1=document.getElementById('inf-hasta').value;
+  var doc=document.getElementById('informe-doc');
+  if(!d0||!d1||d1<d0){ doc.innerHTML='<div style="color:#dc2626;padding:40px;text-align:center">Rango inválido.</div>'; return; }
+  var btn=document.getElementById('inf-btn'); btn.disabled=true; btn.textContent='⏳ Generando…';
+  doc.innerHTML='<div style="text-align:center;color:#64748b;padding:60px">⏳ Reuniendo avance, personal, maquinaria y fotos del período…</div>';
+  try{
+    var anios={}; _infDias(d0,d1).forEach(function(f){ anios[f.slice(0,4)]=1; });
+    var pFotos=Promise.all(Object.keys(anios).map(function(a){ return jsonp(APPS_URL,{action:'fotos',anio:a,_ts:Date.now()}).catch(function(){return {items:[]};}); }));
+    var rets=await Promise.all([
+      _infAvanceRango(d0,d1),
+      fetch('./obra_data.json',{cache:'no-store'}).then(function(r){return r.json();}).catch(function(){return null;}),
+      jsonp(APPS_URL,{action:'mano_obra',_ts:Date.now()}).catch(function(){return null;}),
+      jsonp(APPS_URL,{action:'control_maquinaria',_ts:Date.now()}).catch(function(){return null;}),
+      pFotos
+    ]);
+    var dias=rets[0], od=rets[1], mo=rets[2], mq=rets[3], fotosAll=[].concat.apply([],(rets[4]||[]).map(function(x){return x.items||[];}));
+
+    // ---- avance del periodo ----
+    var totalPer=0, porDia=[], caps={};
+    dias.forEach(function(d){
+      var c=(d.data&&d.data.costos)||{}; var v=Number(c.total)||0;
+      if(!v&&d.data&&d.data.items){ d.data.items.forEach(function(it){ v+=(typeof it.vrDia==='number')?it.vrDia:(Number(it.cantDia)||0)*(Number(it.vrUnit)||0); }); }
+      if(v>0){ porDia.push({fecha:d.fecha, valor:v}); totalPer+=v; }
+      (d.data&&d.data.items||[]).forEach(function(it){
+        var vv=(typeof it.vrDia==='number')?it.vrDia:(Number(it.cantDia)||0)*(Number(it.vrUnit)||0);
+        var cp=String(it.capitulo||'?'); if(!caps[cp])caps[cp]={cap:cp,valor:0,n:0}; caps[cp].valor+=vv; caps[cp].n++;
+      });
+    });
+    porDia.sort(function(a,b){return a.fecha<b.fecha?-1:1;});
+    var capsArr=Object.keys(caps).map(function(k){return caps[k];}).sort(function(a,b){return b.valor-a.valor;});
+    var k=(od&&od.dashboardKpis)||{}; var bac=k.valorTotal||0;
+
+    // ---- mano de obra del periodo ----
+    var moD=((mo&&mo.diaria)||[]).filter(function(x){return x.fecha>=d0&&x.fecha<=d1;});
+    var moTot=moD.reduce(function(a,b){return a+(Number(b.ingresos)||0);},0);
+    var moPico=moD.reduce(function(a,b){return Math.max(a,Number(b.ingresos)||0);},0);
+    var moProm=moD.length? (moTot/moD.length):0;
+
+    // ---- maquinaria del periodo ----
+    var mqRows=[], mqHrs=0, mqSbH=0, mqSb$=0;
+    ((mq&&mq.maquinas)||[]).forEach(function(m){
+      var hrs=0,sbh=0,sb=0,diasM=0;
+      (m.registros||[]).forEach(function(r){
+        var f=String(r.fecha).slice(0,10);
+        if(f>=d0&&f<=d1){ diasM++; hrs+=Number(r.totalHoras)||0; sbh+=Number(r.horasPagarStandBy)||0; sb+=Number(r.costoStandBy)||0; }
+      });
+      if(diasM>0){ mqRows.push({nombre:m.nombre||m.id, dias:diasM, hrs:hrs, sbh:sbh, sb:sb}); mqHrs+=hrs; mqSbH+=sbh; mqSb$+=sb; }
+    });
+
+    // ---- fotos del periodo (regla: fecha real de la foto dentro del rango) ----
+    var fotos=fotosAll.filter(function(x){ return x.f>=d0 && x.f<=d1; });
+    // distribuir: hasta 8, espaciadas a lo largo del periodo
+    fotos.sort(function(a,b){return a.f<b.f?-1:1;});
+    var sel=[]; if(fotos.length){ var paso=Math.max(1,Math.floor(fotos.length/8)); for(var i=0;i<fotos.length&&sel.length<8;i+=paso) sel.push(fotos[i]); }
+
+    // ---- HTML del documento ----
+    var kpi=function(l,v,s){ return '<div class="inf-kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; };
+    var fmtF=function(s){ var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+    var html='<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0ea5e9;padding-bottom:10px">'+
+      '<div><h1>INFORME EJECUTIVO DE OBRA</h1>'+
+      '<div style="font-size:12px;color:#475569">Reposición de Redes de Alcantarillado · Barrio Comuneros, Montenegro (Quindío)<br>Contrato 023 de 2025 · CONSORCIO INFRARED COMUNEROS 2025</div></div>'+
+      '<div style="text-align:right;font-size:11px;color:#64748b">Período<br><b style="font-size:13px;color:#0f172a">'+fmtF(d0)+' — '+fmtF(d1)+'</b><br>Generado: '+new Date().toLocaleDateString('es-CO')+'</div></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">'+
+      kpi('Ejecutado en el período', _infM(totalPer), porDia.length+' días con avance · prom. '+_infM(porDia.length?totalPer/porDia.length:0)+'/día')+
+      kpi('% del contrato (período)', bac? (totalPer/bac*100).toFixed(2)+'%' : '—', 'sobre BAC '+_infM(bac))+
+      kpi('Avance acumulado obra', ((k.pctReal||0)*100).toFixed(2)+'%', 'programado '+((k.pctProg||0)*100).toFixed(2)+'% · SPI '+(k.spi||0).toFixed(2))+
+      '</div>'+
+      '<h3>📊 Avance por días</h3><div style="height:220px"><canvas id="inf-chart"></canvas></div>'+
+      '<h3>🧱 Avance por capítulo en el período</h3>'+
+      '<table><tr><th>Capítulo</th><th style="text-align:right">Actividades·día</th><th style="text-align:right">Valor período</th><th style="text-align:right">% del período</th></tr>'+
+      capsArr.map(function(c){ return '<tr><td>Cap '+c.cap+'</td><td style="text-align:right">'+c.n+'</td><td style="text-align:right">'+_infM(c.valor)+'</td><td style="text-align:right">'+(totalPer?(c.valor/totalPer*100).toFixed(1):'0')+'%</td></tr>'; }).join('')+'</table>'+
+      '<h3>👷 Mano de obra</h3>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
+      kpi('Promedio personal/día', moProm.toFixed(1), moD.length+' días con registro')+
+      kpi('Pico de personal', String(moPico), 'máximo en un día')+
+      kpi('Ingresos totales', String(moTot), 'persona·día en el período')+'</div>'+
+      '<h3>🚜 Maquinaria</h3>'+
+      (mqRows.length? ('<table><tr><th>Máquina</th><th style="text-align:right">Días</th><th style="text-align:right">Hr. trabajadas</th><th style="text-align:right">Hr. stand-by</th><th style="text-align:right">$ Stand-by</th></tr>'+
+        mqRows.map(function(m){ return '<tr><td>'+m.nombre+'</td><td style="text-align:right">'+m.dias+'</td><td style="text-align:right">'+m.hrs.toFixed(1)+'</td><td style="text-align:right">'+m.sbh.toFixed(1)+'</td><td style="text-align:right">'+_infM(m.sb)+'</td></tr>'; }).join('')+
+        '<tr style="font-weight:700;background:#f8fafc"><td>TOTAL</td><td></td><td style="text-align:right">'+mqHrs.toFixed(1)+'</td><td style="text-align:right">'+mqSbH.toFixed(1)+'</td><td style="text-align:right">'+_infM(mqSb$)+'</td></tr></table>')
+        : '<div style="color:#64748b;font-size:12px">Sin registros de maquinaria en el período.</div>')+
+      '<h3>📷 Registro fotográfico del período ('+fotos.length+' fotos)</h3>'+
+      (sel.length? ('<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+
+        sel.map(function(x){ return '<div style="text-align:center"><img src="https://drive.google.com/thumbnail?id='+x.i+'&sz=w400" style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" onerror="this.parentElement.style.display=\'none\'"><div style="font-size:9.5px;color:#64748b;margin-top:2px">'+fmtF(x.f)+'</div></div>'; }).join('')+'</div>')
+        : '<div style="color:#64748b;font-size:12px">Sin fotos registradas en el período.</div>')+
+      '<p style="color:#94a3b8;font-size:10px;margin-top:18px;border-top:1px solid #e2e8f0;padding-top:8px">Generado automáticamente desde el Cockpit Comuneros · Fuentes: AVANCE DIARIO, hoja DASHBOARD, registros de asistencia y maquinaria, Drive fotográfico · '+new Date().toLocaleString('es-CO')+'</p>';
+
+    doc.innerHTML=html;
+    // chart de barras por dia
+    try{
+      if(INF_CHART) INF_CHART.destroy();
+      INF_CHART=new Chart(document.getElementById('inf-chart'),{ type:'bar',
+        data:{ labels:porDia.map(function(d){return d.fecha.slice(5);}), datasets:[{label:'Millones COP', data:porDia.map(function(d){return Math.round(d.valor/1e5)/10;}), backgroundColor:'#0ea5e9'}]},
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#475569',font:{size:9}}}, y:{ticks:{color:'#475569'}, grid:{color:'#e2e8f0'}} } }
+      });
+    }catch(e){ console.warn('inf chart:',e); }
+    document.getElementById('inf-pdf').style.display='inline-block';
+  }catch(e){
+    doc.innerHTML='<div style="color:#dc2626;padding:40px;text-align:center">Error generando el informe: '+escapeHTML(e.message||String(e))+'</div>';
+  }
+  btn.disabled=false; btn.textContent='Generar';
+}
+
 /* ====================== FAB NAVEGACION (V2) ====================== */
 var FAB_VISTAS=[
   ['menu','🏠','Menú principal'],
@@ -3298,6 +3476,7 @@ var FAB_VISTAS=[
   ['mo','👷','Mano de Obra'],
   ['inventario','📦','Inventario'],
   ['indicadores','📊','Indicadores'],
+  ['informe','🧾','Informe Ejecutivo'],
   ['contrato','📑','Contrato'],
   ['comunicaciones','📨','Comunicaciones'],
   ['fotos','📷','Fotos']
