@@ -3072,6 +3072,10 @@ function _goToInner(name){
     try{
       var dh=document.getElementById('inf-hasta'), dd=document.getElementById('inf-desde');
       if(dh&&!dh.value){ var t=new Date(); dh.value=t.toISOString().slice(0,10); var w=new Date(t-6*86400000); dd.value=w.toISOString().slice(0,10); }
+      if(dh&&!dh._infHook){ dh._infHook=dd._infHook=true;
+        var reset=function(){ window.INF_LAST=null; var b=document.getElementById('inf-pdf'); if(b) b.style.display='none'; };
+        dh.addEventListener('change',reset); dd.addEventListener('change',reset);
+      }
     }catch(_){}
   }
   if(name==='indicadores'){
@@ -3389,7 +3393,7 @@ async function informePdf(){
     await _infPdfLibs();
     var MESN=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     var fmtF=function(s){ var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
-    var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({unit:'pt',format:'a4'});
+    var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({unit:'pt',format:'letter'});
     var PW=doc.internal.pageSize.getWidth(), PH=doc.internal.pageSize.getHeight(), M=40;
     function header(){
       doc.setFillColor(13,27,62); doc.rect(0,0,PW,64,'F');
@@ -3398,7 +3402,7 @@ async function informePdf(){
       doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(196,214,238);
       doc.text('Reposición de Redes de Alcantarillado · Barrio Comuneros, Montenegro (Quindío) — Contrato 023 de 2025',M,43);
       doc.setFontSize(8.4); doc.setTextColor(150,180,222);
-      doc.text('Período: '+fmtF(L.d0)+'  a  '+fmtF(L.d1)+'        CONSORCIO INFRARED COMUNEROS 2025        Generado: '+new Date().toLocaleDateString('es-CO'),M,56);
+      doc.text('Período: '+fmtF(L.d0)+'  a  '+fmtF(L.d1)+'        CONSORCIO INFRARED COMUNEROS 2025',M,56);
     }
     function nueva(){ doc.addPage(); header(); return 84; }
     header(); var y=84;
@@ -3705,7 +3709,7 @@ async function informeGenerar(){
     var html='<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0ea5e9;padding-bottom:10px">'+
       '<div><h1>INFORME EJECUTIVO DE OBRA</h1>'+
       '<div style="font-size:12px;color:#475569">Reposición de Redes de Alcantarillado · Barrio Comuneros, Montenegro (Quindío)<br>Contrato 023 de 2025 · CONSORCIO INFRARED COMUNEROS 2025</div></div>'+
-      '<div style="text-align:right;font-size:11px;color:#64748b">Período<br><b style="font-size:13px;color:#0f172a">'+fmtF(d0)+' — '+fmtF(d1)+'</b><br>Generado: '+new Date().toLocaleDateString('es-CO')+'</div></div>'+
+      '<div style="text-align:right;font-size:11px;color:#64748b">Período<br><b style="font-size:13px;color:#0f172a">'+fmtF(d0)+' — '+fmtF(d1)+'</b></div></div>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">'+
       kpi('Ejecutado en el período', _infM(totalPer), porDia.length+' días con avance · prom. '+_infM(porDia.length?totalPer/porDia.length:0)+'/día · incluye AIU y planes')+
       kpi('% del contrato (período)', bac? (totalPer/bac*100).toFixed(2)+'%' : '—', 'sobre BAC '+_infM(bac))+
