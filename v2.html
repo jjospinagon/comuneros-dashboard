@@ -3412,9 +3412,12 @@ async function informeGenerar(){
       if(diasM>0){ mqRows.push({nombre:m.nombre||m.id, dias:diasM, hrs:hrs, sbh:sbh, sb:sb}); mqHrs+=hrs; mqSbH+=sbh; mqSb$+=sb; }
     });
 
-    // ---- fotos del periodo (regla: fecha real de la foto dentro del rango) ----
-    var fotos=fotosAll.filter(function(x){ return x.f>=d0 && x.f<=d1; });
-    // distribuir: hasta 8, espaciadas a lo largo del periodo
+    // ---- fotos del periodo (regla semana N del mes = dias (N-1)*7+1 .. N*7) ----
+    var _fw=function(x){ var a=Number(x.a),m=Number(x.m),w=Number(x.w)||1;
+      var ult=new Date(a,m,0).getDate(); var di=(w-1)*7+1, df=Math.min(w*7,ult);
+      var p=function(n){return (n<10?'0':'')+n;};
+      return [a+'-'+p(m)+'-'+p(di), a+'-'+p(m)+'-'+p(df)]; };
+    var fotos=fotosAll.filter(function(x){ var r=_fw(x); return r[0]<=d1 && r[1]>=d0; });
     fotos.sort(function(a,b){return a.f<b.f?-1:1;});
     var sel=[]; if(fotos.length){ var paso=Math.max(1,Math.floor(fotos.length/8)); for(var i=0;i<fotos.length&&sel.length<8;i+=paso) sel.push(fotos[i]); }
 
@@ -3446,7 +3449,7 @@ async function informeGenerar(){
         : '<div style="color:#64748b;font-size:12px">Sin registros de maquinaria en el período.</div>')+
       '<h3>📷 Registro fotográfico del período ('+fotos.length+' fotos)</h3>'+
       (sel.length? ('<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+
-        sel.map(function(x){ return '<div style="text-align:center"><img src="https://drive.google.com/thumbnail?id='+x.i+'&sz=w400" style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" onerror="this.parentElement.style.display=\'none\'"><div style="font-size:9.5px;color:#64748b;margin-top:2px">'+fmtF(x.f)+'</div></div>'; }).join('')+'</div>')
+        sel.map(function(x){ return '<div style="text-align:center"><img src="https://drive.google.com/thumbnail?id='+x.i+'&sz=w400" style="width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" onerror="this.parentElement.style.display=\'none\'"><div style="font-size:9.5px;color:#64748b;margin-top:2px">Sem '+Number(x.w)+' · '+['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(x.m)]+'</div></div>'; }).join('')+'</div>')
         : '<div style="color:#64748b;font-size:12px">Sin fotos registradas en el período.</div>')+
       '<p style="color:#94a3b8;font-size:10px;margin-top:18px;border-top:1px solid #e2e8f0;padding-top:8px">Generado automáticamente desde el Cockpit Comuneros · Fuentes: AVANCE DIARIO, hoja DASHBOARD, registros de asistencia y maquinaria, Drive fotográfico · '+new Date().toLocaleString('es-CO')+'</p>';
 
