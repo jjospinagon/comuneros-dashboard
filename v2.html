@@ -3386,6 +3386,28 @@ function _infPVfrac(od, fISO){
   }catch(e){ return null; }
 }
 
+function _infEVfrac(od, fISO){
+  try{
+    var cs=od.curvaS; if(!cs||!cs.fechas||!cs.fechas.length) return null;
+    var p=function(s){ var m=s.trim().split('-'); return '20'+m[2]+'-'+m[1]+'-'+m[0]; };
+    var t=fISO, prev=0;
+    for(var i=0;i<cs.fechas.length;i++){
+      var v=cs.real? cs.real[i] : null;
+      if(v==null) return prev;
+      var pr=cs.fechas[i].split(' a ');
+      var ini=p(pr[0]), fin=p(pr[1]);
+      var val=Number(v)||prev;
+      if(t<ini) return prev;
+      if(t<=fin){
+        var d1=new Date(ini+'T00:00:00'), d2=new Date(fin+'T00:00:00'), dt=new Date(t+'T00:00:00');
+        return prev+(val-prev)*((dt-d1)/Math.max(1,(d2-d1)));
+      }
+      prev=val;
+    }
+    return prev;
+  }catch(e){ return null; }
+}
+
 async function informeGenerar(){
   var d0=document.getElementById('inf-desde').value, d1=document.getElementById('inf-hasta').value;
   var doc=document.getElementById('informe-doc');
@@ -3423,14 +3445,17 @@ async function informeGenerar(){
     var diasTodos=_infDias(d0,d1);
     var evMap={}; porDia.forEach(function(x){ evMap[x.fecha]=x.valor; });
     var dAnt=new Date(new Date(d0+'T00:00:00').getTime()-86400000).toISOString().slice(0,10);
-    var pvBase=(od&&bac)? (_infPVfrac(od,dAnt)||0)*bac : 0;
+    var evBase=(od&&bac)? (_infEVfrac(od,dAnt)||0) : 0;
     var curvaLbl=[], curvaPV=[], curvaEV=[], accEV=0;
     diasTodos.forEach(function(f){
       accEV+=evMap[f]||0;
-      var pvA=(od&&bac)? ((_infPVfrac(od,f)||0)*bac - pvBase) : null;
-      curvaLbl.push(f.slice(5)); curvaPV.push(pvA==null?null:Math.round(pvA/1e5)/10); curvaEV.push(Math.round(accEV/1e5)/10);
+      var pvA=(od&&bac)? (_infPVfrac(od,f)||0)*100 : null;
+      var evA=(od&&bac)? (evBase+accEV/bac)*100 : null;
+      curvaLbl.push(f.slice(5));
+      curvaPV.push(pvA==null?null:Math.round(pvA*100)/100);
+      curvaEV.push(evA==null?null:Math.round(evA*100)/100);
     });
-    var pvPer=curvaPV.length? (curvaPV[curvaPV.length-1]||0)*1e6 : 0;
+    var pvPer=(od&&bac)? ((_infPVfrac(od,d1)||0)-(_infPVfrac(od,dAnt)||0))*bac : 0;
     var spiPer=pvPer>0? (totalPer/pvPer) : null;
 
     // ---- detalle de actividades ejecutadas en el periodo ----
@@ -3504,7 +3529,7 @@ async function informeGenerar(){
       '<h3>📊 Avance por días</h3>'+
       (porDia.length? '<div style="height:230px"><canvas id="inf-chart"></canvas></div>'
         : '<div style="color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;font-size:12px">Sin datos de avance diario en este período (verifica que los días estén cargados en AVANCE DIARIO).</div>')+
-      '<h3>📈 Curva S del período — programado vs ejecutado (acumulado, $M)</h3>'+
+      '<h3>📈 Curva S — avance acumulado de obra en el período (% del contrato)</h3>'+
       '<div style="height:240px"><canvas id="inf-scurve"></canvas></div>'+
       '<h3>🧱 Avance por capítulo en el período</h3>'+
       '<table><tr><th>Capítulo</th><th style="text-align:right">Actividades·día</th><th style="text-align:right">Valor período</th><th style="text-align:right">% del período</th></tr>'+
