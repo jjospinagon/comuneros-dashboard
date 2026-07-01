@@ -1754,9 +1754,13 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 <!-- ============ VISTA INFORME EJECUTIVO ============ -->
 <style>
   @media print {
-    body * { visibility: hidden !important; }
-    #informe-doc, #informe-doc * { visibility: visible !important; }
-    #informe-doc { position: absolute !important; left: 0; top: 0; width: 100%; margin: 0; box-shadow: none !important; }
+    html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
+    body > *:not(#inf-print-root) { display: none !important; }
+    #inf-print-root { display: block !important; }
+    #informe-doc { position: static !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
+    #informe-doc table tr { page-break-inside: avoid; }
+    #informe-doc h3 { page-break-after: avoid; }
+    #informe-doc img { page-break-inside: avoid; }
     #fab-nav, #theme-toggle { display: none !important; }
   }
   #informe-doc { background:#ffffff; color:#0f172a; border-radius:12px; padding:28px 32px; max-width:860px; margin:0 auto; box-shadow:0 20px 60px rgba(0,0,0,.35); }
@@ -3365,6 +3369,20 @@ async function _infAvanceRango(d0,d1){
   var res=[]; partes.forEach(function(r){ (r&&r.dias||[]).forEach(function(d){ res.push(d); }); });
   return res;
 }
+
+window.addEventListener('beforeprint', function(){
+  var doc=document.getElementById('informe-doc');
+  if(!doc || document.getElementById('inf-print-root')) return;
+  var ph=document.createElement('div'); ph.id='inf-print-ph'; ph.style.display='none';
+  doc.parentNode.insertBefore(ph, doc);
+  var wrap=document.createElement('div'); wrap.id='inf-print-root';
+  wrap.appendChild(doc); document.body.appendChild(wrap);
+});
+window.addEventListener('afterprint', function(){
+  var doc=document.getElementById('informe-doc'), ph=document.getElementById('inf-print-ph'), wrap=document.getElementById('inf-print-root');
+  if(doc&&ph){ ph.parentNode.insertBefore(doc, ph); ph.parentNode.removeChild(ph); }
+  if(wrap&&wrap.parentNode) wrap.parentNode.removeChild(wrap);
+});
 
 function _infPVfrac(od, fISO){
   try{
