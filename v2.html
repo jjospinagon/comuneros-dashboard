@@ -3365,6 +3365,27 @@ async function _infAvanceRango(d0,d1){
   return res;
 }
 
+function _infPVfrac(od, fISO){
+  try{
+    var cs=od.curvaS; if(!cs||!cs.fechas||!cs.fechas.length) return null;
+    var p=function(s){ var m=s.trim().split('-'); return '20'+m[2]+'-'+m[1]+'-'+m[0]; };
+    var t=fISO, prev=0;
+    for(var i=0;i<cs.fechas.length;i++){
+      var pr=cs.fechas[i].split(' a ');
+      var ini=p(pr[0]), fin=p(pr[1]);
+      var val=Number(cs.programado[i])||prev;
+      if(t<ini) return prev;
+      if(t<=fin){
+        var d1=new Date(ini+'T00:00:00'), d2=new Date(fin+'T00:00:00'), dt=new Date(t+'T00:00:00');
+        var f=(dt-d1)/Math.max(1,(d2-d1));
+        return prev+(val-prev)*f;
+      }
+      prev=val;
+    }
+    return prev;
+  }catch(e){ return null; }
+}
+
 async function informeGenerar(){
   var d0=document.getElementById('inf-desde').value, d1=document.getElementById('inf-hasta').value;
   var doc=document.getElementById('informe-doc');
@@ -3397,6 +3418,33 @@ async function informeGenerar(){
     porDia.sort(function(a,b){return a.fecha<b.fecha?-1:1;});
     var capsArr=Object.keys(caps).map(function(k){return caps[k];}).sort(function(a,b){return b.valor-a.valor;});
     var k=(od&&od.dashboardKpis)||{}; var bac=k.valorTotal||0;
+
+    // ---- curva S del periodo: PV vs EV acumulados por dia ----
+    var diasTodos=_infDias(d0,d1);
+    var evMap={}; porDia.forEach(function(x){ evMap[x.fecha]=x.valor; });
+    var dAnt=new Date(new Date(d0+'T00:00:00').getTime()-86400000).toISOString().slice(0,10);
+    var pvBase=(od&&bac)? (_infPVfrac(od,dAnt)||0)*bac : 0;
+    var curvaLbl=[], curvaPV=[], curvaEV=[], accEV=0;
+    diasTodos.forEach(function(f){
+      accEV+=evMap[f]||0;
+      var pvA=(od&&bac)? ((_infPVfrac(od,f)||0)*bac - pvBase) : null;
+      curvaLbl.push(f.slice(5)); curvaPV.push(pvA==null?null:Math.round(pvA/1e5)/10); curvaEV.push(Math.round(accEV/1e5)/10);
+    });
+    var pvPer=curvaPV.length? (curvaPV[curvaPV.length-1]||0)*1e6 : 0;
+    var spiPer=pvPer>0? (totalPer/pvPer) : null;
+
+    // ---- detalle de actividades ejecutadas en el periodo ----
+    var actMap={};
+    dias.forEach(function(d){
+      (d.data&&d.data.items||[]).forEach(function(it){
+        var kk=String(it.item);
+        if(!actMap[kk]) actMap[kk]={item:kk,desc:it.desc||'',und:it.und||'',cap:String(it.capitulo||''),cant:0,valor:0,pctAcum:0};
+        actMap[kk].cant+=Number(it.cantDia)||0;
+        actMap[kk].valor+=(typeof it.vrDia==='number')?it.vrDia:(Number(it.cantDia)||0)*(Number(it.vrUnit)||0);
+        actMap[kk].pctAcum=Math.max(actMap[kk].pctAcum, Number(it.pctAcum)||0);
+      });
+    });
+    var acts=Object.keys(actMap).map(function(x){return actMap[x];}).sort(function(a,b){return b.valor-a.valor;});
 
     // ---- mano de obra del periodo ----
     var moD=((mo&&mo.diaria)||[]).filter(function(x){return x.fecha>=d0&&x.fecha<=d1;});
@@ -3439,13 +3487,23 @@ async function informeGenerar(){
       kpi('Ejecutado en el período', _infM(totalPer), porDia.length+' días con avance · prom. '+_infM(porDia.length?totalPer/porDia.length:0)+'/día')+
       kpi('% del contrato (período)', bac? (totalPer/bac*100).toFixed(2)+'%' : '—', 'sobre BAC '+_infM(bac))+
       kpi('Avance acumulado obra', ((k.pctReal||0)*100).toFixed(2)+'%', 'programado '+((k.pctProg||0)*100).toFixed(2)+'% · SPI '+(k.spi||0).toFixed(2))+
+      kpi('Programado del período', _infM(pvPer), 'según curva S contractual')+
+      kpi('SPI del período', spiPer!=null? spiPer.toFixed(2) : '—', spiPer!=null? (spiPer>=1?'al día o adelantado':'ritmo por debajo del programa') : 'sin programa en el rango')+
+      kpi('Desviación del período', _infM(totalPer-pvPer), (totalPer>=pvPer?'a favor':'en contra')+' vs programado')+
       '</div>'+
       '<h3>📊 Avance por días</h3>'+
       (porDia.length? '<div style="height:230px"><canvas id="inf-chart"></canvas></div>'
         : '<div style="color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;font-size:12px">Sin datos de avance diario en este período (verifica que los días estén cargados en AVANCE DIARIO).</div>')+
+      '<h3>📈 Curva S del período — programado vs ejecutado (acumulado, $M)</h3>'+
+      '<div style="height:240px"><canvas id="inf-scurve"></canvas></div>'+
       '<h3>🧱 Avance por capítulo en el período</h3>'+
       '<table><tr><th>Capítulo</th><th style="text-align:right">Actividades·día</th><th style="text-align:right">Valor período</th><th style="text-align:right">% del período</th></tr>'+
       capsArr.map(function(c){ return '<tr><td>Cap '+c.cap+'</td><td style="text-align:right">'+c.n+'</td><td style="text-align:right">'+_infM(c.valor)+'</td><td style="text-align:right">'+(totalPer?(c.valor/totalPer*100).toFixed(1):'0')+'%</td></tr>'; }).join('')+'</table>'+
+      '<h3>🔧 Detalle de actividades ejecutadas en el período ('+acts.length+' ítems)</h3>'+
+      (acts.length? ('<table><tr><th>Ítem</th><th>Descripción</th><th>Und</th><th style="text-align:right">Cant. período</th><th style="text-align:right">Valor período</th><th style="text-align:right">% acum. ítem</th></tr>'+
+        acts.map(function(a){ return '<tr><td>'+a.item+'</td><td>'+escapeHTML(a.desc)+'</td><td>'+a.und+'</td><td style="text-align:right">'+a.cant.toLocaleString('es-CO',{maximumFractionDigits:2})+'</td><td style="text-align:right">'+_infM(a.valor)+'</td><td style="text-align:right">'+(a.pctAcum*100).toFixed(1)+'%</td></tr>'; }).join('')+
+        '<tr style="font-weight:700;background:#f8fafc"><td colspan="4">TOTAL PERÍODO</td><td style="text-align:right">'+_infM(totalPer)+'</td><td></td></tr></table>')
+        : '<div style="color:#64748b;font-size:12px">Sin actividades registradas en el período.</div>')+
       '<h3>👷 Mano de obra (solo frente M.O — excluye interventoría y personal de obra)</h3>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
       kpi('Promedio personal/día', moProm.toFixed(1), moD.length+' días con registro')+
@@ -3486,6 +3544,35 @@ async function informeGenerar(){
         });
       }
     }catch(e){ console.warn('inf chart:',e); }
+    try{
+      var sEl=document.getElementById('inf-scurve');
+      if(sEl){
+        if(window.INF_SCHART){ window.INF_SCHART.destroy(); }
+        var nL=curvaLbl.length, cada=Math.max(1,Math.ceil(nL/6));
+        window.INF_SCHART=new Chart(sEl,{ type:'line',
+          data:{ labels:curvaLbl, datasets:[
+            {label:'Programado', data:curvaPV, borderColor:'#94a3b8', backgroundColor:'transparent', borderDash:[6,4], pointRadius:0, tension:.25},
+            {label:'Ejecutado', data:curvaEV, borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,.08)', fill:true, pointRadius:2, tension:.25}
+          ]},
+          options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:16,right:26}},
+            plugins:{legend:{labels:{color:'#475569',boxWidth:18}}},
+            scales:{ x:{ticks:{color:'#475569',font:{size:9},maxTicksLimit:10}}, y:{ticks:{color:'#475569'}, grid:{color:'#e2e8f0'}} } },
+          plugins:[{ id:'lblS', afterDatasetsDraw:function(ch){
+            var ctx=ch.ctx; ctx.save(); ctx.font='bold 9.5px Arial'; ctx.textAlign='center';
+            ch.data.datasets.forEach(function(ds,di){
+              var meta=ch.getDatasetMeta(di);
+              meta.data.forEach(function(pt,pi){
+                var v=ds.data[pi]; if(v==null) return;
+                if(pi%cada!==0 && pi!==nL-1) return;
+                ctx.fillStyle=(di===0?'#64748b':'#0369a1');
+                ctx.fillText('$'+v+' M', pt.x, pt.y+(di===0?-6:12));
+              });
+            });
+            ctx.restore();
+          }}]
+        });
+      }
+    }catch(e){ console.warn('scurve:',e); }
     document.getElementById('inf-pdf').style.display='inline-block';
   }catch(e){
     doc.innerHTML='<div style="color:#dc2626;padding:40px;text-align:center">Error generando el informe: '+escapeHTML(e.message||String(e))+'</div>';
