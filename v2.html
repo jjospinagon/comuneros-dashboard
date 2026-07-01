@@ -3398,8 +3398,8 @@ async function informeGenerar(){
     var rets=await Promise.all([
       _infAvanceRango(d0,d1),
       fetch('./obra_data.json',{cache:'no-store'}).then(function(r){return r.json();}).catch(function(){return null;}),
-      jsonp(APPS_URL,{action:'mano_obra',_ts:Date.now()}).catch(function(){return null;}),
-      jsonp(APPS_URL,{action:'control_maquinaria',_ts:Date.now()}).catch(function(){return null;}),
+      jsonp(APPS_URL,{action:'mano_obra',_ts:Date.now()}).catch(function(){ return jsonp(APPS_URL,{action:'mano_obra',_ts:Date.now()}).catch(function(){return null;}); }),
+      jsonp(APPS_URL,{action:'control_maquinaria',_ts:Date.now()}).catch(function(){ return jsonp(APPS_URL,{action:'control_maquinaria',_ts:Date.now()}).catch(function(){return null;}); }),
       pFotos
     ]);
     var dias=rets[0], od=rets[1], mo=rets[2], mq=rets[3], fotosAll=[].concat.apply([],(rets[4]||[]).map(function(x){return x.items||[];}));
@@ -3438,13 +3438,23 @@ async function informeGenerar(){
     dias.forEach(function(d){
       (d.data&&d.data.items||[]).forEach(function(it){
         var kk=String(it.item);
-        if(!actMap[kk]) actMap[kk]={item:kk,desc:it.desc||'',und:it.und||'',cap:String(it.capitulo||''),cant:0,valor:0,pctAcum:0};
+        if(!actMap[kk]) actMap[kk]={item:kk,desc:'',und:'',cap:String(it.capitulo||''),cant:0,valor:0,pctAcum:0};
+        if(!actMap[kk].desc && it.desc) actMap[kk].desc=String(it.desc);
+        if(!actMap[kk].und && it.und) actMap[kk].und=String(it.und);
         actMap[kk].cant+=Number(it.cantDia)||0;
         actMap[kk].valor+=(typeof it.vrDia==='number')?it.vrDia:(Number(it.cantDia)||0)*(Number(it.vrUnit)||0);
         actMap[kk].pctAcum=Math.max(actMap[kk].pctAcum, Number(it.pctAcum)||0);
       });
     });
-    var acts=Object.keys(actMap).map(function(x){return actMap[x];}).sort(function(a,b){return b.valor-a.valor;});
+    var acts=Object.keys(actMap).map(function(x){return actMap[x];});
+    // completar descripciones faltantes desde el maestro de actividades (obra_data)
+    if(od&&od.actividades){
+      var maestro={}; od.actividades.forEach(function(a){ if(a.item!=null) maestro[String(a.item)]={d:a.desc||'',u:a.unidad||''}; });
+      acts.forEach(function(a){ var mm=maestro[a.item]; if(mm){ if(!a.desc) a.desc=mm.d; if(!a.und) a.und=mm.u; } });
+    }
+    // orden natural por numero de item (1.02 < 1.11 < 2.01 < 3.2 < 3.13)
+    var _iKey=function(s){ return String(s).split('.').map(function(x){return ('00000'+(parseInt(x,10)||0)).slice(-5);}).join('.'); };
+    acts.sort(function(a,b){ var ka=_iKey(a.item), kb=_iKey(b.item); return ka<kb?-1:(ka>kb?1:0); });
 
     // ---- mano de obra del periodo ----
     var moD=((mo&&mo.diaria)||[]).filter(function(x){return x.fecha>=d0&&x.fecha<=d1;});
