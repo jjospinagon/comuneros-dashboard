@@ -3351,6 +3351,7 @@ async function analisisCargar(force){
 /* ====================== INFORME EJECUTIVO POR RANGO (V2) ====================== */
 var INF_CHART=null;
 function _infM(n){ return '$'+((Number(n)||0)/1e6).toLocaleString('es-CO',{maximumFractionDigits:1})+' M'; }
+function _infPesos(n){ return '$'+Math.round(Number(n)||0).toLocaleString('es-CO'); }
 function _infDias(d0,d1){ var out=[],c=new Date(d0+'T00:00:00'); var f=new Date(d1+'T00:00:00'); while(c<=f){ out.push(c.toISOString().slice(0,10)); c=new Date(c.getTime()+86400000);} return out; }
 
 async function _infAvanceRango(d0,d1){
@@ -3560,8 +3561,8 @@ async function informeGenerar(){
       kpi('Ingresos totales', String(moTot), 'persona·día en el período')+'</div>'+
       '<h3>🚜 Maquinaria</h3>'+
       (mqRows.length? ('<table><tr><th>Máquina</th><th style="text-align:right">Días</th><th style="text-align:right">Hr. trabajadas</th><th style="text-align:right">Hr. stand-by</th><th style="text-align:right">$ Stand-by</th></tr>'+
-        mqRows.map(function(m){ return '<tr><td>'+m.nombre+'</td><td style="text-align:right">'+m.dias+'</td><td style="text-align:right">'+m.hrs.toFixed(1)+'</td><td style="text-align:right">'+m.sbh.toFixed(1)+'</td><td style="text-align:right">'+_infM(m.sb)+'</td></tr>'; }).join('')+
-        '<tr style="font-weight:700;background:#f8fafc"><td>TOTAL</td><td></td><td style="text-align:right">'+mqHrs.toFixed(1)+'</td><td style="text-align:right">'+mqSbH.toFixed(1)+'</td><td style="text-align:right">'+_infM(mqSb$)+'</td></tr></table>')
+        mqRows.map(function(m){ return '<tr><td>'+m.nombre+'</td><td style="text-align:right">'+m.dias+'</td><td style="text-align:right">'+m.hrs.toFixed(1)+'</td><td style="text-align:right">'+m.sbh.toFixed(1)+'</td><td style="text-align:right">'+_infPesos(m.sb)+'</td></tr>'; }).join('')+
+        '<tr style="font-weight:700;background:#f8fafc"><td>TOTAL</td><td></td><td style="text-align:right">'+mqHrs.toFixed(1)+'</td><td style="text-align:right">'+mqSbH.toFixed(1)+'</td><td style="text-align:right">'+_infPesos(mqSb$)+'</td></tr></table>')
         : '<div style="color:#64748b;font-size:12px">Sin registros de maquinaria en el período.</div>')+
       '<h3>📷 Registro fotográfico del período ('+fotos.length+' fotos)</h3>'+
       (semKeys.length? semKeys.map(function(k){
