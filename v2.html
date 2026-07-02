@@ -1775,6 +1775,23 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   .inf-kpi .l { font-size:9.5px; letter-spacing:.1em; color:#64748b; text-transform:uppercase; }
   .inf-kpi .v { font-size:18px; font-weight:800; color:#0f172a; }
   .inf-kpi .s { font-size:10.5px; color:#64748b; }
+  /* ===== Informe Ejecutivo: optimizacion movil ===== */
+  @media (max-width: 640px) {
+    #screen-informe .no-print { gap:6px !important; }
+    #screen-informe h1 { font-size:16px !important; }
+    #screen-informe input[type="date"] { flex:1 1 42%; min-width:128px; font-size:13px; }
+    #screen-informe #inf-btn, #screen-informe #inf-pdf { flex:1 1 45%; }
+    #informe-doc { padding:14px 10px !important; border-radius:10px; }
+    #informe-doc h1 { font-size:16px !important; }
+    #informe-doc > div:first-child { flex-wrap:wrap; gap:8px; }
+    #informe-doc div[style*="repeat(3,1fr)"] { grid-template-columns:repeat(2,1fr) !important; }
+    #informe-doc div[style*="repeat(4,1fr)"] { grid-template-columns:repeat(2,1fr) !important; }
+    #informe-doc img { height:130px !important; }
+    #informe-doc table { font-size:10px; }
+    #informe-doc th, #informe-doc td { padding:4px 4px !important; }
+    .inf-kpi .v { font-size:15px; }
+    .inf-kpi { padding:8px 9px; }
+  }
 </style>
 <div class="screen" id="screen-informe">
   <div style="max-width:920px;margin:0 auto;padding:24px 16px 60px">
