@@ -6326,21 +6326,26 @@ async function indRefrescarConSync(){
   } catch(e){ _toastDone('ind', 'Error Indicadores', false); }
   IND_LAST_SYNC = Date.now();
   if (btn){ btn.textContent = 'Refrescar'; btn.disabled = false; }
-  // 3) Auto-refresh en 60s para traer los datos del sync background
-  setTimeout(function(){
+  // 3) Re-chequeos a 90s y 210s: el sync server tarda ~150s; asi el corte nuevo
+  //    aparece solo, sin que el usuario tenga que volver a pulsar Refrescar.
+  var _indRecheck=function(){
     if (document.getElementById('screen-indicadores') && document.getElementById('screen-indicadores').classList.contains('active')){
       _lsBust('ind');
       jsonp(APPS_URL, {action:'indicadores', _ts: Date.now()}).then(function(ind){
         if (ind && !ind._error){
+          var antes = IND_LATEST;
           IND_DATA = ind;
           IND_CORTES = _cortesValidos(ind);
           IND_LATEST = IND_CORTES[0]; IND_CURRENT = IND_LATEST;
           _lsSet('ind', ind);
           renderIndCorteSelect(); renderIndCorte(); fillMenuKPIsInd();
+          if (antes && IND_LATEST && antes !== IND_LATEST) _toastDone('ind', 'Nuevo corte cargado: '+IND_LATEST, true);
         }
       }).catch(function(){});
     }
-  }, 60000);
+  };
+  setTimeout(_indRecheck, 90000);
+  setTimeout(_indRecheck, 210000);
 }
 
 
