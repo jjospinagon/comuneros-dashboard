@@ -3020,12 +3020,12 @@ function forceSyncThrottled(act,extra){
   return jsonp(APPS_URL,p).catch(function(){ return null; });
 }
 var _LIBS_P=null;
-function _loadScript(src){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+function _loadScript(src, sri){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; if(sri){ s.integrity=sri; s.crossOrigin='anonymous'; } s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
 function _ensureLibs(){
   if(_LIBS_P) return _LIBS_P;
   _LIBS_P=Promise.all([
-    (window.Chart?Promise.resolve():_loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js')),
-    (window.ApexCharts?Promise.resolve():_loadScript('https://cdn.jsdelivr.net/npm/apexcharts@3.45.2/dist/apexcharts.min.js'))
+    (window.Chart?Promise.resolve():_loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js','sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4')),
+    (window.ApexCharts?Promise.resolve():_loadScript('https://cdn.jsdelivr.net/npm/apexcharts@3.45.2/dist/apexcharts.min.js','sha384-6foQBJHuUSRZT7FlYD0AkFDsYH7bowmqBulLZUb8S1qBoEItSgOaXiGkxDn9kSLP'))
   ]).catch(function(){ _LIBS_P=null; });
   return _LIBS_P;
 }
@@ -3396,10 +3396,10 @@ async function _infAvanceRango(d0,d1){
 var _infPdfLibsP=null;
 function _infPdfLibs(){
   if(_infPdfLibsP) return _infPdfLibsP;
-  function ld(src){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=function(){rej(new Error('lib: '+src));}; document.head.appendChild(s); }); }
+  function ld(src, sri){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; if(sri){ s.integrity=sri; s.crossOrigin='anonymous'; } s.onload=res; s.onerror=function(){rej(new Error('lib: '+src));}; document.head.appendChild(s); }); }
   _infPdfLibsP=(async function(){
-    if(!(window.jspdf&&window.jspdf.jsPDF)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    if(!(window.jspdf.jsPDF.API&&window.jspdf.jsPDF.API.autoTable)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+    if(!(window.jspdf&&window.jspdf.jsPDF)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk');
+    if(!(window.jspdf.jsPDF.API&&window.jspdf.jsPDF.API.autoTable)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js','sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3');
   })();
   return _infPdfLibsP;
 }
@@ -3730,9 +3730,9 @@ async function informeGenerar(){
       '<div style="font-size:12px;color:#475569">Reposición de Redes de Alcantarillado · Barrio Comuneros, Montenegro (Quindío)<br>Contrato 023 de 2025 · CONSORCIO INFRARED COMUNEROS 2025</div></div>'+
       '<div style="text-align:right;font-size:11px;color:#64748b">Período<br><b style="font-size:13px;color:#0f172a">'+fmtF(d0)+' — '+fmtF(d1)+'</b></div></div>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">'+
-      kpi('Ejecutado en el período', _infM(totalPer), porDia.length+' días con avance · prom. '+_infM(porDia.length?totalPer/porDia.length:0)+'/día · incluye AIU y planes')+
+      kpi('Ejecutado en el período', _infM(totalPer), porDia.length+' días con avance (prom. '+_infM(porDia.length?totalPer/porDia.length:0)+'/día) · calendario '+diasTodos.length+' días (prom. '+_infM(diasTodos.length?totalPer/diasTodos.length:0)+'/día) · incluye AIU y planes')+
       kpi('% del contrato (período)', bac? (totalPer/bac*100).toFixed(2)+'%' : '—', 'sobre BAC '+_infM(bac))+
-      kpi('Avance acumulado obra', ((k.pctReal||0)*100).toFixed(2)+'%', 'programado '+((k.pctProg||0)*100).toFixed(2)+'% · SPI '+(k.spi||0).toFixed(2))+
+      kpi('Avance acumulado obra', ((k.pctReal||0)*100).toFixed(2)+'%', 'programado '+((k.pctProg||0)*100).toFixed(2)+'% · SPI '+(k.spi||0).toFixed(2)+(k.fechaCorte?' · corte '+k.fechaCorte:'')+' · fuente: curva S al día')+
       kpi('Programado del período', _infM(pvPer), 'según curva S contractual')+
       kpi('SPI del período', spiPer!=null? spiPer.toFixed(2) : '—', spiPer!=null? (spiPer>=1?'al día o adelantado':'ritmo por debajo del programa') : 'sin programa en el rango')+
       kpi('Desviación del período', _infM(totalPer-pvPer), (totalPer>=pvPer?'a favor':'en contra')+' vs programado')+
@@ -5618,7 +5618,7 @@ function fotosRenderGrid(){
   FOTOS_STATE.viewArr = arr;
   const titulo = '📷 ' + FOTOS_STATE.anioActual + (FOTOS_STATE.filtroMes ? ' · mes ' + FOTOS_STATE.filtroMes : '') + (FOTOS_STATE.filtroSemana ? ' · semana ' + FOTOS_STATE.filtroSemana : '');
   document.getElementById('fotos-titulo').textContent = titulo;
-  document.getElementById('fotos-count').textContent = arr.length + ' fotos';
+  document.getElementById('fotos-count').textContent = arr.length + ' fotos en este filtro · ' + FOTOS_STATE.items.length + ' en el año ' + (FOTOS_STATE.anioActual||'');
   const grid = document.getElementById('fotos-grid');
   if(!arr.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8">Sin fotos en este rango.</div>'; return; }
   const LIMIT = 200;
@@ -6928,21 +6928,28 @@ function ejecDiariaRender(){
     }
   })();
 
-  // Desglose AIU + PMT + PMA
-  const aPct = ((c.aiuPct && c.aiuPct.A) || 0) * 100;
-  const iPct = ((c.aiuPct && c.aiuPct.I) || 0) * 100;
-  const uPct = ((c.aiuPct && c.aiuPct.U) || 0) * 100;
+  // Desglose AIU + PMT + PMA — FIX auditoría H-01: soporta shape nuevo (A/I/U/ratio*) y legacy (a/i/u/aiuPct)
+  const _cA   = (c.a  != null) ? c.a  : (c.A  || 0);
+  const _cI   = (c.i  != null) ? c.i  : (c.I  || 0);
+  const _cU   = (c.u  != null) ? c.u  : (c.U  || 0);
+  const _cPmt = (c.pmtDia != null) ? c.pmtDia : (c.PMT || 0);
+  const _cPma = (c.pmaDia != null) ? c.pmaDia : (c.PMA || 0);
+  const _cSub = (c.directosIndirectos != null) ? c.directosIndirectos : (c.subDirIndir || 0);
+  const aPct = (((c.aiuPct && c.aiuPct.A) != null ? c.aiuPct.A : (c.ratioA || 0)) || 0) * 100;
+  const iPct = (((c.aiuPct && c.aiuPct.I) != null ? c.aiuPct.I : (c.ratioI || 0)) || 0) * 100;
+  const uPct = (((c.aiuPct && c.aiuPct.U) != null ? c.aiuPct.U : (c.ratioU || 0)) || 0) * 100;
+  const pmtPct = ((c.ratioPMT || 0) * 100), pmaPct = ((c.ratioPMA || 0) * 100);
   const desg = document.getElementById('ed-desglose');
   if (desg) {
     desg.innerHTML = [
       {l:'Costo directo', v:c.directo||0, color:'#22d3ee', s:items.length+' actividades'},
-      {l:'A · Administración ('+aPct.toFixed(2)+'%)', v:c.a||0, color:'#fbbf24', s:'del costo directo'},
-      {l:'I · Imprevistos ('+iPct.toFixed(2)+'%)', v:c.i||0, color:'#f59e0b', s:'del costo directo'},
-      {l:'U · Utilidad ('+uPct.toFixed(2)+'%)', v:c.u||0, color:'#a855f7', s:'del costo directo'},
-      {l:'Subtotal Directos + Indirectos', v:c.directosIndirectos||0, color:'#34d399', s:'CD + A + I + U'},
-      {l:'PMT', v:c.pmtDia||0, color:'#94a3b8', s:pctObra.toFixed(3)+'% × $'+(c.pmtTotalObra||0).toLocaleString('es-CO')},
-      {l:'PMA', v:c.pmaDia||0, color:'#10b981', s:pctObra.toFixed(3)+'% × $'+(c.pmaTotalObra||0).toLocaleString('es-CO')},
-      {l:'TOTAL DEL DÍA', v:c.total||0, color:'#a855f7', s:'Σ con todas las arandelas', bold:true}
+      {l:'A · Administración ('+aPct.toFixed(2)+'%)', v:_cA, color:'#fbbf24', s:'del costo directo'},
+      {l:'I · Imprevistos ('+iPct.toFixed(2)+'%)', v:_cI, color:'#f59e0b', s:'del costo directo'},
+      {l:'U · Utilidad ('+uPct.toFixed(2)+'%)', v:_cU, color:'#a855f7', s:'del costo directo'},
+      {l:'Subtotal Directos + Indirectos', v:_cSub, color:'#34d399', s:'CD + A + I + U'},
+      {l:'PMT'+(pmtPct?' ('+pmtPct.toFixed(2)+'%)':''), v:_cPmt, color:'#94a3b8', s:(c.pmtTotalObra? pctObra.toFixed(3)+'% × $'+(c.pmtTotalObra||0).toLocaleString('es-CO') : 'plan de manejo de tránsito')},
+      {l:'PMA'+(pmaPct?' ('+pmaPct.toFixed(2)+'%)':''), v:_cPma, color:'#10b981', s:(c.pmaTotalObra? pctObra.toFixed(3)+'% × $'+(c.pmaTotalObra||0).toLocaleString('es-CO') : 'plan de manejo ambiental')},
+      {l:'TOTAL DEL DÍA', v:c.total||0, color:'#a855f7', s:'CD × '+(c.directo? (c.total/c.directo).toFixed(4):'—')+' · reconstruible', bold:true}
     ].map(x => '<div style="background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;border-left:3px solid ' + x.color + (x.bold?';box-shadow:0 0 0 1px '+x.color+'33':'') + '">' +
       '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;font-weight:700">' + x.l + '</div>' +
       '<div style="font-size:' + (x.bold?'19px':'17px') + ';font-weight:700;color:#fff;font-family:Space Grotesk,sans-serif;margin-top:3px">' + money(x.v) + '</div>' +
@@ -9609,14 +9616,14 @@ if ('serviceWorker' in navigator) {
   window.repCerrar=function(){ var m=document.getElementById('rep-modal'); if(m) m.style.display='none'; };
 
   // ---- Cargar librerías PDF bajo demanda ----
-  function loadScript(src){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=function(){rej(new Error('No se pudo cargar '+src));}; document.head.appendChild(s); }); }
+  function loadScript(src, sri){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; if(sri){ s.integrity=sri; s.crossOrigin='anonymous'; } s.onload=res; s.onerror=function(){rej(new Error('No se pudo cargar '+src));}; document.head.appendChild(s); }); }
   var _pdfP=null;
   function ensurePdfLibs(){
     if(_pdfP) return _pdfP;
     _pdfP=(async function(){
-      if(!(window.jspdf&&window.jspdf.jsPDF)) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      if(!(window.jspdf&&window.jspdf.jsPDF)) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk');
       var has=window.jspdf&&window.jspdf.jsPDF&&window.jspdf.jsPDF.API&&window.jspdf.jsPDF.API.autoTable;
-      if(!has) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js');
+      if(!has) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js','sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3');
       if(typeof Chart==='undefined' && typeof _ensureLibs==='function'){ try{ await _ensureLibs(); }catch(_){} }
     })();
     return _pdfP;
