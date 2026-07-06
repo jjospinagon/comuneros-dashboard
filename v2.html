@@ -1337,6 +1337,29 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         </table>
       </div>
     </div>
+
+    <!-- ===== Análisis AIU y costo total del corte (filas finales de la hoja INDICADORES) ===== -->
+    <div id="ind-aiu-panel" style="margin:18px 0 8px;padding:16px 18px;background:rgba(14,20,45,.55);border:1px solid rgba(251,191,36,.28);border-radius:14px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <h3 style="margin:0;font-size:15px;color:#fbbf24">🧮 Análisis AIU y costo total del corte</h3>
+        <span id="ind-aiu-sub" style="color:#8b9bd1;font-size:12px">filas finales de la hoja INDICADORES</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:640px">
+          <thead>
+            <tr style="color:#8b9bd1;text-transform:uppercase;font-size:10px;letter-spacing:.06em">
+              <th style="text-align:left;padding:6px 8px">Concepto</th>
+              <th style="text-align:right;padding:6px 8px">%</th>
+              <th style="text-align:right;padding:6px 8px">Contractual al corte</th>
+              <th style="text-align:right;padding:6px 8px">Real al corte</th>
+              <th style="text-align:right;padding:6px 8px">Proyección al corte</th>
+              <th style="text-align:right;padding:6px 8px">Proyección al finalizar</th>
+            </tr>
+          </thead>
+          <tbody id="ind-aiu-body"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -4117,6 +4140,45 @@ function _evmColor(id,v){
   e.style.color = v>=1 ? '#10b981' : (v>=0.9 ? '#fbbf24' : '#ef4444');
 }
 
+function renderIndAIU(d){
+  var body=document.getElementById('ind-aiu-body');
+  var sub=document.getElementById('ind-aiu-sub');
+  if(!body) return;
+  var T=(d&&d.totales)||{};
+  if(sub) sub.textContent='hoja INDICADORES_'+IND_CURRENT+' · valores del corte';
+  var fmt=function(v){
+    if(v==null||isNaN(v)) return '<span style="color:#475569">—</span>';
+    var neg=v<0, a=Math.abs(v);
+    var s='$'+Math.round(a).toLocaleString('es-CO');
+    return '<span style="color:'+(neg?'#f87171':'#e2e8f0')+'">'+(neg?'-':'')+s+'</span>';
+  };
+  var fmtP=function(p){ return (p==null||isNaN(p))? '<span style="color:#475569">—</span>' : '<span style="color:#8b9bd1">'+(p*100).toFixed(2).replace('.',',')+'%</span>'; };
+  var orden=[
+    ['COSTO TOTAL INDIRECTO','#22d3ee',false],
+    ['ADMINISTRACIÓN','#fbbf24',false],
+    ['IMPREVISTOS','#f59e0b',false],
+    ['UTILIDAD','#a855f7',false],
+    ['INVENTARIO','#94a3b8',false],
+    ['"EQUIPOS"','#94a3b8',false],
+    ['PMT','#94a3b8',false],
+    ['PMA','#10b981',false],
+    ['COSTO TOTAL','#34d399',true]
+  ];
+  body.innerHTML=orden.map(function(o){
+    var k=o[0], t=T[k]||{};
+    var nombre=(k==='"EQUIPOS"')?'EQUIPOS':k;
+    var st=o[2]? 'font-weight:800;border-top:2px solid rgba(52,211,153,.45);background:rgba(52,211,153,.06)' : 'border-top:1px solid rgba(255,255,255,.06)';
+    return '<tr style="'+st+'">'+
+      '<td style="padding:7px 8px;color:'+o[1]+';font-weight:'+(o[2]?'800':'600')+'">'+nombre+'</td>'+
+      '<td style="padding:7px 8px;text-align:right">'+fmtP(t.pct)+'</td>'+
+      '<td style="padding:7px 8px;text-align:right">'+fmt(t.contr_corte)+'</td>'+
+      '<td style="padding:7px 8px;text-align:right">'+fmt(t.real_corte)+'</td>'+
+      '<td style="padding:7px 8px;text-align:right">'+fmt(t.proy_corte)+'</td>'+
+      '<td style="padding:7px 8px;text-align:right">'+fmt(t.proy_final)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
 function renderIndCorte(){
   const d = IND_DATA[IND_CURRENT];
   const isLatest = (IND_CURRENT === IND_LATEST);
@@ -4187,6 +4249,9 @@ function renderIndCorte(){
   const acts = d.actividades||[];
   ACT_ROWS = acts;
   renderActividades();
+
+  // Análisis AIU del corte (filas finales de la hoja)
+  try{ renderIndAIU(d); }catch(e){console.warn('aiu corte:',e);}
 
   // FASE B
   try{ renderKpisAvanzados(); }catch(e){console.warn('kpis avanzados:',e);}
