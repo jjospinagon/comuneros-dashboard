@@ -8199,7 +8199,8 @@ function moRender(){
       const horas = p.horasTrabajadas !== null && p.horasTrabajadas !== undefined ? p.horasTrabajadas.toFixed(2) + ' h' : '—';
       const extras = p.horasExtras > 0 ? '<span class="he-tag">+' + p.horasExtras.toFixed(2) + 'h</span>' : '—';
       const ced = (p.cedula||'').replace(/'/g, "\\'");
-      return '<tr class="clickable" onclick="moAbrirPersona(\'' + ced + '\')">' +
+      const ckv = (p.ck||'');
+      return '<tr class="clickable" onclick="moAbrirPersona(\'' + ced + '\',\'' + ckv + '\')">' +
         '<td>' + fotoHtml + '</td>' +
         '<td><div style="font-weight:600;color:#fff">' + escapeHTML(p.nombre||'') + '</div><div style="font-size:10.5px;color:#94a3b8">' + escapeHTML(p.cedula||'') + '</div></td>' +
         '<td><span class="badge-fr ' + clsFr + '">' + escapeHTML(p.frente||'—') + '</span></td>' +
@@ -8313,6 +8314,7 @@ async function moCerrarJornada(p){
     var res = await jsonp(APPS_URL, {
       action: 'cerrar_jornada',
       cedula: p.cedula,
+      ck: p.ck || '',
       nombre: p.nombre || '',
       frente: p.frente || '',
       cargo: p.cargo || '',
@@ -8357,8 +8359,8 @@ async function moCerrarJornada(p){
   }
 }
 
-async function moAbrirPersona(cedula){
-  if (!cedula) return;
+async function moAbrirPersona(cedula, ck){
+  if (!cedula && !ck) return;
   const modal = document.getElementById('mo-persona-modal');
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -8368,7 +8370,7 @@ async function moAbrirPersona(cedula){
   document.querySelector('#mp-tabla tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">⏳ Cargando histórico…</td></tr>';
   document.getElementById('mp-grafico').innerHTML = '';
   try {
-    const d = await jsonp(APPS_URL, {action:'mano_obra_persona', cedula: cedula});
+    const d = await jsonp(APPS_URL, {action:'mano_obra_persona', cedula: (String(cedula||'').indexOf('*')>=0 ? '' : cedula), ck: ck || ''});
     if (!d || d.error) {
       document.getElementById('mp-nombre').textContent = 'Error';
       document.querySelector('#mp-tabla tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#ef4444">' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
@@ -8627,10 +8629,10 @@ async function trabCargar(){
       const personasReales = mo.personas.filter(p => !p.ausencia && (p.ingreso || (p.horasTrabajadas != null && p.horasTrabajadas > 0)));
       if (personasReales.length > 0) totalDiasConData.add(f);
       personasReales.forEach(p => {
-        const ced = String(p.cedula || p.nombre || '').trim();
+        const ced = String(p.ck || p.cedula || p.nombre || '').trim();
         if (!ced) return;
         if (!porCedula[ced]){
-          porCedula[ced] = { cedula:p.cedula||'', nombre:p.nombre||'', cargo:p.cargo||'', frente:p.frente||'', foto:p.foto||'', dias:new Set(), horas:0, extras:0, ultimaFecha:'' };
+          porCedula[ced] = { ck:p.ck||'', cedula:p.cedula||'', nombre:p.nombre||'', cargo:p.cargo||'', frente:p.frente||'', foto:p.foto||'', dias:new Set(), horas:0, extras:0, ultimaFecha:'' };
         }
         const t = porCedula[ced];
         t.dias.add(f);
@@ -8799,8 +8801,9 @@ function trabRenderTabla(){
     const fotoHtml = t.foto ? `<img class="foto-thumb" src="${escapeHTML(t.foto)}" referrerpolicy="no-referrer" onerror="this.style.display='none'"/>` : '<div class="foto-thumb"></div>';
     const asistPct = ((t.dias.size / totalDias) * 100).toFixed(0);
     const ced = (t.cedula || '').replace(/'/g, "\\'");
+    const ckv = (t.ck || '');
     const colorPct = asistPct>=75?'#86efac':asistPct>=50?'#fcd34d':asistPct>=25?'#fb923c':'#fca5a5';
-    parts[i] = '<tr class="clickable" onclick="moAbrirPersona(\''+ced+'\')">' +
+    parts[i] = '<tr class="clickable" onclick="moAbrirPersona(\''+ced+'\',\''+ckv+'\')">' +
       '<td>'+fotoHtml+'</td>' +
       '<td><div style="font-weight:600;color:#fff">'+escapeHTML(t.nombre || '')+'</div></td>' +
       '<td><div style="font-size:11px;color:#94a3b8">'+escapeHTML(t.cedula || '—')+'</div></td>' +
