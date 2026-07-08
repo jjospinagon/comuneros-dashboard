@@ -2491,7 +2491,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div id="edit-colab-msg" style="margin-top:8px;font-size:12px;color:#34d399;display:none"></div>
       </div>
       <div class="mo-panel" style="overflow-x:auto">
-        <table id="edit-colab-tabla" style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px">
+        <table id="edit-colab-tabla" style="border-collapse:collapse;font-size:12px;table-layout:fixed">
           <thead></thead>
           <tbody><tr><td style="padding:24px;text-align:center;color:#94a3b8">⏳ Cargando catálogo…</td></tr></tbody>
         </table>
@@ -8631,8 +8631,36 @@ function editColabRender(){
   var heads=d.headers.map(function(x){return String(x||'').trim();});
   var visibles=[]; heads.forEach(function(hn,i){ if(hn) visibles.push(i); });
   var listas={}; visibles.forEach(function(ci){ var hn=heads[ci].toUpperCase(); if(EC_LISTAS_BASE[hn]) listas[ci]=_ecOpciones(d,hn,ci); });
+  // anchos: por defecto + los que el usuario haya ajustado (persisten en el navegador)
+  var DEFW={'CEDULA':90,'NOMBRE COMPLETO':260,'CARGO':170,'FRENTE':140,'ESTADO':120,'CONTACTO DE EMERGENCIA':180,'NUMERO DE CONTACTO':140,'CORREO':210};
+  var saved={}; try{ saved=JSON.parse(localStorage.getItem('ec_colw_v1')||'{}'); }catch(_){}
+  var tabla=document.getElementById('edit-colab-tabla');
+  var oldCg=tabla.querySelector('colgroup'); if(oldCg) oldCg.remove();
+  var cg=document.createElement('colgroup');
+  visibles.forEach(function(ci){
+    var hn=heads[ci].toUpperCase();
+    var w=saved[hn]||DEFW[hn]||140;
+    var col=document.createElement('col'); col.style.width=w+'px'; col.setAttribute('data-h',hn); cg.appendChild(col);
+  });
+  var colAcc=document.createElement('col'); colAcc.style.width='104px'; cg.appendChild(colAcc);
+  tabla.insertBefore(cg, tabla.firstChild);
   var thead=document.querySelector('#edit-colab-tabla thead');
-  thead.innerHTML='<tr>'+visibles.map(function(i){ return '<th style="text-align:left;padding:7px 8px;color:#8b9bd1;font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,.1)">'+escapeHTML(heads[i])+'</th>'; }).join('')+'<th style="width:110px"></th></tr>';
+  thead.innerHTML='<tr>'+visibles.map(function(i,vi){ return '<th style="position:relative;text-align:left;padding:7px 8px;color:#8b9bd1;font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,.1);overflow:hidden;white-space:nowrap">'+escapeHTML(heads[i])+'<span class="ec-grip" data-vi="'+vi+'" style="position:absolute;top:0;right:0;width:10px;height:100%;cursor:col-resize;border-right:2px solid rgba(139,155,209,.25);touch-action:none"></span></th>'; }).join('')+'<th style="width:104px"></th></tr>';
+  // arrastre de los grips (mouse y tactil)
+  thead.querySelectorAll('.ec-grip').forEach(function(g){
+    g.addEventListener('pointerdown', function(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      var vi=Number(g.getAttribute('data-vi'));
+      var col=cg.children[vi];
+      var x0=ev.clientX, w0=parseInt(col.style.width,10)||140;
+      function mv(e2){ var w=Math.max(60, w0+(e2.clientX-x0)); col.style.width=w+'px'; }
+      function up(e3){
+        document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',up);
+        try{ var s=JSON.parse(localStorage.getItem('ec_colw_v1')||'{}'); s[col.getAttribute('data-h')]=parseInt(col.style.width,10); localStorage.setItem('ec_colw_v1',JSON.stringify(s)); }catch(_){}
+      }
+      document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up);
+    });
+  });
   var tb=document.querySelector('#edit-colab-tabla tbody');
   tb.innerHTML=d.filas.map(function(f,fi){
     return '<tr data-fi="'+fi+'" style="border-bottom:1px solid rgba(255,255,255,.05)">'+
