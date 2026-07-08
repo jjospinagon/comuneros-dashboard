@@ -2489,6 +2489,13 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
           <button onclick="editColabNuevo()" style="background:linear-gradient(90deg,#10b981,#0ea5e9);border:none;color:#fff;padding:7px 14px;border-radius:9px;cursor:pointer;font-weight:700;font-size:12px">➕ Agregar trabajador</button>
         </div>
         <div id="edit-colab-msg" style="margin-top:8px;font-size:12px;color:#34d399;display:none"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+          <input id="ec-buscar" placeholder="🔍 Buscar por nombre…" oninput="ecFiltrar()" style="flex:2;min-width:180px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:9px;color:#e2e8f0;padding:8px 12px;font-size:13px">
+          <select id="ec-f-cargo" onchange="ecFiltrar()" style="flex:1;min-width:130px;background:#141a37;border:1px solid rgba(255,255,255,.14);border-radius:9px;color:#e2e8f0;padding:8px;font-size:12px"><option value="">Cargo: todos</option></select>
+          <select id="ec-f-frente" onchange="ecFiltrar()" style="flex:1;min-width:130px;background:#141a37;border:1px solid rgba(255,255,255,.14);border-radius:9px;color:#e2e8f0;padding:8px;font-size:12px"><option value="">Frente: todos</option></select>
+          <select id="ec-f-estado" onchange="ecFiltrar()" style="flex:1;min-width:130px;background:#141a37;border:1px solid rgba(255,255,255,.14);border-radius:9px;color:#e2e8f0;padding:8px;font-size:12px"><option value="">Estado: todos</option></select>
+          <span id="ec-contador" style="font-size:12px;color:#8b9bd1;white-space:nowrap"></span>
+        </div>
       </div>
       <div class="mo-panel" style="overflow-x:auto">
         <table id="edit-colab-tabla" style="border-collapse:collapse;font-size:12px;table-layout:fixed">
@@ -8619,6 +8626,19 @@ function _ecMsg(t,err){
   var m=document.getElementById('edit-colab-msg');
   if(!m) return; m.style.display=''; m.style.color=err?'#f87171':'#34d399'; m.textContent=t;
 }
+var EC_FILTRO={q:'',cargo:'',frente:'',estado:''};
+function ecFiltrar(){
+  EC_FILTRO.q=(document.getElementById('ec-buscar')||{}).value||'';
+  EC_FILTRO.cargo=(document.getElementById('ec-f-cargo')||{}).value||'';
+  EC_FILTRO.frente=(document.getElementById('ec-f-frente')||{}).value||'';
+  EC_FILTRO.estado=(document.getElementById('ec-f-estado')||{}).value||'';
+  editColabRender();
+}
+function _ecLlenarFiltro(id, ops, actual){
+  var s=document.getElementById(id); if(!s) return;
+  var pre=s.options[0].outerHTML;
+  s.innerHTML=pre+ops.map(function(o){ return '<option value="'+escapeHTML(o).replace(/"/g,'&quot;')+'"'+(o===actual?' selected':'')+'>'+escapeHTML(o)+'</option>'; }).join('');
+}
 var EC_LISTAS_BASE={ 'CARGO':['AYUDANTE','OFICIAL','MAESTRO','SST','TOPOGRAFA','RESIDENTE DE OBRA','INSPECTORA DE OBRA','ALMACENISTA','AUX. PMT','SOCIAL DE INTER'],
   'FRENTE':['M.O','OBRA','INTERVENTORÍA'], 'ESTADO':['ACTIVO','INACTIVO','RETIRADO'] };
 function _ecOpciones(d, colName, ci){
@@ -8661,8 +8681,26 @@ function editColabRender(){
       document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up);
     });
   });
+  // poblar filtros (indices de columnas por nombre)
+  var idxDe=function(n){ var k=-1; heads.forEach(function(hn,i){ if(hn.toUpperCase()===n) k=i; }); return k; };
+  var iCar=idxDe('CARGO'), iFre=idxDe('FRENTE'), iEst=idxDe('ESTADO'), iNom=idxDe('NOMBRE COMPLETO');
+  if(iCar>=0) _ecLlenarFiltro('ec-f-cargo', _ecOpciones(d,'CARGO',iCar), EC_FILTRO.cargo);
+  if(iFre>=0) _ecLlenarFiltro('ec-f-frente', _ecOpciones(d,'FRENTE',iFre), EC_FILTRO.frente);
+  if(iEst>=0) _ecLlenarFiltro('ec-f-estado', _ecOpciones(d,'ESTADO',iEst), EC_FILTRO.estado);
+  // filtrar conservando el indice real de cada fila
+  var q=EC_FILTRO.q.trim().toUpperCase();
+  var visiblesFilas=d.filas.map(function(f,fi){ return {f:f,fi:fi}; }).filter(function(x){
+    if(q && String(x.f.c[iNom]||'').toUpperCase().indexOf(q)<0) return false;
+    if(EC_FILTRO.cargo && String(x.f.c[iCar]||'').trim()!==EC_FILTRO.cargo) return false;
+    if(EC_FILTRO.frente && String(x.f.c[iFre]||'').trim()!==EC_FILTRO.frente) return false;
+    if(EC_FILTRO.estado && String(x.f.c[iEst]||'').trim()!==EC_FILTRO.estado) return false;
+    return true;
+  });
+  var cnt=document.getElementById('ec-contador');
+  if(cnt) cnt.textContent=visiblesFilas.length+' de '+d.filas.length;
   var tb=document.querySelector('#edit-colab-tabla tbody');
-  tb.innerHTML=d.filas.map(function(f,fi){
+  tb.innerHTML=visiblesFilas.map(function(x){
+    var f=x.f, fi=x.fi;
     return '<tr data-fi="'+fi+'" style="border-bottom:1px solid rgba(255,255,255,.05)">'+
       visibles.map(function(ci){
         var val=String(f.c[ci]||'').trim();
