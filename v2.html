@@ -2297,6 +2297,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <button class="mo-tab" data-mo-tab="trab" onclick="moTab('trab')">👷 Información de Mano de Obra</button>
       <button class="mo-tab" data-mo-tab="org" onclick="moTab('org')">🧑‍🏭 Organigrama</button>
       <button class="mo-tab" data-mo-tab="dist" onclick="moTab('dist')">🗂️ Distribución de Cuadrillas</button>
+      <button class="mo-tab" data-mo-tab="edit" onclick="moTab('edit')">✏️ Edición Colaboradores</button>
     </div>
 
     <!-- ============ TAB ASISTENCIA DIARIA ============ -->
@@ -2477,6 +2478,25 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       </div>
       <div id="dist-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px"></div>
     </div> <!-- /mo-pane-dist -->
+
+    <!-- ===== PESTAÑA EDICIÓN COLABORADORES (hoja Trabajadores del XLSX) ===== -->
+    <div id="mo-pane-edit" style="display:none">
+      <div class="mo-panel" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h3 style="margin:0;color:#34d399">✏️ Edición Colaboradores</h3>
+          <span style="color:#8b9bd1;font-size:12px">conectado a la hoja <b>Trabajadores</b> de REGISTRO DE INGRESO Y SALIDAS.xlsx · lo que guardes aquí queda en el Excel; lo que cambies en el Excel aparece aquí en ≤5 min</span>
+          <button onclick="editColabCargar(true)" style="margin-left:auto;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.4);color:#34d399;padding:7px 12px;border-radius:9px;cursor:pointer;font-size:12px">🔄 Recargar</button>
+          <button onclick="editColabNuevo()" style="background:linear-gradient(90deg,#10b981,#0ea5e9);border:none;color:#fff;padding:7px 14px;border-radius:9px;cursor:pointer;font-weight:700;font-size:12px">➕ Agregar trabajador</button>
+        </div>
+        <div id="edit-colab-msg" style="margin-top:8px;font-size:12px;color:#34d399;display:none"></div>
+      </div>
+      <div class="mo-panel" style="overflow-x:auto">
+        <table id="edit-colab-tabla" style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px">
+          <thead></thead>
+          <tbody><tr><td style="padding:24px;text-align:center;color:#94a3b8">⏳ Cargando catálogo…</td></tr></tbody>
+        </table>
+      </div>
+    </div> <!-- /mo-pane-edit -->
 
   </div>
 </div>
@@ -8583,6 +8603,80 @@ async function distGuardar(){
   b.textContent='💾 Guardar distribución'; b.disabled=!DIST_DIRTY; b.style.opacity=DIST_DIRTY?'1':'.5';
 }
 
+/* ===== Edición Colaboradores: tabla editable ligada a la hoja Trabajadores del XLSX ===== */
+var EDIT_COLAB=null;
+async function editColabCargar(force){
+  var tb=document.querySelector('#edit-colab-tabla tbody');
+  if(EDIT_COLAB && !force){ editColabRender(); return; }
+  if(tb) tb.innerHTML='<tr><td colspan="9" style="padding:24px;text-align:center;color:#94a3b8">⏳ Cargando catálogo…</td></tr>';
+  try{
+    var r=await jsonp(APPS_URL,{action:'trabajadores_cat',_ts:Date.now()});
+    if(r && r.headers){ EDIT_COLAB=r; editColabRender(); _ecMsg('Catálogo cargado ('+r.filas.length+' personas) · '+(r._generado||'')); }
+    else _ecMsg('Error: '+((r&&r.error)||'sin datos'), true);
+  }catch(e){ _ecMsg('Error cargando: '+(e.message||e), true); }
+}
+function _ecMsg(t,err){
+  var m=document.getElementById('edit-colab-msg');
+  if(!m) return; m.style.display=''; m.style.color=err?'#f87171':'#34d399'; m.textContent=t;
+}
+function editColabRender(){
+  var d=EDIT_COLAB; if(!d) return;
+  var heads=d.headers.map(function(x){return String(x||'').trim();});
+  var visibles=[]; heads.forEach(function(hn,i){ if(hn) visibles.push(i); });
+  var thead=document.querySelector('#edit-colab-tabla thead');
+  thead.innerHTML='<tr>'+visibles.map(function(i){ return '<th style="text-align:left;padding:7px 8px;color:#8b9bd1;font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,.1)">'+escapeHTML(heads[i])+'</th>'; }).join('')+'<th style="width:70px"></th></tr>';
+  var tb=document.querySelector('#edit-colab-tabla tbody');
+  tb.innerHTML=d.filas.map(function(f,fi){
+    return '<tr data-fi="'+fi+'" style="border-bottom:1px solid rgba(255,255,255,.05)">'+
+      visibles.map(function(ci){
+        var val=f.c[ci]||'';
+        if(ci===d.iCed) return '<td style="padding:6px 8px;color:#94a3b8">'+escapeHTML(val)+'</td>';
+        return '<td style="padding:3px 4px"><input data-ci="'+ci+'" value="'+escapeHTML(val).replace(/"/g,'&quot;')+'" onchange="editColabDirty('+fi+')" style="width:100%;min-width:90px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#e2e8f0;padding:5px 7px;font-size:12px"></td>';
+      }).join('')+
+      '<td style="padding:3px 4px;text-align:center"><button id="ec-save-'+fi+'" onclick="editColabGuardar('+fi+')" disabled style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#34d399;border-radius:7px;padding:5px 9px;font-size:11px;cursor:pointer;opacity:.35">💾</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function editColabDirty(fi){
+  var b=document.getElementById('ec-save-'+fi);
+  if(b){ b.disabled=false; b.style.opacity='1'; }
+}
+async function editColabGuardar(fi){
+  var d=EDIT_COLAB; if(!d) return;
+  var tr=document.querySelector('#edit-colab-tabla tr[data-fi="'+fi+'"]');
+  var b=document.getElementById('ec-save-'+fi);
+  var valores={};
+  tr.querySelectorAll('input[data-ci]').forEach(function(inp){
+    var ci=Number(inp.getAttribute('data-ci'));
+    valores[d.headers[ci]]=inp.value;
+  });
+  b.disabled=true; b.textContent='⏳';
+  try{
+    var r=await jsonp(APPS_URL,{action:'trabajador_upd', data:JSON.stringify({ck:d.filas[fi].ck, valores:valores}), _ts:Date.now()});
+    if(r && r.ok){
+      Object.keys(valores).forEach(function(hn){ var ci=d.headers.indexOf(hn); if(ci>=0) d.filas[fi].c[ci]=valores[hn]; });
+      _ecMsg('✅ Guardado en el Excel: '+(valores['NOMBRE COMPLETO']||r.cedula)+' · el espejo se refresca solo');
+      b.textContent='💾'; b.style.opacity='.35';
+    } else { _ecMsg('Error al guardar: '+((r&&r.error)||'sin respuesta'), true); b.disabled=false; b.textContent='💾'; }
+  }catch(e){ _ecMsg('Error: '+(e.message||e), true); b.disabled=false; b.textContent='💾'; }
+}
+async function editColabNuevo(){
+  var d=EDIT_COLAB; if(!d){ _ecMsg('Espera a que cargue el catálogo', true); return; }
+  var ced=prompt('Cédula del nuevo trabajador (completa, solo números):');
+  if(!ced) return; ced=String(ced).trim();
+  if(!/^\d{5,12}$/.test(ced)){ _ecMsg('Cédula inválida', true); return; }
+  var nom=prompt('Nombre completo:'); if(!nom) return;
+  var cargo=prompt('Cargo (ej. AYUDANTE, OFICIAL):')||'';
+  var frente=prompt('Frente (M.O / OBRA / INTERVENTORÍA):')||'M.O';
+  var valores={'NOMBRE COMPLETO':nom.toUpperCase(),'CARGO':cargo.toUpperCase(),'FRENTE':frente.toUpperCase(),'ESTADO':'ACTIVO'};
+  _ecMsg('⏳ Creando a '+nom.toUpperCase()+' en el Excel…');
+  try{
+    var r=await jsonp(APPS_URL,{action:'trabajador_upd', data:JSON.stringify({cedulaNueva:ced, valores:valores}), _ts:Date.now()});
+    if(r && r.ok){ _ecMsg('✅ '+nom.toUpperCase()+' agregado al Excel ('+r.cedula+')'); EDIT_COLAB=null; editColabCargar(true); }
+    else _ecMsg('Error: '+((r&&r.error)||'sin respuesta'), true);
+  }catch(e){ _ecMsg('Error: '+(e.message||e), true); }
+}
+
 async function moAbrirPersona(cedula, ck){
   if (!cedula && !ck) return;
   const modal = document.getElementById('mo-persona-modal');
@@ -8748,6 +8842,8 @@ function moTab(t){
   var pDist=document.getElementById('mo-pane-dist'); if(pDist) pDist.style.display = (t === 'dist') ? 'block' : 'none';
   if (t === 'org') { try{ moRenderOrganigrama(); }catch(_){} }
   if (t === 'dist') { try{ distCargar(); }catch(_){} }
+  var pEd=document.getElementById('mo-pane-edit'); if(pEd) pEd.style.display = (t === 'edit') ? 'block' : 'none';
+  if (t === 'edit') { try{ editColabCargar(); }catch(_){} }
   if (t === 'trab' && !TRAB_LOADED) trabCargar();
 }
 
