@@ -8619,23 +8619,53 @@ function _ecMsg(t,err){
   var m=document.getElementById('edit-colab-msg');
   if(!m) return; m.style.display=''; m.style.color=err?'#f87171':'#34d399'; m.textContent=t;
 }
+var EC_LISTAS_BASE={ 'CARGO':['AYUDANTE','OFICIAL','MAESTRO','SST','TOPOGRAFA','RESIDENTE DE OBRA','INSPECTORA DE OBRA','ALMACENISTA','AUX. PMT','SOCIAL DE INTER'],
+  'FRENTE':['M.O','OBRA','INTERVENTORÍA'], 'ESTADO':['ACTIVO','INACTIVO','RETIRADO'] };
+function _ecOpciones(d, colName, ci){
+  var set={}; (EC_LISTAS_BASE[colName]||[]).forEach(function(v){ set[v]=1; });
+  d.filas.forEach(function(f){ var v=String(f.c[ci]||'').trim(); if(v) set[v]=1; });
+  return Object.keys(set).sort();
+}
 function editColabRender(){
   var d=EDIT_COLAB; if(!d) return;
   var heads=d.headers.map(function(x){return String(x||'').trim();});
   var visibles=[]; heads.forEach(function(hn,i){ if(hn) visibles.push(i); });
+  var listas={}; visibles.forEach(function(ci){ var hn=heads[ci].toUpperCase(); if(EC_LISTAS_BASE[hn]) listas[ci]=_ecOpciones(d,hn,ci); });
   var thead=document.querySelector('#edit-colab-tabla thead');
-  thead.innerHTML='<tr>'+visibles.map(function(i){ return '<th style="text-align:left;padding:7px 8px;color:#8b9bd1;font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,.1)">'+escapeHTML(heads[i])+'</th>'; }).join('')+'<th style="width:70px"></th></tr>';
+  thead.innerHTML='<tr>'+visibles.map(function(i){ return '<th style="text-align:left;padding:7px 8px;color:#8b9bd1;font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,.1)">'+escapeHTML(heads[i])+'</th>'; }).join('')+'<th style="width:110px"></th></tr>';
   var tb=document.querySelector('#edit-colab-tabla tbody');
   tb.innerHTML=d.filas.map(function(f,fi){
     return '<tr data-fi="'+fi+'" style="border-bottom:1px solid rgba(255,255,255,.05)">'+
       visibles.map(function(ci){
-        var val=f.c[ci]||'';
+        var val=String(f.c[ci]||'').trim();
         if(ci===d.iCed) return '<td style="padding:6px 8px;color:#94a3b8">'+escapeHTML(val)+'</td>';
+        if(listas[ci]){
+          var ops=listas[ci].slice(); if(val && ops.indexOf(val)<0) ops.unshift(val);
+          return '<td style="padding:3px 4px"><select data-ci="'+ci+'" onchange="editColabDirty('+fi+')" style="width:100%;min-width:110px;background:#141a37;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#e2e8f0;padding:5px 6px;font-size:12px">'+
+            (val?'':'<option value=""></option>')+
+            ops.map(function(o){ return '<option value="'+escapeHTML(o).replace(/"/g,'&quot;')+'"'+(o===val?' selected':'')+'>'+escapeHTML(o)+'</option>'; }).join('')+
+            '</select></td>';
+        }
         return '<td style="padding:3px 4px"><input data-ci="'+ci+'" value="'+escapeHTML(val).replace(/"/g,'&quot;')+'" onchange="editColabDirty('+fi+')" style="width:100%;min-width:90px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#e2e8f0;padding:5px 7px;font-size:12px"></td>';
       }).join('')+
-      '<td style="padding:3px 4px;text-align:center"><button id="ec-save-'+fi+'" onclick="editColabGuardar('+fi+')" disabled style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#34d399;border-radius:7px;padding:5px 9px;font-size:11px;cursor:pointer;opacity:.35">💾</button></td>'+
+      '<td style="padding:3px 4px;text-align:center;white-space:nowrap">'+
+      '<button id="ec-save-'+fi+'" onclick="editColabGuardar('+fi+')" disabled title="Guardar cambios" style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:#34d399;border-radius:7px;padding:5px 9px;font-size:11px;cursor:pointer;opacity:.35">💾</button> '+
+      '<button onclick="editColabEliminar('+fi+')" title="Eliminar trabajador" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#f87171;border-radius:7px;padding:5px 9px;font-size:11px;cursor:pointer">🗑</button>'+
+      '</td>'+
     '</tr>';
   }).join('');
+}
+async function editColabEliminar(fi){
+  var d=EDIT_COLAB; if(!d) return;
+  var nom=String(d.filas[fi].c[1]||'').trim()||('cédula '+d.filas[fi].c[d.iCed]);
+  if(!confirm('¿Eliminar a '+nom+' del catálogo de Trabajadores?\n\nSe borrará su fila en el Excel (el historial de asistencia NO se toca).')) return;
+  if(!confirm('Confirma de nuevo: ELIMINAR definitivamente a '+nom+'.')) return;
+  _ecMsg('⏳ Eliminando a '+nom+' del Excel…');
+  try{
+    var r=await jsonp(APPS_URL,{action:'trabajador_del', data:JSON.stringify({ck:d.filas[fi].ck}), _ts:Date.now()});
+    if(r && r.ok){ d.filas.splice(fi,1); editColabRender(); _ecMsg('✅ '+nom+' eliminado del Excel ('+r.cedula+')'); }
+    else _ecMsg('Error al eliminar: '+((r&&r.error)||'sin respuesta'), true);
+  }catch(e){ _ecMsg('Error: '+(e.message||e), true); }
 }
 function editColabDirty(fi){
   var b=document.getElementById('ec-save-'+fi);
@@ -8646,7 +8676,7 @@ async function editColabGuardar(fi){
   var tr=document.querySelector('#edit-colab-tabla tr[data-fi="'+fi+'"]');
   var b=document.getElementById('ec-save-'+fi);
   var valores={};
-  tr.querySelectorAll('input[data-ci]').forEach(function(inp){
+  tr.querySelectorAll('input[data-ci], select[data-ci]').forEach(function(inp){
     var ci=Number(inp.getAttribute('data-ci'));
     valores[d.headers[ci]]=inp.value;
   });
