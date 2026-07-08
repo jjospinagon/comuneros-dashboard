@@ -2463,13 +2463,19 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     </div>
     </div> <!-- /mo-pane-org -->
 
-    <!-- ===== PESTAÑA DISTRIBUCIÓN DE CUADRILLAS (en construcción) ===== -->
+    <!-- ===== PESTAÑA DISTRIBUCIÓN DE CUADRILLAS (editor drag & drop) ===== -->
     <div id="mo-pane-dist" style="display:none">
-      <div class="mo-panel" style="text-align:center;padding:60px 20px">
-        <div style="font-size:40px;margin-bottom:12px">🗂️</div>
-        <h3 style="margin:0 0 8px;color:#fff">Distribución de Cuadrillas</h3>
-        <p style="color:#8b9bd1;font-size:13px;max-width:520px;margin:0 auto;line-height:1.6">Módulo en construcción: aquí se asignarán las cuadrillas a los frentes/tramos de trabajo y se podrá seguir su ubicación día a día.</p>
+      <div class="mo-panel" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h3 style="margin:0;color:#fbbf24">🗂️ Distribución de Cuadrillas</h3>
+          <span style="color:#8b9bd1;font-size:12px">arrastra a una persona hacia otra cuadrilla (en celular: tócala y luego toca la cuadrilla destino)</span>
+          <span id="dist-estado" style="margin-left:auto;font-size:12px;color:#8b9bd1">—</span>
+          <button id="dist-guardar" onclick="distGuardar()" disabled style="background:linear-gradient(90deg,#10b981,#0ea5e9);border:none;color:#fff;padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;opacity:.5">💾 Guardar distribución</button>
+          <button onclick="distRestaurar()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#cbd5e1;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:12px">↩ Restaurar</button>
+        </div>
+        <div id="dist-msg" style="margin-top:8px;font-size:12px;color:#34d399;display:none"></div>
       </div>
+      <div id="dist-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px"></div>
     </div> <!-- /mo-pane-dist -->
 
   </div>
@@ -8482,6 +8488,96 @@ function moRenderOrganigrama(){
   }).join('');
 }
 
+/* ===== Editor de distribución de cuadrillas (drag & drop + guardado en PPTX) ===== */
+var DIST_DATA=null, DIST_DIRTY=false, DIST_SEL=null;
+
+async function distCargar(){
+  if(DIST_DATA){ distRender(); return; }
+  try{
+    var r=await jsonp(APPS_URL,{action:'cuadrillas',_ts:Date.now()});
+    if(r && r.cuadrillas && r.cuadrillas.length){ DIST_DATA=r.cuadrillas; _distMsg('Última distribución guardada: '+(r.ts||'')); }
+  }catch(_){}
+  if(!DIST_DATA) DIST_DATA=JSON.parse(JSON.stringify(CUADRILLAS_ORG));
+  distRender();
+}
+function distRestaurar(){
+  DIST_DATA=JSON.parse(JSON.stringify(CUADRILLAS_ORG));
+  DIST_DIRTY=true; DIST_SEL=null; distRender(); _distMsg('Restaurada la distribución del organigrama original (sin guardar aún).');
+}
+function _distMsg(t,err){
+  var m=document.getElementById('dist-msg');
+  if(!m) return; m.style.display=''; m.style.color=err?'#f87171':'#34d399'; m.textContent=t;
+}
+function _distEstado(){
+  var e=document.getElementById('dist-estado'), b=document.getElementById('dist-guardar');
+  if(e) e.textContent = DIST_DIRTY? '● cambios sin guardar' : 'sin cambios';
+  if(e) e.style.color = DIST_DIRTY? '#fbbf24' : '#8b9bd1';
+  if(b){ b.disabled=!DIST_DIRTY; b.style.opacity=DIST_DIRTY?'1':'.5'; }
+}
+function distMover(ci,rol,pi,cd){
+  if(ci===cd) { DIST_SEL=null; distRender(); return; }
+  var persona=DIST_DATA[ci][rol].splice(pi,1)[0];
+  DIST_DATA[cd][rol].push(persona);
+  DIST_DIRTY=true; DIST_SEL=null; distRender();
+}
+function distChipClick(ev,ci,rol,pi){
+  ev.stopPropagation();
+  DIST_SEL=(DIST_SEL && DIST_SEL.ci===ci && DIST_SEL.rol===rol && DIST_SEL.pi===pi)? null : {ci:ci,rol:rol,pi:pi};
+  distRender();
+}
+function distColClick(cd){
+  if(DIST_SEL){ distMover(DIST_SEL.ci, DIST_SEL.rol, DIST_SEL.pi, cd); }
+}
+function distDrop(ev,cd){
+  ev.preventDefault();
+  try{
+    var d=JSON.parse(ev.dataTransfer.getData('text/plain'));
+    distMover(d.ci,d.rol,d.pi,cd);
+  }catch(_){}
+}
+function distRender(){
+  var g=document.getElementById('dist-grid');
+  if(!g||!DIST_DATA) return;
+  g.innerHTML=DIST_DATA.map(function(c,ci){
+    var tit=(typeof c.n==='number'||/^\d+$/.test(String(c.n)))?('CUADRILLA '+c.n):(String(c.n)==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
+    var chips=function(rol,color,borde,tag){
+      return (c[rol]||[]).map(function(p,pi){
+        var sel=DIST_SEL&&DIST_SEL.ci===ci&&DIST_SEL.rol===rol&&DIST_SEL.pi===pi;
+        return '<div draggable="true" ondragstart="event.dataTransfer.setData(\'text/plain\',JSON.stringify({ci:'+ci+',rol:\''+rol+'\',pi:'+pi+'}))" onclick="distChipClick(event,'+ci+',\''+rol+'\','+pi+')" '+
+          'style="background:'+color+';border-left:3px solid '+borde+';border-radius:6px;padding:5px 8px;font-size:11px;color:#fff;cursor:grab;user-select:none'+(sel?';outline:2px solid #fbbf24;box-shadow:0 0 10px rgba(251,191,36,.5)':'')+'">'+
+          escapeHTML(p)+' <span style="opacity:.6">· '+tag+'</span></div>';
+      }).join('');
+    };
+    var target=DIST_SEL && DIST_SEL.ci!==ci;
+    return '<div onclick="distColClick('+ci+')" ondragover="event.preventDefault()" ondrop="distDrop(event,'+ci+')" '+
+      'style="background:rgba(0,0,0,.35);border:1px '+(target?'dashed #fbbf24':'solid rgba(255,255,255,.08)')+';border-radius:10px;overflow:hidden'+(target?';box-shadow:0 0 12px rgba(251,191,36,.25)':'')+'">'+
+      '<div style="background:#0d5c8c;padding:7px 10px"><div style="font-size:11px;font-weight:800;color:#fff">'+tit+'</div>'+
+      '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+escapeHTML(c.labor||'')+'</div></div>'+
+      '<div style="padding:8px 10px;display:flex;flex-direction:column;gap:4px;min-height:46px">'+
+      chips('of','rgba(22,101,52,.55)','#22c55e','OF')+
+      chips('ay','rgba(134,25,143,.4)','#d946ef','AY')+
+      '</div></div>';
+  }).join('');
+  _distEstado();
+}
+async function distGuardar(){
+  if(!DIST_DIRTY||!DIST_DATA) return;
+  var b=document.getElementById('dist-guardar');
+  b.disabled=true; b.textContent='⏳ Guardando…';
+  try{
+    var data=JSON.stringify(DIST_DATA.map(function(c){ return {n:c.n, labor:c.labor, of:c.of, ay:c.ay}; }));
+    var r=await jsonp(APPS_URL,{action:'guardar_cuadrillas', data:data, _ts:Date.now()});
+    if(r && r.ok){
+      DIST_DIRTY=false; _distEstado();
+      var sl=(r.pptx&&r.pptx.ok)? (' · diapositiva '+r.pptx.slide+' creada en el PowerPoint') : (' · ⚠ PPTX: '+((r.pptx&&r.pptx.error)||'no actualizado'));
+      _distMsg('✅ Distribución guardada '+r.ts+sl);
+    } else {
+      _distMsg('Error al guardar: '+((r&&r.error)||'sin respuesta'), true);
+    }
+  }catch(e){ _distMsg('Error al guardar: '+(e.message||e), true); }
+  b.textContent='💾 Guardar distribución'; b.disabled=!DIST_DIRTY; b.style.opacity=DIST_DIRTY?'1':'.5';
+}
+
 async function moAbrirPersona(cedula, ck){
   if (!cedula && !ck) return;
   const modal = document.getElementById('mo-persona-modal');
@@ -8646,6 +8742,7 @@ function moTab(t){
   var pOrg=document.getElementById('mo-pane-org');  if(pOrg)  pOrg.style.display  = (t === 'org')  ? 'block' : 'none';
   var pDist=document.getElementById('mo-pane-dist'); if(pDist) pDist.style.display = (t === 'dist') ? 'block' : 'none';
   if (t === 'org') { try{ moRenderOrganigrama(); }catch(_){} }
+  if (t === 'dist') { try{ distCargar(); }catch(_){} }
   if (t === 'trab' && !TRAB_LOADED) trabCargar();
 }
 
