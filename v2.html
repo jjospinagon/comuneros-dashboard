@@ -8640,7 +8640,7 @@ function _ecLlenarFiltro(id, ops, actual){
   s.innerHTML=pre+ops.map(function(o){ return '<option value="'+escapeHTML(o).replace(/"/g,'&quot;')+'"'+(o===actual?' selected':'')+'>'+escapeHTML(o)+'</option>'; }).join('');
 }
 var EC_LISTAS_BASE={ 'CARGO':['AYUDANTE','OFICIAL','MAESTRO','SST','TOPOGRAFA','RESIDENTE DE OBRA','INSPECTORA DE OBRA','ALMACENISTA','AUX. PMT','SOCIAL DE INTER'],
-  'FRENTE':['M.O','OBRA','INTERVENTORÍA'], 'ESTADO':['ACTIVO','INACTIVO','RETIRADO'] };
+  'FRENTE':['M.O','OBRA','INTERVENTORÍA'], 'ESTADO':['ACTIVO','INCAPACITADO','INACTIVO','RETIRADO'] };
 function _ecOpciones(d, colName, ci){
   var set={}; (EC_LISTAS_BASE[colName]||[]).forEach(function(v){ set[v]=1; });
   d.filas.forEach(function(f){ var v=String(f.c[ci]||'').trim(); if(v) set[v]=1; });
