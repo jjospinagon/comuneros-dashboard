@@ -2443,6 +2443,23 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 
     </div> <!-- /mo-pane-trab -->
 
+    <!-- ===== ORGANIGRAMA DE CUADRILLAS (fuente: CUADRILLAS MANO DE OBRA.pptx, diap. 2) ===== -->
+    <div id="mo-organigrama" style="margin:22px 0 10px;padding:16px 18px;background:rgba(14,20,45,.55);border:1px solid rgba(34,211,238,.25);border-radius:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;cursor:pointer" onclick="var b=document.getElementById('mo-org-body'); var v=b.style.display==='none'; b.style.display=v?'':'none'; document.getElementById('mo-org-chev').textContent=v?'▾':'▸';">
+        <span id="mo-org-chev" style="color:#22d3ee">▾</span>
+        <h3 style="margin:0;font-size:15px;color:#22d3ee">🧑‍🏭 Organigrama de cuadrillas</h3>
+        <span style="color:#8b9bd1;font-size:12px">distribución vigente de la mano de obra por frente de trabajo</span>
+      </div>
+      <div id="mo-org-body">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin:12px 0 16px">
+          <div style="background:#0d5c8c;color:#fff;font-weight:800;font-size:13px;padding:8px 22px;border-radius:8px;letter-spacing:.04em">MANO DE OBRA COMUNEROS</div>
+          <div style="width:2px;height:10px;background:rgba(255,255,255,.25)"></div>
+          <div style="background:#166534;color:#fff;font-weight:800;font-size:12.5px;padding:7px 18px;border-radius:8px">FREDY JARAMILLO · MAESTRO</div>
+        </div>
+        <div id="mo-org-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -8019,6 +8036,7 @@ function _moFormatHoraFrac(s){
 }
 
 async function moCargar(force, fechaOverride){
+  try{ moRenderOrganigrama(); }catch(_){}
   const tbody = document.querySelector('#mo-tabla tbody');
   let fecha = fechaOverride || MO_FECHA || moHoyStr();
   MO_FECHA = fecha;
@@ -8422,6 +8440,34 @@ async function moCerrarJornada(p){
       '<div style="font-size:12px;color:#cbd5e1;margin-bottom:18px">' + escapeHTML(e.message||String(e)) + '</div>' +
       '<button onclick="document.getElementById(\'mo-cerrar-overlay\').remove()" style="background:#475569;color:#fff;border:none;padding:9px 22px;border-radius:6px;cursor:pointer;font-weight:600">Cerrar</button>');
   }
+}
+
+/* ===== Organigrama de cuadrillas — fuente: CUADRILLAS MANO DE OBRA.pptx (diap. 2), 06-jul-2026 ===== */
+var CUADRILLAS_ORG=[
+  {n:1, labor:'Soldadura — fundición de tapas', of:['FRANK JOSÉ GÓMEZ'], ay:['DANIEL STIVEN DAZA HERNÁNDEZ']},
+  {n:2, labor:'Instalación de tubería pluvial y sanitaria (solo red principal)', of:['ANDRÉS MAURICIO GÓMEZ MUÑOZ'], ay:['JHON DEINER CORTÉS CORTÉS','IVÁN CAMILO ALONSO LÓPEZ']},
+  {n:3, labor:'Demolición y excavación cajas de inspección', of:['EDUARDO ANTONIO ROSARIO'], ay:['RUBÉN ALZATE GALEANO','JUAN ARLES HERNÁNDEZ PÉREZ','JHON JAIRO BEDOYA GUTIÉRREZ','CAMILO HARRISON BASTIDAS CASTAÑEDA']},
+  {n:4, labor:'Conexión domiciliarias silla yee', of:['RUBÉN DARÍO MUÑOZ BEDOYA'], ay:['ALEJANDRO BOLÍVAR']},
+  {n:5, labor:'Instalación de tubería pluvial y sanitaria (solo red principal)', of:['MILLER OLMEDO AROCA ZAMBRANO','CRISTIAN CAMILO BUENO ALEGRÍA'], ay:['LUIS FERNANDO MÁRQUEZ','VÍCTOR ALFONSO GUISAO ZAPATA']},
+  {n:6, labor:'Flejado de acero y formaletas cajas de inspección y fundida', of:['DIEGO ALEJANDRO HERNÁNDEZ'], ay:['ÓSCAR EDUARDO ZAPATA RAMÍREZ']},
+  {n:7, labor:'Demolición y armado de acero y fundición de cámaras', of:['HERNÁN EFRAÍN MEDINA'], ay:['LEONARDO JOSÉ RINCÓN','JAVIER ADOLFO LARIOS']},
+  {n:8, labor:'Armado de acero y fundición de cámaras', of:['JEISON CHICO'], ay:['DUVAN LONDOÑO']},
+  {n:'F', labor:'Cuadrilla flotante (apoyo a todos los frentes)', of:[], ay:['YORGENI JESÚS CARREÑO SANDOVAL','LUIS MARIO FRANCO','ANDRÉS FELIPE TRUJILLO','ÓSCAR RAFAEL MORENO']},
+  {n:'T', labor:'Topografía', of:['FRANCIA NORBY SALAZAR PARRA (TOPO)'], ay:['EDDIER ORLANDO MEZA']}
+];
+function moRenderOrganigrama(){
+  var g=document.getElementById('mo-org-grid');
+  if(!g || g.children.length) return;
+  g.innerHTML=CUADRILLAS_ORG.map(function(c){
+    var tit=(typeof c.n==='number')?('CUADRILLA '+c.n):(c.n==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
+    return '<div style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">'+
+      '<div style="background:#0d5c8c;padding:7px 10px"><div style="font-size:11px;font-weight:800;color:#fff;letter-spacing:.04em">'+tit+'</div>'+
+      '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+c.labor+'</div></div>'+
+      '<div style="padding:8px 10px;display:flex;flex-direction:column;gap:4px">'+
+      c.of.map(function(p){ return '<div style="background:rgba(22,101,52,.55);border-left:3px solid #22c55e;border-radius:6px;padding:4px 8px;font-size:11px;color:#dcfce7;font-weight:700">'+p+' <span style="opacity:.65;font-weight:600">· OF</span></div>'; }).join('')+
+      c.ay.map(function(p){ return '<div style="background:rgba(134,25,143,.4);border-left:3px solid #d946ef;border-radius:6px;padding:4px 8px;font-size:11px;color:#fae8ff">'+p+' <span style="opacity:.6">· AY</span></div>'; }).join('')+
+      '</div></div>';
+  }).join('');
 }
 
 async function moAbrirPersona(cedula, ck){
