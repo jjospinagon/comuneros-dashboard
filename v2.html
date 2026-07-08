@@ -2295,6 +2295,8 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     <div style="display:flex;gap:6px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px;flex-wrap:wrap">
       <button class="mo-tab active" data-mo-tab="diaria" onclick="moTab('diaria')">📅 Asistencia Diaria</button>
       <button class="mo-tab" data-mo-tab="trab" onclick="moTab('trab')">👷 Catálogo de Trabajadores</button>
+      <button class="mo-tab" data-mo-tab="org" onclick="moTab('org')">🧑‍🏭 Organigrama</button>
+      <button class="mo-tab" data-mo-tab="dist" onclick="moTab('dist')">🗂️ Distribución de Cuadrillas</button>
     </div>
 
     <!-- ============ TAB ASISTENCIA DIARIA ============ -->
@@ -2443,12 +2445,12 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 
     </div> <!-- /mo-pane-trab -->
 
-    <!-- ===== ORGANIGRAMA DE CUADRILLAS (fuente: CUADRILLAS MANO DE OBRA.pptx, diap. 2) ===== -->
-    <div id="mo-organigrama" style="margin:22px 0 10px;padding:16px 18px;background:rgba(14,20,45,.55);border:1px solid rgba(34,211,238,.25);border-radius:14px">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;cursor:pointer" onclick="var b=document.getElementById('mo-org-body'); var v=b.style.display==='none'; b.style.display=v?'':'none'; document.getElementById('mo-org-chev').textContent=v?'▾':'▸';">
-        <span id="mo-org-chev" style="color:#22d3ee">▾</span>
+    <!-- ===== PESTAÑA ORGANIGRAMA (fuente: CUADRILLAS MANO DE OBRA.pptx, diap. 2) ===== -->
+    <div id="mo-pane-org" style="display:none">
+    <div id="mo-organigrama" style="margin:4px 0 10px;padding:16px 18px;background:rgba(14,20,45,.55);border:1px solid rgba(34,211,238,.25);border-radius:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
         <h3 style="margin:0;font-size:15px;color:#22d3ee">🧑‍🏭 Organigrama de cuadrillas</h3>
-        <span style="color:#8b9bd1;font-size:12px">distribución vigente de la mano de obra por frente de trabajo</span>
+        <span style="color:#8b9bd1;font-size:12px">distribución vigente de la mano de obra por frente de trabajo · fuente: CUADRILLAS MANO DE OBRA (diap. 2)</span>
       </div>
       <div id="mo-org-body">
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin:12px 0 16px">
@@ -2459,6 +2461,16 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div id="mo-org-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px"></div>
       </div>
     </div>
+    </div> <!-- /mo-pane-org -->
+
+    <!-- ===== PESTAÑA DISTRIBUCIÓN DE CUADRILLAS (en construcción) ===== -->
+    <div id="mo-pane-dist" style="display:none">
+      <div class="mo-panel" style="text-align:center;padding:60px 20px">
+        <div style="font-size:40px;margin-bottom:12px">🗂️</div>
+        <h3 style="margin:0 0 8px;color:#fff">Distribución de Cuadrillas</h3>
+        <p style="color:#8b9bd1;font-size:13px;max-width:520px;margin:0 auto;line-height:1.6">Módulo en construcción: aquí se asignarán las cuadrillas a los frentes/tramos de trabajo y se podrá seguir su ubicación día a día.</p>
+      </div>
+    </div> <!-- /mo-pane-dist -->
 
   </div>
 </div>
@@ -8631,6 +8643,9 @@ function moTab(t){
   document.querySelectorAll('.mo-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-mo-tab') === t));
   document.getElementById('mo-pane-diaria').style.display = (t === 'diaria') ? 'block' : 'none';
   document.getElementById('mo-pane-trab').style.display   = (t === 'trab') ? 'block' : 'none';
+  var pOrg=document.getElementById('mo-pane-org');  if(pOrg)  pOrg.style.display  = (t === 'org')  ? 'block' : 'none';
+  var pDist=document.getElementById('mo-pane-dist'); if(pDist) pDist.style.display = (t === 'dist') ? 'block' : 'none';
+  if (t === 'org') { try{ moRenderOrganigrama(); }catch(_){} }
   if (t === 'trab' && !TRAB_LOADED) trabCargar();
 }
 
