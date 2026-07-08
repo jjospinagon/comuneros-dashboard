@@ -8514,11 +8514,15 @@ function _distEstado(){
   if(e) e.style.color = DIST_DIRTY? '#fbbf24' : '#8b9bd1';
   if(b){ b.disabled=!DIST_DIRTY; b.style.opacity=DIST_DIRTY?'1':'.5'; }
 }
+var DIST_MAX=12;
 function distMover(ci,rol,pi,cd){
   if(ci===cd) { DIST_SEL=null; distRender(); return; }
+  var totalDestino=(DIST_DATA[cd].of||[]).length+(DIST_DATA[cd].ay||[]).length;
+  if(totalDestino>=DIST_MAX){ _distMsg('⚠ La cuadrilla destino ya tiene '+DIST_MAX+' personas (tope máximo).', true); DIST_SEL=null; distRender(); return; }
   var persona=DIST_DATA[ci][rol].splice(pi,1)[0];
   DIST_DATA[cd][rol].push(persona);
   DIST_DIRTY=true; DIST_SEL=null; distRender();
+  _distMsg('Movido: '+persona+' → '+((typeof DIST_DATA[cd].n==='number')?('Cuadrilla '+DIST_DATA[cd].n):(String(DIST_DATA[cd].n)==='F'?'Flotante':'Topografía'))+'. Recuerda Guardar.');
 }
 function distChipClick(ev,ci,rol,pi){
   ev.stopPropagation();
@@ -8549,11 +8553,12 @@ function distRender(){
       }).join('');
     };
     var target=DIST_SEL && DIST_SEL.ci!==ci;
-    return '<div onclick="distColClick('+ci+')" ondragover="event.preventDefault()" ondrop="distDrop(event,'+ci+')" '+
+    var nP=(c.of||[]).length+(c.ay||[]).length;
+    return '<div onclick="distColClick('+ci+')" ondragenter="event.preventDefault()" ondragover="event.preventDefault();event.dataTransfer.dropEffect=\'move\'" ondrop="distDrop(event,'+ci+')" '+
       'style="background:rgba(0,0,0,.35);border:1px '+(target?'dashed #fbbf24':'solid rgba(255,255,255,.08)')+';border-radius:10px;overflow:hidden'+(target?';box-shadow:0 0 12px rgba(251,191,36,.25)':'')+'">'+
-      '<div style="background:#0d5c8c;padding:7px 10px"><div style="font-size:11px;font-weight:800;color:#fff">'+tit+'</div>'+
+      '<div style="background:#0d5c8c;padding:7px 10px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;font-weight:800;color:#fff">'+tit+'</div><span style="font-size:10px;color:#cfe8ff;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 7px">'+nP+'/'+DIST_MAX+'</span></div>'+
       '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+escapeHTML(c.labor||'')+'</div></div>'+
-      '<div style="padding:8px 10px;display:flex;flex-direction:column;gap:4px;min-height:46px">'+
+      '<div style="padding:8px 10px 20px;display:flex;flex-direction:column;gap:4px;min-height:70px">'+
       chips('of','rgba(22,101,52,.55)','#22c55e','OF')+
       chips('ay','rgba(134,25,143,.4)','#d946ef','AY')+
       '</div></div>';
