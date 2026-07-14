@@ -2584,13 +2584,25 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       </div>
       <span id="loc-estado" style="font-size:11px;color:#94a3b8">—</span>
     </header>
-    <div id="loc-leyenda" style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;font-size:12px;color:#cbd5e1">
-      <span><span style="display:inline-block;width:22px;height:4px;background:#22c55e;border-radius:2px;vertical-align:middle"></span> Tramo ejecutado</span>
-      <span><span style="display:inline-block;width:22px;height:4px;background:#fbbf24;border-radius:2px;vertical-align:middle"></span> En ejecución</span>
-      <span><span style="display:inline-block;width:22px;height:4px;background:#94a3b8;border-radius:2px;vertical-align:middle"></span> Pendiente</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:50%;vertical-align:middle"></span> Cámara red sanitaria</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:50%;vertical-align:middle"></span> Cámara red pluvial</span>
+    <div id="loc-leyenda" style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 8px;font-size:12px;color:#cbd5e1">
+      <span><span style="display:inline-block;width:22px;height:4px;background:#ef4444;border-radius:2px;vertical-align:middle"></span> Sanitaria construida</span>
+      <span><span style="display:inline-block;width:22px;height:4px;background:#3b82f6;border-radius:2px;vertical-align:middle"></span> Pluvial construida</span>
+      <span><span style="display:inline-block;width:22px;height:4px;background:#d946ef;border-radius:2px;vertical-align:middle"></span> Sanitaria proyectada</span>
+      <span><span style="display:inline-block;width:22px;height:4px;background:#7dd3fc;border-radius:2px;vertical-align:middle"></span> Pluvial proyectada</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:50%;vertical-align:middle"></span> Cámara sanitaria</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:50%;vertical-align:middle"></span> Cámara pluvial</span>
     </div>
+    <div id="loc-tools" style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px">
+      <button class="back-btn" id="lt-san_const" onclick="locHerr('san_const')" style="border:2px solid #ef4444;font-size:12px;padding:6px 10px">✏️ Sanitaria construida</button>
+      <button class="back-btn" id="lt-plu_const" onclick="locHerr('plu_const')" style="border:2px solid #3b82f6;font-size:12px;padding:6px 10px">✏️ Pluvial construida</button>
+      <button class="back-btn" id="lt-san_proy" onclick="locHerr('san_proy')" style="border:2px solid #d946ef;font-size:12px;padding:6px 10px">✏️ Proy. sanitaria</button>
+      <button class="back-btn" id="lt-plu_proy" onclick="locHerr('plu_proy')" style="border:2px solid #7dd3fc;font-size:12px;padding:6px 10px">✏️ Proy. pluvial</button>
+      <button class="back-btn" onclick="locDeshacer()" style="font-size:12px;padding:6px 10px" title="Quita el último punto de la línea en curso">↩ Deshacer</button>
+      <button class="back-btn" onclick="locTerminar()" style="font-size:12px;padding:6px 10px;background:#16a34a;border:none;color:#fff;font-weight:700" title="Guarda la línea dibujada (también con doble clic)">✔ Terminar</button>
+      <button class="back-btn" id="lt-borrar" onclick="locHerr('borrar')" style="border:2px solid #64748b;font-size:12px;padding:6px 10px" title="Activa y luego toca una línea para eliminarla">🗑 Borrar línea</button>
+      <button class="back-btn" onclick="locReporte()" style="font-size:12px;padding:6px 10px;background:linear-gradient(135deg,#fbbf24,#ef4444);border:none;color:#1a0f04;font-weight:800">📄 Generar reporte</button>
+    </div>
+    <div id="loc-dib-estado" style="font-size:11px;color:#94a3b8;margin:0 0 8px">Elige una herramienta y toca el mapa para dibujar (los puntos se pegan a las cámaras cercanas). Termina con ✔ o doble clic.</div>
     <div id="loc-map" style="height:68vh;min-height:420px;border-radius:14px;border:1px solid rgba(99,102,241,.35);overflow:hidden;background:#0b1229"></div>
     <div id="loc-nota" style="margin-top:10px;font-size:12px;color:#94a3b8;background:rgba(20,26,55,.5);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:10px 12px">
       ✅ <b>Redes cargadas:</b> sanitaria (84 cámaras, rojo) y pluvial (64 cámaras, azul) — coordenadas MAGNA-SIRGAS convertidas a WGS84. Toca cualquier punto rojo para ver su identificación y elevación. <b>Pendiente:</b> definir los tramos entre cámaras para pintar la ejecución (verde ejecutado / amarillo en ejecución).
@@ -3348,8 +3360,14 @@ function _locInitGL(){
       container:'loc-map',
       style:'https://tiles.openfreemap.org/styles/liberty',
       center:LOC_CENTRO, zoom:LOC_ZOOM, pitch:0, bearing:0,
-      attributionControl:{compact:true}, maxPitch:70
+      attributionControl:{compact:true}, maxPitch:70, preserveDrawingBuffer:true
     });
+    LOC_MAP.on('click',function(e){
+      if(!LOC_HERR||LOC_HERR==='borrar') return;
+      var fs=LOC_MAP.queryRenderedFeatures(e.point,{layers:LOC_MAP.getLayer('loc-dib-l')?['loc-dib-l']:[]});
+      LOC_TMP.push(_locSnap(e.lngLat.lng,e.lngLat.lat)); _locTmpDraw();
+    });
+    LOC_MAP.on('dblclick',function(e){ if(LOC_HERR&&LOC_HERR!=='borrar'){ e.preventDefault(); locTerminar(); } });
     LOC_MAP.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-left');
     LOC_MAP.addControl(new maplibregl.ScaleControl({unit:'metric'}),'bottom-left');
     new maplibregl.Marker({color:'#0ea5e9'}).setLngLat(LOC_CENTRO)
@@ -3363,6 +3381,7 @@ function _locInitGL(){
       _locAsegurar3D();
       if(est) est.textContent='Mapa listo (3D disponible)'+(LOC_CAMARAS.length?'':' · esperando listado de cámaras');
       locRender();
+      locCargarDibujos();
       var b=document.getElementById('loc-3d-btn'); if(b) b.style.display='';
     };
     LOC_MAP.once('load',_locReady);
@@ -3490,6 +3509,159 @@ function _locRenderLf(){
     pts.push(m);
   });
   if(pts.length){ LOC_CAPA_CAM=L.layerGroup(pts).addTo(LOC_MAP); LOC_MAP.fitBounds(L.featureGroup(pts).getBounds().pad(0.2)); }
+}
+
+/* ---------- DIBUJO DE LINEAS (construido / proyectado) ---------- */
+var LOC_TIPOS={
+  san_const:{n:'Sanitaria construida', c:'#ef4444'},
+  plu_const:{n:'Pluvial construida',   c:'#3b82f6'},
+  san_proy:{n:'Sanitaria proyectada',  c:'#d946ef'},
+  plu_proy:{n:'Pluvial proyectada',    c:'#7dd3fc'}
+};
+var LOC_DIBUJOS=[], LOC_HERR=null, LOC_TMP=[], LOC_DIB_LISTO=false;
+
+function _locHav(a,b){ var R=6371000,rad=Math.PI/180;
+  var dLa=(b[1]-a[1])*rad, dLo=(b[0]-a[0])*rad;
+  var s=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(a[1]*rad)*Math.cos(b[1]*rad)*Math.sin(dLo/2)*Math.sin(dLo/2);
+  return 2*R*Math.asin(Math.sqrt(s)); }
+function _locLen(coords){ var t=0; for(var i=1;i<coords.length;i++) t+=_locHav(coords[i-1],coords[i]); return t; }
+function _locSnap(lng,lat){
+  var best=null,bd=12; /* iman: 12 m */
+  LOC_CAMARAS.forEach(function(c){ var d=_locHav([lng,lat],[c.lng,c.lat]); if(d<bd){bd=d;best=c;} });
+  return best?[best.lng,best.lat]:[lng,lat];
+}
+function locHerr(t){
+  LOC_HERR=(LOC_HERR===t)?null:t;
+  if(LOC_HERR!==null && LOC_TMP.length && t!=='borrar'){ LOC_TMP=[]; _locTmpDraw(); }
+  ['san_const','plu_const','san_proy','plu_proy','borrar'].forEach(function(k){
+    var b=document.getElementById('lt-'+k); if(!b) return;
+    b.style.background=(LOC_HERR===k)?((LOC_TIPOS[k]||{c:'#64748b'}).c):''; b.style.color=(LOC_HERR===k)?'#0b1229':'';
+  });
+  var est=document.getElementById('loc-dib-estado');
+  if(est) est.textContent = LOC_HERR===null ? 'Herramienta desactivada.' :
+    (LOC_HERR==='borrar' ? 'Modo borrar: toca una línea para eliminarla.' :
+     'Dibujando '+LOC_TIPOS[LOC_HERR].n+': toca el mapa para agregar puntos (se pegan a las cámaras). Termina con ✔ o doble clic.');
+  if(LOC_MAP&&LOC_MODO==='gl') LOC_MAP.getCanvas().style.cursor = LOC_HERR&&LOC_HERR!=='borrar' ? 'crosshair' : '';
+}
+function locDeshacer(){ if(LOC_TMP.length){ LOC_TMP.pop(); _locTmpDraw(); } }
+function _locTmpDraw(){
+  if(!LOC_MAP||LOC_MODO!=='gl') return;
+  var col=LOC_HERR&&LOC_TIPOS[LOC_HERR]?LOC_TIPOS[LOC_HERR].c:'#fff';
+  var g={type:'FeatureCollection',features:[]};
+  if(LOC_TMP.length>1) g.features.push({type:'Feature',properties:{c:col},geometry:{type:'LineString',coordinates:LOC_TMP}});
+  LOC_TMP.forEach(function(p){ g.features.push({type:'Feature',properties:{c:col},geometry:{type:'Point',coordinates:p}}); });
+  if(LOC_MAP.getSource('loc-tmp')) LOC_MAP.getSource('loc-tmp').setData(g);
+  else{
+    LOC_MAP.addSource('loc-tmp',{type:'geojson',data:g});
+    LOC_MAP.addLayer({id:'loc-tmp-l',type:'line',source:'loc-tmp',paint:{'line-color':['get','c'],'line-width':4,'line-dasharray':[1.5,1.5]}});
+    LOC_MAP.addLayer({id:'loc-tmp-p',type:'circle',source:'loc-tmp',paint:{'circle-radius':5,'circle-color':['get','c'],'circle-stroke-color':'#0b1229','circle-stroke-width':1.5}});
+  }
+}
+function locTerminar(){
+  if(!LOC_HERR||LOC_HERR==='borrar'||LOC_TMP.length<2){ if(LOC_TMP.length<2){ var e=document.getElementById('loc-dib-estado'); if(e) e.textContent='La línea necesita al menos 2 puntos.'; } return; }
+  var tipo=LOC_HERR, coords=LOC_TMP.slice();
+  var est=document.getElementById('loc-dib-estado'); if(est) est.textContent='💾 Guardando línea…';
+  var cs=coords.map(function(c){ return c[0].toFixed(6)+','+c[1].toFixed(6); }).join(';');
+  jsonp(APPS_URL,{action:'loc_linea_add',tipo:tipo,coords:cs,_ts:Date.now()}).then(function(r){
+    if(r&&r.ok){
+      LOC_DIBUJOS.push({id:r.id,tipo:tipo,coords:coords,fecha:r.fecha||new Date().toISOString().slice(0,16).replace('T',' ')});
+      LOC_TMP=[]; _locTmpDraw(); _locDibujosRender();
+      if(est) est.textContent='✅ Línea guardada ('+LOC_TIPOS[tipo].n+', '+Math.round(_locLen(coords))+' m). Sigue dibujando o cambia de herramienta.';
+    } else if(est) est.textContent='❌ No se pudo guardar: '+((r&&r.error)||'error');
+  },function(){ if(est) est.textContent='❌ Error de conexión al guardar.'; });
+}
+function locCargarDibujos(){
+  jsonp(APPS_URL,{action:'loc_lineas',_ts:Date.now()}).then(function(r){
+    if(r&&r.ok){ LOC_DIBUJOS=r.lineas||[]; _locDibujosRender(); }
+  },function(){});
+}
+function _locDibujosRender(){
+  if(!LOC_MAP||LOC_MODO!=='gl') return;
+  var g={type:'FeatureCollection',features:LOC_DIBUJOS.map(function(l){
+    var t=LOC_TIPOS[l.tipo]||{c:'#fff',n:l.tipo};
+    return {type:'Feature',properties:{id:l.id,c:t.c,nombre:t.n,fecha:l.fecha||'',m:Math.round(_locLen(l.coords))},
+            geometry:{type:'LineString',coordinates:l.coords}};
+  })};
+  if(LOC_MAP.getSource('loc-dib')) LOC_MAP.getSource('loc-dib').setData(g);
+  else{
+    LOC_MAP.addSource('loc-dib',{type:'geojson',data:g});
+    LOC_MAP.addLayer({id:'loc-dib-l',type:'line',source:'loc-dib',
+      paint:{'line-color':['get','c'],'line-width':5,'line-opacity':.95},
+      layout:{'line-cap':'round','line-join':'round'}});
+    LOC_MAP.on('click','loc-dib-l',function(e){
+      var p=e.features[0].properties;
+      if(LOC_HERR==='borrar'){
+        if(confirm('¿Eliminar la línea '+p.nombre+' de '+p.m+' m ('+p.fecha+')?')){
+          jsonp(APPS_URL,{action:'loc_linea_del',id:p.id,_ts:Date.now()}).then(function(r){
+            if(r&&r.ok){ LOC_DIBUJOS=LOC_DIBUJOS.filter(function(l){return l.id!==p.id;}); _locDibujosRender();
+              var est=document.getElementById('loc-dib-estado'); if(est) est.textContent='🗑 Línea eliminada.'; }
+          },function(){});
+        }
+      } else if(!LOC_HERR){
+        new maplibregl.Popup().setLngLat(e.lngLat).setHTML('<b>'+p.nombre+'</b><br>'+p.m+' m<br><span style="font-size:11px;color:#64748b">'+p.fecha+'</span>').addTo(LOC_MAP);
+      }
+    });
+  }
+  _locResumen();
+}
+function _locResumen(){
+  var est=document.getElementById('loc-estado'); if(!est) return;
+  var m={};
+  LOC_DIBUJOS.forEach(function(l){ m[l.tipo]=(m[l.tipo]||0)+_locLen(l.coords); });
+  var cons=Math.round((m.san_const||0)+(m.plu_const||0)), proy=Math.round((m.san_proy||0)+(m.plu_proy||0));
+  est.textContent=LOC_CAMARAS.length+' cámaras · construido '+cons+' m · proyectado '+proy+' m';
+}
+async function locReporte(){
+  var est=document.getElementById('loc-dib-estado'); if(est) est.textContent='📄 Generando reporte…';
+  try{
+    function ld(u,integ){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=u; if(integ){s.integrity=integ;s.crossOrigin='anonymous';} s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+    if(!(window.jspdf&&window.jspdf.jsPDF)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk');
+    if(!(window.jspdf.jsPDF.API&&window.jspdf.jsPDF.API.autoTable)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js','sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3');
+    var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({unit:'pt',format:'letter'});
+    var PW=doc.internal.pageSize.getWidth(), M=40, hoy=new Date();
+    var fstr=hoy.toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+    doc.setFillColor(13,27,62); doc.rect(0,0,PW,64,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+    doc.text('REPORTE DE REDES · CONSTRUIDO VS PROYECTADO',M,28);
+    doc.setFontSize(9.5); doc.setFont('helvetica','normal');
+    doc.text('Reposición de alcantarillado · Urbanización Comuneros, Montenegro (Quindío) · Corte: '+fstr,M,46);
+    doc.setFillColor(251,191,36); doc.rect(0,64,PW,3,'F');
+    var y=86;
+    /* resumen por tipo */
+    var m={}, cnt={};
+    LOC_DIBUJOS.forEach(function(l){ m[l.tipo]=(m[l.tipo]||0)+_locLen(l.coords); cnt[l.tipo]=(cnt[l.tipo]||0)+1; });
+    var filas=Object.keys(LOC_TIPOS).map(function(k){
+      return [LOC_TIPOS[k].n,(cnt[k]||0),((m[k]||0)).toFixed(1)+' m'];
+    });
+    var cons=(m.san_const||0)+(m.plu_const||0), proy=(m.san_proy||0)+(m.plu_proy||0);
+    filas.push(['TOTAL CONSTRUIDO A LA FECHA',(cnt.san_const||0)+(cnt.plu_const||0),cons.toFixed(1)+' m']);
+    filas.push(['TOTAL PROYECTADO',(cnt.san_proy||0)+(cnt.plu_proy||0),proy.toFixed(1)+' m']);
+    if(cons+proy>0) filas.push(['AVANCE FÍSICO (construido / total trazado)','',(100*cons/(cons+proy)).toFixed(1)+' %']);
+    doc.autoTable({startY:y,margin:{left:M,right:M},head:[['Red / Estado','Líneas','Longitud']],body:filas,
+      styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[13,27,62],textColor:255},
+      didParseCell:function(d){ if(d.section==='body'&&d.row.index>=4){ d.cell.styles.fontStyle='bold'; d.cell.styles.fillColor=[255,246,220]; } }});
+    y=doc.lastAutoTable.finalY+14;
+    /* imagen del mapa */
+    try{
+      var img=LOC_MAP.getCanvas().toDataURL('image/jpeg',0.85);
+      var cw=LOC_MAP.getCanvas().width, ch=LOC_MAP.getCanvas().height;
+      var iw=PW-2*M, ih=iw*ch/cw; if(ih>300){ ih=300; iw=ih*cw/ch; }
+      doc.addImage(img,'JPEG',M,y,iw,ih); y+=ih+14;
+    }catch(_e){}
+    /* detalle */
+    if(LOC_DIBUJOS.length){
+      if(y>640){ doc.addPage(); y=50; }
+      var det=LOC_DIBUJOS.map(function(l,i){ var t=LOC_TIPOS[l.tipo]||{n:l.tipo};
+        return [i+1,t.n,l.coords.length+' pts',Math.round(_locLen(l.coords))+' m',l.fecha||'']; });
+      doc.autoTable({startY:y,margin:{left:M,right:M},head:[['#','Tipo','Vértices','Longitud','Dibujado el']],body:det,
+        styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:[13,27,62],textColor:255}});
+    }
+    var pages=doc.internal.getNumberOfPages();
+    for(var pi=1;pi<=pages;pi++){ doc.setPage(pi); doc.setFontSize(8); doc.setTextColor(148,163,184);
+      doc.text('Cockpit Comuneros · Localización del Proyecto · 84 cámaras sanitarias + 64 pluviales · página '+pi+'/'+pages,M,doc.internal.pageSize.getHeight()-18); }
+    doc.save('Reporte_Redes_Comuneros_'+hoy.toISOString().slice(0,10)+'.pdf');
+    if(est) est.textContent='✅ Reporte descargado.';
+  }catch(e){ if(est) est.textContent='❌ Error generando reporte: '+(e.message||e); }
 }
 
 function locCargarCamaras(camaras, tramos){
