@@ -3356,12 +3356,16 @@ function _locInitGL(){
     LOC_MAP.on('error',function(e){ /* estilo/teselas: si falla del todo, fallback */
       if(!LOC_MAP._locFail && !LOC_MAP.getStyle){ LOC_MAP._locFail=true; }
     });
-    LOC_MAP.on('load',function(){
+    var _locReady=function(){
+      if(LOC_MAP._locReady) return; LOC_MAP._locReady=true;
       _locAsegurar3D();
-      if(est) est.textContent='Mapa listo (3D disponible) · esperando listado de cámaras';
+      if(est) est.textContent='Mapa listo (3D disponible)'+(LOC_CAMARAS.length?'':' · esperando listado de cámaras');
       locRender();
       var b=document.getElementById('loc-3d-btn'); if(b) b.style.display='';
-    });
+    };
+    LOC_MAP.once('load',_locReady);
+    LOC_MAP.once('idle',_locReady);
+    setTimeout(_locReady,5000); /* respaldo: el estilo puede dejar recursos colgados sin disparar load */
     setTimeout(function(){ try{ LOC_MAP.resize(); }catch(_){}},300);
   }catch(e){ _locInitLeafletFallback(); }
 }
