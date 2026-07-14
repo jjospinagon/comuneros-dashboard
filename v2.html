@@ -2572,8 +2572,9 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <button class="back-btn" onclick="goTo('menu')">← Menú</button>
       <div>
         <div class="topbar-title">🗺️ Localización del Proyecto</div>
-        <div class="topbar-meta">Barrio Comuneros · Montenegro (Quindío) · OpenStreetMap</div>
+        <div class="topbar-meta">Barrio Comuneros · Montenegro (Quindío) · OpenStreetMap · edificios 3D</div>
       </div>
+      <button class="back-btn" id="loc-3d-btn" onclick="locToggle3D()" style="display:none;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#04121f;font-weight:800;border:none" title="Inclinar el mapa y ver los edificios con volumen">Vista 3D</button>
       <button class="back-btn" onclick="locCentrar()" title="Volver al encuadre de la obra">Centrar obra</button>
     </div>
     <header>
@@ -3305,84 +3306,181 @@ function _goToInner(name){
 }
 
 
-/* ====================== LOCALIZACION DEL PROYECTO (mapa OSM/Leaflet) ======================
-   Carga perezosa de Leaflet 1.9.4 desde cdnjs. Centro: Barrio Comuneros, Montenegro (Quindio).
-   Estructuras listas para el listado de camaras (LOC_CAMARAS) y tramos (LOC_TRAMOS). */
-var LOC_MAP=null, LOC_LIB=null, LOC_CENTRO=[4.5664,-75.7506], LOC_ZOOM=16;
-var LOC_CAMARAS=[]; /* [{id:'C-01', lat:..., lng:..., desc:''}] ← se llena con el listado */
-var LOC_TRAMOS=[];  /* [{de:'C-01', a:'C-02', estado:'ejecutado|en_ejecucion|pendiente'}] */
+/* ====================== LOCALIZACION DEL PROYECTO (MapLibre GL 3D) ======================
+   Mapa vectorial con edificios en 3D (fill-extrusion) via OpenFreeMap (gratuito, sin token).
+   Boton 2D/3D. Fallback automatico a Leaflet raster si MapLibre no carga.
+   API para datos: locCargarCamaras([{id,lat,lng,desc}], [{de,a,estado}]) */
+var LOC_MAP=null, LOC_MODO=null, LOC_LIB=null, LOC_CENTRO=[-75.75197,4.55948], LOC_ZOOM=16.6;
+var LOC_CAMARAS=[]; var LOC_TRAMOS=[];
 var LOC_COLOR={ejecutado:'#22c55e', en_ejecucion:'#fbbf24', pendiente:'#94a3b8'};
+var LOC_3D=false, LOC_MARKERS=[];
 
+function _locCss(href){ var l=document.createElement('link'); l.rel='stylesheet'; l.href=href; document.head.appendChild(l); }
+function _locJs(src){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=function(){rej(new Error('cdn'))}; document.head.appendChild(s); }); }
+
+function _locLoadMapLibre(){
+  if(window.maplibregl) return Promise.resolve();
+  _locCss('https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css');
+  return _locJs('https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js');
+}
 function _locLoadLeaflet(){
-  if(LOC_LIB) return LOC_LIB;
-  LOC_LIB=new Promise(function(res,rej){
-    var css=document.createElement('link'); css.rel='stylesheet';
-    css.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
-    document.head.appendChild(css);
-    var s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
-    s.onload=function(){ res(window.L); };
-    s.onerror=function(){ LOC_LIB=null; rej(new Error('No se pudo cargar Leaflet (revisa conexión)')); };
-    document.head.appendChild(s);
-  });
-  return LOC_LIB;
+  if(window.L) return Promise.resolve();
+  _locCss('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css');
+  return _locJs('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js');
 }
 
 function locInit(){
   var est=document.getElementById('loc-estado');
-  if(LOC_MAP){ setTimeout(function(){ LOC_MAP.invalidateSize(); },120); return; }
-  if(est) est.textContent='Cargando mapa…';
-  _locLoadLeaflet().then(function(L){
-    LOC_MAP=L.map('loc-map',{zoomControl:true}).setView(LOC_CENTRO, LOC_ZOOM);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      maxZoom:19, attribution:'© OpenStreetMap contributors'
-    }).addTo(LOC_MAP);
-    L.control.scale({imperial:false}).addTo(LOC_MAP);
-    L.marker(LOC_CENTRO).addTo(LOC_MAP).bindPopup('<b>Obra Comuneros</b><br>Reposición de alcantarillado<br>Montenegro, Quindío');
-    if(est) est.textContent='Mapa listo · esperando listado de cámaras';
-    locRender();
-    setTimeout(function(){ LOC_MAP.invalidateSize(); },200);
-  }, function(err){ if(est) est.textContent='⚠️ '+err.message; });
+  if(LOC_MAP){ setTimeout(function(){ try{ LOC_MAP.resize?LOC_MAP.resize():LOC_MAP.invalidateSize(); }catch(_){}},120); return; }
+  if(est) est.textContent='Cargando mapa 3D…';
+  _locLoadMapLibre().then(function(){ _locInitGL(); }, function(){ _locInitLeafletFallback(); });
 }
 
-function locCentrar(){ if(LOC_MAP) LOC_MAP.setView(LOC_CENTRO, LOC_ZOOM); }
+function _locInitGL(){
+  var est=document.getElementById('loc-estado');
+  try{
+    LOC_MODO='gl';
+    LOC_MAP=new maplibregl.Map({
+      container:'loc-map',
+      style:'https://tiles.openfreemap.org/styles/liberty',
+      center:LOC_CENTRO, zoom:LOC_ZOOM, pitch:0, bearing:0,
+      attributionControl:{compact:true}, maxPitch:70
+    });
+    LOC_MAP.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-left');
+    LOC_MAP.addControl(new maplibregl.ScaleControl({unit:'metric'}),'bottom-left');
+    new maplibregl.Marker({color:'#0ea5e9'}).setLngLat(LOC_CENTRO)
+      .setPopup(new maplibregl.Popup().setHTML('<b>Obra Comuneros</b><br>Urbanización Comuneros<br>Montenegro, Quindío'))
+      .addTo(LOC_MAP);
+    LOC_MAP.on('error',function(e){ /* estilo/teselas: si falla del todo, fallback */
+      if(!LOC_MAP._locFail && !LOC_MAP.getStyle){ LOC_MAP._locFail=true; }
+    });
+    LOC_MAP.on('load',function(){
+      _locAsegurar3D();
+      if(est) est.textContent='Mapa listo (3D disponible) · esperando listado de cámaras';
+      locRender();
+      var b=document.getElementById('loc-3d-btn'); if(b) b.style.display='';
+    });
+    setTimeout(function(){ try{ LOC_MAP.resize(); }catch(_){}},300);
+  }catch(e){ _locInitLeafletFallback(); }
+}
 
-var LOC_CAPA_CAM=null, LOC_CAPA_TRA=null;
+/* Si el estilo Liberty no trae capa de extrusion, se agrega una con las alturas de OSM */
+function _locAsegurar3D(){
+  try{
+    var tiene=LOC_MAP.getStyle().layers.some(function(l){ return l.type==='fill-extrusion'; });
+    if(tiene) return;
+    var srcName=null, st=LOC_MAP.getStyle();
+    Object.keys(st.sources||{}).forEach(function(k){ if(st.sources[k].type==='vector') srcName=srcName||k; });
+    if(!srcName) return;
+    LOC_MAP.addLayer({
+      id:'loc-edificios-3d', type:'fill-extrusion', source:srcName, 'source-layer':'building', minzoom:14,
+      paint:{
+        'fill-extrusion-color':'#c9b8a3',
+        'fill-extrusion-height':['coalesce',['get','render_height'],['get','height'],6],
+        'fill-extrusion-base':['coalesce',['get','render_min_height'],['get','min_height'],0],
+        'fill-extrusion-opacity':0.85
+      }
+    });
+  }catch(_){}}
+
+function locToggle3D(){
+  if(!LOC_MAP) return;
+  if(LOC_MODO!=='gl'){ alert('El 3D no está disponible en el modo de respaldo (2D raster).'); return; }
+  LOC_3D=!LOC_3D;
+  LOC_MAP.easeTo({pitch:LOC_3D?62:0, bearing:LOC_3D?-18:0, duration:900});
+  var b=document.getElementById('loc-3d-btn'); if(b) b.textContent=LOC_3D?'Vista 2D':'Vista 3D';
+}
+
+function locCentrar(){
+  if(!LOC_MAP) return;
+  if(LOC_MODO==='gl') LOC_MAP.easeTo({center:LOC_CENTRO, zoom:LOC_ZOOM, duration:800});
+  else LOC_MAP.setView([LOC_CENTRO[1],LOC_CENTRO[0]], LOC_ZOOM);
+}
+
+/* ---------- Render de camaras y tramos (ambos modos) ---------- */
 function locRender(){
-  if(!LOC_MAP||!window.L) return;
-  if(LOC_CAPA_CAM){ LOC_MAP.removeLayer(LOC_CAPA_CAM); LOC_CAPA_CAM=null; }
-  if(LOC_CAPA_TRA){ LOC_MAP.removeLayer(LOC_CAPA_TRA); LOC_CAPA_TRA=null; }
-  var idx={};
-  LOC_CAMARAS.forEach(function(c){ idx[String(c.id).trim().toUpperCase()]=c; });
-  // tramos primero (debajo de los puntos)
-  var lineas=[];
-  LOC_TRAMOS.forEach(function(t){
-    var a=idx[String(t.de).trim().toUpperCase()], b=idx[String(t.a).trim().toUpperCase()];
-    if(!a||!b) return;
-    var col=LOC_COLOR[t.estado]||LOC_COLOR.pendiente;
-    var pl=L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{color:col,weight:6,opacity:.9});
-    pl.bindPopup('<b>Tramo '+t.de+' → '+t.a+'</b><br>Estado: '+(t.estado||'pendiente').replace('_',' '));
-    lineas.push(pl);
-  });
-  if(lineas.length) LOC_CAPA_TRA=L.layerGroup(lineas).addTo(LOC_MAP);
-  var puntos=[];
-  LOC_CAMARAS.forEach(function(c){
-    var m=L.circleMarker([c.lat,c.lng],{radius:7,color:'#0b1229',weight:2,fillColor:'#0ea5e9',fillOpacity:.95});
-    m.bindPopup('<b>Cámara '+c.id+'</b>'+(c.desc?('<br>'+c.desc):''));
-    m.bindTooltip(String(c.id),{permanent:false,direction:'top'});
-    puntos.push(m);
-  });
-  if(puntos.length){
-    LOC_CAPA_CAM=L.layerGroup(puntos).addTo(LOC_MAP);
-    var g=L.featureGroup(puntos); LOC_MAP.fitBounds(g.getBounds().pad(0.2));
+  if(!LOC_MAP) return;
+  if(LOC_MODO==='gl') _locRenderGL(); else _locRenderLf();
+  if(LOC_CAMARAS.length){
     var n=document.getElementById('loc-nota'); if(n) n.style.display='none';
     var est=document.getElementById('loc-estado');
     if(est) est.textContent=LOC_CAMARAS.length+' cámaras · '+LOC_TRAMOS.length+' tramos';
   }
 }
+function _locGeo(){
+  var idx={}; LOC_CAMARAS.forEach(function(c){ idx[String(c.id).trim().toUpperCase()]=c; });
+  var lineas={type:'FeatureCollection',features:[]};
+  LOC_TRAMOS.forEach(function(t){
+    var a=idx[String(t.de).trim().toUpperCase()], b=idx[String(t.a).trim().toUpperCase()];
+    if(!a||!b) return;
+    lineas.features.push({type:'Feature',properties:{color:LOC_COLOR[t.estado]||LOC_COLOR.pendiente,de:t.de,a:t.a,estado:t.estado||'pendiente'},
+      geometry:{type:'LineString',coordinates:[[a.lng,a.lat],[b.lng,b.lat]]}});
+  });
+  return lineas;
+}
+function _locRenderGL(){
+  var g=_locGeo();
+  if(LOC_MAP.getSource('loc-tramos')) LOC_MAP.getSource('loc-tramos').setData(g);
+  else{
+    LOC_MAP.addSource('loc-tramos',{type:'geojson',data:g});
+    LOC_MAP.addLayer({id:'loc-tramos-l',type:'line',source:'loc-tramos',
+      paint:{'line-color':['get','color'],'line-width':6,'line-opacity':0.9},
+      layout:{'line-cap':'round','line-join':'round'}});
+    LOC_MAP.on('click','loc-tramos-l',function(e){
+      var p=e.features[0].properties;
+      new maplibregl.Popup().setLngLat(e.lngLat).setHTML('<b>Tramo '+p.de+' → '+p.a+'</b><br>Estado: '+String(p.estado).replace('_',' ')).addTo(LOC_MAP);
+    });
+  }
+  LOC_MARKERS.forEach(function(m){ m.remove(); }); LOC_MARKERS=[];
+  LOC_CAMARAS.forEach(function(c){
+    var el=document.createElement('div');
+    el.style.cssText='width:16px;height:16px;border-radius:50%;background:#0ea5e9;border:2.5px solid #0b1229;box-shadow:0 0 6px rgba(14,165,233,.8);cursor:pointer';
+    var mk=new maplibregl.Marker({element:el}).setLngLat([c.lng,c.lat])
+      .setPopup(new maplibregl.Popup().setHTML('<b>Cámara '+c.id+'</b>'+(c.desc?('<br>'+c.desc):'')));
+    mk.addTo(LOC_MAP); LOC_MARKERS.push(mk);
+  });
+  if(LOC_CAMARAS.length){
+    var bb=new maplibregl.LngLatBounds();
+    LOC_CAMARAS.forEach(function(c){ bb.extend([c.lng,c.lat]); });
+    LOC_MAP.fitBounds(bb,{padding:70,maxZoom:17.5});
+  }
+}
 
-/* API para cargar datos cuando llegue el listado:
-   locCargarCamaras([{id,lat,lng,desc}], [{de,a,estado}]) */
+/* ---------- Fallback Leaflet raster (solo si MapLibre no carga) ---------- */
+var LOC_CAPA_CAM=null, LOC_CAPA_TRA=null;
+function _locInitLeafletFallback(){
+  var est=document.getElementById('loc-estado');
+  _locLoadLeaflet().then(function(){
+    LOC_MODO='leaflet';
+    LOC_MAP=L.map('loc-map').setView([LOC_CENTRO[1],LOC_CENTRO[0]], LOC_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(LOC_MAP);
+    L.control.scale({imperial:false}).addTo(LOC_MAP);
+    L.marker([LOC_CENTRO[1],LOC_CENTRO[0]]).addTo(LOC_MAP).bindPopup('<b>Obra Comuneros</b><br>Montenegro, Quindío');
+    if(est) est.textContent='Mapa listo (modo 2D de respaldo) · esperando listado de cámaras';
+    locRender();
+    setTimeout(function(){ LOC_MAP.invalidateSize(); },200);
+  }, function(){ if(est) est.textContent='⚠️ Sin conexión a los servidores de mapas'; });
+}
+function _locRenderLf(){
+  if(LOC_CAPA_CAM){ LOC_MAP.removeLayer(LOC_CAPA_CAM); LOC_CAPA_CAM=null; }
+  if(LOC_CAPA_TRA){ LOC_MAP.removeLayer(LOC_CAPA_TRA); LOC_CAPA_TRA=null; }
+  var g=_locGeo(), lineas=[];
+  g.features.forEach(function(f){
+    var cs=f.geometry.coordinates.map(function(c){ return [c[1],c[0]]; });
+    var pl=L.polyline(cs,{color:f.properties.color,weight:6,opacity:.9});
+    pl.bindPopup('<b>Tramo '+f.properties.de+' → '+f.properties.a+'</b><br>Estado: '+f.properties.estado.replace('_',' '));
+    lineas.push(pl);
+  });
+  if(lineas.length) LOC_CAPA_TRA=L.layerGroup(lineas).addTo(LOC_MAP);
+  var pts=[];
+  LOC_CAMARAS.forEach(function(c){
+    var m=L.circleMarker([c.lat,c.lng],{radius:7,color:'#0b1229',weight:2,fillColor:'#0ea5e9',fillOpacity:.95});
+    m.bindPopup('<b>Cámara '+c.id+'</b>'+(c.desc?('<br>'+c.desc):''));
+    pts.push(m);
+  });
+  if(pts.length){ LOC_CAPA_CAM=L.layerGroup(pts).addTo(LOC_MAP); LOC_MAP.fitBounds(L.featureGroup(pts).getBounds().pad(0.2)); }
+}
+
 function locCargarCamaras(camaras, tramos){
   LOC_CAMARAS=camaras||[]; LOC_TRAMOS=tramos||[];
   if(LOC_MAP) locRender();
