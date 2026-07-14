@@ -963,6 +963,29 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       </div>
 
       <div class="menu-section"><span class="ms-label"><svg class="ic"><use href="#ic-truck"></use></svg>Recursos de obra</span></div>
+      <!-- CARD LOCALIZACION DEL PROYECTO -->
+      <div class="menu-card ind" onclick="goTo('loc')" style="background:linear-gradient(180deg,rgba(34,197,94,.05),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#22c55e,#0ea5e9)"><svg class="ic"><use href="#ic-truck"></use></svg></div>
+        <h2>Localización del Proyecto</h2>
+        <p class="desc">Mapa del proyecto sobre OpenStreetMap: cámaras de alcantarillado a construir y tramos pintados según su ejecución, para ver visualmente cómo va la obra.</p>
+        <div class="illust">
+          <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
+            <path d="M10 60 L60 40 L110 55 L160 30 L195 38" fill="none" stroke="rgba(34,197,94,.9)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M10 60 L60 40" stroke="rgba(34,197,94,.9)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M25 15 L70 12 L120 22 L170 12" fill="none" stroke="rgba(148,163,184,.45)" stroke-width="2" stroke-dasharray="5 4"/>
+            <circle cx="10" cy="60" r="4.5" fill="rgba(34,197,94,.95)"/>
+            <circle cx="60" cy="40" r="4.5" fill="rgba(34,197,94,.95)"/>
+            <circle cx="110" cy="55" r="4.5" fill="rgba(251,191,36,.95)"/>
+            <circle cx="160" cy="30" r="4.5" fill="rgba(148,163,184,.9)"/>
+            <g transform="translate(140,48)">
+              <path d="M0 0 C-7 -12 7 -12 0 0 Z" fill="rgba(14,165,233,.95)" transform="scale(1.6)"/>
+              <circle cx="0" cy="-9" r="3" fill="#0b1229"/>
+            </g>
+          </svg>
+        </div>
+        <div class="cta">Ver mapa de la obra <span class="arrow">→</span></div>
+      </div>
+
       <!-- CARD CONTROL DE MAQUINARIA -->
       <div class="menu-card ind" onclick="goTo('maq')" style="background:linear-gradient(180deg,rgba(245,158,11,.05),rgba(20,26,55,.4))">
         <div class="icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><svg class="ic"><use href="#ic-truck"></use></svg></div>
@@ -2543,6 +2566,36 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 </div>
 
 <!-- ============ VISTA REGISTRO FOTOGRÁFICO ============ -->
+<div class="screen" id="screen-loc">
+  <div class="wrap">
+    <div class="topbar">
+      <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+      <div>
+        <div class="topbar-title">🗺️ Localización del Proyecto</div>
+        <div class="topbar-meta">Barrio Comuneros · Montenegro (Quindío) · OpenStreetMap</div>
+      </div>
+      <button class="back-btn" onclick="locCentrar()" title="Volver al encuadre de la obra">Centrar obra</button>
+    </div>
+    <header>
+      <div>
+        <h1>Mapa de cámaras y tramos</h1>
+        <h2 id="loc-sub">Cámaras de alcantarillado a construir y tramos coloreados según ejecución</h2>
+      </div>
+      <span id="loc-estado" style="font-size:11px;color:#94a3b8">—</span>
+    </header>
+    <div id="loc-leyenda" style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;font-size:12px;color:#cbd5e1">
+      <span><span style="display:inline-block;width:22px;height:4px;background:#22c55e;border-radius:2px;vertical-align:middle"></span> Tramo ejecutado</span>
+      <span><span style="display:inline-block;width:22px;height:4px;background:#fbbf24;border-radius:2px;vertical-align:middle"></span> En ejecución</span>
+      <span><span style="display:inline-block;width:22px;height:4px;background:#94a3b8;border-radius:2px;vertical-align:middle"></span> Pendiente</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#0ea5e9;border-radius:50%;vertical-align:middle"></span> Cámara de inspección</span>
+    </div>
+    <div id="loc-map" style="height:68vh;min-height:420px;border-radius:14px;border:1px solid rgba(99,102,241,.35);overflow:hidden;background:#0b1229"></div>
+    <div id="loc-nota" style="margin-top:10px;font-size:12px;color:#94a3b8;background:rgba(20,26,55,.5);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:10px 12px">
+      ⏳ <b>Pendiente:</b> cargar el listado de cámaras de alcantarillado a construir. Cuando se cargue, aparecerán aquí como puntos sobre el mapa y se podrán pintar los tramos ya ejecutados entre cámaras.
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="screen-fotos">
   <div style="padding:18px;max-width:1500px;margin:0 auto">
     <button class="back-btn" onclick="goTo('menu')">← Menú</button>
@@ -3170,6 +3223,7 @@ function _goToInner(name){
   if(name==='inventario' && !INV_LOADED){ invLoadData(); }
   if(name==='comunicaciones' && !CMS_LOADED){ cmsLoadData(); }
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
+  if(name==='loc'){ try{ locInit(); }catch(e){ console.warn('loc:',e); } }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
   if(name==='analisis'){ try{ analisisCargar(); }catch(e){ console.warn('analisis:',e); } }
   if(name==='informe'){
@@ -3250,6 +3304,89 @@ function _goToInner(name){
   }
 }
 
+
+/* ====================== LOCALIZACION DEL PROYECTO (mapa OSM/Leaflet) ======================
+   Carga perezosa de Leaflet 1.9.4 desde cdnjs. Centro: Barrio Comuneros, Montenegro (Quindio).
+   Estructuras listas para el listado de camaras (LOC_CAMARAS) y tramos (LOC_TRAMOS). */
+var LOC_MAP=null, LOC_LIB=null, LOC_CENTRO=[4.5664,-75.7506], LOC_ZOOM=16;
+var LOC_CAMARAS=[]; /* [{id:'C-01', lat:..., lng:..., desc:''}] ← se llena con el listado */
+var LOC_TRAMOS=[];  /* [{de:'C-01', a:'C-02', estado:'ejecutado|en_ejecucion|pendiente'}] */
+var LOC_COLOR={ejecutado:'#22c55e', en_ejecucion:'#fbbf24', pendiente:'#94a3b8'};
+
+function _locLoadLeaflet(){
+  if(LOC_LIB) return LOC_LIB;
+  LOC_LIB=new Promise(function(res,rej){
+    var css=document.createElement('link'); css.rel='stylesheet';
+    css.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    document.head.appendChild(css);
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+    s.onload=function(){ res(window.L); };
+    s.onerror=function(){ LOC_LIB=null; rej(new Error('No se pudo cargar Leaflet (revisa conexión)')); };
+    document.head.appendChild(s);
+  });
+  return LOC_LIB;
+}
+
+function locInit(){
+  var est=document.getElementById('loc-estado');
+  if(LOC_MAP){ setTimeout(function(){ LOC_MAP.invalidateSize(); },120); return; }
+  if(est) est.textContent='Cargando mapa…';
+  _locLoadLeaflet().then(function(L){
+    LOC_MAP=L.map('loc-map',{zoomControl:true}).setView(LOC_CENTRO, LOC_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19, attribution:'© OpenStreetMap contributors'
+    }).addTo(LOC_MAP);
+    L.control.scale({imperial:false}).addTo(LOC_MAP);
+    L.marker(LOC_CENTRO).addTo(LOC_MAP).bindPopup('<b>Obra Comuneros</b><br>Reposición de alcantarillado<br>Montenegro, Quindío');
+    if(est) est.textContent='Mapa listo · esperando listado de cámaras';
+    locRender();
+    setTimeout(function(){ LOC_MAP.invalidateSize(); },200);
+  }, function(err){ if(est) est.textContent='⚠️ '+err.message; });
+}
+
+function locCentrar(){ if(LOC_MAP) LOC_MAP.setView(LOC_CENTRO, LOC_ZOOM); }
+
+var LOC_CAPA_CAM=null, LOC_CAPA_TRA=null;
+function locRender(){
+  if(!LOC_MAP||!window.L) return;
+  if(LOC_CAPA_CAM){ LOC_MAP.removeLayer(LOC_CAPA_CAM); LOC_CAPA_CAM=null; }
+  if(LOC_CAPA_TRA){ LOC_MAP.removeLayer(LOC_CAPA_TRA); LOC_CAPA_TRA=null; }
+  var idx={};
+  LOC_CAMARAS.forEach(function(c){ idx[String(c.id).trim().toUpperCase()]=c; });
+  // tramos primero (debajo de los puntos)
+  var lineas=[];
+  LOC_TRAMOS.forEach(function(t){
+    var a=idx[String(t.de).trim().toUpperCase()], b=idx[String(t.a).trim().toUpperCase()];
+    if(!a||!b) return;
+    var col=LOC_COLOR[t.estado]||LOC_COLOR.pendiente;
+    var pl=L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{color:col,weight:6,opacity:.9});
+    pl.bindPopup('<b>Tramo '+t.de+' → '+t.a+'</b><br>Estado: '+(t.estado||'pendiente').replace('_',' '));
+    lineas.push(pl);
+  });
+  if(lineas.length) LOC_CAPA_TRA=L.layerGroup(lineas).addTo(LOC_MAP);
+  var puntos=[];
+  LOC_CAMARAS.forEach(function(c){
+    var m=L.circleMarker([c.lat,c.lng],{radius:7,color:'#0b1229',weight:2,fillColor:'#0ea5e9',fillOpacity:.95});
+    m.bindPopup('<b>Cámara '+c.id+'</b>'+(c.desc?('<br>'+c.desc):''));
+    m.bindTooltip(String(c.id),{permanent:false,direction:'top'});
+    puntos.push(m);
+  });
+  if(puntos.length){
+    LOC_CAPA_CAM=L.layerGroup(puntos).addTo(LOC_MAP);
+    var g=L.featureGroup(puntos); LOC_MAP.fitBounds(g.getBounds().pad(0.2));
+    var n=document.getElementById('loc-nota'); if(n) n.style.display='none';
+    var est=document.getElementById('loc-estado');
+    if(est) est.textContent=LOC_CAMARAS.length+' cámaras · '+LOC_TRAMOS.length+' tramos';
+  }
+}
+
+/* API para cargar datos cuando llegue el listado:
+   locCargarCamaras([{id,lat,lng,desc}], [{de,a,estado}]) */
+function locCargarCamaras(camaras, tramos){
+  LOC_CAMARAS=camaras||[]; LOC_TRAMOS=tramos||[];
+  if(LOC_MAP) locRender();
+}
 
 function goTo(name){
   try{ fabSync(name); }catch(_){}
