@@ -3384,9 +3384,6 @@ function _locInitGL(){
     LOC_MAP.on('dblclick',function(e){ if(LOC_HERR&&LOC_HERR!=='borrar'){ e.preventDefault(); locTerminar(); } });
     LOC_MAP.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-left');
     LOC_MAP.addControl(new maplibregl.ScaleControl({unit:'metric'}),'bottom-left');
-    new maplibregl.Marker({color:'#0ea5e9'}).setLngLat(LOC_CENTRO)
-      .setPopup(new maplibregl.Popup().setHTML('<b>Obra Comuneros</b><br>Urbanización Comuneros<br>Montenegro, Quindío'))
-      .addTo(LOC_MAP);
     LOC_MAP.on('error',function(e){ /* estilo/teselas: si falla del todo, fallback */
       if(!LOC_MAP._locFail && !LOC_MAP.getStyle){ LOC_MAP._locFail=true; }
     });
@@ -3512,7 +3509,6 @@ function _locInitLeafletFallback(){
     LOC_MAP=L.map('loc-map').setView([LOC_CENTRO[1],LOC_CENTRO[0]], LOC_ZOOM);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(LOC_MAP);
     L.control.scale({imperial:false}).addTo(LOC_MAP);
-    L.marker([LOC_CENTRO[1],LOC_CENTRO[0]]).addTo(LOC_MAP).bindPopup('<b>Obra Comuneros</b><br>Montenegro, Quindío');
     if(est) est.textContent='Mapa listo (modo 2D de respaldo) · esperando listado de cámaras';
     locRender();
     setTimeout(function(){ LOC_MAP.invalidateSize(); },200);
