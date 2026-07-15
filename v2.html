@@ -9116,23 +9116,52 @@ var CUADRILLAS_ORG=[
   {n:'F', labor:'Cuadrilla flotante (apoyo a todos los frentes)', of:[], ay:['YORGENI JESÚS CARREÑO SANDOVAL','LUIS MARIO FRANCO','ANDRÉS FELIPE TRUJILLO','ÓSCAR RAFAEL MORENO']},
   {n:'T', labor:'Topografía', of:['FRANCIA NORBY SALAZAR PARRA (TOPO)'], ay:['EDDIER ORLANDO MEZA']}
 ];
-function moRenderOrganigrama(){
+var ORG_DATA=null;
+async function moRenderOrganigrama(force){
   var g=document.getElementById('mo-org-grid');
-  if(!g || g.children.length) return;
-  g.innerHTML=CUADRILLAS_ORG.map(function(c){
+  if(!g) return;
+  if(g.children.length && !force) return;
+  if(!ORG_DATA){
+    try{ var r=await jsonp(APPS_URL,{action:'cuadrillas',_ts:Date.now()});
+      if(r && r.cuadrillas && r.cuadrillas.length) ORG_DATA=r.cuadrillas; }catch(_){}
+  }
+  var datos=ORG_DATA||CUADRILLAS_ORG;
+  g.innerHTML=datos.map(function(c){
     var tit=(typeof c.n==='number')?('CUADRILLA '+c.n):(c.n==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
     return '<div style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">'+
       '<div style="background:#0d5c8c;padding:7px 10px"><div style="font-size:11px;font-weight:800;color:#fff;letter-spacing:.04em">'+tit+'</div>'+
       '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+c.labor+'</div></div>'+
       '<div style="padding:8px 10px;display:flex;flex-direction:column;gap:4px">'+
-      c.of.map(function(p){ return '<div style="background:rgba(22,101,52,.55);border-left:3px solid #22c55e;border-radius:6px;padding:4px 8px;font-size:11px;color:#dcfce7;font-weight:700">'+p+' <span style="opacity:.65;font-weight:600">· OF</span></div>'; }).join('')+
-      c.ay.map(function(p){ return '<div style="background:rgba(134,25,143,.4);border-left:3px solid #d946ef;border-radius:6px;padding:4px 8px;font-size:11px;color:#fae8ff">'+p+' <span style="opacity:.6">· AY</span></div>'; }).join('')+
+      (c.of||[]).map(function(p){ return '<div style="background:rgba(22,101,52,.55);border-left:3px solid #22c55e;border-radius:6px;padding:4px 8px;font-size:11px;color:#dcfce7;font-weight:700">'+p+' <span style="opacity:.65;font-weight:600">· OF</span></div>'; }).join('')+
+      (c.ay||[]).map(function(p){ return '<div style="background:rgba(134,25,143,.4);border-left:3px solid #d946ef;border-radius:6px;padding:4px 8px;font-size:11px;color:#fae8ff">'+p+' <span style="opacity:.6">· AY</span></div>'; }).join('')+
       '</div></div>';
   }).join('');
 }
 
 /* ===== Editor de distribución de cuadrillas (drag & drop + guardado en PPTX) ===== */
-var DIST_DATA=null, DIST_DIRTY=false, DIST_SEL=null;
+var DIST_DATA=null, DIST_DIRTY=false, DIST_SEL=null, DIST_POOL=[], DIST_CAT=null;
+function _distNorm(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim(); }
+async function _distPoolBuild(){
+  DIST_POOL=[];
+  try{
+    if(!DIST_CAT){ var r=await jsonp(APPS_URL,{action:'trabajadores_cat',_ts:Date.now()}); if(r&&r.headers) DIST_CAT=r; }
+    if(!DIST_CAT||!DIST_CAT.filas) return;
+    var H=DIST_CAT.headers.map(function(h){return _distNorm(h);});
+    var iN=H.indexOf('NOMBRE COMPLETO'), iC=H.indexOf('CARGO'), iF=H.indexOf('FRENTE'), iE=H.indexOf('ESTADO');
+    var asignados={};
+    (DIST_DATA||[]).forEach(function(c){ (c.of||[]).concat(c.ay||[]).forEach(function(p){ asignados[_distNorm(p)]=1; }); });
+    DIST_CAT.filas.forEach(function(f){
+      var nom=String(f[iN]||'').trim(); if(!nom) return;
+      var cargo=_distNorm(f[iC]), frente=_distNorm(f[iF]), est=_distNorm(f[iE]);
+      if(frente.indexOf('M.O')<0) return;
+      if(est==='INACTIVO'||est==='RETIRADO') return;
+      if(!(cargo.indexOf('OFICIAL')>=0||cargo.indexOf('AYUDANTE')>=0)) return;
+      if(asignados[_distNorm(nom)]) return;
+      DIST_POOL.push({nombre:nom.toUpperCase(), rol:(cargo.indexOf('OFICIAL')>=0)?'of':'ay'});
+    });
+    DIST_POOL.sort(function(a,b){ return (a.rol===b.rol)?a.nombre.localeCompare(b.nombre):(a.rol==='of'?-1:1); });
+  }catch(_){}
+}
 
 async function distCargar(){
   if(DIST_DATA){ distRender(); return; }
@@ -9141,11 +9170,14 @@ async function distCargar(){
     if(r && r.cuadrillas && r.cuadrillas.length){ DIST_DATA=r.cuadrillas; _distMsg('Última distribución guardada: '+(r.ts||'')); }
   }catch(_){}
   if(!DIST_DATA) DIST_DATA=JSON.parse(JSON.stringify(CUADRILLAS_ORG));
+  await _distPoolBuild();
   distRender();
 }
 function distRestaurar(){
   DIST_DATA=JSON.parse(JSON.stringify(CUADRILLAS_ORG));
-  DIST_DIRTY=true; DIST_SEL=null; distRender(); _distMsg('Restaurada la distribución del organigrama original (sin guardar aún).');
+  DIST_DIRTY=true; DIST_SEL=null;
+  _distPoolBuild().then(function(){ distRender(); });
+  distRender(); _distMsg('Restaurada la distribución del organigrama original (sin guardar aún).');
 }
 function _distMsg(t,err){
   var m=document.getElementById('dist-msg');
@@ -9160,12 +9192,23 @@ function _distEstado(){
 var DIST_MAX=12;
 function distMover(ci,rol,pi,cd){
   if(ci===cd) { DIST_SEL=null; distRender(); return; }
-  var totalDestino=(DIST_DATA[cd].of||[]).length+(DIST_DATA[cd].ay||[]).length;
-  if(totalDestino>=DIST_MAX){ _distMsg('⚠ La cuadrilla destino ya tiene '+DIST_MAX+' personas (tope máximo).', true); DIST_SEL=null; distRender(); return; }
-  var persona=DIST_DATA[ci][rol].splice(pi,1)[0];
-  DIST_DATA[cd][rol].push(persona);
-  DIST_DIRTY=true; DIST_SEL=null; distRender();
-  _distMsg('Movido: '+persona+' → '+((typeof DIST_DATA[cd].n==='number')?('Cuadrilla '+DIST_DATA[cd].n):(String(DIST_DATA[cd].n)==='F'?'Flotante':'Topografía'))+'. Recuerda Guardar.');
+  if(cd!==-1){
+    var totalDestino=(DIST_DATA[cd].of||[]).length+(DIST_DATA[cd].ay||[]).length;
+    if(totalDestino>=DIST_MAX){ _distMsg('⚠ La cuadrilla destino ya tiene '+DIST_MAX+' personas (tope máximo).', true); DIST_SEL=null; distRender(); return; }
+  }
+  var persona;
+  if(ci===-1){ var it=DIST_POOL.splice(pi,1)[0]; if(!it){ DIST_SEL=null; distRender(); return; } persona=it.nombre; rol=it.rol; }
+  else persona=DIST_DATA[ci][rol].splice(pi,1)[0];
+  if(cd===-1){
+    DIST_POOL.push({nombre:persona, rol:rol});
+    DIST_POOL.sort(function(a,b){ return (a.rol===b.rol)?a.nombre.localeCompare(b.nombre):(a.rol==='of'?-1:1); });
+    DIST_DIRTY=true; DIST_SEL=null; distRender();
+    _distMsg('Movido: '+persona+' → Sin cuadrilla. Recuerda Guardar.');
+  } else {
+    DIST_DATA[cd][rol].push(persona);
+    DIST_DIRTY=true; DIST_SEL=null; distRender();
+    _distMsg('Movido: '+persona+' → '+((typeof DIST_DATA[cd].n==='number')?('Cuadrilla '+DIST_DATA[cd].n):(String(DIST_DATA[cd].n)==='F'?'Flotante':'Topografía'))+'. Recuerda Guardar.');
+  }
 }
 function distChipClick(ev,ci,rol,pi){
   ev.stopPropagation();
@@ -9185,7 +9228,21 @@ function distDrop(ev,cd){
 function distRender(){
   var g=document.getElementById('dist-grid');
   if(!g||!DIST_DATA) return;
-  g.innerHTML=DIST_DATA.map(function(c,ci){
+  var poolChips=DIST_POOL.map(function(it,pi){
+    var sel=DIST_SEL&&DIST_SEL.ci===-1&&DIST_SEL.pi===pi;
+    var color=it.rol==='of'?'rgba(22,101,52,.55)':'rgba(134,25,143,.4)', borde=it.rol==='of'?'#22c55e':'#d946ef';
+    return '<div draggable="true" ondragstart="event.dataTransfer.setData(\'text/plain\',JSON.stringify({ci:-1,rol:\''+it.rol+'\',pi:'+pi+'}))" onclick="distChipClick(event,-1,\''+it.rol+'\','+pi+')" '+
+      'style="background:'+color+';border-left:3px solid '+borde+';border-radius:6px;padding:5px 8px;font-size:11px;color:#fff;cursor:grab;user-select:none'+(sel?';outline:2px solid #fbbf24;box-shadow:0 0 10px rgba(251,191,36,.5)':'')+'">'+
+      escapeHTML(it.nombre)+' <span style="opacity:.6">· '+(it.rol==='of'?'OF':'AY')+'</span></div>';
+  }).join('');
+  var poolTarget=DIST_SEL && DIST_SEL.ci!==-1;
+  var poolCol='<div onclick="distColClick(-1)" ondragenter="event.preventDefault()" ondragover="event.preventDefault();event.dataTransfer.dropEffect=\'move\'" ondrop="distDrop(event,-1)" '+
+    'style="background:rgba(251,191,36,.06);border:1px '+(poolTarget?'dashed #fbbf24':'dashed rgba(251,191,36,.5)')+';border-radius:10px;overflow:hidden'+(poolTarget?';box-shadow:0 0 12px rgba(251,191,36,.25)':'')+'">'+
+    '<div style="background:#7c5e0b;padding:7px 10px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;font-weight:800;color:#fff">SIN CUADRILLA</div><span style="font-size:10px;color:#fff3c9;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 7px">'+DIST_POOL.length+'</span></div>'+
+    '<div style="font-size:10px;color:#fde68a;margin-top:2px;line-height:1.35">Personal M.O activo sin asignar (nuevos ingresos). Arrástralos a una cuadrilla, o suelta aquí para des-asignar.</div></div>'+
+    '<div style="padding:8px 10px 20px;display:flex;flex-direction:column;gap:4px;min-height:70px">'+poolChips+
+    (DIST_POOL.length?'':'<div style="color:#8b9bd1;font-size:11px;padding:6px 2px">— todos asignados —</div>')+'</div></div>';
+  g.innerHTML=poolCol+DIST_DATA.map(function(c,ci){
     var tit=(typeof c.n==='number'||/^\d+$/.test(String(c.n)))?('CUADRILLA '+c.n):(String(c.n)==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
     var chips=function(rol,color,borde,tag){
       return (c[rol]||[]).map(function(p,pi){
@@ -9217,8 +9274,9 @@ async function distGuardar(){
     var r=await jsonp(APPS_URL,{action:'guardar_cuadrillas', data:data, _ts:Date.now()});
     if(r && r.ok){
       DIST_DIRTY=false; _distEstado();
+      try{ ORG_DATA=JSON.parse(JSON.stringify(DIST_DATA)); moRenderOrganigrama(true); }catch(_o){}
       var sl=(r.pptx&&r.pptx.ok)? (' · diapositiva '+r.pptx.slide+' creada en el PowerPoint') : (' · ⚠ PPTX: '+((r.pptx&&r.pptx.error)||'no actualizado'));
-      _distMsg('✅ Distribución guardada '+r.ts+sl);
+      _distMsg('✅ Distribución guardada '+r.ts+sl+' · organigrama actualizado');
     } else {
       _distMsg('Error al guardar: '+((r&&r.error)||'sin respuesta'), true);
     }
