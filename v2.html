@@ -9141,6 +9141,19 @@ async function moRenderOrganigrama(force){
 /* ===== Editor de distribución de cuadrillas (drag & drop + guardado en PPTX) ===== */
 var DIST_DATA=null, DIST_DIRTY=false, DIST_SEL=null, DIST_POOL=[], DIST_CAT=null;
 function _distNorm(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim(); }
+function _distLev1(a,b){ if(a===b) return true; if(a.length<4||b.length<4||Math.abs(a.length-b.length)>1) return false;
+  var i=0,j=0,d=0;
+  while(i<a.length&&j<b.length){ if(a[i]===b[j]){i++;j++;continue;} d++; if(d>1) return false;
+    if(a.length>b.length) i++; else if(b.length>a.length) j++; else {i++;j++;} }
+  return d+(a.length-i)+(b.length-j)<=1; }
+function _distMismaPersona(tA,tB){
+  var corto=tA.length<=tB.length?tA:tB, largo=(corto===tA)?tB:tA;
+  if(corto.length<2) return false;
+  var usados={};
+  for(var x=0;x<corto.length;x++){ var ok=false;
+    for(var y=0;y<largo.length;y++){ if(usados[y]) continue; if(corto[x]===largo[y]||_distLev1(corto[x],largo[y])){ usados[y]=1; ok=true; break; } }
+    if(!ok) return false; }
+  return true; }
 async function _distPoolBuild(){
   DIST_POOL=[];
   try{
@@ -9148,8 +9161,8 @@ async function _distPoolBuild(){
     if(!DIST_CAT||!DIST_CAT.filas) return;
     var H=DIST_CAT.headers.map(function(h){return _distNorm(h);});
     var iN=H.indexOf('NOMBRE COMPLETO'), iC=H.indexOf('CARGO'), iF=H.indexOf('FRENTE'), iE=H.indexOf('ESTADO');
-    var asignados={};
-    (DIST_DATA||[]).forEach(function(c){ (c.of||[]).concat(c.ay||[]).forEach(function(p){ asignados[_distNorm(p)]=1; }); });
+    var asignadosTok=[];
+    (DIST_DATA||[]).forEach(function(c){ (c.of||[]).concat(c.ay||[]).forEach(function(p){ asignadosTok.push(_distNorm(p).split(' ').filter(Boolean)); }); });
     DIST_CAT.filas.forEach(function(f){
       var c=f.c||f; /* filas vienen como {ck, c:[...]} */
       var nom=String(c[iN]||'').trim(); if(!nom) return;
@@ -9157,7 +9170,9 @@ async function _distPoolBuild(){
       if(frente.indexOf('M.O')<0) return;
       if(est==='INACTIVO'||est==='RETIRADO') return;
       if(!(cargo.indexOf('OFICIAL')>=0||cargo.indexOf('AYUDANTE')>=0)) return;
-      if(asignados[_distNorm(nom)]) return;
+      var tks=_distNorm(nom).split(' ').filter(Boolean);
+      var ya=asignadosTok.some(function(t){ return _distMismaPersona(tks,t); });
+      if(ya) return;
       DIST_POOL.push({nombre:nom.toUpperCase(), rol:(cargo.indexOf('OFICIAL')>=0)?'of':'ay'});
     });
     DIST_POOL.sort(function(a,b){ return (a.rol===b.rol)?a.nombre.localeCompare(b.nombre):(a.rol==='of'?-1:1); });
