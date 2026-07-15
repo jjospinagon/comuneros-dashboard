@@ -2574,9 +2574,11 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div class="topbar-title">🗺️ Localización del Proyecto</div>
         <div class="topbar-meta">Barrio Comuneros · Montenegro (Quindío) · OpenStreetMap · edificios 3D</div>
       </div>
-      <button class="back-btn" id="loc-3d-btn" onclick="locToggle3D()" style="display:none;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#04121f;font-weight:800;border:none" title="Inclinar el mapa y ver los edificios con volumen">Vista 3D</button>
-      <button class="back-btn" onclick="locCentrar()" title="Volver al encuadre de la obra">Centrar obra</button>
-      <button class="back-btn" onclick="locReporte()" style="background:linear-gradient(135deg,#fbbf24,#ef4444);color:#1a0f04;font-weight:800;border:none" title="PDF con resumen construido vs proyectado, tramos cámara a cámara y plano general">📄 Generar reporte</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto;align-items:center">
+        <button class="back-btn" id="loc-3d-btn" onclick="locToggle3D()" style="display:none;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#04121f;font-weight:800;border:none" title="Inclinar el mapa y ver los edificios con volumen">Vista 3D</button>
+        <button class="back-btn" onclick="locCentrar()" title="Volver al encuadre de la obra">Centrar obra</button>
+        <button class="back-btn" onclick="locReporte()" style="background:linear-gradient(135deg,#fbbf24,#ef4444);color:#1a0f04;font-weight:800;border:none" title="PDF con resumen construido vs proyectado, tramos cámara a cámara y plano general">📄 Generar reporte</button>
+      </div>
     </div>
     <header>
       <div>
@@ -3424,7 +3426,7 @@ function locToggle3D(){
   if(!LOC_MAP) return;
   if(LOC_MODO!=='gl'){ alert('El 3D no está disponible en el modo de respaldo (2D raster).'); return; }
   LOC_3D=!LOC_3D;
-  LOC_MAP.easeTo({pitch:LOC_3D?55:0, bearing:0, duration:900});
+  LOC_MAP.easeTo({pitch:LOC_3D?55:0, duration:900}); /* norte queda libre: rota con clic derecho / dos dedos; la brujula lo restaura */
   var b=document.getElementById('loc-3d-btn'); if(b) b.textContent=LOC_3D?'Vista 2D':'Vista 3D';
 }
 
@@ -3767,11 +3769,35 @@ async function locReporte(){
     var cons=(m.san_const||0)+(m.plu_const||0), proy=(m.san_proy||0)+(m.plu_proy||0);
     filas.push(['TOTAL CONSTRUIDO A LA FECHA',(cnt.san_const||0)+(cnt.plu_const||0),cons.toFixed(1)+' m']);
     filas.push(['TOTAL PROYECTADO',(cnt.san_proy||0)+(cnt.plu_proy||0),proy.toFixed(1)+' m']);
-    if(cons+proy>0) filas.push(['AVANCE FÍSICO (construido / total trazado)','',(100*cons/(cons+proy)).toFixed(1)+' %']);
     doc.autoTable({startY:y,margin:{left:M,right:M},head:[['Red / Estado','Líneas','Longitud']],body:filas,
       styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[13,27,62],textColor:255},
       didParseCell:function(d){ if(d.section==='body'&&d.row.index>=4){ d.cell.styles.fontStyle='bold'; d.cell.styles.fillColor=[255,246,220]; } }});
-    y=doc.lastAutoTable.finalY+14;
+    y=doc.lastAutoTable.finalY+12;
+    /* AVANCE REAL POR SISTEMA: construido vs total contractual de tuberia (cap 3) */
+    var totSan=0, totPlu=0;
+    try{
+      var od=await (await fetch('obra_data.json?_r='+Date.now())).json();
+      (od.actividades||[]).forEach(function(a2){
+        var ds=String(a2.desc||''); if(!/tuber[ií]a doble pared/i.test(ds)) return;
+        var mm2=ds.match(/D\s*=?\s*(\d+)\s*"/); if(!mm2) return;
+        var pg=parseInt(mm2[1],10), q=Number(a2.cantContr)||0;
+        if(/sanitaria/i.test(ds)&&(pg===8||pg===10)) totSan+=q;
+        else if(/pluvial/i.test(ds)&&pg>=12&&pg<=36) totPlu+=q;
+      });
+    }catch(_od){}
+    if(totSan>0||totPlu>0){
+      var fs2=[
+        ['Red sanitaria (tubería 8" y 10")',(m.san_const||0).toFixed(1)+' m',totSan.toFixed(1)+' m',totSan>0?(100*(m.san_const||0)/totSan).toFixed(1)+' %':'—'],
+        ['Red pluvial (tubería 12" a 36")',(m.plu_const||0).toFixed(1)+' m',totPlu.toFixed(1)+' m',totPlu>0?(100*(m.plu_const||0)/totPlu).toFixed(1)+' %':'—'],
+        ['TOTAL AMBOS SISTEMAS',cons.toFixed(1)+' m',(totSan+totPlu).toFixed(1)+' m',(totSan+totPlu)>0?(100*cons/(totSan+totPlu)).toFixed(1)+' %':'—']
+      ];
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,27,62);
+      doc.text('Avance real por sistema (construido vs cantidades contractuales de tubería)',M,y+4); y+=10;
+      doc.autoTable({startY:y,margin:{left:M,right:M},head:[['Sistema','Construido','Total contractual','% avance']],body:fs2,
+        styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[13,27,62],textColor:255},
+        didParseCell:function(d){ if(d.section==='body'&&d.row.index===2){ d.cell.styles.fontStyle='bold'; d.cell.styles.fillColor=[255,246,220]; } }});
+      y=doc.lastAutoTable.finalY+14;
+    }
     /* detalle */
     if(LOC_DIBUJOS.length){
       if(y>600){ doc.addPage(); y=50; }
