@@ -2605,6 +2605,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <button class="back-btn" id="lt-vis-san" onclick="locVis('san')" style="font-size:12px;padding:6px 10px;border:2px solid #ef4444;background:rgba(239,68,68,.25)">👁 Sanitaria: SÍ</button>
       <button class="back-btn" id="lt-vis-plu" onclick="locVis('plu')" style="font-size:12px;padding:6px 10px;border:2px solid #3b82f6;background:rgba(59,130,246,.25)">👁 Pluvial: SÍ</button>
       <button class="back-btn" id="lt-sat" onclick="locSat()" style="font-size:12px;padding:6px 10px;border:2px solid #94a3b8">🛰 Satélite: NO</button>
+      <button class="back-btn" id="lt-cad" onclick="locCad()" style="font-size:12px;padding:6px 10px;border:2px solid #fbbf24">📐 CAD: NO</button>
     </div>
     <div id="loc-dib-estado" style="font-size:11px;color:#94a3b8;margin:0 0 8px">Elige una herramienta y toca el mapa para dibujar (los puntos se pegan a las cámaras). Termina con ✔ o doble clic. Mover: arrastrar · Rotar/inclinar: clic derecho o Ctrl+arrastrar (dos dedos en el celular) — también mientras dibujas.</div>
     <div id="loc-map" style="height:68vh;min-height:420px;border-radius:14px;border:1px solid rgba(99,102,241,.35);overflow:hidden;background:#0b1229"></div>
@@ -3634,16 +3635,59 @@ function locVis(red){
 }
 function locSat(){
   if(!LOC_MAP||LOC_MODO!=='gl') return;
+  if(!LOC_SAT && LOC_CAD) locCad(); /* exclusivos */
   LOC_SAT=!LOC_SAT;
   if(LOC_SAT){
     if(!LOC_MAP.getSource('loc-sat')) LOC_MAP.addSource('loc-sat',{type:'raster',
       tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-      tileSize:256, maxzoom:17, attribution:'Imagen satelital: Esri World Imagery'});
+      tileSize:256, maxzoom:18, attribution:'Imagen satelital: Esri World Imagery'});
     if(!LOC_MAP.getLayer('loc-sat-l')) LOC_MAP.addLayer({id:'loc-sat-l',type:'raster',source:'loc-sat',paint:{'raster-opacity':1}},
       LOC_MAP.getLayer('loc-dib-l')?'loc-dib-l':undefined);
   } else { if(LOC_MAP.getLayer('loc-sat-l')) LOC_MAP.removeLayer('loc-sat-l'); }
   var b=document.getElementById('lt-sat');
   if(b){ b.textContent='🛰 Satélite: '+(LOC_SAT?'SÍ':'NO'); b.style.background=LOC_SAT?'rgba(148,163,184,.3)':''; }
+}
+/* ---------- VISTA CAD: manzanas del plano AutoCAD (cad_manzanas.json) ---------- */
+var LOC_CAD=false, LOC_CAD_DATA=null, LOC_CAD_OCULTAS=null;
+async function locCad(){
+  if(!LOC_MAP||LOC_MODO!=='gl') return;
+  var b=document.getElementById('lt-cad');
+  if(!LOC_CAD){
+    if(LOC_SAT) locSat(); /* exclusivos */
+    if(!LOC_CAD_DATA){
+      if(b) b.textContent='📐 CAD: cargando…';
+      try{ var rr=await fetch('cad_manzanas.json?v=1'); LOC_CAD_DATA=await rr.json(); }
+      catch(e){ if(b) b.textContent='📐 CAD: error'; return; }
+    }
+    if(!LOC_MAP.getSource('loc-cad')) LOC_MAP.addSource('loc-cad',{type:'geojson',data:LOC_CAD_DATA});
+    /* ocultar el mapa base (queda plano blanco tipo plancha) */
+    LOC_CAD_OCULTAS=[];
+    LOC_MAP.getStyle().layers.forEach(function(l){
+      if(l.id.indexOf('loc-')===0) return;
+      var v=LOC_MAP.getLayoutProperty(l.id,'visibility')||'visible';
+      if(v!=='none'){ LOC_CAD_OCULTAS.push(l.id); LOC_MAP.setLayoutProperty(l.id,'visibility','none'); }
+    });
+    var antes=LOC_MAP.getLayer('loc-dib-l')?'loc-dib-l':undefined;
+    if(!LOC_MAP.getLayer('loc-cad-bg')){
+      var primera=LOC_MAP.getStyle().layers[0].id;
+      LOC_MAP.addLayer({id:'loc-cad-bg',type:'background',paint:{'background-color':'#f8fafc'}},primera);
+      LOC_MAP.addLayer({id:'loc-cad-predio',type:'line',source:'loc-cad',filter:['==',['get','cat'],'predio'],
+        paint:{'line-color':'#94a3b8','line-width':1}},antes);
+      LOC_MAP.addLayer({id:'loc-cad-via',type:'line',source:'loc-cad',filter:['==',['get','cat'],'via'],
+        paint:{'line-color':'#334155','line-width':1.6}},antes);
+      LOC_MAP.addLayer({id:'loc-cad-param',type:'line',source:'loc-cad',filter:['==',['get','cat'],'paramento'],
+        paint:{'line-color':'#0d1b3e','line-width':1,'line-dasharray':[3,2]}},antes);
+    } else {
+      ['loc-cad-bg','loc-cad-predio','loc-cad-via','loc-cad-param'].forEach(function(id){ LOC_MAP.setLayoutProperty(id,'visibility','visible'); });
+    }
+    LOC_CAD=true;
+    if(b){ b.textContent='📐 CAD: SÍ'; b.style.background='rgba(251,191,36,.3)'; }
+  } else {
+    ['loc-cad-bg','loc-cad-predio','loc-cad-via','loc-cad-param'].forEach(function(id){ if(LOC_MAP.getLayer(id)) LOC_MAP.setLayoutProperty(id,'visibility','none'); });
+    (LOC_CAD_OCULTAS||[]).forEach(function(id){ if(LOC_MAP.getLayer(id)) LOC_MAP.setLayoutProperty(id,'visibility','visible'); });
+    LOC_CAD_OCULTAS=null; LOC_CAD=false;
+    if(b){ b.textContent='📐 CAD: NO'; b.style.background=''; }
+  }
 }
 /* Divide cada linea dibujada en tramos camara→camara (los vertices imantados coinciden con camaras) */
 function _locTramosDe(l){
