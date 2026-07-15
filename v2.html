@@ -2576,6 +2576,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       </div>
       <button class="back-btn" id="loc-3d-btn" onclick="locToggle3D()" style="display:none;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#04121f;font-weight:800;border:none" title="Inclinar el mapa y ver los edificios con volumen">Vista 3D</button>
       <button class="back-btn" onclick="locCentrar()" title="Volver al encuadre de la obra">Centrar obra</button>
+      <button class="back-btn" onclick="locReporte()" style="background:linear-gradient(135deg,#fbbf24,#ef4444);color:#1a0f04;font-weight:800;border:none" title="PDF con resumen construido vs proyectado, tramos cámara a cámara y plano general">📄 Generar reporte</button>
     </div>
     <header>
       <div>
@@ -2602,7 +2603,6 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <button class="back-btn" onclick="locDeshacer()" style="font-size:12px;padding:6px 10px" title="Quita el último punto de la línea en curso">↩ Deshacer</button>
         <button class="back-btn" onclick="locTerminar()" style="font-size:12px;padding:6px 10px;background:#16a34a;border:none;color:#fff;font-weight:700" title="Guarda la línea dibujada (también con doble clic)">✔ Terminar</button>
         <button class="back-btn" id="lt-borrar" onclick="locHerr('borrar')" style="border:2px solid #64748b;font-size:12px;padding:6px 10px" title="Activa y luego toca una línea para eliminarla">🗑 Borrar línea</button>
-        <button class="back-btn" onclick="locReporte()" style="font-size:12px;padding:6px 10px;background:linear-gradient(135deg,#fbbf24,#ef4444);border:none;color:#1a0f04;font-weight:800">📄 Generar reporte</button>
       </fieldset>
       <fieldset id="loc-capas" style="border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:6px 10px 9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0;min-width:0">
         <legend style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;color:#86c99b;padding:0 6px">🗺 VISTAS Y CAPAS</legend>
