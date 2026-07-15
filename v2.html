@@ -3638,7 +3638,7 @@ function locSat(){
   if(LOC_SAT){
     if(!LOC_MAP.getSource('loc-sat')) LOC_MAP.addSource('loc-sat',{type:'raster',
       tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-      tileSize:256, maxzoom:19, attribution:'Imagen satelital: Esri World Imagery'});
+      tileSize:256, maxzoom:17, attribution:'Imagen satelital: Esri World Imagery'});
     if(!LOC_MAP.getLayer('loc-sat-l')) LOC_MAP.addLayer({id:'loc-sat-l',type:'raster',source:'loc-sat',paint:{'raster-opacity':1}},
       LOC_MAP.getLayer('loc-dib-l')?'loc-dib-l':undefined);
   } else { if(LOC_MAP.getLayer('loc-sat-l')) LOC_MAP.removeLayer('loc-sat-l'); }
@@ -3660,12 +3660,33 @@ function _locTramosDe(l){
   }
   return out;
 }
+function _locCapturaTotal(){
+  return new Promise(function(res){
+    try{
+      if(!LOC_MAP||LOC_MODO!=='gl'){ res(null); return; }
+      var prev={center:LOC_MAP.getCenter(),zoom:LOC_MAP.getZoom(),pitch:LOC_MAP.getPitch(),bearing:LOC_MAP.getBearing()};
+      var bb=new maplibregl.LngLatBounds();
+      LOC_CAMARAS.forEach(function(c){ bb.extend([c.lng,c.lat]); });
+      LOC_DIBUJOS.forEach(function(l){ (l.coords||[]).forEach(function(p){ bb.extend(p); }); });
+      LOC_MAP.fitBounds(bb,{padding:70,pitch:0,bearing:0,duration:0,maxZoom:17.4});
+      var done=false;
+      var fin=function(){ if(done) return; done=true;
+        try{ var c=LOC_MAP.getCanvas(); var out={img:c.toDataURL('image/jpeg',0.88), w:c.width, h:c.height};
+             LOC_MAP.jumpTo(prev); res(out); }
+        catch(_e){ try{ LOC_MAP.jumpTo(prev); }catch(__){} res(null); } };
+      LOC_MAP.once('idle',fin); setTimeout(fin,4500);
+    }catch(e){ res(null); }
+  });
+}
 async function locReporte(){
   var est=document.getElementById('loc-dib-estado'); if(est) est.textContent='📄 Generando reporte…';
   try{
     function ld(u,integ){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=u; if(integ){s.integrity=integ;s.crossOrigin='anonymous';} s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
     if(!(window.jspdf&&window.jspdf.jsPDF)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk');
     if(!(window.jspdf.jsPDF.API&&window.jspdf.jsPDF.API.autoTable)) await ld('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js','sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3');
+    if(est) est.textContent='📸 Capturando plano general…';
+    var cap=null; try{ cap=await _locCapturaTotal(); }catch(_c){}
+    if(est) est.textContent='📄 Generando reporte…';
     var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({unit:'pt',format:'letter'});
     var PW=doc.internal.pageSize.getWidth(), M=40, hoy=new Date();
     var fstr=hoy.toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
@@ -3690,13 +3711,6 @@ async function locReporte(){
       styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[13,27,62],textColor:255},
       didParseCell:function(d){ if(d.section==='body'&&d.row.index>=4){ d.cell.styles.fontStyle='bold'; d.cell.styles.fillColor=[255,246,220]; } }});
     y=doc.lastAutoTable.finalY+14;
-    /* imagen del mapa */
-    try{
-      var img=LOC_MAP.getCanvas().toDataURL('image/jpeg',0.85);
-      var cw=LOC_MAP.getCanvas().width, ch=LOC_MAP.getCanvas().height;
-      var iw=PW-2*M, ih=iw*ch/cw; if(ih>300){ ih=300; iw=ih*cw/ch; }
-      doc.addImage(img,'JPEG',M,y,iw,ih); y+=ih+14;
-    }catch(_e){}
     /* detalle */
     if(LOC_DIBUJOS.length){
       if(y>600){ doc.addPage(); y=50; }
@@ -3704,16 +3718,29 @@ async function locReporte(){
       var ordenT={san_const:1,plu_const:2,san_proy:3,plu_proy:4};
       tramos.sort(function(a,b){ return (ordenT[a.tipo]||9)-(ordenT[b.tipo]||9); });
       var det=tramos.map(function(t,i){ var tt=LOC_TIPOS[t.tipo]||{n:t.tipo};
-        return [i+1,tt.n,t.de,t.a,t.m.toFixed(1)+' m',t.fecha]; });
+        return [i+1,tt.n,t.de,t.a,t.m.toFixed(1)+' m']; });
       doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,27,62);
       doc.text('Detalle por tramos (cámara a cámara)',M,y); y+=8;
-      doc.autoTable({startY:y,margin:{left:M,right:M},head:[['#','Red / Estado','De cámara','A cámara','Longitud','Marcado el']],body:det,
+      doc.autoTable({startY:y,margin:{left:M,right:M},head:[['#','Red / Estado','De cámara','A cámara','Longitud']],body:det,
         styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:[13,27,62],textColor:255},
         didParseCell:function(d){ if(d.section==='body'&&d.column.index===1){ var v=String(d.cell.raw||''); 
           if(v.indexOf('Sanitaria construida')>=0) d.cell.styles.textColor=[239,68,68];
           else if(v.indexOf('Pluvial construida')>=0) d.cell.styles.textColor=[59,130,246];
           else if(v.indexOf('Sanitaria proyectada')>=0) d.cell.styles.textColor=[217,70,239];
           else if(v.indexOf('Pluvial proyectada')>=0) d.cell.styles.textColor=[56,152,199]; } }});
+    }
+    if(cap){
+      doc.addPage('letter','landscape');
+      var LW2=doc.internal.pageSize.getWidth(), LH2=doc.internal.pageSize.getHeight();
+      doc.setFillColor(13,27,62); doc.rect(0,0,LW2,40,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+      doc.text('PLANO GENERAL · URBANIZACIÓN COMUNEROS · CÁMARAS Y TRAMOS',40,25);
+      doc.setFillColor(251,191,36); doc.rect(0,40,LW2,2.5,'F');
+      var iw2=LW2-70, ih2=iw2*cap.h/cap.w, mh2=LH2-85;
+      if(ih2>mh2){ ih2=mh2; iw2=ih2*cap.w/cap.h; }
+      doc.addImage(cap.img,'JPEG',(LW2-iw2)/2,55,iw2,ih2);
+      doc.setFontSize(8); doc.setTextColor(100,116,139);
+      doc.text('Rojo: sanitaria construida · Azul: pluvial construida · Magenta: proy. sanitaria · Azul claro: proy. pluvial · Puntos: cámaras de inspección',40,LH2-16);
     }
     var pages=doc.internal.getNumberOfPages();
     for(var pi=1;pi<=pages;pi++){ doc.setPage(pi); doc.setFontSize(8); doc.setTextColor(148,163,184);
