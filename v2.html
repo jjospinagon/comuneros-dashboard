@@ -9127,7 +9127,7 @@ async function moRenderOrganigrama(force){
   }
   var datos=ORG_DATA||CUADRILLAS_ORG;
   g.innerHTML=datos.map(function(c){
-    var tit=(typeof c.n==='number')?('CUADRILLA '+c.n):(c.n==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
+    var tit=c.nom?String(c.nom).toUpperCase():((typeof c.n==='number')?('CUADRILLA '+c.n):(c.n==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA'));
     return '<div style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">'+
       '<div style="background:#0d5c8c;padding:7px 10px"><div style="font-size:11px;font-weight:800;color:#fff;letter-spacing:.04em">'+tit+'</div>'+
       '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+c.labor+'</div></div>'+
@@ -9206,6 +9206,24 @@ function _distEstado(){
   if(b){ b.disabled=!DIST_DIRTY; b.style.opacity=DIST_DIRTY?'1':'.5'; }
 }
 var DIST_MAX=12;
+function _distTitulo(c){
+  if(c.nom) return String(c.nom).toUpperCase();
+  return (typeof c.n==='number'||/^\d+$/.test(String(c.n)))?('CUADRILLA '+c.n):(String(c.n)==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
+}
+function distEditarCab(ev,ci){
+  ev.stopPropagation();
+  var c=DIST_DATA[ci];
+  var nom=prompt('Nombre de la cuadrilla:', _distTitulo(c));
+  if(nom===null) return;
+  var lab=prompt('Actividad / labor que ejecuta:', c.labor||'');
+  if(lab===null) return;
+  nom=nom.trim(); lab=lab.trim();
+  var porDefecto=(typeof c.n==='number'||/^\d+$/.test(String(c.n)))?('CUADRILLA '+c.n):(String(c.n)==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
+  c.nom=(nom&&nom.toUpperCase()!==porDefecto)?nom:''; if(!c.nom) delete c.nom;
+  c.labor=lab;
+  DIST_DIRTY=true; distRender();
+  _distMsg('Cabecera actualizada: '+_distTitulo(c)+'. Recuerda Guardar.');
+}
 function distMover(ci,rol,pi,cd){
   if(ci===cd) { DIST_SEL=null; distRender(); return; }
   if(cd!==-1){
@@ -9223,7 +9241,7 @@ function distMover(ci,rol,pi,cd){
   } else {
     DIST_DATA[cd][rol].push(persona);
     DIST_DIRTY=true; DIST_SEL=null; distRender();
-    _distMsg('Movido: '+persona+' → '+((typeof DIST_DATA[cd].n==='number')?('Cuadrilla '+DIST_DATA[cd].n):(String(DIST_DATA[cd].n)==='F'?'Flotante':'Topografía'))+'. Recuerda Guardar.');
+    _distMsg('Movido: '+persona+' → '+_distTitulo(DIST_DATA[cd])+'. Recuerda Guardar.');
   }
 }
 function distChipClick(ev,ci,rol,pi){
@@ -9259,7 +9277,7 @@ function distRender(){
     '<div style="padding:8px 10px 20px;display:flex;flex-direction:column;gap:4px;min-height:70px">'+poolChips+
     (DIST_POOL.length?'':'<div style="color:#8b9bd1;font-size:11px;padding:6px 2px">— todos asignados —</div>')+'</div></div>';
   g.innerHTML=poolCol+DIST_DATA.map(function(c,ci){
-    var tit=(typeof c.n==='number'||/^\d+$/.test(String(c.n)))?('CUADRILLA '+c.n):(String(c.n)==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
+    var tit=_distTitulo(c);
     var chips=function(rol,color,borde,tag){
       return (c[rol]||[]).map(function(p,pi){
         var sel=DIST_SEL&&DIST_SEL.ci===ci&&DIST_SEL.rol===rol&&DIST_SEL.pi===pi;
@@ -9272,7 +9290,7 @@ function distRender(){
     var nP=(c.of||[]).length+(c.ay||[]).length;
     return '<div onclick="distColClick('+ci+')" ondragenter="event.preventDefault()" ondragover="event.preventDefault();event.dataTransfer.dropEffect=\'move\'" ondrop="distDrop(event,'+ci+')" '+
       'style="background:rgba(0,0,0,.35);border:1px '+(target?'dashed #fbbf24':'solid rgba(255,255,255,.08)')+';border-radius:10px;overflow:hidden'+(target?';box-shadow:0 0 12px rgba(251,191,36,.25)':'')+'">'+
-      '<div style="background:#0d5c8c;padding:7px 10px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;font-weight:800;color:#fff">'+tit+'</div><span style="font-size:10px;color:#cfe8ff;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 7px">'+nP+'/'+DIST_MAX+'</span></div>'+
+      '<div style="background:#0d5c8c;padding:7px 10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="font-size:11px;font-weight:800;color:#fff">'+escapeHTML(tit)+'</div><span style="display:flex;gap:6px;align-items:center"><button onclick="distEditarCab(event,'+ci+')" title="Cambiar nombre y actividad de la cuadrilla" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 6px">✏️</button><span style="font-size:10px;color:#cfe8ff;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 7px">'+nP+'/'+DIST_MAX+'</span></span></div>'+
       '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+escapeHTML(c.labor||'')+'</div></div>'+
       '<div style="padding:8px 10px 20px;display:flex;flex-direction:column;gap:4px;min-height:70px">'+
       chips('of','rgba(22,101,52,.55)','#22c55e','OF')+
@@ -9286,7 +9304,7 @@ async function distGuardar(){
   var b=document.getElementById('dist-guardar');
   b.disabled=true; b.textContent='⏳ Guardando…';
   try{
-    var data=JSON.stringify(DIST_DATA.map(function(c){ return {n:c.n, labor:c.labor, of:c.of, ay:c.ay}; }));
+    var data=JSON.stringify(DIST_DATA.map(function(c){ var o={n:c.n, labor:c.labor, of:c.of, ay:c.ay}; if(c.nom) o.nom=c.nom; return o; }));
     var r=await jsonp(APPS_URL,{action:'guardar_cuadrillas', data:data, _ts:Date.now()});
     if(r && r.ok){
       DIST_DIRTY=false; _distEstado();
