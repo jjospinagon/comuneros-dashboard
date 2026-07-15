@@ -9134,8 +9134,8 @@ async function moRenderOrganigrama(force){
     var col=PAL[i%PAL.length];
     var tit=c.nom?String(c.nom).toUpperCase():((typeof c.n==='number')?('CUADRILLA '+c.n):(c.n==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA'));
     var nP=(c.of||[]).length+(c.ay||[]).length;
-    return '<div style="display:flex;flex-direction:column;align-items:stretch">'+
-      '<div style="height:16px;width:2px;background:linear-gradient(180deg,rgba(251,191,36,.9),'+col+');margin:0 auto"></div>'+
+    return '<div class="org-card-wrap" style="display:flex;flex-direction:column;align-items:stretch">'+
+      '<div class="org-stub" style="height:16px;width:2px;background:linear-gradient(180deg,rgba(251,191,36,.9),'+col+');margin:0 auto"></div>'+
       '<div style="background:rgba(10,16,40,.75);border:1px solid '+col+'55;border-top:3px solid '+col+';border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.35);flex:1">'+
       '<div style="background:linear-gradient(135deg,'+col+'33,transparent);padding:8px 10px 6px">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="font-size:11px;font-weight:800;color:#fff;letter-spacing:.03em">'+tit+'</div>'+
@@ -9155,6 +9155,16 @@ async function moRenderOrganigrama(force){
       '<div style="height:14px;width:2px;background:#fbbf24"></div>'+
       '<div style="height:2px;width:92%;background:linear-gradient(90deg,transparent,#fbbf24 12%,#fbbf24 88%,transparent)"></div>'+
     '</div>'+tarjetas;
+  /* conectores solo en la primera fila: las demas filas no dependen de la tarjeta de arriba */
+  window._orgAjustar=function(){
+    var ws=[].slice.call(g.querySelectorAll('.org-card-wrap'));
+    if(!ws.length) return;
+    var min=Math.min.apply(null, ws.map(function(w){ return w.offsetTop; }));
+    ws.forEach(function(w){ var s=w.querySelector('.org-stub'); if(s) s.style.visibility=(w.offsetTop-min<8)?'visible':'hidden'; });
+  };
+  setTimeout(window._orgAjustar,60);
+  if(!window._orgResizeHook){ window._orgResizeHook=true;
+    window.addEventListener('resize',function(){ if(window._orgAjustar) setTimeout(window._orgAjustar,120); }); }
 }
 
 /* ===== Editor de distribución de cuadrillas (drag & drop + guardado en PPTX) ===== */
