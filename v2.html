@@ -3848,11 +3848,11 @@ async function locReporte(){
       doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
       doc.text('PLANO GENERAL · URBANIZACIÓN COMUNEROS · CÁMARAS Y TRAMOS',40,25);
       doc.setFillColor(251,191,36); doc.rect(0,40,LW2,2.5,'F');
-      var iw2=LW2-70, ih2=iw2*cap.h/cap.w, mh2=LH2-85;
+      var iw2=LW2-70, ih2=iw2*cap.h/cap.w, mh2=LH2-108;
       if(ih2>mh2){ ih2=mh2; iw2=ih2*cap.w/cap.h; }
       doc.addImage(cap.img,'JPEG',(LW2-iw2)/2,55,iw2,ih2);
       doc.setFontSize(8); doc.setTextColor(100,116,139);
-      doc.text('Rojo: sanitaria construida · Azul: pluvial construida · Magenta: proy. sanitaria · Azul claro: proy. pluvial · Puntos: cámaras de inspección',40,LH2-16);
+      doc.text('Rojo: sanitaria construida · Azul: pluvial construida · Magenta: proy. sanitaria · Azul claro: proy. pluvial · Puntos: cámaras de inspección',40,LH2-34);
     }
     var pages=doc.internal.getNumberOfPages();
     for(var pi=1;pi<=pages;pi++){ doc.setPage(pi); doc.setFontSize(8); doc.setTextColor(148,163,184);
