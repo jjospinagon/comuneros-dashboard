@@ -1,0 +1,43 @@
+name: Validar cockpit
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'v2.html']
+  workflow_dispatch:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validar sintaxis JS y funciones clave
+        run: |
+          python3 - <<'PYEOF'
+          import re, sys, subprocess
+          fallos = 0
+          CLAVES = ['function handleLogin', 'function goTo(name)', 'async function ejecDiariaCargar(', 'function jsonp(']
+          for f in ['index.html', 'v2.html']:
+              try:
+                  h = open(f, encoding='utf-8').read()
+              except FileNotFoundError:
+                  continue
+              scripts = [s for s in re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', h, re.S) if s.strip()]
+              for i, s in enumerate(scripts):
+                  p = f'/tmp/{f}.{i}.js'
+                  open(p, 'w', encoding='utf-8').write(s)
+                  r = subprocess.run(['node', '--check', p], capture_output=True, text=True)
+                  if r.returncode != 0:
+                      print(f'X {f} script #{i}: SINTAXIS INVALIDA\n{r.stderr}')
+                      fallos += 1
+              for fn in CLAVES:
+                  if fn not in h:
+                      print(f'X {f}: falta funcion clave "{fn}" (posible script truncado)')
+                      fallos += 1
+              if not fallos:
+                  print(f'OK {f}: {len(scripts)} bloque(s) de script validos, funciones clave presentes')
+          sys.exit(1 if fallos else 0)
+          PYEOF
