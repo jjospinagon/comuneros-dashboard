@@ -2494,6 +2494,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
           <h3 style="margin:0;color:#fbbf24">🗂️ Distribución de Cuadrillas</h3>
           <span style="color:#8b9bd1;font-size:12px">arrastra a una persona hacia otra cuadrilla (en celular: tócala y luego toca la cuadrilla destino)</span>
           <span id="dist-estado" style="margin-left:auto;font-size:12px;color:#8b9bd1">—</span>
+          <button onclick="distAgregar()" style="background:rgba(34,197,94,.18);border:1px solid #22c55e;color:#dcfce7;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:700">➕ Agregar cuadrilla</button>
           <button id="dist-guardar" onclick="distGuardar()" disabled style="background:linear-gradient(90deg,#10b981,#0ea5e9);border:none;color:#fff;padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;opacity:.5">💾 Guardar distribución</button>
           <button onclick="distRestaurar()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#cbd5e1;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:12px">↩ Restaurar</button>
         </div>
@@ -9212,17 +9213,40 @@ function _distTitulo(c){
 }
 function distEditarCab(ev,ci){
   ev.stopPropagation();
-  var c=DIST_DATA[ci];
-  var nom=prompt('Nombre de la cuadrilla:', _distTitulo(c));
+  var c=DIST_DATA[ci], cambio=false;
+  var nom=prompt('Nombre de la cuadrilla (Cancelar = no cambiar):', _distTitulo(c));
+  if(nom!==null){
+    nom=nom.trim();
+    var porDefecto=(typeof c.n==='number'||/^\d+$/.test(String(c.n)))?('CUADRILLA '+c.n):(String(c.n)==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
+    var nuevoNom=(nom&&nom.toUpperCase()!==porDefecto)?nom:'';
+    if((c.nom||'')!==nuevoNom){ if(nuevoNom) c.nom=nuevoNom; else delete c.nom; cambio=true; }
+  }
+  var lab=prompt('Actividad / labor que ejecuta la cuadrilla (Cancelar = no cambiar):', c.labor||'');
+  if(lab!==null){ lab=lab.trim(); if(lab!==(c.labor||'')){ c.labor=lab; cambio=true; } }
+  if(cambio){ DIST_DIRTY=true; distRender(); _distMsg('Cabecera actualizada: '+_distTitulo(c)+' — '+(c.labor||'(sin actividad)')+'. Recuerda Guardar.'); }
+}
+function distAgregar(){
+  var maxN=0; DIST_DATA.forEach(function(c){ var v=parseInt(c.n,10); if(!isNaN(v)&&v>maxN) maxN=v; });
+  var nom=prompt('Nombre de la nueva cuadrilla (deja "CUADRILLA '+(maxN+1)+'" o escribe uno propio):','CUADRILLA '+(maxN+1));
   if(nom===null) return;
-  var lab=prompt('Actividad / labor que ejecuta:', c.labor||'');
-  if(lab===null) return;
-  nom=nom.trim(); lab=lab.trim();
-  var porDefecto=(typeof c.n==='number'||/^\d+$/.test(String(c.n)))?('CUADRILLA '+c.n):(String(c.n)==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA');
-  c.nom=(nom&&nom.toUpperCase()!==porDefecto)?nom:''; if(!c.nom) delete c.nom;
-  c.labor=lab;
+  var lab=prompt('Actividad / labor que ejecutará:','');
+  if(lab===null) lab='';
+  var c={n:maxN+1, labor:lab.trim(), of:[], ay:[]};
+  nom=nom.trim();
+  if(nom && nom.toUpperCase()!==('CUADRILLA '+(maxN+1))) c.nom=nom;
+  DIST_DATA.push(c);
   DIST_DIRTY=true; distRender();
-  _distMsg('Cabecera actualizada: '+_distTitulo(c)+'. Recuerda Guardar.');
+  _distMsg('➕ Cuadrilla creada: '+_distTitulo(c)+'. Arrastra personas y Guarda.');
+}
+function distEliminar(ev,ci){
+  ev.stopPropagation();
+  var c=DIST_DATA[ci];
+  var n=(c.of||[]).length+(c.ay||[]).length;
+  if(n>0){ _distMsg('⚠ Solo se pueden eliminar cuadrillas vacías (mueve antes a sus '+n+' personas).', true); return; }
+  if(!confirm('¿Eliminar la cuadrilla '+_distTitulo(c)+'?')) return;
+  DIST_DATA.splice(ci,1); DIST_SEL=null;
+  DIST_DIRTY=true; distRender();
+  _distMsg('🗑 Cuadrilla eliminada. Recuerda Guardar.');
 }
 function distMover(ci,rol,pi,cd){
   if(ci===cd) { DIST_SEL=null; distRender(); return; }
@@ -9290,7 +9314,7 @@ function distRender(){
     var nP=(c.of||[]).length+(c.ay||[]).length;
     return '<div onclick="distColClick('+ci+')" ondragenter="event.preventDefault()" ondragover="event.preventDefault();event.dataTransfer.dropEffect=\'move\'" ondrop="distDrop(event,'+ci+')" '+
       'style="background:rgba(0,0,0,.35);border:1px '+(target?'dashed #fbbf24':'solid rgba(255,255,255,.08)')+';border-radius:10px;overflow:hidden'+(target?';box-shadow:0 0 12px rgba(251,191,36,.25)':'')+'">'+
-      '<div style="background:#0d5c8c;padding:7px 10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="font-size:11px;font-weight:800;color:#fff">'+escapeHTML(tit)+'</div><span style="display:flex;gap:6px;align-items:center"><button onclick="distEditarCab(event,'+ci+')" title="Cambiar nombre y actividad de la cuadrilla" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 6px">✏️</button><span style="font-size:10px;color:#cfe8ff;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 7px">'+nP+'/'+DIST_MAX+'</span></span></div>'+
+      '<div style="background:#0d5c8c;padding:7px 10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="font-size:11px;font-weight:800;color:#fff">'+escapeHTML(tit)+'</div><span style="display:flex;gap:6px;align-items:center"><button onclick="distEditarCab(event,'+ci+')" title="Cambiar nombre y actividad de la cuadrilla" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 6px">✏️</button>'+(nP===0?'<button onclick="distEliminar(event,'+ci+')" title="Eliminar esta cuadrilla vacía" style="background:rgba(239,68,68,.35);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 6px">🗑</button>':'')+' <span style="font-size:10px;color:#cfe8ff;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 7px">'+nP+'/'+DIST_MAX+'</span></span></div>'+
       '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+escapeHTML(c.labor||'')+'</div></div>'+
       '<div style="padding:8px 10px 20px;display:flex;flex-direction:column;gap:4px;min-height:70px">'+
       chips('of','rgba(22,101,52,.55)','#22c55e','OF')+
