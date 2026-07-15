@@ -9151,8 +9151,9 @@ async function _distPoolBuild(){
     var asignados={};
     (DIST_DATA||[]).forEach(function(c){ (c.of||[]).concat(c.ay||[]).forEach(function(p){ asignados[_distNorm(p)]=1; }); });
     DIST_CAT.filas.forEach(function(f){
-      var nom=String(f[iN]||'').trim(); if(!nom) return;
-      var cargo=_distNorm(f[iC]), frente=_distNorm(f[iF]), est=_distNorm(f[iE]);
+      var c=f.c||f; /* filas vienen como {ck, c:[...]} */
+      var nom=String(c[iN]||'').trim(); if(!nom) return;
+      var cargo=_distNorm(c[iC]), frente=_distNorm(c[iF]), est=_distNorm(c[iE]);
       if(frente.indexOf('M.O')<0) return;
       if(est==='INACTIVO'||est==='RETIRADO') return;
       if(!(cargo.indexOf('OFICIAL')>=0||cargo.indexOf('AYUDANTE')>=0)) return;
