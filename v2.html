@@ -3477,8 +3477,19 @@ function _locRenderGL(){
     var rn=(c.red&&LOC_REDES[c.red])?LOC_REDES[c.red].nombre:'';
     el.dataset.red=(c.red==='pluvial')?'plu':'san';
     if(!LOC_VIS[el.dataset.red]) el.style.display='none';
+    var idU=String(c.id).replace(/\(\d+\)$/,'').toUpperCase();
+    var trs=(window.LOC_TRAMOS_INFO||[]).filter(function(t){ return t.de===idU||t.a===idU; });
+    var etapas=[]; trs.forEach(function(t){ if(t.e&&etapas.indexOf(t.e)<0) etapas.push(t.e); });
+    var extra='';
+    if(etapas.length) extra+='<br><span style="background:#fbbf24;color:#1a0f04;font-weight:700;border-radius:6px;padding:1px 6px;font-size:11px">Etapa '+etapas.join(' · ')+'</span>';
+    if(trs.length){
+      extra+='<br><span style="font-size:11px;color:#475569">'+trs.slice(0,6).map(function(t){
+        var otro=(t.de===idU)?('→ '+t.a):('← '+t.de);
+        return otro+' · '+t.p+'\" '+t.s+(t.m?(' · '+t.m+' m'):'');
+      }).join('<br>')+(trs.length>6?('<br>… y '+(trs.length-6)+' más'):'')+'</span>';
+    }
     var mk=new maplibregl.Marker({element:el}).setLngLat([c.lng,c.lat])
-      .setPopup(new maplibregl.Popup().setHTML('<b>Cámara '+c.id+'</b>'+(rn?('<br>'+rn):'')+(c.elev?('<br>Elev: '+c.elev+' m'):'')+(c.desc?('<br>'+c.desc):'')));
+      .setPopup(new maplibregl.Popup().setHTML('<b>Cámara '+c.id+'</b>'+(rn?('<br>'+rn):'')+(c.elev?('<br>Elev: '+c.elev+' m'):'')+(c.desc?('<br>'+c.desc):'')+extra));
     mk.addTo(LOC_MAP); LOC_MARKERS.push(mk);
   });
   if(LOC_CAMARAS.length){
