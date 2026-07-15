@@ -9127,16 +9127,39 @@ async function moRenderOrganigrama(force){
       if(r && r.cuadrillas && r.cuadrillas.length) ORG_DATA=r.cuadrillas; }catch(_){}
   }
   var datos=ORG_DATA||CUADRILLAS_ORG;
-  g.innerHTML=datos.map(function(c){
+  var PAL=['#0ea5e9','#22c55e','#f59e0b','#a855f7','#ef4444','#14b8a6','#f43f5e','#84cc16','#6366f1','#eab308','#06b6d4','#fb923c'];
+  function inic(n){ var p=String(n).trim().split(/\s+/); return ((p[0]||'').charAt(0)+(p[1]||'').charAt(0)).toUpperCase(); }
+  function persona(p,rol,col){
+    var of=rol==='of';
+    return '<div style="display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:8px;background:'+(of?'rgba(255,255,255,.09)':'rgba(255,255,255,.04)')+'">'+
+      '<span style="flex:none;width:24px;height:24px;border-radius:50%;background:'+col+(of?'':'55')+';color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;border:'+(of?'2px solid #fff':'1px solid rgba(255,255,255,.35)')+'">'+inic(p)+'</span>'+
+      '<span style="font-size:10.5px;color:'+(of?'#fff':'#c7d2e6')+';font-weight:'+(of?'800':'500')+';line-height:1.25">'+p+(of?' <span style="color:#fbbf24">★ OF</span>':' <span style="opacity:.55">AY</span>')+'</span></div>';
+  }
+  var tarjetas=datos.map(function(c,i){
+    var col=PAL[i%PAL.length];
     var tit=c.nom?String(c.nom).toUpperCase():((typeof c.n==='number')?('CUADRILLA '+c.n):(c.n==='F'?'CUADRILLA FLOTANTE':'CUADRILLA TOPOGRAFÍA'));
-    return '<div style="background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">'+
-      '<div style="background:#0d5c8c;padding:7px 10px"><div style="font-size:11px;font-weight:800;color:#fff;letter-spacing:.04em">'+tit+'</div>'+
-      '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+c.labor+'</div></div>'+
-      '<div style="padding:8px 10px;display:flex;flex-direction:column;gap:4px">'+
-      (c.of||[]).map(function(p){ return '<div style="background:rgba(22,101,52,.55);border-left:3px solid #22c55e;border-radius:6px;padding:4px 8px;font-size:11px;color:#dcfce7;font-weight:700">'+p+' <span style="opacity:.65;font-weight:600">· OF</span></div>'; }).join('')+
-      (c.ay||[]).map(function(p){ return '<div style="background:rgba(134,25,143,.4);border-left:3px solid #d946ef;border-radius:6px;padding:4px 8px;font-size:11px;color:#fae8ff">'+p+' <span style="opacity:.6">· AY</span></div>'; }).join('')+
-      '</div></div>';
+    var nP=(c.of||[]).length+(c.ay||[]).length;
+    return '<div style="display:flex;flex-direction:column;align-items:stretch">'+
+      '<div style="height:16px;width:2px;background:linear-gradient(180deg,rgba(251,191,36,.9),'+col+');margin:0 auto"></div>'+
+      '<div style="background:rgba(10,16,40,.75);border:1px solid '+col+'55;border-top:3px solid '+col+';border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.35);flex:1">'+
+      '<div style="background:linear-gradient(135deg,'+col+'33,transparent);padding:8px 10px 6px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="font-size:11px;font-weight:800;color:#fff;letter-spacing:.03em">'+tit+'</div>'+
+        '<span style="font-size:9px;color:#fff;background:'+col+';border-radius:8px;padding:1px 7px;font-weight:800">'+nP+' 👷</span></div>'+
+        '<div style="font-size:9.5px;color:#9fb0d0;margin-top:3px;line-height:1.35;font-style:italic">'+(c.labor||'')+'</div></div>'+
+      '<div style="padding:6px 8px 10px;display:flex;flex-direction:column;gap:3px">'+
+      (c.of||[]).map(function(p){ return persona(p,'of',col); }).join('')+
+      (c.ay||[]).map(function(p){ return persona(p,'ay',col); }).join('')+
+      '</div></div></div>';
   }).join('');
+  g.innerHTML=
+    '<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center">'+
+      '<div style="background:linear-gradient(135deg,#166534,#22c55e);border-radius:14px;padding:10px 26px;box-shadow:0 8px 24px rgba(34,197,94,.35);text-align:center">'+
+        '<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:50%;background:#fff;color:#166534;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center">FJ</span>'+
+        '<span style="text-align:left"><div style="color:#fff;font-weight:900;font-size:13px;letter-spacing:.04em">FREDY JARAMILLO</div>'+
+        '<div style="color:#bbf7d0;font-size:10px;font-weight:700;letter-spacing:.12em">MAESTRO GENERAL DE OBRA</div></span></div></div>'+
+      '<div style="height:14px;width:2px;background:#fbbf24"></div>'+
+      '<div style="height:2px;width:92%;background:linear-gradient(90deg,transparent,#fbbf24 12%,#fbbf24 88%,transparent)"></div>'+
+    '</div>'+tarjetas;
 }
 
 /* ===== Editor de distribución de cuadrillas (drag & drop + guardado en PPTX) ===== */
@@ -9238,6 +9261,19 @@ function distAgregar(){
   DIST_DIRTY=true; distRender();
   _distMsg('➕ Cuadrilla creada: '+_distTitulo(c)+'. Arrastra personas y Guarda.');
 }
+function distReordenar(desde,hasta){
+  if(desde===hasta||desde<0||hasta<0) return;
+  var c=DIST_DATA.splice(desde,1)[0];
+  DIST_DATA.splice(hasta,0,c);
+  DIST_DIRTY=true; DIST_SEL=null; distRender();
+  _distMsg('Cuadrilla '+_distTitulo(c)+' movida a la posición '+(hasta+1)+'. Recuerda Guardar.');
+}
+function distMoverCol(ev,ci,dir){
+  ev.stopPropagation();
+  var hasta=ci+dir;
+  if(hasta<0||hasta>=DIST_DATA.length) return;
+  distReordenar(ci,hasta);
+}
 function distEliminar(ev,ci){
   ev.stopPropagation();
   var c=DIST_DATA[ci];
@@ -9280,7 +9316,8 @@ function distDrop(ev,cd){
   ev.preventDefault();
   try{
     var d=JSON.parse(ev.dataTransfer.getData('text/plain'));
-    distMover(d.ci,d.rol,d.pi,cd);
+    if(d.mc!==undefined){ if(cd>=0) distReordenar(d.mc,cd); }
+    else distMover(d.ci,d.rol,d.pi,cd);
   }catch(_){}
 }
 function distRender(){
@@ -9314,7 +9351,7 @@ function distRender(){
     var nP=(c.of||[]).length+(c.ay||[]).length;
     return '<div onclick="distColClick('+ci+')" ondragenter="event.preventDefault()" ondragover="event.preventDefault();event.dataTransfer.dropEffect=\'move\'" ondrop="distDrop(event,'+ci+')" '+
       'style="background:rgba(0,0,0,.35);border:1px '+(target?'dashed #fbbf24':'solid rgba(255,255,255,.08)')+';border-radius:10px;overflow:hidden'+(target?';box-shadow:0 0 12px rgba(251,191,36,.25)':'')+'">'+
-      '<div style="background:#0d5c8c;padding:7px 10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="font-size:11px;font-weight:800;color:#fff">'+escapeHTML(tit)+'</div><span style="display:flex;gap:6px;align-items:center"><button onclick="distEditarCab(event,'+ci+')" title="Cambiar nombre y actividad de la cuadrilla" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 6px">✏️</button>'+(nP===0?'<button onclick="distEliminar(event,'+ci+')" title="Eliminar esta cuadrilla vacía" style="background:rgba(239,68,68,.35);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 6px">🗑</button>':'')+' <span style="font-size:10px;color:#cfe8ff;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 7px">'+nP+'/'+DIST_MAX+'</span></span></div>'+
+      '<div draggable="true" ondragstart="event.stopPropagation();event.dataTransfer.setData(\'text/plain\',JSON.stringify({mc:'+ci+'}))" title="Arrastra esta cabecera para reordenar la cuadrilla" style="background:#0d5c8c;padding:7px 10px;cursor:grab"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="font-size:11px;font-weight:800;color:#fff">⠿ '+escapeHTML(tit)+'</div><span style="display:flex;gap:4px;align-items:center"><button onclick="distMoverCol(event,'+ci+',-1)" title="Mover cuadrilla a la izquierda" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 5px">‹</button><button onclick="distMoverCol(event,'+ci+',1)" title="Mover cuadrilla a la derecha" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 5px">›</button><button onclick="distEditarCab(event,'+ci+')" title="Cambiar nombre y actividad de la cuadrilla" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 6px">✏️</button>'+(nP===0?'<button onclick="distEliminar(event,'+ci+')" title="Eliminar esta cuadrilla vacía" style="background:rgba(239,68,68,.35);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:1px 6px">🗑</button>':'')+' <span style="font-size:10px;color:#cfe8ff;background:rgba(255,255,255,.15);border-radius:8px;padding:1px 7px">'+nP+'/'+DIST_MAX+'</span></span></div>'+
       '<div style="font-size:10px;color:#cfe8ff;margin-top:2px;line-height:1.35">'+escapeHTML(c.labor||'')+'</div></div>'+
       '<div style="padding:8px 10px 20px;display:flex;flex-direction:column;gap:4px;min-height:70px">'+
       chips('of','rgba(22,101,52,.55)','#22c55e','OF')+
