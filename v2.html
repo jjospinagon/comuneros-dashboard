@@ -2592,20 +2592,25 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:50%;vertical-align:middle"></span> Cámara sanitaria</span>
       <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:50%;vertical-align:middle"></span> Cámara pluvial</span>
     </div>
-    <div id="loc-tools" style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px">
-      <button class="back-btn" id="lt-san_const" onclick="locHerr('san_const')" style="border:2px solid #ef4444;font-size:12px;padding:6px 10px">✏️ Sanitaria construida</button>
-      <button class="back-btn" id="lt-plu_const" onclick="locHerr('plu_const')" style="border:2px solid #3b82f6;font-size:12px;padding:6px 10px">✏️ Pluvial construida</button>
-      <button class="back-btn" id="lt-san_proy" onclick="locHerr('san_proy')" style="border:2px solid #d946ef;font-size:12px;padding:6px 10px">✏️ Proy. sanitaria</button>
-      <button class="back-btn" id="lt-plu_proy" onclick="locHerr('plu_proy')" style="border:2px solid #7dd3fc;font-size:12px;padding:6px 10px">✏️ Proy. pluvial</button>
-      <button class="back-btn" onclick="locDeshacer()" style="font-size:12px;padding:6px 10px" title="Quita el último punto de la línea en curso">↩ Deshacer</button>
-      <button class="back-btn" onclick="locTerminar()" style="font-size:12px;padding:6px 10px;background:#16a34a;border:none;color:#fff;font-weight:700" title="Guarda la línea dibujada (también con doble clic)">✔ Terminar</button>
-      <button class="back-btn" id="lt-borrar" onclick="locHerr('borrar')" style="border:2px solid #64748b;font-size:12px;padding:6px 10px" title="Activa y luego toca una línea para eliminarla">🗑 Borrar línea</button>
-      <button class="back-btn" onclick="locReporte()" style="font-size:12px;padding:6px 10px;background:linear-gradient(135deg,#fbbf24,#ef4444);border:none;color:#1a0f04;font-weight:800">📄 Generar reporte</button>
-      <span style="flex-basis:100%;height:0"></span>
-      <button class="back-btn" id="lt-vis-san" onclick="locVis('san')" style="font-size:12px;padding:6px 10px;border:2px solid #ef4444;background:rgba(239,68,68,.25)">👁 Sanitaria: SÍ</button>
-      <button class="back-btn" id="lt-vis-plu" onclick="locVis('plu')" style="font-size:12px;padding:6px 10px;border:2px solid #3b82f6;background:rgba(59,130,246,.25)">👁 Pluvial: SÍ</button>
-      <button class="back-btn" id="lt-sat" onclick="locSat()" style="font-size:12px;padding:6px 10px;border:2px solid #94a3b8">🛰 Satélite: NO</button>
-      <button class="back-btn" id="lt-cad" onclick="locCad()" style="font-size:12px;padding:6px 10px;border:2px solid #fbbf24">📐 CAD: NO</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 8px;align-items:stretch">
+      <fieldset id="loc-tools" style="border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:6px 10px 9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0;min-width:0">
+        <legend style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;color:#8b9bd1;padding:0 6px">✏️ HERRAMIENTAS DE MARCADO</legend>
+        <button class="back-btn" id="lt-san_const" onclick="locHerr('san_const')" style="border:2px solid #ef4444;font-size:12px;padding:6px 10px">✏️ Sanitaria construida</button>
+        <button class="back-btn" id="lt-plu_const" onclick="locHerr('plu_const')" style="border:2px solid #3b82f6;font-size:12px;padding:6px 10px">✏️ Pluvial construida</button>
+        <button class="back-btn" id="lt-san_proy" onclick="locHerr('san_proy')" style="border:2px solid #d946ef;font-size:12px;padding:6px 10px">✏️ Proy. sanitaria</button>
+        <button class="back-btn" id="lt-plu_proy" onclick="locHerr('plu_proy')" style="border:2px solid #7dd3fc;font-size:12px;padding:6px 10px">✏️ Proy. pluvial</button>
+        <button class="back-btn" onclick="locDeshacer()" style="font-size:12px;padding:6px 10px" title="Quita el último punto de la línea en curso">↩ Deshacer</button>
+        <button class="back-btn" onclick="locTerminar()" style="font-size:12px;padding:6px 10px;background:#16a34a;border:none;color:#fff;font-weight:700" title="Guarda la línea dibujada (también con doble clic)">✔ Terminar</button>
+        <button class="back-btn" id="lt-borrar" onclick="locHerr('borrar')" style="border:2px solid #64748b;font-size:12px;padding:6px 10px" title="Activa y luego toca una línea para eliminarla">🗑 Borrar línea</button>
+        <button class="back-btn" onclick="locReporte()" style="font-size:12px;padding:6px 10px;background:linear-gradient(135deg,#fbbf24,#ef4444);border:none;color:#1a0f04;font-weight:800">📄 Generar reporte</button>
+      </fieldset>
+      <fieldset id="loc-capas" style="border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:6px 10px 9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0;min-width:0">
+        <legend style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;color:#86c99b;padding:0 6px">🗺 VISTAS Y CAPAS</legend>
+        <button class="back-btn" id="lt-vis-san" onclick="locVis('san')" style="font-size:12px;padding:6px 10px;border:2px solid #ef4444;background:rgba(239,68,68,.25)">👁 Sanitaria: SÍ</button>
+        <button class="back-btn" id="lt-vis-plu" onclick="locVis('plu')" style="font-size:12px;padding:6px 10px;border:2px solid #3b82f6;background:rgba(59,130,246,.25)">👁 Pluvial: SÍ</button>
+        <button class="back-btn" id="lt-sat" onclick="locSat()" style="font-size:12px;padding:6px 10px;border:2px solid #94a3b8">🛰 Satélite: NO</button>
+        <button class="back-btn" id="lt-cad" onclick="locCad()" style="font-size:12px;padding:6px 10px;border:2px solid #fbbf24">📐 CAD: NO</button>
+      </fieldset>
     </div>
     <div id="loc-dib-estado" style="font-size:11px;color:#94a3b8;margin:0 0 8px">Elige una herramienta y toca el mapa para dibujar (los puntos se pegan a las cámaras). Termina con ✔ o doble clic. Mover: arrastrar · Rotar/inclinar: clic derecho o Ctrl+arrastrar (dos dedos en el celular) — también mientras dibujas.</div>
     <div id="loc-map" style="height:68vh;min-height:420px;border-radius:14px;border:1px solid rgba(99,102,241,.35);overflow:hidden;background:#0b1229"></div>
