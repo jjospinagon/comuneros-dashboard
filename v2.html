@@ -10857,4 +10857,148 @@ if ('serviceWorker' in navigator) {
   };
   window.maqRepCerrar=function(){ var m=document.getElementById('maqrep-modal'); if(m) m.style.display='none'; };
 
-  // Corrección stand-by del sábado = 2,5 h (idéntica al dashboard
+  // Corrección stand-by del sábado = 2,5 h (idéntica al dashboard)
+  function fixSabado(d){
+    if(!d||!Array.isArray(d.maquinas)) return d;
+    d.maquinas.forEach(function(m){ var tarifa=m.tarifa||0;
+      (m.registros||[]).forEach(function(r){
+        var p=(r.fecha||'').split('-'); var esSab=(p.length===3)?(new Date(+p[0],+p[1]-1,+p[2]).getDay()===6):/^s[áa]b/i.test(r.dia||'');
+        if(!esSab) return; if((r.horasPagarStandBy||0)<=0) return;
+        var nuevo=Math.max(0,2.5-(r.totalHoras||0)); r.standByBase=2.5; r.horasPagarStandBy=+nuevo.toFixed(2); r.costoStandBy=Math.round(r.horasPagarStandBy*tarifa);
+      });
+    });
+    return d;
+  }
+
+  function chartDataURL(maqs){
+    if(typeof Chart==='undefined') return null;
+    var cv=document.createElement('canvas'); cv.width=1240; cv.height=440;
+    var labels=maqs.map(function(m){return m.nombre;});
+    var ht=maqs.map(function(m){return +m.ht.toFixed(1);});
+    var sb=maqs.map(function(m){return +m.sb.toFixed(1);});
+    var ch=new Chart(cv.getContext('2d'),{type:'bar',
+      data:{labels:labels,datasets:[
+        {label:'Horas trabajadas',data:ht,backgroundColor:'rgba(16,185,129,.85)',borderRadius:3},
+        {label:'Horas stand-by',data:sb,backgroundColor:'rgba(245,158,11,.9)',borderRadius:3}
+      ]},
+      options:{responsive:false,animation:false,layout:{padding:{top:24}},
+        plugins:{legend:{labels:{color:'#334155',font:{size:14},usePointStyle:true}},
+          tooltip:{enabled:false}},
+        scales:{x:{grid:{display:false},ticks:{color:'#334155',font:{size:12,weight:'600'}}},
+                y:{grid:{color:'#e2e8f0'},ticks:{color:'#475569',font:{size:12},callback:function(v){return v+' h';}},beginAtZero:true}}},
+      plugins:[{id:'hl',afterDatasetsDraw:function(c){ var x=c.ctx; x.save(); x.font='700 11px Inter,system-ui,sans-serif'; x.fillStyle='#0f172a'; x.textAlign='center'; x.textBaseline='bottom';
+        [0,1].forEach(function(di){ var mt=c.getDatasetMeta(di); if(!mt||!mt.data)return; mt.data.forEach(function(b,i){ var v=(di===0?ht:sb)[i]; if(v>0) x.fillText((''+v).replace('.',',')+' h',b.x,b.y-3); }); }); x.restore();
+      }}]
+    });
+    var url=cv.toDataURL('image/png',1.0); try{ch.destroy();}catch(_){}
+    return url;
+  }
+
+  window.maqRepGenerar=async function(){
+    var modo=(document.querySelector('input[name="maqrep-modo"]:checked')||{}).value||'sem';
+    var desde=(document.getElementById('maqrep-desde')||{}).value, hasta=(document.getElementById('maqrep-hasta')||{}).value;
+    if(!desde||!hasta){ msg('Selecciona ambas fechas.','err'); return; }
+    if(desde>hasta){ var t=desde; desde=hasta; hasta=t; }
+    if(modo==='sem'){ desde=_iso(mondayOf(desde)); var sat=mondayOf(hasta); sat.setDate(sat.getDate()+5); hasta=_iso(sat); }
+    var go=document.getElementById('maqrep-go'); if(go){ go.disabled=true; go.style.opacity=.6; }
+    var L=R().loader||function(){}, EP=R().ensurePdfLibs;
+    try{
+      L(true,'Generando reporte…','Cargando librerías…'); if(EP) await EP();
+      L(true,null,'Cargando datos de maquinaria…');
+      var d=await jsonp(APPS_URL,{action:'control_maquinaria',_ts:Date.now()});
+      if(!d||!Array.isArray(d.maquinas)) throw new Error('No se pudo cargar la maquinaria.');
+      fixSabado(d);
+      var maqs=(d.maquinas||[]).map(function(m){
+        var regs=(m.registros||[]).filter(function(r){return r.fecha>=desde&&r.fecha<=hasta;}).sort(function(a,b){return a.fecha.localeCompare(b.fecha);});
+        var ht=0,sb=0,csb=0,diasSB=0,dias=regs.length;
+        regs.forEach(function(r){ ht+=r.totalHoras||0; sb+=r.horasPagarStandBy||0; csb+=r.costoStandBy||0; if((r.horasPagarStandBy||0)>0)diasSB++; });
+        var tarifa=m.tarifa||0;
+        return {id:m.id,nombre:m.nombre,tarifa:tarifa,regs:regs,ht:ht,sb:sb,csb:csb,diasSB:diasSB,dias:dias,valTrab:ht*tarifa,total:ht*tarifa+csb};
+      }).filter(function(m){return m.regs.length>0;});
+      if(!maqs.length){ msg('No hay registros de maquinaria en ese rango.','err'); return; }
+      L(true,'Generando PDF…','Construyendo tablas y gráfico…');
+
+      var TH=0,TSB=0,TCSB=0,TVT=0,TTOT=0; maqs.forEach(function(m){ TH+=m.ht; TSB+=m.sb; TCSB+=m.csb; TVT+=m.valTrab; TTOT+=m.total; });
+
+      var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({unit:'pt',format:'a4'});
+      var PW=doc.internal.pageSize.getWidth(), PH=doc.internal.pageSize.getHeight(), M=40;
+      doc.setFillColor(13,27,62); doc.rect(0,0,PW,64,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+      doc.text('INFORME DE STAND-BY DE MAQUINARIA',M,27);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(196,214,238);
+      doc.text('Horas trabajadas, stand-by y valorización  ·  Reposición Alcantarillado · Montenegro — Contrato 023 de 2025',M,43);
+      doc.setFontSize(8.4); doc.setTextColor(150,180,222);
+      doc.text('Periodo: '+_lblFull(desde)+'  a  '+_lblFull(hasta),M,56);
+      var y=84;
+      doc.setTextColor(71,85,105); doc.setFont('helvetica','normal'); doc.setFontSize(8.2);
+      var meto='Metodología: las horas trabajadas y el stand-by provienen del control diario de maquinaria. El stand-by es el tiempo pagado en que la máquina permaneció disponible sin operar. '+
+        'La jornada base del sábado es 2,5 h: si la máquina trabaja 2,5 h o más no se paga stand-by, y si trabaja menos se paga el excedente. Valor = horas x tarifa de cada máquina '+
+        '(Retro CAT 312 $170.000/h · Retro CAT 305 $150.000/h · Minicargador $150.000/h).';
+      var ml=doc.splitTextToSize(meto,PW-2*M); doc.text(ml,M,y); y+=ml.length*9.6+8;
+      var img=chartDataURL(maqs);
+      if(img){ var iw=PW-2*M, ih=iw*440/1240; doc.addImage(img,'PNG',M,y,iw,ih); y+=ih+12; }
+
+      // Resumen por máquina
+      doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(13,27,62); doc.text('Resumen por máquina',M,y); y+=6;
+      doc.autoTable({
+        startY:y+4,
+        head:[['Máquina','Tarifa $/h','H. trabajadas','Valor trabajadas','H. stand-by','¿Stand-by?','Valor stand-by','Total']],
+        body: maqs.map(function(m){ return [m.nombre,_money(m.tarifa),_h(m.ht),_money(m.valTrab),_h(m.sb),(m.sb>0?('Sí ('+m.diasSB+' d)'):'No'),_money(m.csb),_money(m.total)]; }),
+        foot:[['TOTAL','',_h(TH),_money(TVT),_h(TSB),'',_money(TCSB),_money(TTOT)]],
+        theme:'grid', margin:{left:M,right:M},
+        styles:{font:'helvetica',fontSize:7.8,cellPadding:3.4,overflow:'linebreak',textColor:[15,23,42],lineColor:[203,213,225],lineWidth:0.3},
+        headStyles:{fillColor:[13,27,62],textColor:[255,255,255],fontStyle:'bold',halign:'center',fontSize:7.6},
+        footStyles:{fillColor:[219,228,240],textColor:[13,27,62],fontStyle:'bold',halign:'center'},
+        columnStyles:{0:{halign:'left',cellWidth:86},1:{halign:'right',cellWidth:52},2:{halign:'right',cellWidth:56},3:{halign:'right',cellWidth:70,fontStyle:'bold'},4:{halign:'right',cellWidth:50},5:{halign:'center',cellWidth:54},6:{halign:'right',cellWidth:70,fontStyle:'bold'},7:{halign:'right',cellWidth:70,fontStyle:'bold'}},
+        didParseCell:function(dd){ if(dd.section==='body'&&dd.column.index===5){ var t=(dd.cell.raw||'')+''; dd.cell.styles.textColor = t.indexOf('Sí')===0?[194,116,10]:[15,157,110]; dd.cell.styles.fontStyle='bold'; } }
+      });
+      y=doc.lastAutoTable.finalY+16;
+      if(y>PH-120){ doc.addPage(); y=60; }
+
+      // Detalle diario por máquina
+      doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(13,27,62); doc.text('Detalle diario por máquina',M,y);
+      var body=[];
+      maqs.forEach(function(m){
+        m.regs.forEach(function(r){ body.push([r.fecha,(r.dia||''),m.nombre,(r.tipo||''),_h(r.totalHoras||0),_h(r.horasPagarStandBy||0),_money(r.costoStandBy||0),(r.operador||'—')]); });
+        body.push(['Subtotal '+m.nombre,'','','',_h(m.ht),_h(m.sb),_money(m.csb),'']);
+      });
+      doc.autoTable({
+        startY:y+8,
+        head:[['Fecha','Día','Máquina','Tipo','H. trab','H. SB','Valor SB','Operador']],
+        foot:[['TOTAL','','','',_h(TH),_h(TSB),_money(TCSB),'']],
+        body:body, theme:'grid', margin:{left:M,right:M},
+        styles:{font:'helvetica',fontSize:7.3,cellPadding:2.8,overflow:'linebreak',textColor:[15,23,42],lineColor:[203,213,225],lineWidth:0.3},
+        headStyles:{fillColor:[13,27,62],textColor:[255,255,255],fontStyle:'bold',halign:'center',fontSize:7.3},
+        footStyles:{fillColor:[219,228,240],textColor:[13,27,62],fontStyle:'bold',halign:'center'},
+        columnStyles:{0:{halign:'center',cellWidth:54},1:{halign:'left',cellWidth:54},2:{halign:'left',cellWidth:96},3:{halign:'center',cellWidth:62},4:{halign:'right',cellWidth:48},5:{halign:'right',cellWidth:48},6:{halign:'right',cellWidth:66},7:{halign:'left'}},
+        didParseCell:function(dd){ if(dd.section==='body'){ var raw0=(dd.row.raw&&dd.row.raw[0])||''; if(typeof raw0==='string'&&raw0.indexOf('Subtotal')===0){ dd.cell.styles.fillColor=[226,232,240]; dd.cell.styles.fontStyle='bold'; } if(dd.column.index===6){ var t=(dd.cell.raw||'')+''; if(t!=='$0') dd.cell.styles.textColor=[214,40,40]; } } }
+      });
+      y=doc.lastAutoTable.finalY+16;
+      if(y>PH-130){ doc.addPage(); y=60; }
+
+      // Conclusión
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,27,62); doc.text('Conclusión',M,y); y+=14;
+      var pctSB = TTOT>0 ? (TCSB/TTOT*100) : 0;
+      var conSB = maqs.filter(function(m){return m.sb>0;}).map(function(m){return m.nombre+' ('+_money(m.csb)+')';});
+      var concl='En el periodo, las '+maqs.length+' máquinas trabajaron '+_h(TH)+' (valor '+_money(TVT)+' a tarifa) y acumularon '+_h(TSB)+' de stand-by, '+
+        'con un costo de '+_money(TCSB)+'. El stand-by representa el '+pctSB.toFixed(1).replace('.',',')+'% del costo total de maquinaria ('+_money(TTOT)+'). '+
+        (conSB.length? ('Máquinas con stand-by: '+conSB.join(' · ')+'.') : 'Ninguna máquina registró stand-by en el periodo.');
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.6); doc.setTextColor(15,23,42);
+      var cl=doc.splitTextToSize(concl,PW-2*M); doc.text(cl,M,y);
+
+      var np=doc.internal.getNumberOfPages();
+      for(var p=1;p<=np;p++){ doc.setPage(p); doc.setDrawColor(203,213,225); doc.setLineWidth(0.4); doc.line(M,PH-26,PW-M,PH-26);
+        doc.setFontSize(7.2); doc.setTextColor(120,130,150);
+        doc.text('Generado desde el cockpit de obra · Fuente: control diario de maquinaria',M,PH-15);
+        doc.text('Página '+p+' / '+np,PW-M,PH-15,{align:'right'}); }
+
+      doc.save('Reporte_StandBy_Maquinaria_'+desde+'_'+hasta+'.pdf');
+      msg('Reporte generado ✓','ok'); setTimeout(maqRepCerrar,1200);
+    }catch(e){ msg('Error: '+(e&&e.message||e),'err'); }
+    finally{ if(R().loader) R().loader(false); var g=document.getElementById('maqrep-go'); if(g){ g.disabled=false; g.style.opacity=1; } }
+  };
+})();
+</script>
+
+</body>
+</html>
