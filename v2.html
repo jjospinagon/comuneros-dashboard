@@ -3668,7 +3668,8 @@ function _locCapturaTotal(){
       var bb=new maplibregl.LngLatBounds();
       LOC_CAMARAS.forEach(function(c){ bb.extend([c.lng,c.lat]); });
       LOC_DIBUJOS.forEach(function(l){ (l.coords||[]).forEach(function(p){ bb.extend(p); }); });
-      LOC_MAP.fitBounds(bb,{padding:70,pitch:0,bearing:0,duration:0,maxZoom:17.4});
+      LOC_MAP.jumpTo({pitch:0,bearing:0}); /* vista en planta, perpendicular */
+      LOC_MAP.fitBounds(bb,{padding:70,duration:0,maxZoom:17.4});
       var done=false;
       var fin=function(){ if(done) return; done=true;
         try{ var c=LOC_MAP.getCanvas(); var out={img:c.toDataURL('image/jpeg',0.88), w:c.width, h:c.height};
