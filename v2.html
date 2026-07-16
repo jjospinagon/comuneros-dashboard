@@ -2331,6 +2331,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div class="mo-kpi" style="--acc:#34d399"><div class="l">Con ingreso</div><div class="v" id="mo-k-ingreso">—</div><div class="s">del día</div></div>
       <div class="mo-kpi" style="--acc:#fbbf24"><div class="l">Con salida</div><div class="v" id="mo-k-salida">—</div><div class="s">cerraron jornada</div></div>
       <div class="mo-kpi" style="--acc:#ef4444"><div class="l">Ausencias</div><div class="v" id="mo-k-ausencias">—</div><div class="s">no se reportaron</div></div>
+      <div class="mo-kpi" style="--acc:#fb923c"><div class="l">Sin registrar ingreso</div><div class="v" id="mo-k-sining">—</div><div class="s">activos que faltan (hoy)</div></div>
       <div class="mo-kpi" style="--acc:#a855f7"><div class="l">Horas día</div><div class="v" id="mo-k-horas">—</div><div class="s">netas trabajadas</div></div>
       <div class="mo-kpi" style="--acc:#f59e0b"><div class="l">Horas extras</div><div class="v" id="mo-k-extras">—</div><div class="s">sobre jornada base</div></div>
     </div>
@@ -8692,7 +8693,71 @@ function _moFormatHoraFrac(s){
   return hh + ':' + mm;
 }
 
-async function moCargar(force, fechaOverride){
+/* ============================================================
+   Activos SIN registrar ingreso (para verificar quién falta).
+   Fuente: hoja Trabajadores del XLSX (action=trabajadores_cat),
+   filtrando ESTADO = ACTIVO. La cédula del roster viene enmascarada
+   (****1234), por eso el cruce se hace por nombre normalizado y por
+   los últimos 4 dígitos. Solo aplica al día de HOY: el ESTADO del
+   roster es el actual y no representa fechas pasadas.
+   ============================================================ */
+var MO_ROSTER = null, MO_ROSTER_TS = 0;
+var _MO_ROSTER_TTL = 10 * 60 * 1000;
+function _moNorm(s){ return String(s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); }
+function _moLast4(s){ var d = String(s||'').replace(/\D/g,''); return d.length >= 4 ? d.slice(-4) : ''; }
+async function _moRosterActivos(){
+  if (MO_ROSTER && (Date.now() - MO_ROSTER_TS) < _MO_ROSTER_TTL) return MO_ROSTER;
+  try {
+    var r = await jsonp(APPS_URL, {action:'trabajadores_cat', _ts:Date.now()});
+    if (!r || !r.headers || !r.filas) return MO_ROSTER || [];
+    var H = r.headers.map(function(x){ return String(x||'').trim().toUpperCase(); });
+    var iCed = H.findIndex(function(h){ return /CEDULA/.test(h); });
+    var iNom = H.findIndex(function(h){ return /NOMBRE/.test(h); });
+    var iCar = H.findIndex(function(h){ return /CARGO/.test(h); });
+    var iFre = H.findIndex(function(h){ return /FRENTE/.test(h); });
+    var iEst = H.findIndex(function(h){ return /ESTADO/.test(h); });
+    if (iCed < 0 || iNom < 0 || iEst < 0) return MO_ROSTER || [];
+    MO_ROSTER = r.filas
+      .filter(function(f){ return f && f.c && /^ACTIVO$/i.test(String(f.c[iEst]||'').trim()); })
+      .map(function(f){ return {
+        cedula: String(f.c[iCed]||'').trim(), nombre: String(f.c[iNom]||'').trim(),
+        cargo: iCar>=0 ? String(f.c[iCar]||'').trim() : '', frente: iFre>=0 ? String(f.c[iFre]||'').trim() : ''
+      }; });
+    MO_ROSTER_TS = Date.now();
+  } catch(_){}
+  return MO_ROSTER || [];
+}
+async function _moAplicarSinIngreso(d, fecha){
+  try {
+    if (!d || !Array.isArray(d.personas)) return;
+    // idempotente: quitar los marcadores de una pasada anterior
+    d.personas = d.personas.filter(function(p){ return !p._sinIngreso; });
+    d._sinIngresoCount = 0;
+    var fUsada = d.fechaUsada || d.fecha || fecha;
+    if (fUsada !== moHoyStr()) return;           // solo HOY
+    var roster = await _moRosterActivos();
+    if (!roster || !roster.length) return;
+    var setN = {}, set4 = {};
+    d.personas.forEach(function(p){
+      setN[_moNorm(p.nombre)] = 1;
+      var l = _moLast4(p.cedula); if (l) set4[l] = 1;
+    });
+    var faltan = roster.filter(function(t){
+      var n = _moNorm(t.nombre), l = _moLast4(t.cedula);
+      return !setN[n] && !(l && set4[l]);
+    });
+    faltan.forEach(function(t){
+      d.personas.push({
+        cedula: t.cedula, nombre: t.nombre, cargo: t.cargo, frente: t.frente,
+        ingreso: null, salida: null, horasTrabajadas: null, horasExtras: 0,
+        ausencia: null, ingresoMin: null, salidaMin: null, _sinIngreso: true
+      });
+    });
+    d._sinIngresoCount = faltan.length;
+  } catch(_){}
+}
+
+async function moCargar(force, fechaOverride, silent){
   try{ moRenderOrganigrama(); }catch(_){}
   const tbody = document.querySelector('#mo-tabla tbody');
   let fecha = fechaOverride || MO_FECHA || moHoyStr();
@@ -8703,18 +8768,21 @@ async function moCargar(force, fechaOverride){
     if (cached) {
       MO_DATA = cached;
       _moCompensarOffsetHoras(MO_DATA);
+      await _moAplicarSinIngreso(MO_DATA, fecha);
       MO_LOADED = true;
       const picker = document.getElementById('mo-fecha-picker'); if (picker) picker.value = fecha;
       moRender(); return;
     }
   }
-  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando personal…</td></tr>';
+  // En recargas silenciosas (auto-poll cada 30s) NO se vacía la tabla: se
+  // mantiene lo visible y solo se repinta cuando llegan los datos nuevos.
+  if (tbody && !(silent && MO_DATA)) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">⏳ Cargando personal…</td></tr>';
   try {
     const params = {action:'mano_obra', fecha: fecha};
     if (force) params._ts = Date.now();
     const d = await jsonp(APPS_URL, params);
     if (!d || (d.error && !d.personas)) {
-      if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
+      if (tbody && !(silent && MO_DATA)) tbody.innerHTML = '<tr><td colspan="10" style="color:#ef4444;padding:20px;text-align:center">❌ ' + escapeHTML((d&&d.error)||'sin datos') + '</td></tr>';
       return;
     }
     _lsSet('mo:' + fecha, d, 15000); // TTL 15s para MO (asistencia se actualiza rapido)
