@@ -107,12 +107,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
           <div><label>Ø pulg</label><input type="number" step="any" id="dmDiam" inputmode="decimal" oninput="calc()"></div>
         </div>
         <div class="grid4" style="margin-top:6px">
-          <div><label>% Expan.</label><input type="number" step="any" id="dmExp" inputmode="decimal"></div>
+          <div><label>% Expan.</label><input type="number" step="any" id="dmExp" inputmode="decimal" oninput="calc()"></div>
           <div><label>Peso kg</label><input type="number" step="any" id="dmPeso" inputmode="decimal"></div>
           <div><label>Área/Vol</label><input type="number" step="any" id="dmArea" inputmode="decimal" oninput="calc()"></div>
           <div><label>Total <span id="lblU"></span></label><input type="number" step="any" id="inTotal" inputmode="decimal" style="border-color:#f59e0b"></div>
         </div>
-        <div class="hint" id="hintCalc">El total se sugiere automáticamente según la unidad; puedes corregirlo.</div>
+        <div class="hint" id="hintCalc">El total se sugiere según la unidad y se amplifica con el % de expansión (acepta 35, 1.35 o 0.35 → +35%). Puedes corregirlo.</div>
         <button class="btn btnP" id="btnEnviar" onclick="enviar()">✔ Guardar registro</button>
       </div>
 
@@ -249,6 +249,13 @@ function deselItem(){
   document.getElementById('cardBuscar').style.display='block';
 }
 function num(id){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)?null:v; }
+function fexp(){
+  var e=num('dmExp');
+  if(e===null||e<=0) return 1;
+  if(e>=3) return 1+e/100;   /* 35  -> x1.35 */
+  if(e>=1) return e;          /* 1.35 -> x1.35 */
+  return 1+e;                 /* 0.35 -> x1.35 */
+}
 function calc(){
   if(!SEL) return;
   var u=(SEL.u||'').toUpperCase();
@@ -259,7 +266,7 @@ function calc(){
   else if(u.indexOf('M2')>=0){ if(alto!==null&&ancho!==null) t=alto*ancho*qq; else if(lon!==null&&ancho!==null) t=lon*ancho*qq; }
   else if(u.indexOf('M3')>=0){ if(alto!==null&&ancho!==null&&lon!==null) t=alto*ancho*lon*qq; }
   else if(u.indexOf('UND')>=0 && q!==null) t=q;
-  if(t!==null) document.getElementById('inTotal').value=Math.round(t*100)/100;
+  if(t!==null) document.getElementById('inTotal').value=Math.round(t*fexp()*100)/100;
 }
 function enviar(){
   if(!SEL){ msg('Elige un ítem', true); return; }
@@ -306,14 +313,45 @@ function quitar(id){
   });
 }
 function volcar(){
-  if(!confirm('Se escribirán los registros pendientes en la hoja CANTIDADES del Excel madre. Tarda 2-4 minutos. ¿Continuar?')) return;
+  if(!confirm('Se escribirán los registros pendientes en la hoja CANTIDADES del Excel madre. El proceso corre en el servidor (2-4 min); puedes cerrar la app. ¿Continuar?')) return;
   var b=document.getElementById('btnSync');
-  b.disabled=true; b.innerHTML='<span class="spin"></span>Escribiendo en el Excel… no cierres la app';
+  b.disabled=true; b.innerHTML='<span class="spin"></span>Iniciando volcado…';
   jsonp({action:'cant_sync'}, function(d){
-    b.disabled=false; b.innerHTML='⬆ Volcar a Excel (hoja CANTIDADES)';
-    if(d && d.ok){ msg('Listo: '+d.n+' registro'+(d.n>1?'s':'')+' escrito'+(d.n>1?'s':'')+' en el Excel'); refrescarPend(); }
-    else msg('Error: '+((d&&d.error)||'sin respuesta — verifica en unos minutos antes de reintentar'), true);
-  }, 360000);
+    if(d && d.ok && d.programado){
+      msg('Volcado iniciado en el servidor. Puedes cerrar la app.');
+      b.innerHTML='<span class="spin"></span>Escribiendo en el Excel (en el servidor)…';
+      esperarSync();
+    } else if(d && d.ok){
+      b.disabled=false; b.innerHTML='⬆ Volcar a Excel (hoja CANTIDADES)';
+      msg('No hay pendientes'); refrescarPend();
+    } else {
+      b.disabled=false; b.innerHTML='⬆ Volcar a Excel (hoja CANTIDADES)';
+      msg('Error: '+((d&&d.error)||'sin respuesta'), true);
+    }
+  });
+}
+function esperarSync(){
+  var b=document.getElementById('btnSync');
+  var t0=Date.now();
+  var iv=setInterval(function(){
+    jsonp({action:'cant_sync_estado'}, function(d){
+      if(d && d.pend===0){
+        clearInterval(iv);
+        b.disabled=false; b.innerHTML='⬆ Volcar a Excel (hoja CANTIDADES)';
+        var det=(d.last&&d.last.r&&d.last.r.n)?(' ('+d.last.r.n+' registro'+(d.last.r.n>1?'s':'')+')'):'';
+        msg('Listo: escrito en el Excel'+det);
+        refrescarPend();
+      } else if(d && d.last && d.last.r && d.last.r.error && (new Date(d.last.ts).getTime()>t0)){
+        clearInterval(iv);
+        b.disabled=false; b.innerHTML='⬆ Volcar a Excel (hoja CANTIDADES)';
+        msg('Error en el volcado: '+d.last.r.error, true);
+      } else if(Date.now()-t0 > 8*60000){
+        clearInterval(iv);
+        b.disabled=false; b.innerHTML='⬆ Volcar a Excel (hoja CANTIDADES)';
+        msg('Sigue en proceso en el servidor; los pendientes se limpiarán solos al terminar. También hay un volcado automático diario a las 7 PM.', true);
+      }
+    });
+  }, 20000);
 }
 
 /* ===== metas ===== */
