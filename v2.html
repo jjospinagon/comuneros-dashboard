@@ -3687,7 +3687,8 @@ function _locDibujosRender(){
             }
           });
           if(mejor){
-            html='<b>Tramo '+mejor.de+' → '+mejor.a+'</b><br>'+p.nombre+'<br>'+mejor.m.toFixed(1)+' m'+
+            var _dm=(window.LOC_TRAMOS_INFO||[]).filter(function(t){ return [String(t.de),String(t.a)].sort().join('|')===[String(mejor.de),String(mejor.a)].sort().join('|'); })[0];
+            html='<b>Tramo '+mejor.de+' → '+mejor.a+'</b><br>'+p.nombre+(_dm&&_dm.p?(' · Ø '+_dm.p+'\"'):'')+'<br>'+mejor.m.toFixed(1)+' m'+
                  (trs.length>1?('<br><span style="font-size:11px;color:#64748b">línea completa: '+trs.length+' tramos · '+p.m+' m</span>'):'');
           }
         }
