@@ -421,4 +421,32 @@ function cargarMetas(){
       var cls=pct>=90?'ok':(pct>=60?'warn':'bad');
       var cat=null; for(var j=0;j<CAT.length;j++) if(CAT[j].n===it){cat=CAT[j];break;}
       var und=cat?cat.u:'';
-      var sem=Math.round(meta/dh*5.5*100)/100, dia=Math.rou
+      var sem=Math.round(meta/dh*5.5*100)/100, dia=Math.round(meta/dh*100)/100;
+      h+='<div class="metaRow"><b style="color:#fbbf24">'+it+'</b> <span style="font-size:11px;color:#9ca3af">'+(cat?cat.d.slice(0,45):'')+'</span>'+
+        '<div style="font-size:12px;margin-top:3px">Meta: <b>'+meta+' '+und+'</b> · Avance: <b>'+(Math.round(av*100)/100)+'</b> ('+pct+'%)</div>'+
+        '<div style="font-size:11px;color:#93c5fd">≈ '+sem+' '+und+'/semana · '+dia+' '+und+'/día hábil</div>'+
+        '<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div></div>';
+    }
+    document.getElementById('listaMetas').innerHTML=h||'<div class="vacio">Sin metas para '+mes+'. Crea la primera arriba.</div>';
+  });
+}
+
+/* ===== tabs ===== */
+function tab(t){
+  document.getElementById('tabReg').style.display=(t==='reg')?'block':'none';
+  document.getElementById('tabMetas').style.display=(t==='metas')?'block':'none';
+  document.getElementById('tbReg').className=(t==='reg')?'on':'';
+  document.getElementById('tbMetas').className=(t==='metas')?'on':'';
+  if(t==='metas') cargarMetas();
+}
+
+/* ===== arranque ===== */
+(function(){
+  var u=null;
+  try{ u=JSON.parse(localStorage.getItem('cantUser')||'null'); }catch(e){}
+  if(u&&u.r&&u.n){ ROL=u.r; NOM=u.n; iniciar(); }
+  else document.getElementById('vLogin').style.display='block';
+})();
+</script>
+</body>
+</html>
