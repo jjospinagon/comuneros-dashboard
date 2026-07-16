@@ -2614,6 +2614,11 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       </fieldset>
     </div>
     <div id="loc-dib-estado" style="font-size:11px;color:#94a3b8;margin:0 0 8px">Elige una herramienta y toca el mapa para dibujar (los puntos se pegan a las cámaras). Termina con ✔ o doble clic. Mover: arrastrar · Rotar/inclinar: clic derecho o Ctrl+arrastrar (dos dedos en el celular) — también mientras dibujas.</div>
+    <style>
+      .maplibregl-popup-content, .maplibregl-popup-content *{color:#000 !important}
+      .maplibregl-popup-content{font-size:12.5px;line-height:1.55;font-weight:600}
+      .maplibregl-popup-content b{color:#0d1b3e !important;font-weight:800}
+    </style>
     <div id="loc-map" style="height:68vh;min-height:420px;border-radius:14px;border:1px solid rgba(99,102,241,.35);overflow:hidden;background:#0b1229"></div>
     <div id="loc-nota" style="margin-top:10px;font-size:12px;color:#94a3b8;background:rgba(20,26,55,.5);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:10px 12px">
       ✅ <b>Redes cargadas:</b> sanitaria (84 cámaras, rojo) y pluvial (64 cámaras, azul) — coordenadas MAGNA-SIRGAS convertidas a WGS84. Toca cualquier punto rojo para ver su identificación y elevación. <b>Pendiente:</b> definir los tramos entre cámaras para pintar la ejecución (verde ejecutado / amarillo en ejecución).
