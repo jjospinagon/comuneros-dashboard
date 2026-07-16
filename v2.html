@@ -3871,29 +3871,53 @@ async function locReporte(){
       styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[13,27,62],textColor:255},
       didParseCell:function(d){ if(d.section==='body'&&d.row.index>=4){ d.cell.styles.fontStyle='bold'; d.cell.styles.fillColor=[255,246,220]; } }});
     y=doc.lastAutoTable.finalY+12;
-    /* AVANCE REAL POR SISTEMA: construido vs total contractual de tuberia (cap 3) */
-    var totSan=0, totPlu=0;
+    /* AVANCE REAL POR SISTEMA Y DIAMETRO: construido vs contractual (cap 3) */
+    var totD={};
     try{
       var od=await (await fetch('obra_data.json?_r='+Date.now())).json();
       (od.actividades||[]).forEach(function(a2){
         var ds=String(a2.desc||''); if(!/tuber[ií]a doble pared/i.test(ds)) return;
         var mm2=ds.match(/D\s*=?\s*(\d+)\s*"/); if(!mm2) return;
         var pg=parseInt(mm2[1],10), q=Number(a2.cantContr)||0;
-        if(/sanitaria/i.test(ds)&&(pg===8||pg===10)) totSan+=q;
-        else if(/pluvial/i.test(ds)&&pg>=12&&pg<=36) totPlu+=q;
+        if(/sanitaria/i.test(ds)&&(pg===8||pg===10)) totD['SAN|'+pg]=(totD['SAN|'+pg]||0)+q;
+        else if(/pluvial/i.test(ds)&&pg>=12&&pg<=36) totD['PLU|'+pg]=(totD['PLU|'+pg]||0)+q;
       });
     }catch(_od){}
-    if(totSan>0||totPlu>0){
-      var fs2=[
-        ['Red sanitaria (tubería 8" y 10")',(m.san_const||0).toFixed(1)+' m',totSan.toFixed(1)+' m',totSan>0?(100*(m.san_const||0)/totSan).toFixed(1)+' %':'—'],
-        ['Red pluvial (tubería 12" a 36")',(m.plu_const||0).toFixed(1)+' m',totPlu.toFixed(1)+' m',totPlu>0?(100*(m.plu_const||0)/totPlu).toFixed(1)+' %':'—'],
-        ['TOTAL AMBOS SISTEMAS',cons.toFixed(1)+' m',(totSan+totPlu).toFixed(1)+' m',(totSan+totPlu)>0?(100*cons/(totSan+totPlu)).toFixed(1)+' %':'—']
-      ];
+    if(Object.keys(totD).length){
+      /* construido por diametro: cruce del tramo camara-camara con el diseno */
+      var dmap={};
+      (window.LOC_TRAMOS_INFO||[]).forEach(function(t){ dmap[[String(t.de),String(t.a)].sort().join('|')]=t.p; });
+      var consD={}, sinId={SAN:0,PLU:0};
+      TU.tramos.forEach(function(t){
+        if(t.tipo!=='san_const'&&t.tipo!=='plu_const') return;
+        var sis=(t.tipo==='san_const')?'SAN':'PLU';
+        var pg=dmap[[String(t.de),String(t.a)].sort().join('|')];
+        if(pg) consD[sis+'|'+pg]=(consD[sis+'|'+pg]||0)+t.m;
+        else sinId[sis]+=t.m;
+      });
+      var DIAS={SAN:[8,10],PLU:[12,14,16,18,20,24,30,36]};
+      var fs2=[], marcas=[];
+      var gcons=0, gtot=0;
+      ['SAN','PLU'].forEach(function(sis){
+        var scons=0, stot=0;
+        DIAS[sis].forEach(function(pg){
+          var c=consD[sis+'|'+pg]||0, t2=totD[sis+'|'+pg]||0;
+          if(c===0&&t2===0) return;
+          scons+=c; stot+=t2;
+          fs2.push([(sis==='SAN'?'Sanitaria':'Pluvial')+' Ø '+pg+'"', c.toFixed(1)+' m', t2.toFixed(1)+' m', t2>0?(100*c/t2).toFixed(1)+' %':'—']);
+        });
+        if(sinId[sis]>0.5){ scons+=sinId[sis]; fs2.push([(sis==='SAN'?'Sanitaria':'Pluvial')+' (tramo libre, sin Ø de diseño)', sinId[sis].toFixed(1)+' m','—','—']); }
+        marcas.push(fs2.length);
+        fs2.push(['SUBTOTAL '+(sis==='SAN'?'SANITARIA':'PLUVIAL'), scons.toFixed(1)+' m', stot.toFixed(1)+' m', stot>0?(100*scons/stot).toFixed(1)+' %':'—']);
+        gcons+=scons; gtot+=stot;
+      });
+      marcas.push(fs2.length);
+      fs2.push(['TOTAL AMBOS SISTEMAS', gcons.toFixed(1)+' m', gtot.toFixed(1)+' m', gtot>0?(100*gcons/gtot).toFixed(1)+' %':'—']);
       doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,27,62);
-      doc.text('Avance real por sistema (construido vs cantidades contractuales de tubería)',M,y+4); y+=10;
-      doc.autoTable({startY:y,margin:{left:M,right:M},head:[['Sistema','Construido','Total contractual','% avance']],body:fs2,
-        styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[13,27,62],textColor:255},
-        didParseCell:function(d){ if(d.section==='body'&&d.row.index===2){ d.cell.styles.fontStyle='bold'; d.cell.styles.fillColor=[255,246,220]; } }});
+      doc.text('Avance real por sistema y diámetro (construido vs cantidades contractuales de tubería)',M,y+4); y+=10;
+      doc.autoTable({startY:y,margin:{left:M,right:M},head:[['Sistema / Diámetro','Construido','Total contractual','% avance']],body:fs2,
+        styles:{fontSize:8.5,cellPadding:3.5},headStyles:{fillColor:[13,27,62],textColor:255},
+        didParseCell:function(d){ if(d.section==='body'&&marcas.indexOf(d.row.index)>=0){ d.cell.styles.fontStyle='bold'; d.cell.styles.fillColor=(d.row.index===fs2.length-1)?[255,246,220]:[234,240,249]; } }});
       y=doc.lastAutoTable.finalY+14;
     }
     /* detalle */
