@@ -112,7 +112,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
           <div><label>Área/Vol</label><input type="number" step="any" id="dmArea" inputmode="decimal" oninput="calc()"></div>
           <div><label>Total <span id="lblU"></span></label><input type="number" step="any" id="inTotal" inputmode="decimal" style="border-color:#f59e0b"></div>
         </div>
-        <div class="hint" id="hintCalc">El total se sugiere según la unidad y se amplifica con el % de expansión (acepta 35, 1.35 o 0.35 → +35%). Puedes corregirlo.</div>
+        <div class="hint" id="hintCalc">El total se sugiere según la unidad y se amplifica con el % de expansión (acepta 35, 1.35 o 0.35 → +35%). Puedes corregirlo. Si una misma actividad tiene tramos con dimensiones distintas, guarda un registro por cada tramo: cada uno ocupa su propia fila en el Excel.</div>
         <button class="btn btnP" id="btnEnviar" onclick="enviar()">✔ Guardar registro</button>
       </div>
 
@@ -292,18 +292,40 @@ function enviar(){
 }
 
 /* ===== pendientes / volcado ===== */
+var PENDARR=[];
 function refrescarPend(){
   jsonp({action:'cant_pend'}, function(d){
     var arr=(d&&d.pend)||[];
+    PENDARR=arr;
     document.getElementById('nPend').textContent=arr.length;
     var h='';
     for(var i=0;i<arr.length;i++){
       var g=arr[i];
       h+='<div class="pendRow"><div class="inf"><b>'+g.it+'</b> · '+g.f+' · '+(g.t||0)+'<br><span style="color:#9ca3af">'+(g.d||'')+' — '+(g.u||'')+'</span></div>'+
+         '<button class="btnR" style="color:#fbbf24" onclick="editarPend(\''+g.id+'\')">✎</button>'+
          '<button class="btnR" onclick="quitar(\''+g.id+'\')">✕</button></div>';
     }
     document.getElementById('listaPend').innerHTML=h||'<div class="vacio">Sin registros pendientes</div>';
     document.getElementById('btnSync').style.display=(arr.length&&ROL==='Residente')?'block':'none';
+  });
+}
+function editarPend(id){
+  var g=null;
+  for(var i=0;i<PENDARR.length;i++) if(PENDARR[i].id===id){ g=PENDARR[i]; break; }
+  if(!g){ msg('Registro no encontrado; recarga la lista', true); return; }
+  if(!confirm('El registro vuelve al formulario para que lo edites y lo guardes de nuevo. ¿Continuar?')) return;
+  jsonp({action:'cant_undo', id:id}, function(d){
+    if(!(d&&d.ok)){ msg('No se pudo retirar de la cola', true); return; }
+    selItem(g.it);
+    document.getElementById('inFecha').value=g.f||hoy();
+    document.getElementById('inDesc').value=g.d||'';
+    var dm=g.dm||{};
+    var mp={dmQ:'q',dmAlto:'alto',dmAncho:'ancho',dmDiam:'diam',dmExp:'exp',dmPeso:'peso',dmLon:'lon',dmArea:'area'};
+    for(var idc in mp){ document.getElementById(idc).value=(dm[mp[idc]]!==undefined&&dm[mp[idc]]!==null)?dm[mp[idc]]:''; }
+    document.getElementById('inTotal').value=g.t||'';
+    refrescarPend();
+    window.scrollTo(0,0);
+    msg('Edita los campos y pulsa Guardar registro');
   });
 }
 function quitar(id){
@@ -399,32 +421,4 @@ function cargarMetas(){
       var cls=pct>=90?'ok':(pct>=60?'warn':'bad');
       var cat=null; for(var j=0;j<CAT.length;j++) if(CAT[j].n===it){cat=CAT[j];break;}
       var und=cat?cat.u:'';
-      var sem=Math.round(meta/dh*5.5*100)/100, dia=Math.round(meta/dh*100)/100;
-      h+='<div class="metaRow"><b style="color:#fbbf24">'+it+'</b> <span style="font-size:11px;color:#9ca3af">'+(cat?cat.d.slice(0,45):'')+'</span>'+
-        '<div style="font-size:12px;margin-top:3px">Meta: <b>'+meta+' '+und+'</b> · Avance: <b>'+(Math.round(av*100)/100)+'</b> ('+pct+'%)</div>'+
-        '<div style="font-size:11px;color:#93c5fd">≈ '+sem+' '+und+'/semana · '+dia+' '+und+'/día hábil</div>'+
-        '<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div></div>';
-    }
-    document.getElementById('listaMetas').innerHTML=h||'<div class="vacio">Sin metas para '+mes+'. Crea la primera arriba.</div>';
-  });
-}
-
-/* ===== tabs ===== */
-function tab(t){
-  document.getElementById('tabReg').style.display=(t==='reg')?'block':'none';
-  document.getElementById('tabMetas').style.display=(t==='metas')?'block':'none';
-  document.getElementById('tbReg').className=(t==='reg')?'on':'';
-  document.getElementById('tbMetas').className=(t==='metas')?'on':'';
-  if(t==='metas') cargarMetas();
-}
-
-/* ===== arranque ===== */
-(function(){
-  var u=null;
-  try{ u=JSON.parse(localStorage.getItem('cantUser')||'null'); }catch(e){}
-  if(u&&u.r&&u.n){ ROL=u.r; NOM=u.n; iniciar(); }
-  else document.getElementById('vLogin').style.display='block';
-})();
-</script>
-</body>
-</html>
+      var sem=Math.round(meta/dh*5.5*100)/100, dia=Math.rou
