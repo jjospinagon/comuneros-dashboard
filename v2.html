@@ -8836,6 +8836,7 @@ async function moCargar(force, fechaOverride, silent){
     // Detectamos el patrón (secuencia <2min entre personas consecutivas + todas > 9:30 AM)
     // y restamos el offset para alinear con la hora real del Excel.
     _moCompensarOffsetHoras(MO_DATA);
+    await _moAplicarSinIngreso(MO_DATA, fecha);
     MO_LOADED = true;
     const picker = document.getElementById('mo-fecha-picker');
     if (picker) {
@@ -8944,23 +8945,27 @@ function moRender(){
   // Aplicar filtros
   const personas = moAplicarFiltros(allPersonas);
 
-  // KPIs recalculados con filtros
-  const ki_ingreso = personas.filter(p => p.ingresoMin !== null && p.ingresoMin !== undefined).length;
-  const ki_salida = personas.filter(p => p.salidaMin !== null && p.salidaMin !== undefined).length;
-  const ki_aus = personas.filter(p => !!p.ausencia).length;
-  const ki_enobra = personas.filter(p => p.ingresoMin !== null && p.ingresoMin !== undefined && (p.salidaMin === null || p.salidaMin === undefined) && !p.ausencia).length;
-  const ki_horas = personas.reduce((s,p) => s + (p.horasTrabajadas||0), 0);
-  const ki_extras = personas.reduce((s,p) => s + (p.horasExtras||0), 0);
+  // KPIs recalculados con filtros. Los "sin registrar ingreso" son personal del
+  // roster que aún no aparece en el reporte del día: no cuentan como asistencia.
+  const conReg = personas.filter(p => !p._sinIngreso);
+  const ki_ingreso = conReg.filter(p => p.ingresoMin !== null && p.ingresoMin !== undefined).length;
+  const ki_salida = conReg.filter(p => p.salidaMin !== null && p.salidaMin !== undefined).length;
+  const ki_aus = conReg.filter(p => !!p.ausencia).length;
+  const ki_sining = personas.filter(p => !!p._sinIngreso).length;
+  const ki_enobra = conReg.filter(p => p.ingresoMin !== null && p.ingresoMin !== undefined && (p.salidaMin === null || p.salidaMin === undefined) && !p.ausencia).length;
+  const ki_horas = conReg.reduce((s,p) => s + (p.horasTrabajadas||0), 0);
+  const ki_extras = conReg.reduce((s,p) => s + (p.horasExtras||0), 0);
   document.getElementById('mo-k-enobra').textContent = ki_enobra.toString();
   document.getElementById('mo-k-ingreso').textContent = ki_ingreso.toString();
   document.getElementById('mo-k-salida').textContent = ki_salida.toString();
   document.getElementById('mo-k-ausencias').textContent = ki_aus.toString();
+  var _elSinIng = document.getElementById('mo-k-sining'); if (_elSinIng) _elSinIng.textContent = ki_sining.toString();
   document.getElementById('mo-k-horas').textContent = ki_horas.toFixed(1) + ' h';
   document.getElementById('mo-k-extras').textContent = ki_extras.toFixed(1) + ' h';
 
   // Por frente (recalculado con filtros)
   const porFrente = {};
-  personas.forEach(p => { const f = p.frente||'SIN FRENTE'; if(!porFrente[f]) porFrente[f]={frente:f,count:0,horas:0}; porFrente[f].count++; porFrente[f].horas+=(p.horasTrabajadas||0); });
+  conReg.forEach(p => { const f = p.frente||'SIN FRENTE'; if(!porFrente[f]) porFrente[f]={frente:f,count:0,horas:0}; porFrente[f].count++; porFrente[f].horas+=(p.horasTrabajadas||0); });
   const arrFrente = Object.values(porFrente).sort((a,b)=>b.count-a.count);
   const maxF = Math.max.apply(null, arrFrente.map(x=>x.count).concat([1]));
   document.getElementById('mo-por-frente').innerHTML = arrFrente.length ? arrFrente.map(f => {
@@ -8974,7 +8979,7 @@ function moRender(){
 
   // Por cargo
   const porCargo = {};
-  personas.forEach(p => { const c = p.cargo||'SIN CARGO'; if(!porCargo[c]) porCargo[c]={cargo:c,count:0}; porCargo[c].count++; });
+  conReg.forEach(p => { const c = p.cargo||'SIN CARGO'; if(!porCargo[c]) porCargo[c]={cargo:c,count:0}; porCargo[c].count++; });
   const arrCargo = Object.values(porCargo).sort((a,b)=>b.count-a.count);
   const maxC = Math.max.apply(null, arrCargo.map(x=>x.count).concat([1]));
   document.getElementById('mo-por-cargo').innerHTML = arrCargo.length ? arrCargo.map(c => {
@@ -8985,7 +8990,7 @@ function moRender(){
   }).join('') : '<div style="color:#94a3b8;text-align:center;padding:20px">Sin datos</div>';
 
   // Tabla personas
-  document.getElementById('mo-total-personas').textContent = '· ' + personas.length + ' persona' + (personas.length===1?'':'s') + (allPersonas.length !== personas.length ? ' (filtrado de ' + allPersonas.length + ')' : '');
+  document.getElementById('mo-total-personas').textContent = '· ' + conReg.length + ' con registro' + (ki_sining ? ' · ' + ki_sining + ' sin ingreso' : '') + (allPersonas.length !== personas.length ? ' (filtrado de ' + allPersonas.length + ')' : '');
   const tbody = document.querySelector('#mo-tabla tbody');
   if (!personas.length) {
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">Sin registros que coincidan con los filtros.</td></tr>';
@@ -8994,6 +8999,21 @@ function moRender(){
     tbody.innerHTML = personas.map(p => {
       const fr = (p.frente||'').toUpperCase();
       const clsFr = fr.indexOf('OBRA')===0 ? 'obra' : (fr.indexOf('M.O')===0 ? 'mo' : (fr.indexOf('INTER')===0 ? 'inter' : ''));
+      // Activo del roster que TODAVÍA no registra ingreso hoy (para saber quién falta)
+      if (p._sinIngreso) {
+        return '<tr style="background:rgba(251,146,60,.07)">' +
+          '<td><div class="foto-thumb"></div></td>' +
+          '<td><div style="font-weight:600;color:#e2e8f0">' + escapeHTML(p.nombre||'') + '</div><div style="font-size:10.5px;color:#94a3b8">' + escapeHTML(p.cedula||'') + '</div></td>' +
+          '<td><span class="badge-fr ' + clsFr + '">' + escapeHTML(p.frente||'—') + '</span></td>' +
+          '<td>' + escapeHTML(p.cargo||'—') + '</td>' +
+          '<td class="num">—</td>' +
+          '<td class="num">—</td>' +
+          '<td class="num">—</td>' +
+          '<td class="num">—</td>' +
+          '<td><span style="font-size:10.5px;color:#94a3b8">—</span></td>' +
+          '<td><span style="color:#fb923c;font-weight:700">Sin registrar ingreso</span></td>' +
+        '</tr>';
+      }
       // FIX 2026-06-09: botón "Cerrar jornada" para personas con ingreso pero sin salida (En obra)
       var _enObra = !p.ausencia && p.ingreso && !p.salida;
       var _btnCerrar = _enObra ? '<button type="button" class="mo-btn-cerrar" onclick="event.stopPropagation(); moCerrarJornadaIdx(' + personas.indexOf(p) + ')" style="margin-left:6px;background:#fbbf24;color:#0f172a;border:none;padding:3px 8px;border-radius:5px;font-size:10.5px;font-weight:700;cursor:pointer">Cerrar jornada</button>' : '';
@@ -9157,8 +9177,8 @@ async function moCerrarJornada(p){
     MO_LOADED = false;
     // Doble recarga: a los 3.5s (UX inmediata) y a los 12s (para alcanzar la
     // propagacion del backend). La memoria local mantiene el cierre entre ambas.
-    setTimeout(function(){ if (typeof moCargar === 'function') moCargar(); }, 3500);
-    setTimeout(function(){ if (typeof moCargar === 'function') moCargar(); }, 12000);
+    setTimeout(function(){ if (typeof moCargar === 'function') moCargar(false, MO_FECHA, true); }, 3500);
+    setTimeout(function(){ if (typeof moCargar === 'function') moCargar(false, MO_FECHA, true); }, 12000);
   } catch(e){
     finishOverlay('<div style="font-size:36px;margin-bottom:12px">'+'\u274C'+'</div>' +
       '<div style="font-size:15px;font-weight:600;color:#ef4444;margin-bottom:10px">Error inesperado</div>' +
@@ -9736,7 +9756,9 @@ function _moStartAutoPoll(){
       // Dispara force_sync + reload silencioso
       forceSyncThrottled('force_sync_mo').catch(function(){});
       setTimeout(function(){
-        _lsBust('mo'); MO_LOADED=false; moCargar(true, MO_FECHA);
+        // silent=true: refresca en segundo plano sin vaciar la tabla (antes parecía
+        // que el módulo "se caía" cada 30 s mostrando "Cargando personal…").
+        _lsBust('mo'); MO_LOADED=false; moCargar(true, MO_FECHA, true);
       }, 3000);
     } catch(_){}
   }, 30000);
@@ -9761,7 +9783,7 @@ async function moRefrescar(){
   if (btn) { btn.disabled = false; btn.textContent = 'Refrescar'; }
   setTimeout(function(){
     if (document.getElementById('screen-mo') && document.getElementById('screen-mo').classList.contains('active')){
-      _lsBust('mo'); moCargar(true, MO_FECHA);
+      _lsBust('mo'); moCargar(true, MO_FECHA, true);
     }
   }, 60000);
 }
