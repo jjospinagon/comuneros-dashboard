@@ -3599,6 +3599,10 @@ function locTerminar(){
   },function(){ if(est) est.textContent='❌ Error de conexión al guardar.'; });
 }
 var LOC_DIS=null;
+function _locPopup(lngLat,html){
+  try{ if(window._locPopupRef) window._locPopupRef.remove(); }catch(_){}
+  window._locPopupRef=new maplibregl.Popup().setLngLat(lngLat).setHTML(html).addTo(LOC_MAP);
+}
 async function locCargarDiseno(){
   if(!LOC_MAP||LOC_MODO!=='gl') return;
   try{
@@ -3615,11 +3619,12 @@ async function locCargarDiseno(){
       layout:{'line-join':'round'}},antes);
     var pop=function(e){
       if(LOC_HERR) return;
+      if(LOC_MAP.getLayer('loc-dib-l') && LOC_MAP.queryRenderedFeatures(e.point,{layers:['loc-dib-l']}).length) return; /* la linea marcada tiene prioridad */
       var p=e.features[0].properties;
-      new maplibregl.Popup().setLngLat(e.lngLat).setHTML(
+      _locPopup(e.lngLat,
         '<b>Tramo '+p.de+' → '+p.a+'</b><br>'+(p.s==='SAN'?'Sanitario':'Pluvial')+' · '+(p.dia||'')+' '+(p.mat||'')+
         '<br>Longitud: '+p.m+' m · Pendiente: '+p.pend+' %'+
-        '<br><span style="font-size:11px;color:#64748b">Batea: '+p.bi+' → '+p.bf+' m</span>').addTo(LOC_MAP);
+        '<br><span style="font-size:11px;color:#64748b">Batea: '+p.bi+' → '+p.bf+' m</span>');
     };
     LOC_MAP.on('click','loc-dis-san',pop); LOC_MAP.on('click','loc-dis-plu',pop);
     _locAplicarVis();
@@ -3677,7 +3682,7 @@ function _locDibujosRender(){
           }
         }
         html+='<br><span style="font-size:11px;color:#64748b">'+p.fecha+'</span>';
-        new maplibregl.Popup().setLngLat(e.lngLat).setHTML(html).addTo(LOC_MAP);
+        _locPopup(e.lngLat,html);
       }
     });
   }
