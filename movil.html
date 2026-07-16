@@ -282,7 +282,7 @@ function enviar(){
   jsonp({action:'cant_add', item:SEL.n, fecha:f, desc:(document.getElementById('inDesc').value||'').trim(), dims:JSON.stringify(dm), total:t, user:ROL+' '+NOM}, function(d){
     b.disabled=false; b.innerHTML='✔ Guardar registro';
     if(d && d.ok){
-      msg('Registro guardado ('+d.pend+' pendiente'+(d.pend>1?'s':'')+' de volcar)');
+      msg('Guardado ('+d.pend+' pendiente'+(d.pend>1?'s':'')+'). Puedes registrar otra ejecución del mismo ítem con otras dimensiones.');
       document.getElementById('inDesc').value='';
       var ids=['dmQ','dmAlto','dmAncho','dmDiam','dmExp','dmPeso','dmLon','dmArea','inTotal'];
       for(var i=0;i<ids.length;i++) document.getElementById(ids[i]).value='';
