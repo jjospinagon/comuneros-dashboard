@@ -2577,51 +2577,61 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <button class="back-btn" onclick="locReporte()" style="background:linear-gradient(135deg,#fbbf24,#ef4444);color:#1a0f04;font-weight:800;border:none" title="PDF con resumen construido vs proyectado, tramos cámara a cámara y plano general">📄 Generar reporte</button>
       </div>
     </div>
-    <header>
-      <div>
-        <h1>Mapa de cámaras y tramos</h1>
-        <h2 id="loc-sub">Cámaras de alcantarillado a construir y tramos coloreados según ejecución</h2>
+    <div class="loc-layout" style="display:flex;gap:12px;align-items:stretch">
+      <div class="loc-side" style="flex:0 0 305px;min-width:0;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 130px);overflow-y:auto;padding-right:2px">
+        <div>
+          <h1 style="font-size:19px;margin:0">Mapa de cámaras y tramos</h1>
+          <div id="loc-estado" style="font-size:11px;color:#94a3b8;margin-top:4px">—</div>
+        </div>
+        <fieldset id="loc-tools" style="border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:6px 10px 10px;display:flex;flex-direction:column;gap:6px;margin:0">
+          <legend style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;color:#8b9bd1;padding:0 6px">✏️ HERRAMIENTAS DE MARCADO</legend>
+          <button class="back-btn" id="lt-san_const" onclick="locHerr('san_const')" style="border:2px solid #ef4444;font-size:12px;padding:7px 10px;width:100%;text-align:left">✏️ Sanitaria construida</button>
+          <button class="back-btn" id="lt-plu_const" onclick="locHerr('plu_const')" style="border:2px solid #3b82f6;font-size:12px;padding:7px 10px;width:100%;text-align:left">✏️ Pluvial construida</button>
+          <button class="back-btn" id="lt-san_proy" onclick="locHerr('san_proy')" style="border:2px solid #d946ef;font-size:12px;padding:7px 10px;width:100%;text-align:left">✏️ Proy. sanitaria</button>
+          <button class="back-btn" id="lt-plu_proy" onclick="locHerr('plu_proy')" style="border:2px solid #7dd3fc;font-size:12px;padding:7px 10px;width:100%;text-align:left">✏️ Proy. pluvial</button>
+          <div style="display:flex;gap:6px">
+            <button class="back-btn" onclick="locDeshacer()" style="font-size:12px;padding:7px 8px;flex:1" title="Quita el último punto de la línea en curso">↩ Deshacer</button>
+            <button class="back-btn" onclick="locTerminar()" style="font-size:12px;padding:7px 8px;flex:1;background:#16a34a;border:none;color:#fff;font-weight:700" title="Guarda la línea dibujada (también con doble clic)">✔ Terminar</button>
+          </div>
+          <button class="back-btn" id="lt-borrar" onclick="locHerr('borrar')" style="border:2px solid #64748b;font-size:12px;padding:7px 10px;width:100%;text-align:left" title="Activa y luego toca una línea para eliminarla">🗑 Borrar línea</button>
+        </fieldset>
+        <fieldset id="loc-capas" style="border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:6px 10px 10px;display:flex;flex-direction:column;gap:6px;margin:0">
+          <legend style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;color:#86c99b;padding:0 6px">🗺 VISTAS Y CAPAS</legend>
+          <div style="display:flex;gap:6px">
+            <button class="back-btn" id="lt-vis-san" onclick="locVis('san')" style="font-size:12px;padding:7px 8px;flex:1;border:2px solid #ef4444;background:rgba(239,68,68,.25)">👁 Sanitaria: SÍ</button>
+            <button class="back-btn" id="lt-vis-plu" onclick="locVis('plu')" style="font-size:12px;padding:7px 8px;flex:1;border:2px solid #3b82f6;background:rgba(59,130,246,.25)">👁 Pluvial: SÍ</button>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="back-btn" id="lt-sat" onclick="locSat()" style="font-size:12px;padding:7px 8px;flex:1;border:2px solid #94a3b8">🛰 Satélite: NO</button>
+            <button class="back-btn" id="lt-cad" onclick="locCad()" style="font-size:12px;padding:7px 8px;flex:1;border:2px solid #fbbf24">📐 CAD: NO</button>
+          </div>
+        </fieldset>
+        <div id="loc-leyenda" style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;font-size:11px;color:#cbd5e1;background:rgba(20,26,55,.5);border:1px solid rgba(99,102,241,.25);border-radius:12px;padding:9px 11px">
+          <span><span style="display:inline-block;width:18px;height:4px;background:#ef4444;border-radius:2px;vertical-align:middle"></span> San. construida</span>
+          <span><span style="display:inline-block;width:18px;height:4px;background:#3b82f6;border-radius:2px;vertical-align:middle"></span> Plu. construida</span>
+          <span><span style="display:inline-block;width:18px;height:4px;background:#d946ef;border-radius:2px;vertical-align:middle"></span> San. proyectada</span>
+          <span><span style="display:inline-block;width:18px;height:4px;background:#7dd3fc;border-radius:2px;vertical-align:middle"></span> Plu. proyectada</span>
+          <span><span style="display:inline-block;width:18px;height:0;border-top:3px solid #9ca3af;vertical-align:middle"></span> Diseño san.</span>
+          <span><span style="display:inline-block;width:18px;height:0;border-top:3px dashed #9ca3af;vertical-align:middle"></span> Diseño plu.</span>
+          <span><span style="display:inline-block;width:9px;height:9px;background:#ef4444;border-radius:50%;vertical-align:middle"></span> Cámara san.</span>
+          <span><span style="display:inline-block;width:9px;height:9px;background:#3b82f6;border-radius:50%;vertical-align:middle"></span> Cámara plu.</span>
+        </div>
+        <div id="loc-dib-estado" style="font-size:11px;color:#94a3b8;background:rgba(20,26,55,.5);border:1px solid rgba(99,102,241,.25);border-radius:12px;padding:9px 11px">Elige una herramienta y toca el mapa para dibujar (los puntos se pegan a las cámaras). Termina con ✔ o doble clic. Mover: arrastrar · Rotar/inclinar: clic derecho o Ctrl+arrastrar (dos dedos en el celular).</div>
+        <div id="loc-nota" style="font-size:11px;color:#94a3b8;background:rgba(20,26,55,.5);border:1px solid rgba(99,102,241,.25);border-radius:12px;padding:9px 11px">✅ Base de diseño SewerGEMS: 146 pozos y 149 tramos (gris sólido = sanitario, punteado = pluvial). Toca pozos y líneas para ver sus atributos.</div>
       </div>
-      <span id="loc-estado" style="font-size:11px;color:#94a3b8">—</span>
-    </header>
-    <div id="loc-leyenda" style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 8px;font-size:12px;color:#cbd5e1">
-      <span><span style="display:inline-block;width:22px;height:4px;background:#ef4444;border-radius:2px;vertical-align:middle"></span> Sanitaria construida</span>
-      <span><span style="display:inline-block;width:22px;height:4px;background:#3b82f6;border-radius:2px;vertical-align:middle"></span> Pluvial construida</span>
-      <span><span style="display:inline-block;width:22px;height:4px;background:#d946ef;border-radius:2px;vertical-align:middle"></span> Sanitaria proyectada</span>
-      <span><span style="display:inline-block;width:22px;height:4px;background:#7dd3fc;border-radius:2px;vertical-align:middle"></span> Pluvial proyectada</span>
-      <span><span style="display:inline-block;width:22px;height:0;border-top:3px solid #9ca3af;vertical-align:middle"></span> Diseño sanitario</span>
-      <span><span style="display:inline-block;width:22px;height:0;border-top:3px dashed #9ca3af;vertical-align:middle"></span> Diseño pluvial</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:50%;vertical-align:middle"></span> Cámara sanitaria</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:50%;vertical-align:middle"></span> Cámara pluvial</span>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 8px;align-items:stretch">
-      <fieldset id="loc-tools" style="border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:6px 10px 9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0;min-width:0">
-        <legend style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;color:#8b9bd1;padding:0 6px">✏️ HERRAMIENTAS DE MARCADO</legend>
-        <button class="back-btn" id="lt-san_const" onclick="locHerr('san_const')" style="border:2px solid #ef4444;font-size:12px;padding:6px 10px">✏️ Sanitaria construida</button>
-        <button class="back-btn" id="lt-plu_const" onclick="locHerr('plu_const')" style="border:2px solid #3b82f6;font-size:12px;padding:6px 10px">✏️ Pluvial construida</button>
-        <button class="back-btn" id="lt-san_proy" onclick="locHerr('san_proy')" style="border:2px solid #d946ef;font-size:12px;padding:6px 10px">✏️ Proy. sanitaria</button>
-        <button class="back-btn" id="lt-plu_proy" onclick="locHerr('plu_proy')" style="border:2px solid #7dd3fc;font-size:12px;padding:6px 10px">✏️ Proy. pluvial</button>
-        <button class="back-btn" onclick="locDeshacer()" style="font-size:12px;padding:6px 10px" title="Quita el último punto de la línea en curso">↩ Deshacer</button>
-        <button class="back-btn" onclick="locTerminar()" style="font-size:12px;padding:6px 10px;background:#16a34a;border:none;color:#fff;font-weight:700" title="Guarda la línea dibujada (también con doble clic)">✔ Terminar</button>
-        <button class="back-btn" id="lt-borrar" onclick="locHerr('borrar')" style="border:2px solid #64748b;font-size:12px;padding:6px 10px" title="Activa y luego toca una línea para eliminarla">🗑 Borrar línea</button>
-      </fieldset>
-      <fieldset id="loc-capas" style="border:1px solid rgba(34,197,94,.4);border-radius:12px;padding:6px 10px 9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0;min-width:0">
-        <legend style="font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;color:#86c99b;padding:0 6px">🗺 VISTAS Y CAPAS</legend>
-        <button class="back-btn" id="lt-vis-san" onclick="locVis('san')" style="font-size:12px;padding:6px 10px;border:2px solid #ef4444;background:rgba(239,68,68,.25)">👁 Sanitaria: SÍ</button>
-        <button class="back-btn" id="lt-vis-plu" onclick="locVis('plu')" style="font-size:12px;padding:6px 10px;border:2px solid #3b82f6;background:rgba(59,130,246,.25)">👁 Pluvial: SÍ</button>
-        <button class="back-btn" id="lt-sat" onclick="locSat()" style="font-size:12px;padding:6px 10px;border:2px solid #94a3b8">🛰 Satélite: NO</button>
-        <button class="back-btn" id="lt-cad" onclick="locCad()" style="font-size:12px;padding:6px 10px;border:2px solid #fbbf24">📐 CAD: NO</button>
-      </fieldset>
-    </div>
-    <div id="loc-dib-estado" style="font-size:11px;color:#94a3b8;margin:0 0 8px">Elige una herramienta y toca el mapa para dibujar (los puntos se pegan a las cámaras). Termina con ✔ o doble clic. Mover: arrastrar · Rotar/inclinar: clic derecho o Ctrl+arrastrar (dos dedos en el celular) — también mientras dibujas.</div>
-    <style>
-      .maplibregl-popup-content, .maplibregl-popup-content *{color:#000 !important}
-      .maplibregl-popup-content{font-size:12.5px;line-height:1.55;font-weight:600}
-      .maplibregl-popup-content b{color:#0d1b3e !important;font-weight:800}
-    </style>
-    <div id="loc-map" style="height:68vh;min-height:420px;border-radius:14px;border:1px solid rgba(99,102,241,.35);overflow:hidden;background:#0b1229"></div>
-    <div id="loc-nota" style="margin-top:10px;font-size:12px;color:#94a3b8;background:rgba(20,26,55,.5);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:10px 12px">
-      ✅ <b>Redes cargadas:</b> sanitaria (84 cámaras, rojo) y pluvial (64 cámaras, azul) — coordenadas MAGNA-SIRGAS convertidas a WGS84. Toca cualquier punto rojo para ver su identificación y elevación. <b>Pendiente:</b> definir los tramos entre cámaras para pintar la ejecución (verde ejecutado / amarillo en ejecución).
+      <div style="flex:1;min-width:0">
+        <style>
+          .maplibregl-popup-content, .maplibregl-popup-content *{color:#000 !important}
+          .maplibregl-popup-content{font-size:12.5px;line-height:1.55;font-weight:600}
+          .maplibregl-popup-content b{color:#0d1b3e !important;font-weight:800}
+          @media (max-width:900px){
+            .loc-layout{flex-direction:column}
+            .loc-side{flex:auto !important;max-height:none !important}
+            #loc-map{height:62vh !important}
+          }
+        </style>
+        <div id="loc-map" style="height:calc(100vh - 135px);min-height:520px;border-radius:14px;border:1px solid rgba(99,102,241,.35);overflow:hidden;background:#0b1229"></div>
+      </div>
     </div>
   </div>
 </div>
