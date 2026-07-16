@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0b0f1a">
+<title>Comuneros · Registro Móvil</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:#0b0f1a;color:#e5e7eb;min-height:100vh;padding-bottom:80px}
+.top{position:sticky;top:0;z-index:50;background:#0d1424;border-bottom:2px solid #f59e0b;padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.top h1{font-size:15px;color:#fff}
+.top .sub{font-size:10px;color:#9ca3af}
+.chipUser{background:#1f2937;border:1px solid #f59e0b;color:#fbbf24;font-size:11px;padding:5px 10px;border-radius:14px;font-weight:700}
+.cont{padding:12px;max-width:560px;margin:0 auto}
+.card{background:#111a2e;border:1px solid #253352;border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{font-size:13px;color:#fbbf24;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+label{display:block;font-size:11px;color:#9ca3af;margin:8px 0 3px}
+input,select,textarea{width:100%;background:#0b1222;border:1px solid #2b3a5e;border-radius:8px;color:#fff;font-size:15px;padding:10px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
+.btn{display:block;width:100%;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px}
+.btnP{background:#f59e0b;color:#111}
+.btnS{background:#1f2937;color:#e5e7eb;border:1px solid #374151}
+.btnG{background:#16a34a;color:#fff}
+.btnR{background:none;border:none;color:#f87171;font-size:18px;padding:4px 8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#0d1424;border-top:1px solid #253352;display:flex;z-index:60}
+.tabs button{flex:1;background:none;border:none;color:#6b7280;font-size:11px;padding:10px 4px 12px;cursor:pointer}
+.tabs button.on{color:#fbbf24;font-weight:700}
+.tabs .ic{display:block;font-size:20px;margin-bottom:2px}
+.itemRow{padding:10px;border-bottom:1px solid #1d2941;cursor:pointer}
+.itemRow:active{background:#1a2540}
+.itemRow .n{color:#fbbf24;font-weight:700;font-size:13px}
+.itemRow .d{font-size:12px;color:#d1d5db;margin-top:2px}
+.itemRow .u{font-size:10px;color:#6b7280}
+.pill{display:inline-block;background:#1f2937;border-radius:10px;padding:2px 8px;font-size:10px;color:#93c5fd;margin-left:6px}
+.pendRow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #1d2941}
+.pendRow .inf{flex:1;font-size:12px}
+.pendRow .inf b{color:#fbbf24}
+.metaRow{padding:10px 0;border-bottom:1px solid #1d2941}
+.bar{height:8px;background:#1f2937;border-radius:5px;overflow:hidden;margin-top:6px}
+.bar>div{height:100%;border-radius:5px}
+.ok{background:#22c55e}.warn{background:#f59e0b}.bad{background:#ef4444}
+.msg{position:fixed;top:60px;left:12px;right:12px;background:#16a34a;color:#fff;padding:12px;border-radius:10px;z-index:99;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.5);display:none}
+.msg.err{background:#dc2626}
+.tot{font-size:22px;font-weight:800;color:#fbbf24;text-align:center;padding:6px}
+.hint{font-size:10px;color:#6b7280;margin-top:4px}
+.sel{background:#0f1a30;border:1px solid #f59e0b;border-radius:10px;padding:10px;margin-bottom:10px}
+.sel .n{color:#fbbf24;font-weight:800}
+.sel .d{font-size:12px;color:#e5e7eb;margin-top:2px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #333;border-top-color:#fbbf24;border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.vacio{color:#6b7280;font-size:12px;text-align:center;padding:14px}
+.loginBox{max-width:400px;margin:60px auto;padding:0 16px}
+.loginBox .lg{text-align:center;margin-bottom:22px}
+.loginBox .lg .t1{font-size:22px;font-weight:800;color:#fff}
+.loginBox .lg .t2{font-size:12px;color:#9ca3af;margin-top:4px}
+.rolBtn{display:block;width:100%;background:#111a2e;border:1px solid #253352;border-radius:12px;padding:16px;color:#fff;font-size:16px;font-weight:700;margin-bottom:10px;cursor:pointer;text-align:left}
+.rolBtn small{display:block;font-size:11px;color:#9ca3af;font-weight:400;margin-top:2px}
+.rolBtn.on{border-color:#f59e0b;background:#1a2338}
+</style>
+</head>
+<body>
+
+<div id="vLogin" class="loginBox" style="display:none">
+  <div class="lg">
+    <div class="t1">📋 Registro de Obra</div>
+    <div class="t2">Urbanización Comuneros · Contrato 023 de 2025</div>
+  </div>
+  <button class="rolBtn" onclick="selRol('Residente')">👷 Residente<small>Registro y volcado a Excel · metas</small></button>
+  <button class="rolBtn" onclick="selRol('Maestro')">🔨 Maestro<small>Registro diario de cantidades</small></button>
+  <button class="rolBtn" onclick="selRol('Inspectora')">📝 Inspectora<small>Registro diario de cantidades</small></button>
+  <label>Nombre (queda como firma del registro)</label>
+  <input id="inNombre" placeholder="Tu nombre">
+  <button class="btn btnP" onclick="entrar()">Entrar</button>
+</div>
+
+<div id="vApp" style="display:none">
+  <div class="top">
+    <div><h1>📋 Registro de Obra</h1><div class="sub">Comuneros · Contrato 023-2025</div></div>
+    <div class="chipUser" id="chipU" onclick="salir()">—</div>
+  </div>
+  <div class="cont">
+
+    <div id="tabReg">
+      <div class="card" id="cardBuscar">
+        <h2>1 · Ítem del presupuesto</h2>
+        <input id="inBusca" placeholder="🔍 Buscar por número o nombre (ej: 2.01, tubería)" oninput="filtrar()">
+        <div id="listaItems" style="max-height:280px;overflow:auto;margin-top:8px"></div>
+      </div>
+
+      <div class="card" id="cardForm" style="display:none">
+        <h2>2 · Registro diario</h2>
+        <div class="sel" id="selItem" onclick="deselItem()"></div>
+        <div class="grid2">
+          <div><label>Fecha</label><input type="date" id="inFecha"></div>
+          <div><label>Cantidad (elementos)</label><input type="number" step="any" id="dmQ" inputmode="decimal" oninput="calc()"></div>
+        </div>
+        <label>Descripción / ubicación (ej: Corte domiciliaria Mz 32 #10)</label>
+        <input id="inDesc" placeholder="Qué y dónde se ejecutó">
+        <label style="margin-top:10px">Dimensiones (solo las que apliquen)</label>
+        <div class="grid4">
+          <div><label>Alto m</label><input type="number" step="any" id="dmAlto" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Ancho m</label><input type="number" step="any" id="dmAncho" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Long. m</label><input type="number" step="any" id="dmLon" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Ø pulg</label><input type="number" step="any" id="dmDiam" inputmode="decimal" oninput="calc()"></div>
+        </div>
+        <div class="grid4" style="margin-top:6px">
+          <div><label>% Expan.</label><input type="number" step="any" id="dmExp" inputmode="decimal"></div>
+          <div><label>Peso kg</label><input type="number" step="any" id="dmPeso" inputmode="decimal"></div>
+          <div><label>Área/Vol</label><input type="number" step="any" id="dmArea" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Total <span id="lblU"></span></label><input type="number" step="any" id="inTotal" inputmode="decimal" style="border-color:#f59e0b"></div>
+        </div>
+        <div class="hint" id="hintCalc">El total se sugiere automáticamente según la unidad; puedes corregirlo.</div>
+        <button class="btn btnP" id="btnEnviar" onclick="enviar()">✔ Guardar registro</button>
+      </div>
+
+      <div class="card">
+        <h2>Pendientes de volcar a Excel <span class="pill" id="nPend">0</span></h2>
+        <div id="listaPend"><div class="vacio">Sin registros pendientes</div></div>
+        <button class="btn btnG" id="btnSync" onclick="volcar()" style="display:none">⬆ Volcar a Excel (hoja CANTIDADES)</button>
+        <div class="hint">El volcado escribe cada registro en el bloque de su ítem. Tarda 2-4 minutos; no cierres la app.</div>
+      </div>
+    </div>
+
+    <div id="tabMetas" style="display:none">
+      <div class="card">
+        <h2>Meta mensual <span class="pill" id="lblMes"></span></h2>
+        <label>Ítem</label>
+        <select id="selMetaItem"></select>
+        <div class="grid2">
+          <div><label>Cantidad meta del mes</label><input type="number" step="any" id="inMetaQ" inputmode="decimal"></div>
+          <div><label>Mes</label><input type="month" id="inMetaMes"></div>
+        </div>
+        <button class="btn btnP" onclick="guardarMeta()">✔ Guardar meta</button>
+      </div>
+      <div class="card">
+        <h2>Seguimiento de metas</h2>
+        <div class="hint" id="hintHab"></div>
+        <div id="listaMetas"><div class="vacio">Cargando…</div></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="tabs">
+    <button id="tbReg" class="on" onclick="tab('reg')"><span class="ic">📝</span>Registro</button>
+    <button id="tbMetas" onclick="tab('metas')"><span class="ic">🎯</span>Metas</button>
+  </div>
+</div>
+
+<div class="msg" id="msg"></div>
+
+<script>
+var API='https://script.google.com/macros/s/AKfycbxtP8Q6PQ0AGFDnU1UpGg40lZ6nuiYMf_-QqGlxCd2PMNXIiSBirkyKkU6q7h4IOOL-/exec';
+var CAT=[], SEL=null, ROL='', NOM='', METAS={}, HIST={}, PENDM={};
+var FESTIVOS=['2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03','2026-05-01','2026-05-18','2026-06-08','2026-06-15','2026-06-29','2026-07-20','2026-08-07','2026-08-17','2026-10-12','2026-11-02','2026-11-16','2026-12-08','2026-12-25','2027-01-01','2027-01-11'];
+var _cbN=0;
+function jsonp(params, cb, tmo){
+  var name='cb'+(Date.now())+'_'+(_cbN++);
+  var done=false;
+  window[name]=function(d){ done=true; try{delete window[name];}catch(e){window[name]=null;} cb(d); };
+  var q=[]; for(var k in params) q.push(k+'='+encodeURIComponent(params[k]));
+  var s=document.createElement('script');
+  s.src=API+'?'+q.join('&')+'&callback='+name;
+  s.onerror=function(){ if(!done){done=true; cb({error:'sin conexión'});} };
+  document.head.appendChild(s);
+  setTimeout(function(){ if(!done){done=true; cb({error:'tiempo agotado'});} }, tmo||45000);
+}
+function msg(t, err){
+  var m=document.getElementById('msg');
+  m.textContent=t; m.className='msg'+(err?' err':''); m.style.display='block';
+  clearTimeout(m._t); m._t=setTimeout(function(){m.style.display='none';}, err?5000:3000);
+}
+function hoy(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function mesAct(){ return hoy().slice(0,7); }
+
+/* ===== identidad ===== */
+function selRol(r){
+  ROL=r;
+  var bs=document.querySelectorAll('.rolBtn');
+  for(var i=0;i<bs.length;i++) bs[i].className='rolBtn'+(bs[i].textContent.indexOf(r)>=0?' on':'');
+}
+function entrar(){
+  NOM=(document.getElementById('inNombre').value||'').trim();
+  if(!ROL){ msg('Elige tu rol', true); return; }
+  if(!NOM){ msg('Escribe tu nombre', true); return; }
+  try{ localStorage.setItem('cantUser', JSON.stringify({r:ROL,n:NOM})); }catch(e){}
+  iniciar();
+}
+function salir(){
+  if(!confirm('¿Cambiar de usuario?')) return;
+  try{ localStorage.removeItem('cantUser'); }catch(e){}
+  location.reload();
+}
+function iniciar(){
+  document.getElementById('vLogin').style.display='none';
+  document.getElementById('vApp').style.display='block';
+  document.getElementById('chipU').textContent=ROL+' · '+NOM.split(' ')[0];
+  document.getElementById('inFecha').value=hoy();
+  document.getElementById('inMetaMes').value=mesAct();
+  document.getElementById('lblMes').textContent=mesAct();
+  cargarCat();
+}
+
+/* ===== catálogo ===== */
+function cargarCat(){
+  try{
+    var c=JSON.parse(localStorage.getItem('cantCat')||'null');
+    if(c && c.t && (Date.now()-c.t)<86400000 && c.items && c.items.length){ CAT=c.items; pintarLista(CAT); pintarSelMetas(); refrescarPend(); return; }
+  }catch(e){}
+  jsonp({action:'cant_catalogo'}, function(d){
+    if(d && d.items && d.items.length){
+      CAT=d.items;
+      try{ localStorage.setItem('cantCat', JSON.stringify({t:Date.now(),items:CAT})); }catch(e){}
+      pintarLista(CAT); pintarSelMetas(); refrescarPend();
+    } else msg('No se pudo cargar el catálogo', true);
+  });
+}
+function pintarLista(arr){
+  var h='';
+  for(var i=0;i<Math.min(arr.length,60);i++){
+    var it=arr[i];
+    h+='<div class="itemRow" onclick="selItem(\''+it.n+'\')"><span class="n">'+it.n+'</span><span class="pill">'+it.u+'</span><div class="d">'+it.d+'</div></div>';
+  }
+  if(!arr.length) h='<div class="vacio">Sin resultados</div>';
+  document.getElementById('listaItems').innerHTML=h;
+}
+function filtrar(){
+  var q=(document.getElementById('inBusca').value||'').toLowerCase();
+  if(!q){ pintarLista(CAT); return; }
+  var r=[];
+  for(var i=0;i<CAT.length;i++){
+    if(CAT[i].n.indexOf(q)>=0 || CAT[i].d.toLowerCase().indexOf(q)>=0) r.push(CAT[i]);
+  }
+  pintarLista(r);
+}
+function selItem(n){
+  for(var i=0;i<CAT.length;i++) if(CAT[i].n===n){ SEL=CAT[i]; break; }
+  if(!SEL) return;
+  document.getElementById('selItem').innerHTML='<span class="n">'+SEL.n+' · '+SEL.u+'</span><div class="d">'+SEL.d+'</div><div class="hint">Toca para cambiar de ítem</div>';
+  document.getElementById('lblU').textContent=SEL.u;
+  document.getElementById('cardForm').style.display='block';
+  document.getElementById('cardBuscar').style.display='none';
+}
+function deselItem(){
+  SEL=null;
+  document.getElementById('cardForm').style.display='none';
+  document.getElementById('cardBuscar').style.display='block';
+}
+function num(id){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)?null:v; }
+function calc(){
+  if(!SEL) return;
+  var u=(SEL.u||'').toUpperCase();
+  var q=num('dmQ'), alto=num('dmAlto'), ancho=num('dmAncho'), lon=num('dmLon'), area=num('dmArea');
+  var t=null, qq=(q===null?1:q);
+  if(area!==null) t=area;
+  else if(u.indexOf('ML')>=0 && lon!==null) t=lon*qq;
+  else if(u.indexOf('M2')>=0){ if(alto!==null&&ancho!==null) t=alto*ancho*qq; else if(lon!==null&&ancho!==null) t=lon*ancho*qq; }
+  else if(u.indexOf('M3')>=0){ if(alto!==null&&ancho!==null&&lon!==null) t=alto*ancho*lon*qq; }
+  else if(u.indexOf('UND')>=0 && q!==null) t=q;
+  if(t!==null) document.getElementById('inTotal').value=Math.round(t*100)/100;
+}
+function enviar(){
+  if(!SEL){ msg('Elige un ítem', true); return; }
+  var f=document.getElementById('inFecha').value;
+  var t=num('inTotal');
+  if(!f){ msg('Falta la fecha', true); return; }
+  if(t===null||t<=0){ msg('Falta el total', true); return; }
+  var dm={};
+  var mp={dmQ:'q',dmAlto:'alto',dmAncho:'ancho',dmDiam:'diam',dmExp:'exp',dmPeso:'peso',dmLon:'lon',dmArea:'area'};
+  for(var id in mp){ var v=num(id); if(v!==null) dm[mp[id]]=v; }
+  var b=document.getElementById('btnEnviar');
+  b.disabled=true; b.innerHTML='<span class="spin"></span>Guardando…';
+  jsonp({action:'cant_add', item:SEL.n, fecha:f, desc:(document.getElementById('inDesc').value||'').trim(), dims:JSON.stringify(dm), total:t, user:ROL+' '+NOM}, function(d){
+    b.disabled=false; b.innerHTML='✔ Guardar registro';
+    if(d && d.ok){
+      msg('Registro guardado ('+d.pend+' pendiente'+(d.pend>1?'s':'')+' de volcar)');
+      document.getElementById('inDesc').value='';
+      var ids=['dmQ','dmAlto','dmAncho','dmDiam','dmExp','dmPeso','dmLon','dmArea','inTotal'];
+      for(var i=0;i<ids.length;i++) document.getElementById(ids[i]).value='';
+      refrescarPend();
+    } else msg('Error: '+((d&&d.error)||'sin respuesta'), true);
+  });
+}
+
+/* ===== pendientes / volcado ===== */
+function refrescarPend(){
+  jsonp({action:'cant_pend'}, function(d){
+    var arr=(d&&d.pend)||[];
+    document.getElementById('nPend').textContent=arr.length;
+    var h='';
+    for(var i=0;i<arr.length;i++){
+      var g=arr[i];
+      h+='<div class="pendRow"><div class="inf"><b>'+g.it+'</b> · '+g.f+' · '+(g.t||0)+'<br><span style="color:#9ca3af">'+(g.d||'')+' — '+(g.u||'')+'</span></div>'+
+         '<button class="btnR" onclick="quitar(\''+g.id+'\')">✕</button></div>';
+    }
+    document.getElementById('listaPend').innerHTML=h||'<div class="vacio">Sin registros pendientes</div>';
+    document.getElementById('btnSync').style.display=(arr.length&&ROL==='Residente')?'block':'none';
+  });
+}
+function quitar(id){
+  if(!confirm('¿Eliminar este registro pendiente?')) return;
+  jsonp({action:'cant_undo', id:id}, function(d){
+    if(d&&d.ok){ msg('Eliminado'); refrescarPend(); } else msg('Error al eliminar', true);
+  });
+}
+function volcar(){
+  if(!confirm('Se escribirán los registros pendientes en la hoja CANTIDADES del Excel madre. Tarda 2-4 minutos. ¿Continuar?')) return;
+  var b=document.getElementById('btnSync');
+  b.disabled=true; b.innerHTML='<span class="spin"></span>Escribiendo en el Excel… no cierres la app';
+  jsonp({action:'cant_sync'}, function(d){
+    b.disabled=false; b.innerHTML='⬆ Volcar a Excel (hoja CANTIDADES)';
+    if(d && d.ok){ msg('Listo: '+d.n+' registro'+(d.n>1?'s':'')+' escrito'+(d.n>1?'s':'')+' en el Excel'); refrescarPend(); }
+    else msg('Error: '+((d&&d.error)||'sin respuesta — verifica en unos minutos antes de reintentar'), true);
+  }, 360000);
+}
+
+/* ===== metas ===== */
+function pintarSelMetas(){
+  var h='';
+  for(var i=0;i<CAT.length;i++) h+='<option value="'+CAT[i].n+'">'+CAT[i].n+' — '+CAT[i].d.slice(0,50)+' ('+CAT[i].u+')</option>';
+  document.getElementById('selMetaItem').innerHTML=h;
+}
+function diasHabiles(mes){
+  var p=mes.split('-'), y=+p[0], m=+p[1];
+  var nd=new Date(y,m,0).getDate(), tot=0;
+  for(var d=1;d<=nd;d++){
+    var fx=mes+'-'+('0'+d).slice(-2);
+    if(FESTIVOS.indexOf(fx)>=0) continue;
+    var dw=new Date(y,m-1,d).getDay();
+    if(dw===0) continue;
+    tot+=(dw===6)?0.5:1;
+  }
+  return tot;
+}
+function guardarMeta(){
+  var it=document.getElementById('selMetaItem').value;
+  var q=parseFloat(document.getElementById('inMetaQ').value);
+  var mes=document.getElementById('inMetaMes').value;
+  if(!it||isNaN(q)||!mes){ msg('Completa ítem, cantidad y mes', true); return; }
+  jsonp({action:'metas_set', item:it, qty:q, mes:mes, user:ROL+' '+NOM}, function(d){
+    if(d&&d.ok){ msg('Meta guardada'); cargarMetas(); }
+    else msg('Error: '+((d&&d.error)||''), true);
+  });
+}
+function cargarMetas(){
+  jsonp({action:'metas_get'}, function(d){
+    if(!d||d.error){ document.getElementById('listaMetas').innerHTML='<div class="vacio">Error al cargar</div>'; return; }
+    METAS=d.metas||{}; HIST=d.hist||{}; PENDM=d.pend||{};
+    var mes=document.getElementById('inMetaMes').value||mesAct();
+    var dh=diasHabiles(mes);
+    document.getElementById('hintHab').textContent='Mes '+mes+': '+dh+' días hábiles (5.5 d/sem, sin festivos)';
+    var mm=METAS[mes]||{}, hh=HIST[mes]||{}, pp=PENDM[mes]||{};
+    var ks=[]; for(var k in mm) ks.push(k);
+    ks.sort();
+    var h='';
+    for(var i=0;i<ks.length;i++){
+      var it=ks[i], meta=mm[it].q, av=(hh[it]||0)+(pp[it]||0);
+      var pct=meta>0?Math.min(100,Math.round(av/meta*100)):0;
+      var cls=pct>=90?'ok':(pct>=60?'warn':'bad');
+      var cat=null; for(var j=0;j<CAT.length;j++) if(CAT[j].n===it){cat=CAT[j];break;}
+      var und=cat?cat.u:'';
+      var sem=Math.round(meta/dh*5.5*100)/100, dia=Math.round(meta/dh*100)/100;
+      h+='<div class="metaRow"><b style="color:#fbbf24">'+it+'</b> <span style="font-size:11px;color:#9ca3af">'+(cat?cat.d.slice(0,45):'')+'</span>'+
+        '<div style="font-size:12px;margin-top:3px">Meta: <b>'+meta+' '+und+'</b> · Avance: <b>'+(Math.round(av*100)/100)+'</b> ('+pct+'%)</div>'+
+        '<div style="font-size:11px;color:#93c5fd">≈ '+sem+' '+und+'/semana · '+dia+' '+und+'/día hábil</div>'+
+        '<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div></div>';
+    }
+    document.getElementById('listaMetas').innerHTML=h||'<div class="vacio">Sin metas para '+mes+'. Crea la primera arriba.</div>';
+  });
+}
+
+/* ===== tabs ===== */
+function tab(t){
+  document.getElementById('tabReg').style.display=(t==='reg')?'block':'none';
+  document.getElementById('tabMetas').style.display=(t==='metas')?'block':'none';
+  document.getElementById('tbReg').className=(t==='reg')?'on':'';
+  document.getElementById('tbMetas').className=(t==='metas')?'on':'';
+  if(t==='metas') cargarMetas();
+}
+
+/* ===== arranque ===== */
+(function(){
+  var u=null;
+  try{ u=JSON.parse(localStorage.getItem('cantUser')||'null'); }catch(e){}
+  if(u&&u.r&&u.n){ ROL=u.r; NOM=u.n; iniciar(); }
+  else document.getElementById('vLogin').style.display='block';
+})();
+</script>
+</body>
+</html>
