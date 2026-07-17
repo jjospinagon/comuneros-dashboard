@@ -11580,8 +11580,20 @@ if ('serviceWorker' in navigator) {
       var set=function(id,t){ var e=document.getElementById(id); if(e) e.textContent=t; };
       var pProg=(bac>0&&pv!=null)? pv/bac*100 : null;
       var pEjec=(bac>0&&ev>0)? ev/bac*100 : null;
+      // FUENTE REAL DEL AVANCE (2026-07-17): la hoja AVANCE DIARIO (F108/K108/K109),
+      // la misma que alimenta Ejecución Diaria. Antes se usaba OBRA_DATA.ejecutadoGlobal,
+      // que se queda en la fecha del último corte del dashboard de Obra y mostraba de menos.
+      try{
+        var _ac = await jsonp(APPS_URL,{action:'avance_acum',_ts:Date.now()});
+        if(_ac && _ac.ok && _ac.pct>0){
+          ev = _ac.acumulado || ev;
+          if(_ac.total>0) bac = _ac.total;
+          pEjec = _ac.pct*100;
+          if(bac>0 && pv!=null) pProg = pv/bac*100;
+        }
+      }catch(_){}
       set('md-k-prog', pct(pProg)); set('md-k-prog-s', pv!=null? (mon(pv)+' programado al corte') : 'sin curva S disponible');
-      set('md-k-ejec', pct(pEjec)); set('md-k-ejec-s', mon(ev)+' ejecutado');
+      set('md-k-ejec', pct(pEjec)); set('md-k-ejec-s', mon(ev)+' ejecutado · AVANCE DIARIO');
       var br=(pProg!=null&&pEjec!=null)?(pEjec-pProg):null;
       set('md-k-brecha', br==null?'—':((br>=0?'+':'')+pct(br)));
       var eb=document.getElementById('md-k-brecha'); if(eb) eb.style.color = (br==null)?'':(br>=0?'#10b981':'#f87171');
