@@ -466,7 +466,8 @@ function verMas(itn, mes, btn){
     for(var i=lg.length-1;i>=0;i--){
       var g=lg[i];
       var tv=parseFloat(g.t); if(!isNaN(tv)) tot+=tv;
-      h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px dashed #1d2941">'+(g.f||'s/f')+' · <b style="color:#fbbf24">'+(g.t!==''&&g.t!==null&&g.t!==undefined?g.t:'—')+'</b>'+(g.d?(' · <span style="color:#9ca3af">'+g.d+'</span>'):'')+'</div>';
+      var t2=isNaN(tv)?'—':(Math.round(tv*100)/100);
+      h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px dashed #1d2941">'+(g.f||'s/f')+' · <b style="color:#fbbf24">'+t2+'</b>'+(g.d?(' · <span style="color:#9ca3af">'+g.d+'</span>'):'')+(g.m?('<br><span style="color:#6b7280;font-size:10px">'+g.m+'</span>'):'')+'</div>';
     }
     var pd=PENDARR.filter(function(x){return x.it===itn&&(!mes||String(x.f).slice(0,7)===mes);});
     for(var j=0;j<pd.length;j++){
