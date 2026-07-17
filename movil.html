@@ -63,6 +63,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #333;border-top-color:#fbbf24;border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .vacio{color:#6b7280;font-size:12px;text-align:center;padding:14px}
+.fab{position:fixed;right:14px;bottom:78px;width:54px;height:54px;border-radius:50%;background:#f59e0b;color:#111;border:2px solid #fbbf24;font-size:26px;font-weight:700;line-height:1;cursor:pointer;z-index:90;box-shadow:0 6px 20px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0}
+.fab:active{transform:scale(.93)}
+.fab.girando{animation:sp .9s linear infinite}
 .loginBox{max-width:400px;margin:60px auto;padding:0 16px}
 .loginBox .lg{text-align:center;margin-bottom:22px}
 .loginBox .lg .t1{font-size:22px;font-weight:800;color:#fff}
@@ -175,6 +178,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
 </div>
 
 <div class="msg" id="msg"></div>
+
+<button class="fab" id="fabRef" onclick="hardRefresh()" title="Actualizar app y datos" aria-label="Actualizar">&#10227;</button>
 
 <script>
 var API='https://script.google.com/macros/s/AKfycbxtP8Q6PQ0AGFDnU1UpGg40lZ6nuiYMf_-QqGlxCd2PMNXIiSBirkyKkU6q7h4IOOL-/exec';
@@ -521,6 +526,38 @@ function pintarMseg(){
       '<div id="vm_'+it.n.replace('.','_')+'_m" style="display:none"></div></div>';
   }
   document.getElementById('listaMetas').innerHTML=h||'<div class="vacio">Sin metas para '+mes+'. Créalas en la pestaña Metas.</div>';
+}
+
+/* ===== actualizar app + datos (equivale a Ctrl+Shift+R) ===== */
+function hardRefresh(){
+  var b=document.getElementById('fabRef');
+  if(b){ b.className='fab girando'; }
+  msg('Actualizando la app y los datos\u2026');
+  var tareas=[];
+  try{ localStorage.removeItem('cantCat'); }catch(e){}
+  try{
+    if(window.caches && caches.keys){
+      tareas.push(caches.keys().then(function(ks){
+        return Promise.all(ks.map(function(k){ return caches.delete(k); }));
+      }).catch(function(){}));
+    }
+  }catch(e2){}
+  try{
+    if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+      tareas.push(navigator.serviceWorker.getRegistrations().then(function(rs){
+        return Promise.all(rs.map(function(r){ return r.unregister(); }));
+      }).catch(function(){}));
+    }
+  }catch(e3){}
+  var hecho=false;
+  var recargar=function(){
+    if(hecho) return; hecho=true;
+    var u=location.href.split('#')[0].replace(/([?&])v=\d+/,'$1').replace(/[?&]$/,'');
+    u += (u.indexOf('?')>=0?'&':'?')+'v='+Date.now();
+    location.replace(u);
+  };
+  if(tareas.length){ Promise.all(tareas).then(recargar, recargar); setTimeout(recargar, 4000); }
+  else setTimeout(recargar, 400);
 }
 
 /* ===== arranque ===== */
