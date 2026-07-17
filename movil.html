@@ -52,7 +52,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
 .metaRow{padding:10px 0;border-bottom:1px solid #1d2941}
 .bar{height:8px;background:#1f2937;border-radius:5px;overflow:hidden;margin-top:6px}
 .bar>div{height:100%;border-radius:5px}
-.ok{background:#22c55e}.warn{background:#f59e0b}.bad{background:#ef4444}
+.ok{background:#22c55e}.warn{background:#facc15}.bad{background:#ef4444}.rosa{background:#f472b6}
 .msg{position:fixed;top:60px;left:12px;right:12px;background:#16a34a;color:#fff;padding:12px;border-radius:10px;z-index:99;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.5);display:none}
 .msg.err{background:#dc2626}
 .tot{font-size:22px;font-weight:800;color:#fbbf24;text-align:center;padding:6px}
@@ -448,6 +448,8 @@ function cargarResumen(t){
   });
 }
 function _nfmt(v){ return (v===null||v===undefined||isNaN(v))?'—':(Math.round(v*100)/100); }
+/* escala: 0-33 rosado \u00b7 33-66 amarillo \u00b7 66-100 verde \u00b7 >100 rojo */
+function _clsPct(p){ if(p===null||p===undefined||isNaN(p)) return ''; if(p>100) return 'bad'; if(p>=66) return 'ok'; if(p>=33) return 'warn'; return 'rosa'; }
 function pintarAcum(){
   if(!RES){ return; }
   var a=(RES.acum&&RES.acum.a)||{};
@@ -458,11 +460,13 @@ function pintarAcum(){
     var it=CAT[i];
     if(q && it.n.indexOf(q)<0 && it.d.toLowerCase().indexOf(q)<0) continue;
     var ac=a[it.n]||{};
-    var pct=(ac.c&&ac.e!==null&&ac.e!==undefined)?Math.min(100,Math.round(ac.e/ac.c*100)):null;
-    var cls=pct===null?'':(pct>=90?'ok':(pct>=50?'warn':'bad'));
+    var pct=(ac.c&&ac.c>0&&ac.e!==null&&ac.e!==undefined)?Math.round(ac.e/ac.c*100):null;
+    var cls=_clsPct(pct);
+    var wpct=(pct===null)?0:Math.max(0,Math.min(100,pct));
     h+='<div class="metaRow"><b style="color:#fbbf24">'+it.n+'</b> <span class="pill">'+it.u+'</span> <span style="font-size:11px;color:#9ca3af">'+it.d.slice(0,45)+'</span>'+
       '<div style="font-size:12px;margin-top:3px">Ejecutado: <b>'+_nfmt(ac.e)+'</b> / '+_nfmt(ac.c)+' '+it.u+(pct!==null?(' ('+pct+'%)'):'')+'</div>'+
-      (pct!==null?('<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div>'):'')+
+      (pct!==null?('<div class="bar"><div class="'+cls+'" style="width:'+wpct+'%"></div></div>'):'')+
+      (pct!==null&&pct>100?('<div style="font-size:10px;color:#f87171;margin-top:3px">Supera lo contractual en '+(Math.round((ac.e-ac.c)*100)/100)+' '+it.u+' (+'+(pct-100)+'%)</div>'):'')+
       '<button class="btnS btn" style="padding:6px;margin-top:6px;font-size:12px" onclick="verMas(\''+it.n+'\',\'\',this)">Ver más · historial del ítem</button>'+
       '<div id="vm_'+it.n.replace('.','_')+'_x" style="display:none"></div></div>';
   }
@@ -515,13 +519,14 @@ function pintarMseg(){
     if(!MSEG_TODOS && !tiene) continue;
     var meta=tiene?mm[it.n].q:null;
     var av=(hh[it.n]||0)+(pp[it.n]||0);
-    var pct=(meta&&meta>0)?Math.min(100,Math.round(av/meta*100)):null;
-    var cls=pct===null?'':(pct>=90?'ok':(pct>=60?'warn':'bad'));
+    var pct=(meta&&meta>0)?Math.round(av/meta*100):null;
+    var cls=_clsPct(pct);
+    var wpct=(pct===null)?0:Math.max(0,Math.min(100,pct));
     var sem=meta?Math.round(meta/dh*5.5*100)/100:null, dia=meta?Math.round(meta/dh*100)/100:null;
     h+='<div class="metaRow"><b style="color:#fbbf24">'+it.n+'</b> <span class="pill">'+it.u+'</span> <span style="font-size:11px;color:#9ca3af">'+it.d.slice(0,45)+'</span>'+
       '<div style="font-size:12px;margin-top:3px">Meta: <b>'+(meta!==null?meta:'—')+'</b> · Ejecutado mes: <b>'+(Math.round(av*100)/100)+'</b>'+(pct!==null?(' ('+pct+'%)'):'')+'</div>'+
       (sem!==null?('<div style="font-size:11px;color:#93c5fd">≈ '+sem+' '+it.u+'/semana · '+dia+' '+it.u+'/día hábil</div>'):'')+
-      (pct!==null?('<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div>'):'')+
+      (pct!==null?('<div class="bar"><div class="'+cls+'" style="width:'+wpct+'%"></div></div>'):'')+
       '<button class="btnS btn" style="padding:6px;margin-top:6px;font-size:12px" onclick="verMas(\''+it.n+'\',\''+mes+'\',this)">Ver más · registros del mes</button>'+
       '<div id="vm_'+it.n.replace('.','_')+'_m" style="display:none"></div></div>';
   }
