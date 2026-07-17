@@ -69,7 +69,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
     <div class="t2">Urbanización Comuneros · Contrato 023 de 2025</div>
   </div>
   <button class="rolBtn" onclick="iniciarTab('reg')">📝 Registro de actividades<small>Cantidades ejecutadas del día → hoja CANTIDADES</small></button>
-  <button class="rolBtn" onclick="iniciarTab('metas')">🎯 Registro de metas<small>Meta mensual por ítem · seguimiento semanal y diario</small></button>
+  <button class="rolBtn" onclick="iniciarTab('metas')">🎯 Registro de metas<small>Meta mensual por ítem</small></button>
+  <button class="rolBtn" onclick="iniciarTab('acum')">📊 Ejecutado acumulado<small>Avance por ítem (Excel) + registros de la app</small></button>
+  <button class="rolBtn" onclick="iniciarTab('mseg')">📈 Seguimiento de metas<small>Meta vs ejecutado del mes por ítem</small></button>
 </div>
 
 <div id="vApp" style="display:none">
@@ -132,9 +134,22 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         </div>
         <button class="btn btnP" onclick="guardarMeta()">✔ Guardar meta</button>
       </div>
+    </div>
+
+    <div id="tabAcum" style="display:none">
       <div class="card">
-        <h2>Seguimiento de metas</h2>
+        <h2>Ejecutado acumulado <span class="pill" id="acumTs">—</span></h2>
+        <div class="hint">Cantidad ejecutada vs contractual según el Excel (se actualiza en cada volcado). «Ver más» muestra los registros hechos desde la app.</div>
+        <input id="inBuscaAcum" placeholder="🔍 Filtrar ítem" oninput="pintarAcum()" style="margin-top:8px">
+        <div id="listaAcum"><div class="vacio">Cargando…</div></div>
+      </div>
+    </div>
+
+    <div id="tabMseg" style="display:none">
+      <div class="card">
+        <h2>Seguimiento de metas <span class="pill" id="lblMes2">—</span></h2>
         <div class="hint" id="hintHab"></div>
+        <button class="btn btnS" id="btnTodosMetas" onclick="MSEG_TODOS=!MSEG_TODOS;pintarMseg()">Ver los 93 ítems</button>
         <div id="listaMetas"><div class="vacio">Cargando…</div></div>
       </div>
     </div>
@@ -143,6 +158,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
   <div class="tabs">
     <button id="tbReg" class="on" onclick="tab('reg')"><span class="ic">📝</span>Registro</button>
     <button id="tbMetas" onclick="tab('metas')"><span class="ic">🎯</span>Metas</button>
+    <button id="tbAcum" onclick="tab('acum')"><span class="ic">📊</span>Ejecutado</button>
+    <button id="tbMseg" onclick="tab('mseg')"><span class="ic">📈</span>Seguim.</button>
   </div>
 </div>
 
@@ -390,44 +407,105 @@ function guardarMeta(){
   var mes=document.getElementById('inMetaMes').value;
   if(!it||q===null||!mes){ msg('Completa ítem, cantidad y mes', true); return; }
   jsonp({action:'metas_set', item:it, qty:q, mes:mes, user:''}, function(d){
-    if(d&&d.ok){ msg('Meta guardada'); cargarMetas(); }
+    if(d&&d.ok){ msg('Meta guardada. Revisa la pestaña Seguim.'); RES=null; }
     else msg('Error: '+((d&&d.error)||''), true);
   });
 }
-function cargarMetas(){
-  jsonp({action:'metas_get'}, function(d){
-    if(!d||d.error){ document.getElementById('listaMetas').innerHTML='<div class="vacio">Error al cargar</div>'; return; }
-    METAS=d.metas||{}; HIST=d.hist||{}; PENDM=d.pend||{};
-    var mes=document.getElementById('inMetaMes').value||mesAct();
-    var dh=diasHabiles(mes);
-    document.getElementById('hintHab').textContent='Mes '+mes+': '+dh+' días hábiles (5.5 d/sem, sin festivos)';
-    var mm=METAS[mes]||{}, hh=HIST[mes]||{}, pp=PENDM[mes]||{};
-    var ks=[]; for(var k in mm) ks.push(k);
-    ks.sort();
-    var h='';
-    for(var i=0;i<ks.length;i++){
-      var it=ks[i], meta=mm[it].q, av=(hh[it]||0)+(pp[it]||0);
-      var pct=meta>0?Math.min(100,Math.round(av/meta*100)):0;
-      var cls=pct>=90?'ok':(pct>=60?'warn':'bad');
-      var cat=null; for(var j=0;j<CAT.length;j++) if(CAT[j].n===it){cat=CAT[j];break;}
-      var und=cat?cat.u:'';
-      var sem=Math.round(meta/dh*5.5*100)/100, dia=Math.round(meta/dh*100)/100;
-      h+='<div class="metaRow"><b style="color:#fbbf24">'+it+'</b> <span style="font-size:11px;color:#9ca3af">'+(cat?cat.d.slice(0,45):'')+'</span>'+
-        '<div style="font-size:12px;margin-top:3px">Meta: <b>'+meta+' '+und+'</b> · Avance: <b>'+(Math.round(av*100)/100)+'</b> ('+pct+'%)</div>'+
-        '<div style="font-size:11px;color:#93c5fd">≈ '+sem+' '+und+'/semana · '+dia+' '+und+'/día hábil</div>'+
-        '<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div></div>';
-    }
-    document.getElementById('listaMetas').innerHTML=h||'<div class="vacio">Sin metas para '+mes+'. Crea la primera arriba.</div>';
-  });
-}
-
 /* ===== tabs ===== */
 function tab(t){
-  document.getElementById('tabReg').style.display=(t==='reg')?'block':'none';
-  document.getElementById('tabMetas').style.display=(t==='metas')?'block':'none';
-  document.getElementById('tbReg').className=(t==='reg')?'on':'';
-  document.getElementById('tbMetas').className=(t==='metas')?'on':'';
-  if(t==='metas') cargarMetas();
+  var vs={reg:'tabReg',metas:'tabMetas',acum:'tabAcum',mseg:'tabMseg'};
+  var bs={reg:'tbReg',metas:'tbMetas',acum:'tbAcum',mseg:'tbMseg'};
+  for(var k in vs){
+    document.getElementById(vs[k]).style.display=(t===k)?'block':'none';
+    document.getElementById(bs[k]).className=(t===k)?'on':'';
+  }
+  if(t==='acum'||t==='mseg') cargarResumen(t);
+}
+
+/* ===== resumen: acumulados + metas ===== */
+var RES=null, MSEG_TODOS=false, LOGCACHE={};
+function cargarResumen(t){
+  jsonp({action:'cant_resumen'}, function(d){
+    if(!d||d.error){ msg('Error al cargar el resumen', true); return; }
+    RES=d;
+    if(t==='acum') pintarAcum(); else pintarMseg();
+  });
+}
+function _nfmt(v){ return (v===null||v===undefined||isNaN(v))?'—':(Math.round(v*100)/100); }
+function pintarAcum(){
+  if(!RES){ return; }
+  var a=(RES.acum&&RES.acum.a)||{};
+  document.getElementById('acumTs').textContent=(RES.acum&&RES.acum.ts)?String(RES.acum.ts).slice(0,10):'sin datos aún';
+  var q=(document.getElementById('inBuscaAcum').value||'').toLowerCase();
+  var h='';
+  for(var i=0;i<CAT.length;i++){
+    var it=CAT[i];
+    if(q && it.n.indexOf(q)<0 && it.d.toLowerCase().indexOf(q)<0) continue;
+    var ac=a[it.n]||{};
+    var pct=(ac.c&&ac.e!==null&&ac.e!==undefined)?Math.min(100,Math.round(ac.e/ac.c*100)):null;
+    var cls=pct===null?'':(pct>=90?'ok':(pct>=50?'warn':'bad'));
+    h+='<div class="metaRow"><b style="color:#fbbf24">'+it.n+'</b> <span class="pill">'+it.u+'</span> <span style="font-size:11px;color:#9ca3af">'+it.d.slice(0,45)+'</span>'+
+      '<div style="font-size:12px;margin-top:3px">Ejecutado: <b>'+_nfmt(ac.e)+'</b> / '+_nfmt(ac.c)+' '+it.u+(pct!==null?(' ('+pct+'%)'):'')+'</div>'+
+      (pct!==null?('<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div>'):'')+
+      '<button class="btnS btn" style="padding:6px;margin-top:6px;font-size:12px" onclick="verMas(\''+it.n+'\',\'\',this)">Ver más · registros de la app</button>'+
+      '<div id="vm_'+it.n.replace('.','_')+'_x" style="display:none"></div></div>';
+  }
+  document.getElementById('listaAcum').innerHTML=h||'<div class="vacio">Sin resultados</div>';
+}
+function verMas(itn, mes, btn){
+  var idd='vm_'+itn.replace('.','_')+(mes?'_m':'_x');
+  var dv=document.getElementById(idd);
+  if(!dv) return;
+  if(dv.style.display==='block'){ dv.style.display='none'; return; }
+  dv.style.display='block';
+  dv.innerHTML='<div class="vacio">Cargando registros…</div>';
+  var ck=itn+'|'+(mes||'');
+  var pintar=function(lg){
+    var h='';
+    for(var i=lg.length-1;i>=0;i--){
+      var g=lg[i];
+      h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px dashed #1d2941">'+g.f+' · <b style="color:#fbbf24">'+g.t+'</b>'+(g.d?(' · <span style="color:#9ca3af">'+g.d+'</span>'):'')+'</div>';
+    }
+    var pd=PENDARR.filter(function(x){return x.it===itn&&(!mes||String(x.f).slice(0,7)===mes);});
+    for(var j=0;j<pd.length;j++){
+      h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px dashed #1d2941;color:#93c5fd">'+pd[j].f+' · <b>'+pd[j].t+'</b> · pendiente de volcar</div>';
+    }
+    dv.innerHTML=h||'<div class="vacio">Sin registros desde la app</div>';
+  };
+  if(LOGCACHE[ck]){ pintar(LOGCACHE[ck]); return; }
+  var p={action:'cant_log', item:itn}; if(mes) p.mes=mes;
+  jsonp(p, function(d){
+    var lg=(d&&d.log)||[];
+    LOGCACHE[ck]=lg;
+    pintar(lg);
+  });
+}
+function pintarMseg(){
+  if(!RES){ return; }
+  var mes=mesAct();
+  document.getElementById('lblMes2').textContent=mes;
+  var dh=diasHabiles(mes);
+  document.getElementById('hintHab').textContent='Mes '+mes+': '+dh+' días hábiles (5.5 d/sem, sin festivos)';
+  document.getElementById('btnTodosMetas').textContent=MSEG_TODOS?'Ver solo ítems con meta':'Ver los 93 ítems';
+  var mm=(RES.metas&&RES.metas[mes])||{}, hh=(RES.hist&&RES.hist[mes])||{}, pp=(RES.pend&&RES.pend[mes])||{};
+  var h='';
+  for(var i=0;i<CAT.length;i++){
+    var it=CAT[i];
+    var tiene=mm[it.n]!==undefined;
+    if(!MSEG_TODOS && !tiene) continue;
+    var meta=tiene?mm[it.n].q:null;
+    var av=(hh[it.n]||0)+(pp[it.n]||0);
+    var pct=(meta&&meta>0)?Math.min(100,Math.round(av/meta*100)):null;
+    var cls=pct===null?'':(pct>=90?'ok':(pct>=60?'warn':'bad'));
+    var sem=meta?Math.round(meta/dh*5.5*100)/100:null, dia=meta?Math.round(meta/dh*100)/100:null;
+    h+='<div class="metaRow"><b style="color:#fbbf24">'+it.n+'</b> <span class="pill">'+it.u+'</span> <span style="font-size:11px;color:#9ca3af">'+it.d.slice(0,45)+'</span>'+
+      '<div style="font-size:12px;margin-top:3px">Meta: <b>'+(meta!==null?meta:'—')+'</b> · Ejecutado mes: <b>'+(Math.round(av*100)/100)+'</b>'+(pct!==null?(' ('+pct+'%)'):'')+'</div>'+
+      (sem!==null?('<div style="font-size:11px;color:#93c5fd">≈ '+sem+' '+it.u+'/semana · '+dia+' '+it.u+'/día hábil</div>'):'')+
+      (pct!==null?('<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div>'):'')+
+      '<button class="btnS btn" style="padding:6px;margin-top:6px;font-size:12px" onclick="verMas(\''+it.n+'\',\''+mes+'\',this)">Ver más · registros del mes</button>'+
+      '<div id="vm_'+it.n.replace('.','_')+'_m" style="display:none"></div></div>';
+  }
+  document.getElementById('listaMetas').innerHTML=h||'<div class="vacio">Sin metas para '+mes+'. Créalas en la pestaña Metas.</div>';
 }
 
 /* ===== arranque ===== */
