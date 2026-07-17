@@ -1,0 +1,17 @@
+{
+  "name": "Registro de Obra · Comuneros",
+  "short_name": "Registro Obra",
+  "description": "Registro diario de cantidades ejecutadas y metas · Contrato 023 de 2025",
+  "start_url": "movil.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f1a",
+  "theme_color": "#0b0f1a",
+  "lang": "es-CO",
+  "icons": [
+    { "src": "mv-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "mv-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "mv-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
