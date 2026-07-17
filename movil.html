@@ -24,7 +24,9 @@ body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:#0b
 .card{background:#111a2e;border:1px solid #253352;border-radius:12px;padding:14px;margin-bottom:12px}
 .card h2{font-size:13px;color:#fbbf24;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
 label{display:block;font-size:11px;color:#9ca3af;margin:8px 0 3px}
-input,select,textarea{width:100%;background:#0b1222;border:1px solid #2b3a5e;border-radius:8px;color:#fff;font-size:15px;padding:10px}
+input,select,textarea{width:100%;min-width:0;max-width:100%;background:#0b1222;border:1px solid #2b3a5e;border-radius:8px;color:#fff;font-size:15px;padding:10px}
+input[type=date]{-webkit-appearance:none;appearance:none;text-align:left;min-height:44px;line-height:1.2}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
 .btn{display:block;width:100%;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px}
 .btnP{background:#f59e0b;color:#111}
@@ -33,6 +35,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
 .btnR{background:none;border:none;color:#f87171;font-size:18px;padding:4px 8px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.grid2>div,.grid4>div{min-width:0;overflow:hidden}
 .tabs{position:fixed;bottom:0;left:0;right:0;background:#0d1424;border-top:1px solid #253352;display:flex;z-index:60}
 .tabs button{flex:1;background:none;border:none;color:#6b7280;font-size:11px;padding:10px 4px 12px;cursor:pointer}
 .tabs button.on{color:#fbbf24;font-weight:700}
@@ -118,7 +121,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
           <div><label>Área/Vol</label><input type="text" id="dmArea" inputmode="decimal" oninput="calc()"></div>
           <div><label>Total <span id="lblU"></span></label><input type="text" id="inTotal" inputmode="decimal" style="border-color:#f59e0b"></div>
         </div>
-        <div class="hint" id="hintCalc">El total se sugiere según la unidad y se amplifica con el % de expansión (acepta 35, 1.35 o 0.35 → +35%). Puedes corregirlo. Si una misma actividad tiene tramos con dimensiones distintas, guarda un registro por cada tramo: cada uno ocupa su propia fila en el Excel.</div>
+        <div class="hint" id="hintCalc">Total automático según la unidad, amplificado por el % de expansión (35, 1.35 o 0.35 → +35%). Puedes corregirlo. ¿Tramos con dimensiones distintas? Guarda un registro por cada uno.</div>
         <button class="btn btnP" id="btnEnviar" onclick="enviar()">✔ Guardar registro</button>
         <button class="btn btnS" onclick="cancelarReg()">✕ Cancelar ingreso</button>
       </div>
