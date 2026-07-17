@@ -139,7 +139,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
     <div id="tabAcum" style="display:none">
       <div class="card">
         <h2>Ejecutado acumulado <span class="pill" id="acumTs">—</span></h2>
-        <div class="hint">Cantidad ejecutada vs contractual según el Excel (se actualiza en cada volcado). «Ver más» muestra los registros hechos desde la app.</div>
+        <div class="hint">Cantidad ejecutada vs contractual según el Excel (se actualiza en cada volcado). «Ver más» muestra el historial completo del ítem (Excel + pendientes de la app).</div>
         <input id="inBuscaAcum" placeholder="🔍 Filtrar ítem" oninput="pintarAcum()" style="margin-top:8px">
         <div id="listaAcum"><div class="vacio">Cargando…</div></div>
       </div>
@@ -447,7 +447,7 @@ function pintarAcum(){
     h+='<div class="metaRow"><b style="color:#fbbf24">'+it.n+'</b> <span class="pill">'+it.u+'</span> <span style="font-size:11px;color:#9ca3af">'+it.d.slice(0,45)+'</span>'+
       '<div style="font-size:12px;margin-top:3px">Ejecutado: <b>'+_nfmt(ac.e)+'</b> / '+_nfmt(ac.c)+' '+it.u+(pct!==null?(' ('+pct+'%)'):'')+'</div>'+
       (pct!==null?('<div class="bar"><div class="'+cls+'" style="width:'+pct+'%"></div></div>'):'')+
-      '<button class="btnS btn" style="padding:6px;margin-top:6px;font-size:12px" onclick="verMas(\''+it.n+'\',\'\',this)">Ver más · registros de la app</button>'+
+      '<button class="btnS btn" style="padding:6px;margin-top:6px;font-size:12px" onclick="verMas(\''+it.n+'\',\'\',this)">Ver más · historial del ítem</button>'+
       '<div id="vm_'+it.n.replace('.','_')+'_x" style="display:none"></div></div>';
   }
   document.getElementById('listaAcum').innerHTML=h||'<div class="vacio">Sin resultados</div>';
@@ -462,23 +462,26 @@ function verMas(itn, mes, btn){
   var ck=itn+'|'+(mes||'');
   var pintar=function(lg){
     var h='';
+    var tot=0;
     for(var i=lg.length-1;i>=0;i--){
       var g=lg[i];
-      h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px dashed #1d2941">'+g.f+' · <b style="color:#fbbf24">'+g.t+'</b>'+(g.d?(' · <span style="color:#9ca3af">'+g.d+'</span>'):'')+'</div>';
+      var tv=parseFloat(g.t); if(!isNaN(tv)) tot+=tv;
+      h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px dashed #1d2941">'+(g.f||'s/f')+' · <b style="color:#fbbf24">'+(g.t!==''&&g.t!==null&&g.t!==undefined?g.t:'—')+'</b>'+(g.d?(' · <span style="color:#9ca3af">'+g.d+'</span>'):'')+'</div>';
     }
     var pd=PENDARR.filter(function(x){return x.it===itn&&(!mes||String(x.f).slice(0,7)===mes);});
     for(var j=0;j<pd.length;j++){
       h+='<div style="font-size:11px;padding:4px 0;border-bottom:1px dashed #1d2941;color:#93c5fd">'+pd[j].f+' · <b>'+pd[j].t+'</b> · pendiente de volcar</div>';
     }
-    dv.innerHTML=h||'<div class="vacio">Sin registros desde la app</div>';
+    if(lg.length) h='<div style="font-size:11px;padding:4px 0;color:#9ca3af">'+lg.length+' registro'+(lg.length>1?'s':'')+' en el Excel · suma <b style="color:#fbbf24">'+(Math.round(tot*100)/100)+'</b></div>'+h;
+    dv.innerHTML=h||'<div class="vacio">Sin registros en el Excel para este ítem</div>';
   };
   if(LOGCACHE[ck]){ pintar(LOGCACHE[ck]); return; }
-  var p={action:'cant_log', item:itn}; if(mes) p.mes=mes;
+  var p={action:'cant_reg_excel', item:itn}; if(mes) p.mes=mes;
   jsonp(p, function(d){
-    var lg=(d&&d.log)||[];
+    var lg=(d&&d.reg)||[];
     LOGCACHE[ck]=lg;
     pintar(lg);
-  });
+  }, 90000);
 }
 function pintarMseg(){
   if(!RES){ return; }
