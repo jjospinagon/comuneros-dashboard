@@ -643,7 +643,55 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   <symbol id="ic-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></symbol>
   <symbol id="ic-mail" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></symbol>
   <symbol id="ic-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="ic-map" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="ic-pin" viewBox="0 0 24 24"><line x1="12" y1="17" x2="12" y2="22"/><path d="M9 2h6l-1 6 3 3v2H7v-2l3-3z"/></symbol>
 </svg>
+
+<!-- ===== Barra lateral de módulos (solo escritorio) ===== -->
+<style>
+  #side-nav{display:none}
+  #sn-toggle{display:none}
+  @media(min-width:1024px){
+    #side-nav{
+      display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:236px;z-index:8600;
+      background:linear-gradient(180deg,#0c1330,#070b1e);border-right:1px solid rgba(255,255,255,.09);
+      padding:14px 10px;gap:12px;transform:translateX(-100%);transition:transform .22s ease;overflow-y:auto
+    }
+    body.sn-show #side-nav{transform:none}
+    /* Cuando está fijada, los módulos se corren para no quedar debajo */
+    body.sn-offset .screen:not(#screen-menu){padding-left:236px}
+    /* Botón flotante para reabrir la barra dentro de un módulo */
+    #sn-toggle{
+      display:none;position:fixed;left:12px;top:14px;z-index:8500;width:40px;height:40px;border-radius:10px;
+      border:1px solid rgba(34,211,238,.4);background:rgba(10,14,39,.92);color:#22d3ee;cursor:pointer;
+      align-items:center;justify-content:center;backdrop-filter:blur(8px)
+    }
+    body.sn-modulo:not(.sn-show) #sn-toggle{display:flex}
+    body.light #side-nav{background:linear-gradient(180deg,#ffffff,#f1f5f9);border-right-color:#cbd5e1}
+  }
+  .sn-brand{display:flex;align-items:center;gap:9px;padding:6px 8px 0}
+  .sn-brand .t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;letter-spacing:-.2px}
+  .sn-brand .s{font-size:9.5px;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase}
+  body.light .sn-brand .t{color:#0f172a}
+  .sn-pin{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.14);color:#94a3b8;border-radius:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+  .sn-pin.on{color:#22d3ee;border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.12)}
+  .sn-sec{font-size:9.5px;letter-spacing:.14em;color:#64748b;font-weight:700;padding:8px 8px 2px}
+  .sn-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;color:#cbd5e1;font-size:12.5px;font-weight:600;border:1px solid transparent}
+  .sn-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .sn-item.active{background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.35);color:#22d3ee}
+  .sn-item .ic{width:16px;height:16px;flex-shrink:0}
+  body.light .sn-item{color:#334155}
+  body.light .sn-item:hover{background:rgba(15,23,42,.06);color:#0f172a}
+</style>
+<button id="sn-toggle" onclick="snShow()" title="Mostrar barra de módulos" aria-label="Mostrar módulos"><svg class="ic" style="width:18px;height:18px"><use href="#ic-layout"></use></svg></button>
+<aside id="side-nav" aria-label="Módulos">
+  <div class="sn-brand">
+    <svg viewBox="0 0 260 240" width="22" height="20" aria-hidden="true"><path d="M 185.3 185.9 A 86 86 0 1 1 185.3 54.1" stroke="#22d3ee" stroke-width="26" fill="none" stroke-linecap="round"/></svg>
+    <div><div class="t">Comuneros</div><div class="s">Cockpit</div></div>
+    <button class="sn-pin" id="sn-pin" onclick="snTogglePin()" title="Fijar la barra en los módulos"><svg class="ic" style="width:14px;height:14px"><use href="#ic-pin"></use></svg></button>
+  </div>
+  <nav id="sn-list" style="display:flex;flex-direction:column;gap:2px"></nav>
+</aside>
 <!-- ============ FAB NAVEGACION ENTRE MODULOS (V2) ============ -->
 <div id="fab-nav" style="position:fixed;right:14px;top:72px;z-index:9000">
   <div id="fab-menu" style="display:none;position:absolute;right:0;top:60px;border-radius:14px;padding:8px;min-width:235px;box-shadow:0 18px 50px rgba(0,0,0,.55);backdrop-filter:blur(14px)"></div>
@@ -867,6 +915,58 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 
 <!-- ============ MENU INICIAL ============ -->
 <div class="screen active" id="screen-menu">
+  <!-- ===== Cockpit de escritorio: resumen + mapa en vivo (móvil conserva las tarjetas) ===== -->
+  <style>
+    #menu-desk{display:none}
+    @media(min-width:1024px){
+      #menu-desk{display:block;padding:18px 24px 24px 260px}
+      /* En escritorio la navegación vive en la barra lateral */
+      #screen-menu .menu-wrap{display:none}
+    }
+    #menu-desk .md-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+    #menu-desk h1{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;margin:0;color:#fff;letter-spacing:-.5px}
+    body.light #menu-desk h1{color:#0f172a}
+    #menu-desk .md-sub{font-size:11.5px;color:#94a3b8;margin-top:3px}
+    #md-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+    @media(max-width:1320px){#md-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .md-kpi{background:linear-gradient(180deg,rgba(20,26,55,.75),rgba(10,14,39,.6));border:1px solid rgba(255,255,255,.09);border-left:3px solid var(--acc,#22d3ee);border-radius:12px;padding:11px 14px;min-width:0}
+    body.light .md-kpi{background:#fff;border-color:#e2e8f0;border-left-color:var(--acc,#22d3ee)}
+    .md-kpi .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;font-weight:700}
+    .md-kpi .v{font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:800;color:#fff;line-height:1.15;margin-top:3px;white-space:nowrap}
+    body.light .md-kpi .v{color:#0f172a}
+    .md-kpi .s{font-size:10.5px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #md-map-panel{border:1px solid rgba(99,102,241,.28);border-radius:14px;overflow:hidden;background:rgba(10,14,39,.5)}
+    #md-map-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 13px;border-bottom:1px solid rgba(255,255,255,.07)}
+    #md-map-head .t{font-size:12.5px;font-weight:700;color:#fff;display:flex;align-items:center;gap:7px}
+    body.light #md-map-head .t{color:#0f172a}
+    #md-map-slot{height:calc(100vh - 300px);min-height:380px}
+    #md-map-slot #loc-map{height:100% !important;min-height:0 !important;border:0 !important;border-radius:0 !important}
+  </style>
+  <div id="menu-desk">
+    <div class="md-head">
+      <div>
+        <h1>Reposición Alcantarillado · Montenegro</h1>
+        <div class="md-sub">Contrato 023 de 2025 · Consorcio Infrared Comuneros 2025 · datos en vivo</div>
+      </div>
+      <div style="font-size:11px;color:#94a3b8" id="md-corte">—</div>
+    </div>
+    <div id="md-kpis">
+      <div class="md-kpi" style="--acc:#10b981"><div class="l">% Programado</div><div class="v" id="md-k-prog">—</div><div class="s" id="md-k-prog-s">valor programado al corte</div></div>
+      <div class="md-kpi" style="--acc:#22d3ee"><div class="l">% Avance real</div><div class="v" id="md-k-ejec">—</div><div class="s" id="md-k-ejec-s">valor ejecutado</div></div>
+      <div class="md-kpi" style="--acc:#f59e0b"><div class="l">Brecha vs programado</div><div class="v" id="md-k-brecha">—</div><div class="s" id="md-k-brecha-s">avance − programado</div></div>
+      <div class="md-kpi" style="--acc:#a855f7"><div class="l">Valor total del proyecto</div><div class="v" id="md-k-bac">—</div><div class="s">BAC contractual</div></div>
+    </div>
+    <div id="md-map-panel">
+      <div id="md-map-head">
+        <div class="t"><svg class="ic" style="width:15px;height:15px;color:#22d3ee"><use href="#ic-map"></use></svg> Localización · cámaras y tramos</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="md-map-est" style="font-size:10.5px;color:#94a3b8"></span>
+          <button class="back-btn" style="padding:5px 10px;font-size:11px" onclick="goTo('loc')">Abrir mapa completo →</button>
+        </div>
+      </div>
+      <div id="md-map-slot"></div>
+    </div>
+  </div>
   <div class="menu-wrap">
     <div class="menu-hero">
       <span class="menu-pill">Consorcio Infrared Comuneros 2025 · V2 OPTIMIZADA</span>
@@ -11369,6 +11469,149 @@ if ('serviceWorker' in navigator) {
     }catch(e){ msg('Error: '+(e&&e.message||e),'err'); }
     finally{ if(R().loader) R().loader(false); var g=document.getElementById('maqrep-go'); if(g){ g.disabled=false; g.style.opacity=1; } }
   };
+})();
+</script>
+
+<script>
+/* ===================== COCKPIT DE ESCRITORIO · barra lateral + menú =====================
+   - Barra de módulos fija en el menú principal.
+   - Al entrar a un módulo se oculta; el botón de pin la deja fija (se recuerda).
+   - El mapa de Localización es UNA sola instancia que se mueve entre el menú y su pantalla.
+   - En móvil (<1024px) no se activa nada de esto: siguen las tarjetas de siempre.
+   ====================================================================================== */
+(function(){
+  var MODS=[
+    ['ejecdiaria','ic-calendar','Ejecución Diaria','OPERACIÓN'],
+    ['obra','ic-layout','Ejecución de Obra','OPERACIÓN'],
+    ['rendimientos','ic-trending','Rendimientos','OPERACIÓN'],
+    ['analisis','ic-ai','Lectura IA','OPERACIÓN'],
+    ['maq','ic-truck','Maquinaria','RECURSOS'],
+    ['mo','ic-users','Mano de Obra','RECURSOS'],
+    ['inventario','ic-package','Inventario','RECURSOS'],
+    ['loc','ic-map','Localización','RECURSOS'],
+    ['indicadores','ic-dollar','Indicadores','CONTRACTUAL'],
+    ['contrato','ic-file','Contrato','CONTRACTUAL'],
+    ['comunicaciones','ic-mail','Comunicaciones','CONTRACTUAL'],
+    ['fotos','ic-camera','Fotos','CONTRACTUAL']
+  ];
+  var PIN_KEY='monaco_sn_pin_v1';
+  function pinned(){ try{ return localStorage.getItem(PIN_KEY)==='1'; }catch(_){ return false; } }
+  function esDesktop(){ try{ return window.matchMedia('(min-width:1024px)').matches; }catch(_){ return false; } }
+  function pantallaActual(){ var s=document.querySelector('.screen.active'); return s? s.id.replace('screen-','') : 'menu'; }
+  function loginVisible(){ var o=document.getElementById('login-overlay'); return !!(o && getComputedStyle(o).display!=='none'); }
+
+  window.snShow=function(){ document.body.classList.add('sn-show'); };
+  window.snTogglePin=function(){
+    var v=!pinned(); try{ localStorage.setItem(PIN_KEY, v?'1':'0'); }catch(_){}
+    var b=document.getElementById('sn-pin'); if(b) b.classList.toggle('on', v);
+    aplicar(pantallaActual());
+  };
+
+  function render(){
+    var nav=document.getElementById('sn-list'); if(!nav) return;
+    var html='', sec='';
+    MODS.forEach(function(m){
+      if(m[3]!==sec){ sec=m[3]; html+='<div class="sn-sec">'+sec+'</div>'; }
+      html+='<div class="sn-item" data-mod="'+m[0]+'" onclick="goTo(\''+m[0]+'\')" title="'+m[2]+'">'+
+            '<svg class="ic"><use href="#'+m[1]+'"></use></svg>'+m[2]+'</div>';
+    });
+    nav.innerHTML=html;
+  }
+  function marcar(name){
+    var els=document.querySelectorAll('#sn-list .sn-item');
+    for(var i=0;i<els.length;i++) els[i].classList.toggle('active', els[i].getAttribute('data-mod')===name);
+  }
+
+  /* Mueve el contenedor del mapa (una sola instancia de MapLibre) */
+  var mapHome=null;
+  function moverMapa(aMenu){
+    var m=document.getElementById('loc-map'); if(!m) return;
+    if(!mapHome) mapHome=m.parentNode;
+    var destino = aMenu ? document.getElementById('md-map-slot') : mapHome;
+    if(destino && m.parentNode!==destino) destino.appendChild(m);
+    setTimeout(function(){ try{ if(window.LOC_MAP){ LOC_MAP.resize? LOC_MAP.resize() : LOC_MAP.invalidateSize(); } }catch(_){} },160);
+  }
+
+  function aplicar(name){
+    if(!esDesktop()){ document.body.classList.remove('sn-show','sn-offset','sn-modulo'); return; }
+    var esMenu=(name==='menu');
+    document.body.classList.toggle('sn-modulo', !esMenu);
+    document.body.classList.toggle('sn-show', esMenu || pinned());
+    document.body.classList.toggle('sn-offset', !esMenu && pinned());
+    marcar(name);
+    if(esMenu){
+      if(!loginVisible()){
+        try{ locInit(); }catch(_){}
+        moverMapa(true);
+        var est=document.getElementById('md-map-est'), le=document.getElementById('loc-estado');
+        if(est&&le) est.textContent=le.textContent||'';
+      }
+    } else if(name==='loc'){ moverMapa(false); }
+  }
+  window.snAplicar=aplicar;
+
+  /* Resumen superior: % programado (PV/BAC) · % avance (EV/BAC) · valores · BAC */
+  var _kpiTries=0;
+  async function mdKPIs(){
+    try{
+      if(typeof IND_DATA==='undefined' || !IND_DATA || !IND_LATEST){
+        if(_kpiTries++ < 12) setTimeout(mdKPIs, 2000);
+        return;
+      }
+      var d=IND_DATA[IND_LATEST]||{}, totT=(d.totales&&d.totales['COSTO TOTAL'])||{};
+      var bac=totT.total_contr||0, ev=totT.contr_corte||0;
+      if(typeof OBRA_DATA==='undefined' || !OBRA_DATA){
+        try{ var ob=await _obraSrc(); if(ob&&!ob.error){ OBRA_DATA=(typeof obraNormalizarData==='function')?obraNormalizarData(ob):ob; } }catch(_){}
+      }
+      var OD=(typeof OBRA_DATA!=='undefined')?OBRA_DATA:null;
+      if(OD && typeof OD.ejecutadoGlobal==='number' && OD.ejecutadoGlobal>0) ev=OD.ejecutadoGlobal;
+      var pv=null, cs=OD?OD.curvaS:null;
+      if(cs&&cs.programado&&cs.real){
+        var prog=cs.programado.slice(), maxP=0, i;
+        for(i=0;i<prog.length;i++){ if(typeof prog[i]==='number'&&prog[i]>maxP) maxP=prog[i]; }
+        var pf=(maxP>1.5)?prog.map(function(v){ return typeof v==='number'? v/maxP : v; }):prog;
+        var idx=-1; for(i=cs.real.length-1;i>=0;i--){ if(cs.real[i]!=null&&!isNaN(cs.real[i])){ idx=i; break; } }
+        var idxPV=(typeof _evmIdxSemanaActual==='function')?_evmIdxSemanaActual(cs):-1;
+        if(idxPV<0 || pf[idxPV]==null) idxPV=idx;
+        if(idxPV>=0 && pf[idxPV]!=null) pv=Number(pf[idxPV])*bac;
+      }
+      var mon=function(n){ return (n==null||isNaN(n))?'—':('$'+((Number(n)||0)/1e6).toLocaleString('es-CO',{maximumFractionDigits:0})+' M'); };
+      var pct=function(n){ return (n==null||isNaN(n))?'—':(Number(n).toFixed(1).replace('.',',')+'%'); };
+      var set=function(id,t){ var e=document.getElementById(id); if(e) e.textContent=t; };
+      var pProg=(bac>0&&pv!=null)? pv/bac*100 : null;
+      var pEjec=(bac>0&&ev>0)? ev/bac*100 : null;
+      set('md-k-prog', pct(pProg)); set('md-k-prog-s', pv!=null? (mon(pv)+' programado al corte') : 'sin curva S disponible');
+      set('md-k-ejec', pct(pEjec)); set('md-k-ejec-s', mon(ev)+' ejecutado');
+      var br=(pProg!=null&&pEjec!=null)?(pEjec-pProg):null;
+      set('md-k-brecha', br==null?'—':((br>=0?'+':'')+pct(br)));
+      var eb=document.getElementById('md-k-brecha'); if(eb) eb.style.color = (br==null)?'':(br>=0?'#10b981':'#f87171');
+      set('md-k-brecha-s', (br!=null&&pv!=null&&ev>0)? ((((ev-pv)>=0)?'+':'-')+mon(Math.abs(ev-pv))+' vs programado') : 'avance − programado');
+      set('md-k-bac', mon(bac));
+      var eBac=document.getElementById('md-k-bac'); if(eBac) eBac.title='$'+Math.round(bac||0).toLocaleString('es-CO');
+      set('md-corte', (typeof IND_CURRENT!=='undefined'&&IND_CURRENT)? ('Corte '+String(IND_CURRENT).replace(/-/g,'/')) : '');
+    }catch(_){}
+  }
+  window.mdKPIs=mdKPIs;
+
+  function menuListo(){
+    if(pantallaActual()!=='menu') return;
+    if(loginVisible()){ setTimeout(menuListo, 1200); return; }
+    aplicar('menu'); mdKPIs();
+  }
+
+  function init(){
+    render();
+    var b=document.getElementById('sn-pin'); if(b) b.classList.toggle('on', pinned());
+    if(typeof _goToInner==='function' && !window._snHooked){
+      window._snHooked=true;
+      var orig=_goToInner;
+      window._goToInner=function(n){ orig(n); try{ aplicar(n); if(n==='menu') mdKPIs(); }catch(_){} };
+    }
+    aplicar(pantallaActual());
+    menuListo();
+    window.addEventListener('resize', function(){ try{ aplicar(pantallaActual()); }catch(_){} });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
 </script>
 
