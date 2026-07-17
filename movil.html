@@ -68,18 +68,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
     <div class="t1">📋 Registro de Obra</div>
     <div class="t2">Urbanización Comuneros · Contrato 023 de 2025</div>
   </div>
-  <button class="rolBtn" onclick="selRol('Residente')">👷 Residente<small>Registro y volcado a Excel · metas</small></button>
-  <button class="rolBtn" onclick="selRol('Maestro')">🔨 Maestro<small>Registro diario de cantidades</small></button>
-  <button class="rolBtn" onclick="selRol('Inspectora')">📝 Inspectora<small>Registro diario de cantidades</small></button>
-  <label>Nombre (queda como firma del registro)</label>
-  <input id="inNombre" placeholder="Tu nombre">
-  <button class="btn btnP" onclick="entrar()">Entrar</button>
+  <button class="rolBtn" onclick="iniciarTab('reg')">📝 Registro de actividades<small>Cantidades ejecutadas del día → hoja CANTIDADES</small></button>
+  <button class="rolBtn" onclick="iniciarTab('metas')">🎯 Registro de metas<small>Meta mensual por ítem · seguimiento semanal y diario</small></button>
 </div>
 
 <div id="vApp" style="display:none">
   <div class="top">
     <div><h1>📋 Registro de Obra</h1><div class="sub">Comuneros · Contrato 023-2025</div></div>
-    <div class="chipUser" id="chipU" onclick="salir()">—</div>
+    <div class="chipUser" id="chipU" onclick="volverInicio()">☰ Inicio</div>
   </div>
   <div class="cont">
 
@@ -175,32 +171,19 @@ function msg(t, err){
 function hoy(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function mesAct(){ return hoy().slice(0,7); }
 
-/* ===== identidad ===== */
-function selRol(r){
-  ROL=r;
-  var bs=document.querySelectorAll('.rolBtn');
-  for(var i=0;i<bs.length;i++) bs[i].className='rolBtn'+(bs[i].textContent.indexOf(r)>=0?' on':'');
+/* ===== navegación ===== */
+function volverInicio(){
+  document.getElementById('vApp').style.display='none';
+  document.getElementById('vLogin').style.display='block';
 }
-function entrar(){
-  NOM=(document.getElementById('inNombre').value||'').trim();
-  if(!ROL){ msg('Elige tu rol', true); return; }
-  if(!NOM){ msg('Escribe tu nombre', true); return; }
-  try{ localStorage.setItem('cantUser', JSON.stringify({r:ROL,n:NOM})); }catch(e){}
-  iniciar();
-}
-function salir(){
-  if(!confirm('¿Cambiar de usuario?')) return;
-  try{ localStorage.removeItem('cantUser'); }catch(e){}
-  location.reload();
-}
-function iniciar(){
+function iniciarTab(t){
   document.getElementById('vLogin').style.display='none';
   document.getElementById('vApp').style.display='block';
-  document.getElementById('chipU').textContent=ROL+' · '+NOM.split(' ')[0];
-  document.getElementById('inFecha').value=hoy();
-  document.getElementById('inMetaMes').value=mesAct();
+  document.getElementById('inFecha').value=document.getElementById('inFecha').value||hoy();
+  if(!document.getElementById('inMetaMes').value) document.getElementById('inMetaMes').value=mesAct();
   document.getElementById('lblMes').textContent=mesAct();
-  cargarCat();
+  if(!CAT.length) cargarCat(); else refrescarPend();
+  tab(t);
 }
 
 /* ===== catálogo ===== */
@@ -279,7 +262,7 @@ function enviar(){
   for(var id in mp){ var v=num(id); if(v!==null) dm[mp[id]]=v; }
   var b=document.getElementById('btnEnviar');
   b.disabled=true; b.innerHTML='<span class="spin"></span>Guardando…';
-  jsonp({action:'cant_add', item:SEL.n, fecha:f, desc:(document.getElementById('inDesc').value||'').trim(), dims:JSON.stringify(dm), total:t, user:ROL+' '+NOM}, function(d){
+  jsonp({action:'cant_add', item:SEL.n, fecha:f, desc:(document.getElementById('inDesc').value||'').trim(), dims:JSON.stringify(dm), total:t, user:''}, function(d){
     b.disabled=false; b.innerHTML='✔ Guardar registro';
     if(d && d.ok){
       msg('Guardado ('+d.pend+' pendiente'+(d.pend>1?'s':'')+'). Puedes registrar otra ejecución del mismo ítem con otras dimensiones.');
@@ -306,7 +289,7 @@ function refrescarPend(){
          '<button class="btnR" onclick="quitar(\''+g.id+'\')">✕</button></div>';
     }
     document.getElementById('listaPend').innerHTML=h||'<div class="vacio">Sin registros pendientes</div>';
-    document.getElementById('btnSync').style.display=(arr.length&&ROL==='Residente')?'block':'none';
+    document.getElementById('btnSync').style.display=(arr.length)?'block':'none';
   });
 }
 function editarPend(id){
@@ -399,7 +382,7 @@ function guardarMeta(){
   var q=parseFloat(document.getElementById('inMetaQ').value);
   var mes=document.getElementById('inMetaMes').value;
   if(!it||isNaN(q)||!mes){ msg('Completa ítem, cantidad y mes', true); return; }
-  jsonp({action:'metas_set', item:it, qty:q, mes:mes, user:ROL+' '+NOM}, function(d){
+  jsonp({action:'metas_set', item:it, qty:q, mes:mes, user:''}, function(d){
     if(d&&d.ok){ msg('Meta guardada'); cargarMetas(); }
     else msg('Error: '+((d&&d.error)||''), true);
   });
@@ -442,10 +425,7 @@ function tab(t){
 
 /* ===== arranque ===== */
 (function(){
-  var u=null;
-  try{ u=JSON.parse(localStorage.getItem('cantUser')||'null'); }catch(e){}
-  if(u&&u.r&&u.n){ ROL=u.r; NOM=u.n; iniciar(); }
-  else document.getElementById('vLogin').style.display='block';
+  document.getElementById('vLogin').style.display='block';
 })();
 </script>
 </body>
