@@ -661,11 +661,15 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     /* Cuando está fijada, los módulos se corren para no quedar debajo */
     body.sn-offset .screen:not(#screen-menu){padding-left:236px}
     /* Botón flotante para reabrir la barra dentro de un módulo */
+    /* Pestaña en el BORDE izquierdo (centrada verticalmente): antes estaba en la
+       esquina superior y se superponía con el botón "← Menú" de cada módulo. */
     #sn-toggle{
-      display:none;position:fixed;left:12px;top:14px;z-index:8500;width:40px;height:40px;border-radius:10px;
-      border:1px solid rgba(34,211,238,.4);background:rgba(10,14,39,.92);color:#22d3ee;cursor:pointer;
-      align-items:center;justify-content:center;backdrop-filter:blur(8px)
+      display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:8500;
+      width:24px;height:64px;border-radius:0 10px 10px 0;
+      border:1px solid rgba(34,211,238,.4);border-left:0;background:rgba(10,14,39,.92);color:#22d3ee;cursor:pointer;
+      align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:0;opacity:.75;transition:opacity .2s,width .2s
     }
+    #sn-toggle:hover{opacity:1;width:30px}
     body.sn-modulo:not(.sn-show) #sn-toggle{display:flex}
     body.light #side-nav{background:linear-gradient(180deg,#ffffff,#f1f5f9);border-right-color:#cbd5e1}
   }
@@ -683,7 +687,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   body.light .sn-item{color:#334155}
   body.light .sn-item:hover{background:rgba(15,23,42,.06);color:#0f172a}
 </style>
-<button id="sn-toggle" onclick="snShow()" title="Mostrar barra de módulos" aria-label="Mostrar módulos"><svg class="ic" style="width:18px;height:18px"><use href="#ic-layout"></use></svg></button>
+<button id="sn-toggle" onclick="snShow()" title="Mostrar barra de módulos" aria-label="Mostrar módulos"><svg class="ic" style="width:13px;height:13px"><use href="#ic-layout"></use></svg></button>
 <aside id="side-nav" aria-label="Módulos">
   <div class="sn-brand">
     <svg viewBox="0 0 260 240" width="22" height="20" aria-hidden="true"><path d="M 185.3 185.9 A 86 86 0 1 1 185.3 54.1" stroke="#22d3ee" stroke-width="26" fill="none" stroke-linecap="round"/></svg>
