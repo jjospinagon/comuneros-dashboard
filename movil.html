@@ -91,25 +91,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         <div class="sel" id="selItem" onclick="deselItem()"></div>
         <div class="grid2">
           <div><label>Fecha</label><input type="date" id="inFecha"></div>
-          <div><label>Cantidad (elementos)</label><input type="number" step="any" id="dmQ" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Cantidad (elementos)</label><input type="text" id="dmQ" inputmode="decimal" oninput="calc()"></div>
         </div>
         <label>Descripción / ubicación (ej: Corte domiciliaria Mz 32 #10)</label>
         <input id="inDesc" placeholder="Qué y dónde se ejecutó">
         <label style="margin-top:10px">Dimensiones (solo las que apliquen)</label>
         <div class="grid4">
-          <div><label>Alto m</label><input type="number" step="any" id="dmAlto" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Ancho m</label><input type="number" step="any" id="dmAncho" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Long. m</label><input type="number" step="any" id="dmLon" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Ø pulg</label><input type="number" step="any" id="dmDiam" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Alto m</label><input type="text" id="dmAlto" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Ancho m</label><input type="text" id="dmAncho" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Long. m</label><input type="text" id="dmLon" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Ø pulg</label><input type="text" id="dmDiam" inputmode="decimal" oninput="calc()"></div>
         </div>
         <div class="grid4" style="margin-top:6px">
-          <div><label>% Expan.</label><input type="number" step="any" id="dmExp" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Peso kg</label><input type="number" step="any" id="dmPeso" inputmode="decimal"></div>
-          <div><label>Área/Vol</label><input type="number" step="any" id="dmArea" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Total <span id="lblU"></span></label><input type="number" step="any" id="inTotal" inputmode="decimal" style="border-color:#f59e0b"></div>
+          <div><label>% Expan.</label><input type="text" id="dmExp" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Peso kg</label><input type="text" id="dmPeso" inputmode="decimal"></div>
+          <div><label>Área/Vol</label><input type="text" id="dmArea" inputmode="decimal" oninput="calc()"></div>
+          <div><label>Total <span id="lblU"></span></label><input type="text" id="inTotal" inputmode="decimal" style="border-color:#f59e0b"></div>
         </div>
         <div class="hint" id="hintCalc">El total se sugiere según la unidad y se amplifica con el % de expansión (acepta 35, 1.35 o 0.35 → +35%). Puedes corregirlo. Si una misma actividad tiene tramos con dimensiones distintas, guarda un registro por cada tramo: cada uno ocupa su propia fila en el Excel.</div>
         <button class="btn btnP" id="btnEnviar" onclick="enviar()">✔ Guardar registro</button>
+        <button class="btn btnS" onclick="cancelarReg()">✕ Cancelar ingreso</button>
       </div>
 
       <div class="card">
@@ -126,7 +127,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         <label>Ítem</label>
         <select id="selMetaItem"></select>
         <div class="grid2">
-          <div><label>Cantidad meta del mes</label><input type="number" step="any" id="inMetaQ" inputmode="decimal"></div>
+          <div><label>Cantidad meta del mes</label><input type="text" id="inMetaQ" inputmode="decimal"></div>
           <div><label>Mes</label><input type="month" id="inMetaMes"></div>
         </div>
         <button class="btn btnP" onclick="guardarMeta()">✔ Guardar meta</button>
@@ -202,7 +203,7 @@ function cargarCat(){
 }
 function pintarLista(arr){
   var h='';
-  for(var i=0;i<Math.min(arr.length,60);i++){
+  for(var i=0;i<arr.length;i++){
     var it=arr[i];
     h+='<div class="itemRow" onclick="selItem(\''+it.n+'\')"><span class="n">'+it.n+'</span><span class="pill">'+it.u+'</span><div class="d">'+it.d+'</div></div>';
   }
@@ -226,12 +227,18 @@ function selItem(n){
   document.getElementById('cardForm').style.display='block';
   document.getElementById('cardBuscar').style.display='none';
 }
+function cancelarReg(){
+  var ids=['dmQ','dmAlto','dmAncho','dmDiam','dmExp','dmPeso','dmLon','dmArea','inTotal','inDesc'];
+  for(var i=0;i<ids.length;i++) document.getElementById(ids[i]).value='';
+  deselItem();
+  msg('Ingreso cancelado');
+}
 function deselItem(){
   SEL=null;
   document.getElementById('cardForm').style.display='none';
   document.getElementById('cardBuscar').style.display='block';
 }
-function num(id){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)?null:v; }
+function num(id){ var s=String(document.getElementById(id).value||'').replace(',','.'); var v=parseFloat(s); return isNaN(v)?null:v; }
 function fexp(){
   var e=num('dmExp');
   if(e===null||e<=0) return 1;
@@ -379,9 +386,9 @@ function diasHabiles(mes){
 }
 function guardarMeta(){
   var it=document.getElementById('selMetaItem').value;
-  var q=parseFloat(document.getElementById('inMetaQ').value);
+  var q=num('inMetaQ');
   var mes=document.getElementById('inMetaMes').value;
-  if(!it||isNaN(q)||!mes){ msg('Completa ítem, cantidad y mes', true); return; }
+  if(!it||q===null||!mes){ msg('Completa ítem, cantidad y mes', true); return; }
   jsonp({action:'metas_set', item:it, qty:q, mes:mes, user:''}, function(d){
     if(d&&d.ok){ msg('Meta guardada'); cargarMetas(); }
     else msg('Error: '+((d&&d.error)||''), true);
