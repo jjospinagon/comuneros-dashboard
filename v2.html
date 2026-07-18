@@ -11507,7 +11507,8 @@ function authVista(v){
 }
 function authEntrar(d){
   AUTH.token=d.token; AUTH.usuario=d.usuario; AUTH.perfil=d.perfil;
-  try{ localStorage.setItem(AUTH_TKKEY, JSON.stringify({t:d.token,u:d.usuario,p:d.perfil,x:d.expira})); }catch(e){}
+  /* la sesion vive solo mientras la pestaña este abierta; al recargar se pide login de nuevo */
+  try{ sessionStorage.setItem(AUTH_TKKEY, JSON.stringify({t:d.token,u:d.usuario,p:d.perfil,x:d.expira})); }catch(e){}
   var ov=document.getElementById('auth-overlay'); if(ov) ov.style.display='none';
   if(window.AUTH_APLICAR_PERFIL) try{ AUTH_APLICAR_PERFIL(d.perfil); }catch(e){}
   if(typeof boot==='function') boot();
@@ -11563,7 +11564,7 @@ function authRecuperar(){
 }
 function authLogout(){
   if(AUTH.token) _authRaw({action:'auth_logout',token:AUTH.token});
-  try{ localStorage.removeItem(AUTH_TKKEY); }catch(e){}
+  try{ sessionStorage.removeItem(AUTH_TKKEY); }catch(e){}
   location.reload();
 }
 
@@ -11599,22 +11600,15 @@ function _authArrancarReset(tok){
   });
 }
 
-/* al cargar: enlace de recuperación > sesión guardada > login */
+/* al cargar: enlace de recuperación primero; si no, SIEMPRE se pide el login.
+ * No se auto-entra por sesión guardada — el usuario debe ingresar cada vez que abre.
+ * (El navegador puede autocompletar usuario/contraseña, pero el formulario siempre aparece.) */
 (function(){
+  try{ localStorage.removeItem(AUTH_TKKEY); }catch(e){}
   var qs=new URLSearchParams(location.search);
   var rtok=qs.get('reset');
   if(rtok){ _authArrancarReset(rtok); return; }
-  var saved=null;
-  try{ saved=JSON.parse(localStorage.getItem(AUTH_TKKEY)||'null'); }catch(e){}
-  if(saved && saved.t){
-    AUTH.token=saved.t;
-    _authRaw({action:'auth_check',token:saved.t}).then(function(r){
-      if(r&&r.ok){ AUTH.usuario=r.usuario; AUTH.perfil=r.perfil; authEntrar({token:saved.t,usuario:r.usuario,perfil:r.perfil,expira:saved.x}); }
-      else { AUTH.token=null; try{localStorage.removeItem(AUTH_TKKEY);}catch(e){} document.getElementById('auth-overlay').style.display='flex'; }
-    });
-  } else {
-    document.getElementById('auth-overlay').style.display='flex';
-  }
+  document.getElementById('auth-overlay').style.display='flex';
 })();
 </script>
 
