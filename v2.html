@@ -11457,6 +11457,18 @@ if ('serviceWorker' in navigator) {
     #admin-overlay table{width:100%;border-collapse:collapse;font-size:12px}
     #admin-overlay th{color:#64748b;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:6px 8px;border-bottom:1px solid #1d2941}
     #admin-overlay td{color:#e5e7eb;padding:8px;border-bottom:1px solid #131c30;vertical-align:middle}
+    @media(max-width:600px){
+      #admin-overlay .apanel,#content-overlay .apanel{padding:16px 12px}
+      #admin-overlay table,#admin-overlay tbody,#admin-overlay tr,#admin-overlay td{display:block;width:100%}
+      #admin-overlay thead{display:none}
+      #admin-overlay tr{background:#0a1120;border:1px solid #1d2941;border-radius:12px;margin-bottom:12px;padding:6px 12px}
+      #admin-overlay td{border-bottom:1px solid #131c30;padding:8px 2px;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right}
+      #admin-overlay td:last-child{border-bottom:none}
+      #admin-overlay td::before{content:attr(data-label);color:#64748b;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:left;flex:0 0 auto}
+      #admin-overlay td.acc-cell{flex-direction:column;align-items:stretch;gap:6px}
+      #admin-overlay td.acc-cell::before{margin-bottom:2px}
+      #admin-overlay td.acc-cell .ab{margin:0;width:100%;padding:9px}
+    }
     #admin-overlay .pil{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px}
     #admin-overlay .st-ACTIVO{background:rgba(34,197,94,.15);color:#86efac}
     #admin-overlay .st-PENDIENTE{background:rgba(245,158,11,.15);color:#fcd34d}
@@ -11698,12 +11710,12 @@ function adminCargar(){
         if(u.estado==='INACTIVO') acc+='<button class="ab grn" onclick="adminEstado(\''+u.usuario+'\',\'ACTIVO\')">Activar</button>';
         else acc+='<button class="ab red" onclick="adminEstado(\''+u.usuario+'\',\'INACTIVO\')">Desactivar</button>';
       }
-      h+='<tr><td><b style="color:#fbbf24">'+u.usuario+'</b>'+(u.bloqueado?' <span style="color:#fca5a5;font-size:9px">&#128274;</span>':'')+'</td>'+
-         '<td>'+u.perfil+'</td>'+
-         '<td><span class="pil st-'+u.estado+'">'+u.estado+'</span></td>'+
-         '<td style="color:'+(todos?'#86efac':'#67e8f9')+'">'+(todos?'Todo':(nMod+' / '+_adminCat.length))+'</td>'+
-         '<td style="color:#64748b">'+(u.ultimo||'—')+'</td>'+
-         '<td>'+acc+'</td></tr>';
+      h+='<tr><td data-label="Usuario"><b style="color:#fbbf24">'+u.usuario+'</b>'+(u.bloqueado?' <span style="color:#fca5a5;font-size:9px">&#128274;</span>':'')+'</td>'+
+         '<td data-label="Perfil">'+u.perfil+'</td>'+
+         '<td data-label="Estado"><span class="pil st-'+u.estado+'">'+u.estado+'</span></td>'+
+         '<td data-label="Contenido" style="color:'+(todos?'#86efac':'#67e8f9')+'">'+(todos?'Todo':(nMod+' / '+_adminCat.length))+'</td>'+
+         '<td data-label="Ultimo ingreso" style="color:#64748b">'+(u.ultimo||'—')+'</td>'+
+         '<td data-label="Acciones" class="acc-cell">'+acc+'</td></tr>';
     }
     h+='</tbody></table>';
     document.getElementById('admin-tabla').innerHTML=h;
