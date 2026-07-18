@@ -39,4 +39,9 @@ jobs:
                       fallos += 1
               for fn in CLAVES.get(f, []):
                   if fn not in h:
-                      print(f'X {f}: falta
+                      print(f'X {f}: falta funcion clave "{fn}" (posible script truncado)')
+                      fallos += 1
+              if not fallos:
+                  print(f'OK {f}: {len(scripts)} bloque(s) de script validos, funciones clave presentes')
+          sys.exit(1 if fallos else 0)
+          PYEOF
