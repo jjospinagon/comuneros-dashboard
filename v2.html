@@ -11475,7 +11475,7 @@ if ('serviceWorker' in navigator) {
     .amsg2.ok{display:block;color:#86efac;background:rgba(34,197,94,.1)}
     .acls{background:#1e293b;color:#e2e8f0;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit}
     #content-overlay .aspin,#admin-overlay .aspin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:aspin .8s linear infinite;vertical-align:middle;margin-right:7px}
-    #content-overlay .ab:disabled{opacity:.6;cursor:progress}
+    #content-overlay .ab:disabled,#admin-overlay .ab:disabled{opacity:.6;cursor:progress}
     #content-overlay .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
     @media(max-width:560px){#content-overlay .cgrid{grid-template-columns:1fr}}
     #content-overlay .citem{display:flex;align-items:center;gap:9px;background:#0a1120;border:1px solid #1d2941;border-radius:9px;padding:10px 12px;cursor:pointer}
@@ -11496,7 +11496,7 @@ if ('serviceWorker' in navigator) {
         <div><label style="color:#94a3b8;font-size:10px">Correo (opcional)</label><input id="admin-nc" type="email" placeholder="correo@dominio.com"></div>
       </div>
       <div id="admin-msg" class="amsg2"></div>
-      <button class="ab grn" style="margin-top:10px;padding:9px 16px" onclick="adminCrear()">Crear usuario</button>
+      <button id="admin-crear-btn" class="ab grn" style="margin-top:10px;padding:9px 16px" onclick="adminCrear()">Crear usuario</button>
       <div style="color:#64748b;font-size:10px;margin-top:8px">Queda pendiente; en su primer ingreso crea su contrase&#241;a con "Registrarme". Luego puedes definir su contenido.</div>
     </div>
   </div>
@@ -11726,8 +11726,12 @@ function adminCrear(){
   var p=document.getElementById('admin-np').value;
   var c=(document.getElementById('admin-nc').value||'').trim();
   if(!u){ _adMsg('Escribe el usuario'); return; }
+  var btn=document.getElementById('admin-crear-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="aspin"></span>Creando\u2026'; }
+  _adMsg('Creando usuario\u2026','ok');
   _authRaw({action:'auth_alta', token:AUTH.token, usuario:u, perfil:p, correo:c}).then(function(r){
-    if(r&&r.ok){ _adMsg('Usuario '+r.usuario+' creado (pendiente de registro)','ok'); document.getElementById('admin-nu').value=''; document.getElementById('admin-nc').value=''; adminCargar(); }
+    if(btn){ btn.disabled=false; btn.innerHTML='Crear usuario'; }
+    if(r&&r.ok){ _adMsg('\u2713 Usuario '+r.usuario+' creado (pendiente de registro)','ok'); document.getElementById('admin-nu').value=''; document.getElementById('admin-nc').value=''; adminCargar(); }
     else _adMsg((r&&r.error)||'No se pudo crear');
   });
 }
