@@ -11447,9 +11447,77 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- Panel admin de usuarios (solo perfiles admin) -->
+<button id="admin-fab" onclick="adminAbrir()" style="display:none;position:fixed;left:16px;bottom:16px;z-index:99998;background:#0d1424;border:1px solid #22d3ee;color:#67e8f9;font-size:13px;font-weight:700;padding:11px 15px;border-radius:12px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:'Inter',system-ui,sans-serif">&#128101; Usuarios</button>
+<div id="admin-overlay" style="display:none;position:fixed;inset:0;background:rgba(3,5,10,.92);z-index:100001;overflow-y:auto;padding:22px 14px;font-family:'Inter',system-ui,sans-serif">
+  <style>
+    #admin-overlay .apanel,#content-overlay .apanel{max-width:760px;margin:0 auto;background:#0d1424;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:20px}
+    #admin-overlay h2,#content-overlay h2{color:#fff;font-size:17px;font-weight:800;margin:0 0 2px}
+    #admin-overlay .asub{color:#94a3b8;font-size:11px;margin-bottom:16px}
+    #admin-overlay table{width:100%;border-collapse:collapse;font-size:12px}
+    #admin-overlay th{color:#64748b;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:6px 8px;border-bottom:1px solid #1d2941}
+    #admin-overlay td{color:#e5e7eb;padding:8px;border-bottom:1px solid #131c30;vertical-align:middle}
+    #admin-overlay .pil{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px}
+    #admin-overlay .st-ACTIVO{background:rgba(34,197,94,.15);color:#86efac}
+    #admin-overlay .st-PENDIENTE{background:rgba(245,158,11,.15);color:#fcd34d}
+    #admin-overlay .st-INACTIVO{background:rgba(148,163,184,.15);color:#cbd5e1}
+    .ab{background:none;border:1px solid rgba(255,255,255,.15);color:#93c5fd;font-size:11px;padding:5px 9px;border-radius:7px;cursor:pointer;margin:2px;font-family:inherit}
+    .ab:hover{border-color:#22d3ee}
+    .ab.red{color:#fca5a5;border-color:rgba(239,68,68,.3)}
+    .ab.grn{color:#86efac;border-color:rgba(34,197,94,.3)}
+    .ab.cyn{color:#67e8f9;border-color:rgba(34,211,238,.35)}
+    #admin-overlay .acrear{background:#0a1120;border:1px solid #1d2941;border-radius:12px;padding:14px;margin-top:16px}
+    #admin-overlay .acrear input,#admin-overlay .acrear select{width:100%;padding:9px 11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:13px;outline:none;font-family:inherit;margin-top:6px;box-sizing:border-box}
+    #admin-overlay .arow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    @media(max-width:560px){#admin-overlay .arow3{grid-template-columns:1fr}}
+    .amsg2{display:none;font-size:12px;border-radius:8px;padding:8px 11px;margin-top:10px}
+    .amsg2.err{display:block;color:#fca5a5;background:rgba(239,68,68,.1)}
+    .amsg2.ok{display:block;color:#86efac;background:rgba(34,197,94,.1)}
+    .acls{background:#1e293b;color:#e2e8f0;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit}
+    #content-overlay .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+    @media(max-width:560px){#content-overlay .cgrid{grid-template-columns:1fr}}
+    #content-overlay .citem{display:flex;align-items:center;gap:9px;background:#0a1120;border:1px solid #1d2941;border-radius:9px;padding:10px 12px;cursor:pointer}
+    #content-overlay .citem input{width:17px;height:17px;accent-color:#22d3ee}
+    #content-overlay .citem span{color:#e5e7eb;font-size:12.5px}
+  </style>
+  <div class="apanel">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><h2>&#128101; Administrar usuarios</h2><div class="asub" id="admin-quien"></div></div>
+      <button class="acls" onclick="adminCerrar()">&#10005; Cerrar</button>
+    </div>
+    <div id="admin-tabla"><div style="color:#64748b;text-align:center;padding:20px">Cargando&#8230;</div></div>
+    <div class="acrear">
+      <div style="color:#fbbf24;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">&#10133; Crear nuevo usuario</div>
+      <div class="arow3">
+        <div><label style="color:#94a3b8;font-size:10px">Usuario</label><input id="admin-nu" autocapitalize="characters" placeholder="Ej: TECNICA2"></div>
+        <div><label style="color:#94a3b8;font-size:10px">Perfil</label><select id="admin-np"><option value="TECNICA">TECNICA</option><option value="DIRECTOR">DIRECTOR</option><option value="GERENCIA1">GERENCIA1</option><option value="GERENCIA2">GERENCIA2</option><option value="DESARROLLO">DESARROLLO</option></select></div>
+        <div><label style="color:#94a3b8;font-size:10px">Correo (opcional)</label><input id="admin-nc" type="email" placeholder="correo@dominio.com"></div>
+      </div>
+      <div id="admin-msg" class="amsg2"></div>
+      <button class="ab grn" style="margin-top:10px;padding:9px 16px" onclick="adminCrear()">Crear usuario</button>
+      <div style="color:#64748b;font-size:10px;margin-top:8px">Queda pendiente; en su primer ingreso crea su contrase&#241;a con "Registrarme". Luego puedes definir su contenido.</div>
+    </div>
+  </div>
+</div>
+<div id="content-overlay" style="display:none;position:fixed;inset:0;background:rgba(3,5,10,.94);z-index:100002;overflow-y:auto;padding:22px 14px;font-family:'Inter',system-ui,sans-serif">
+  <div class="apanel">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><h2>&#127919; Contenido habilitado</h2><div class="asub" style="color:#94a3b8;font-size:11px" id="content-quien"></div></div>
+      <button class="acls" onclick="contentCerrar()">&#10005; Cerrar</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="ab" onclick="contentTodos(true)">Marcar todo</button>
+      <button class="ab" onclick="contentTodos(false)">Desmarcar todo</button>
+    </div>
+    <div id="content-grid" class="cgrid"></div>
+    <div id="content-msg" class="amsg2"></div>
+    <button class="ab grn" style="padding:10px 18px" onclick="contentGuardar()">Guardar contenido</button>
+  </div>
+</div>
+
 <script>
 /* ====== AUTENTICACIÓN: token de sesión validado en el backend ====== */
-var AUTH = { token:null, usuario:null, perfil:null };
+var AUTH = { token:null, usuario:null, perfil:null, modulos:null };
 var AUTH_TKKEY = 'comuneros_auth_v1';
 
 /* helper usado por jsonp/_mosJsonp: adjunta el token a cada action protegido */
@@ -11506,11 +11574,13 @@ function authVista(v){
   document.getElementById('au-nueva').style.display=(v==='nueva')?'block':'none';
 }
 function authEntrar(d){
-  AUTH.token=d.token; AUTH.usuario=d.usuario; AUTH.perfil=d.perfil;
+  AUTH.token=d.token; AUTH.usuario=d.usuario; AUTH.perfil=d.perfil; AUTH.modulos=d.modulos||null;
   /* la sesion vive solo mientras la pestaña este abierta; al recargar se pide login de nuevo */
   try{ sessionStorage.setItem(AUTH_TKKEY, JSON.stringify({t:d.token,u:d.usuario,p:d.perfil,x:d.expira})); }catch(e){}
   var ov=document.getElementById('auth-overlay'); if(ov) ov.style.display='none';
-  if(window.AUTH_APLICAR_PERFIL) try{ AUTH_APLICAR_PERFIL(d.perfil); }catch(e){}
+  var esAdmin=['GERENCIA1','GERENCIA2','DIRECTOR','DESARROLLO'].indexOf(d.perfil)>=0;
+  var fab=document.getElementById('admin-fab'); if(fab) fab.style.display=esAdmin?'block':'none';
+  if(window.AUTH_APLICAR_PERFIL) try{ AUTH_APLICAR_PERFIL(d.perfil, d.modulos); }catch(e){}
   if(typeof boot==='function') boot();
 }
 function authLogin(){
@@ -11600,7 +11670,146 @@ function _authArrancarReset(tok){
   });
 }
 
+/* ===================== PANEL ADMIN DE USUARIOS ===================== */
+var _adminCat=[];     /* catalogo de modulos [{k,n}] */
+var _adminSel={};     /* seleccion actual del sub-panel de contenido */
+var _adminUsuario=''; /* usuario que se esta editando en contenido */
+
+function adminAbrir(){ document.getElementById('admin-overlay').style.display='block'; adminCargar(); }
+function adminCerrar(){ document.getElementById('admin-overlay').style.display='none'; }
+function _adMsg(txt,tipo){ var e=document.getElementById('admin-msg'); e.textContent=txt; e.className='amsg2 '+(tipo||'err'); }
+
+function adminCargar(){
+  document.getElementById('admin-tabla').innerHTML='<div style="color:#64748b;text-align:center;padding:20px">Cargando&#8230;</div>';
+  _authRaw({action:'auth_usuarios', token:AUTH.token}).then(function(r){
+    if(!r||!r.ok){ document.getElementById('admin-tabla').innerHTML='<div style="color:#fca5a5;padding:14px">'+((r&&r.error)||'No se pudo cargar')+'</div>'; return; }
+    _adminCat=r.catalogo||[];
+    document.getElementById('admin-quien').textContent='Sesion: '+r.yo+' ('+r.miperfil+') · '+r.usuarios.length+' usuarios';
+    var h='<table><thead><tr><th>Usuario</th><th>Perfil</th><th>Estado</th><th>Contenido</th><th>Ultimo ingreso</th><th>Acciones</th></tr></thead><tbody>';
+    for(var i=0;i<r.usuarios.length;i++){
+      var u=r.usuarios[i], esYo=(u.usuario===r.yo);
+      var nMod=(u.modulos&&u.modulos.length)||0, todos=(_adminCat.length&&nMod===_adminCat.length);
+      var acc='<button class="ab cyn" onclick="adminContenido(\''+u.usuario+'\')">Contenido</button>'+
+              '<button class="ab" onclick="adminReset(\''+u.usuario+'\')">Resetear</button>';
+      if(!esYo){
+        if(u.estado==='INACTIVO') acc+='<button class="ab grn" onclick="adminEstado(\''+u.usuario+'\',\'ACTIVO\')">Activar</button>';
+        else acc+='<button class="ab red" onclick="adminEstado(\''+u.usuario+'\',\'INACTIVO\')">Desactivar</button>';
+      }
+      h+='<tr><td><b style="color:#fbbf24">'+u.usuario+'</b>'+(u.bloqueado?' <span style="color:#fca5a5;font-size:9px">&#128274;</span>':'')+'</td>'+
+         '<td>'+u.perfil+'</td>'+
+         '<td><span class="pil st-'+u.estado+'">'+u.estado+'</span></td>'+
+         '<td style="color:'+(todos?'#86efac':'#67e8f9')+'">'+(todos?'Todo':(nMod+' / '+_adminCat.length))+'</td>'+
+         '<td style="color:#64748b">'+(u.ultimo||'—')+'</td>'+
+         '<td>'+acc+'</td></tr>';
+    }
+    h+='</tbody></table>';
+    document.getElementById('admin-tabla').innerHTML=h;
+  });
+}
+function adminReset(usuario){
+  if(!confirm('¿Restablecer el acceso de '+usuario+'? Su contrasena se borra y debera registrarse de nuevo con "Registrarme".')) return;
+  _authRaw({action:'auth_reset', token:AUTH.token, usuario:usuario}).then(function(r){
+    if(r&&r.ok){ adminCargar(); } else alert((r&&r.error)||'No se pudo resetear');
+  });
+}
+function adminEstado(usuario,estado){
+  var txt=estado==='INACTIVO'?'desactivar (no podra entrar)':'activar';
+  if(!confirm('¿Seguro que quieres '+txt+' a '+usuario+'?')) return;
+  _authRaw({action:'auth_estado', token:AUTH.token, usuario:usuario, estado:estado}).then(function(r){
+    if(r&&r.ok){ adminCargar(); } else alert((r&&r.error)||'No se pudo cambiar');
+  });
+}
+function adminCrear(){
+  var u=(document.getElementById('admin-nu').value||'').trim();
+  var p=document.getElementById('admin-np').value;
+  var c=(document.getElementById('admin-nc').value||'').trim();
+  if(!u){ _adMsg('Escribe el usuario'); return; }
+  _authRaw({action:'auth_alta', token:AUTH.token, usuario:u, perfil:p, correo:c}).then(function(r){
+    if(r&&r.ok){ _adMsg('Usuario '+r.usuario+' creado (pendiente de registro)','ok'); document.getElementById('admin-nu').value=''; document.getElementById('admin-nc').value=''; adminCargar(); }
+    else _adMsg((r&&r.error)||'No se pudo crear');
+  });
+}
+
+/* ---- sub-panel: contenido (modulos) por usuario ---- */
+function adminContenido(usuario){
+  _adminUsuario=usuario; _adminSel={};
+  document.getElementById('content-quien').textContent='Usuario: '+usuario;
+  document.getElementById('content-msg').className='amsg2';
+  /* traer el estado actual del usuario para pre-marcar */
+  _authRaw({action:'auth_usuarios', token:AUTH.token}).then(function(r){
+    var actuales=[];
+    if(r&&r.ok){ _adminCat=r.catalogo||_adminCat; var uu=(r.usuarios||[]).filter(function(x){return x.usuario===usuario;})[0]; if(uu) actuales=uu.modulos||[]; }
+    var g='';
+    for(var i=0;i<_adminCat.length;i++){
+      var k=_adminCat[i].k, on=actuales.indexOf(k)>=0; _adminSel[k]=on;
+      g+='<label class="citem"><input type="checkbox" '+(on?'checked':'')+' onchange="_adminSel[\''+k+'\']=this.checked"><span>'+_adminCat[i].n+'</span></label>';
+    }
+    document.getElementById('content-grid').innerHTML=g;
+    document.getElementById('content-overlay').style.display='block';
+  });
+}
+function contentCerrar(){ document.getElementById('content-overlay').style.display='none'; }
+function contentTodos(v){
+  var chs=document.getElementById('content-grid').querySelectorAll('input[type=checkbox]');
+  for(var i=0;i<_adminCat.length;i++){ _adminSel[_adminCat[i].k]=v; }
+  for(var j=0;j<chs.length;j++){ chs[j].checked=v; }
+}
+function contentGuardar(){
+  var sel=[];
+  for(var i=0;i<_adminCat.length;i++){ if(_adminSel[_adminCat[i].k]) sel.push(_adminCat[i].k); }
+  if(!sel.length){ document.getElementById('content-msg').textContent='Debe quedar al menos un contenido habilitado.'; document.getElementById('content-msg').className='amsg2 err'; return; }
+  _authRaw({action:'auth_modulos', token:AUTH.token, usuario:_adminUsuario, modulos:JSON.stringify(sel)}).then(function(r){
+    if(r&&r.ok){ document.getElementById('content-msg').textContent='Contenido actualizado ('+r.modulos.length+' modulos).'; document.getElementById('content-msg').className='amsg2 ok'; adminCargar();
+      setTimeout(contentCerrar,700);
+      /* si el admin se editó a sí mismo, re-aplicar en caliente */
+      if(_adminUsuario===AUTH.usuario){ AUTH.modulos=r.modulos; AUTH_APLICAR_PERFIL(AUTH.perfil, r.modulos); }
+    } else { document.getElementById('content-msg').textContent=(r&&r.error)||'No se pudo guardar'; document.getElementById('content-msg').className='amsg2 err'; }
+  });
+}
+
+/* ---- aplica permisos de contenido: oculta menu-cards y bloquea goTo ---- */
+var _AUTH_MODSET=null;
+function AUTH_APLICAR_PERFIL(perfil, modulos){
+  /* modulos: array de claves permitidas; null/undefined o con '*' => todo */
+  var todo = (!modulos) || (modulos.indexOf && modulos.indexOf('*')>=0);
+  _AUTH_MODSET = todo ? null : {};
+  if(!todo){ for(var i=0;i<modulos.length;i++) _AUTH_MODSET[modulos[i]]=true; }
+  /* ocultar/mostrar tarjetas del menú */
+  try{
+    var cards=document.querySelectorAll('.menu-card');
+    for(var c=0;c<cards.length;c++){
+      var oc=cards[c].getAttribute('onclick')||'';
+      var m=oc.match(/goTo\(\s*['"]([a-zA-Z0-9_]+)['"]\s*\)/);
+      if(!m) continue;
+      var key=m[1];
+      var esModulo = _adminModuloConocido(key);
+      if(!esModulo) continue;              /* claves fuera del catálogo (p.ej. menu) no se tocan */
+      cards[c].style.display = (todo || _AUTH_MODSET[key]) ? '' : 'none';
+    }
+  }catch(e){}
+  /* envolver goTo una sola vez para bloquear navegación directa */
+  try{
+    if(typeof window.goTo==='function' && !window._goToGuard){
+      window._goToOrig=window.goTo;
+      window._goToGuard=true;
+      window.goTo=function(name){
+        if(_AUTH_MODSET && _adminModuloConocido(name) && !_AUTH_MODSET[name]){
+          try{ window._goToOrig('menu'); }catch(_){}
+          return;
+        }
+        return window._goToOrig.apply(this, arguments);
+      };
+    }
+  }catch(e2){}
+}
+function _adminModuloConocido(key){
+  var cat=(_adminCat&&_adminCat.length)?_adminCat:[{k:'ejecdiaria'},{k:'obra'},{k:'rendimientos'},{k:'loc'},{k:'maq'},{k:'mo'},{k:'inventario'},{k:'indicadores'},{k:'contrato'},{k:'informe'},{k:'comunicaciones'},{k:'fotos'}];
+  for(var i=0;i<cat.length;i++){ if(cat[i].k===key) return true; }
+  return false;
+}
+
 /* al cargar: enlace de recuperación primero; si no, SIEMPRE se pide el login.
+
  * No se auto-entra por sesión guardada — el usuario debe ingresar cada vez que abre.
  * (El navegador puede autocompletar usuario/contraseña, pero el formulario siempre aparece.) */
 (function(){
