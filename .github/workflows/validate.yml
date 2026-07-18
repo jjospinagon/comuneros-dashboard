@@ -19,7 +19,11 @@ jobs:
           python3 - <<'PYEOF'
           import re, sys, subprocess
           fallos = 0
-          CLAVES = ['function handleLogin', 'function goTo(name)', 'async function ejecDiariaCargar(', 'function jsonp(']
+          # funciones clave por archivo (v2 usa autenticacion, ya no tiene handleLogin)
+          CLAVES = {
+              'index.html': ['function handleLogin', 'function goTo(name)', 'async function ejecDiariaCargar(', 'function jsonp('],
+              'v2.html':    ['function authEntrar(', 'function goTo(name)', 'async function ejecDiariaCargar(', 'function jsonp('],
+          }
           for f in ['index.html', 'v2.html']:
               try:
                   h = open(f, encoding='utf-8').read()
@@ -33,11 +37,6 @@ jobs:
                   if r.returncode != 0:
                       print(f'X {f} script #{i}: SINTAXIS INVALIDA\n{r.stderr}')
                       fallos += 1
-              for fn in CLAVES:
+              for fn in CLAVES.get(f, []):
                   if fn not in h:
-                      print(f'X {f}: falta funcion clave "{fn}" (posible script truncado)')
-                      fallos += 1
-              if not fallos:
-                  print(f'OK {f}: {len(scripts)} bloque(s) de script validos, funciones clave presentes')
-          sys.exit(1 if fallos else 0)
-          PYEOF
+                      print(f'X {f}: falta
