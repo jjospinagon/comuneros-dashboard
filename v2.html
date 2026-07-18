@@ -11387,6 +11387,7 @@ if ('serviceWorker' in navigator) {
     #auth-overlay .amsg{display:none;font-size:12px;border-radius:8px;padding:9px 12px;margin-top:14px;line-height:1.35}
     #auth-overlay .amsg.err{display:block;color:#fca5a5;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30)}
     #auth-overlay .amsg.ok{display:block;color:#86efac;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.30)}
+    #auth-overlay .hint2{color:#64748b;font-size:10px;margin-top:5px;line-height:1.4}
     #auth-overlay .afoot{text-align:center;color:rgba(255,255,255,.32);font-size:10px;margin-top:16px;line-height:1.5}
     #auth-overlay .aspin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:aspin .8s linear infinite;vertical-align:middle;margin-right:7px}
     @keyframes aspin{to{transform:rotate(360deg)}}
@@ -11410,6 +11411,9 @@ if ('serviceWorker' in navigator) {
     <div id="au-reg" style="display:none">
       <label>Usuario (el que te dio gerencia)</label>
       <input id="ar-user" autocapitalize="characters" placeholder="Tu usuario">
+      <label>Tu correo electrónico</label>
+      <input id="ar-mail" type="email" autocomplete="email" placeholder="nombre@dominio.com">
+      <div class="hint2">A este correo te llegará el enlace si olvidas la contraseña. Anótalo bien.</div>
       <label>Crea tu contraseña</label>
       <input id="ar-pass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
       <label>Repite la contraseña</label>
@@ -11423,9 +11427,20 @@ if ('serviceWorker' in navigator) {
       <label>Usuario</label>
       <input id="ac-user" autocapitalize="characters" placeholder="Tu usuario" onkeydown="if(event.key==='Enter')authRecuperar()">
       <div id="ac-msg" class="amsg"></div>
-      <button class="abtn p" id="ac-btn" onclick="authRecuperar()">Enviar instrucciones</button>
+      <button class="abtn p" id="ac-btn" onclick="authRecuperar()">Enviar enlace</button>
       <button class="abtn s" onclick="authVista('login')">← Volver a Ingresar</button>
-      <p class="afoot">Se restablece tu acceso y recibes un correo para crear una contraseña nueva.</p>
+      <p class="afoot">Te llega un enlace al correo que registraste. Vence en 2 horas y sirve una sola vez.</p>
+    </div>
+
+    <div id="au-nueva" style="display:none">
+      <div id="an-quien" class="hint2" style="font-size:12px;color:#93c5fd;margin-bottom:4px"></div>
+      <label>Crea tu contraseña nueva</label>
+      <input id="an-pass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      <label>Repite la contraseña</label>
+      <input id="an-pass2" type="password" autocomplete="new-password" placeholder="Repite" onkeydown="if(event.key==='Enter')authResetConfirm()">
+      <div id="an-msg" class="amsg"></div>
+      <button class="abtn p" id="an-btn" onclick="authResetConfirm()">Guardar y entrar</button>
+      <button class="abtn s" onclick="authVista('login')">← Cancelar</button>
     </div>
 
     <p class="afoot">Acceso restringido a personal autorizado del contrato.<br>Cada ingreso queda en bitácora institucional.</p>
@@ -11488,6 +11503,7 @@ function authVista(v){
   document.getElementById('au-login').style.display=(v==='login')?'block':'none';
   document.getElementById('au-reg').style.display=(v==='reg')?'block':'none';
   document.getElementById('au-rec').style.display=(v==='rec')?'block':'none';
+  document.getElementById('au-nueva').style.display=(v==='nueva')?'block':'none';
 }
 function authEntrar(d){
   AUTH.token=d.token; AUTH.usuario=d.usuario; AUTH.perfil=d.perfil;
@@ -11516,16 +11532,18 @@ function authLogin(){
 function authRegister(){
   _authClr('ar-msg');
   var u=(document.getElementById('ar-user').value||'').trim();
+  var correo=(document.getElementById('ar-mail').value||'').trim();
   var p=document.getElementById('ar-pass').value||'';
   var p2=document.getElementById('ar-pass2').value||'';
   if(!u){ _authMsg('ar-msg','Escribe tu usuario'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)){ _authMsg('ar-msg','Escribe un correo válido: es el único medio para recuperar tu contraseña'); return; }
   if(p.length<6){ _authMsg('ar-msg','La contraseña debe tener al menos 6 caracteres'); return; }
   if(p!==p2){ _authMsg('ar-msg','Las contraseñas no coinciden'); return; }
   _authBtn('ar-btn',true,'Registrando…');
   _authRaw({action:'auth_challenge',usuario:u}).then(function(ch){
     if(!ch||!ch.salt){ _authBtn('ar-btn',false,'Registrarme y entrar'); _authMsg('ar-msg',(ch&&ch.error)||'No se pudo conectar'); return; }
     return _authClientHash(p, ch.salt).then(function(hash){
-      return _authRaw({action:'auth_register',usuario:u,clientHash:hash});
+      return _authRaw({action:'auth_register',usuario:u,correo:correo,clientHash:hash});
     }).then(function(r){
       _authBtn('ar-btn',false,'Registrarme y entrar');
       if(r&&r.ok){ authEntrar(r); }
@@ -11539,8 +11557,8 @@ function authRecuperar(){
   if(!u){ _authMsg('ac-msg','Escribe tu usuario'); return; }
   _authBtn('ac-btn',true,'Enviando…');
   _authRaw({action:'auth_recuperar',usuario:u}).then(function(r){
-    _authBtn('ac-btn',false,'Enviar instrucciones');
-    _authMsg('ac-msg',(r&&r.msg)||'Si el usuario existe, se envió un correo.','ok');
+    _authBtn('ac-btn',false,'Enviar enlace');
+    _authMsg('ac-msg',(r&&r.msg)||'Si el usuario existe, se envió un enlace al correo registrado.','ok');
   });
 }
 function authLogout(){
@@ -11549,8 +11567,43 @@ function authLogout(){
   location.reload();
 }
 
-/* al cargar: si hay token guardado y sigue válido, entra directo; si no, muestra login */
+/* ===== recuperación por enlace ===== */
+var RESET_TOK=null, RESET_SALT=null;
+function authResetConfirm(){
+  _authClr('an-msg');
+  var p=document.getElementById('an-pass').value||'';
+  var p2=document.getElementById('an-pass2').value||'';
+  if(p.length<6){ _authMsg('an-msg','La contraseña debe tener al menos 6 caracteres'); return; }
+  if(p!==p2){ _authMsg('an-msg','Las contraseñas no coinciden'); return; }
+  _authBtn('an-btn',true,'Guardando…');
+  _authClientHash(p, RESET_SALT).then(function(hash){
+    return _authRaw({action:'auth_reset_confirm', reset:RESET_TOK, clientHash:hash});
+  }).then(function(r){
+    _authBtn('an-btn',false,'Guardar y entrar');
+    if(r&&r.ok){ try{ history.replaceState(null,'',location.pathname); }catch(e){} authEntrar(r); }
+    else _authMsg('an-msg',(r&&r.error)||'No fue posible cambiar la contraseña');
+  }).catch(function(){ _authBtn('an-btn',false,'Guardar y entrar'); _authMsg('an-msg','Error inesperado'); });
+}
+function _authArrancarReset(tok){
+  document.getElementById('auth-overlay').style.display='flex';
+  authVista('nueva');
+  document.getElementById('an-quien').textContent='Verificando el enlace…';
+  _authRaw({action:'auth_reset_info', reset:tok}).then(function(r){
+    if(r&&r.ok){
+      RESET_TOK=tok; RESET_SALT=r.salt;
+      document.getElementById('an-quien').textContent='Usuario: '+r.usuario;
+    } else {
+      authVista('login');
+      _authMsg('au-msg',(r&&r.error)||'El enlace no es válido');
+    }
+  });
+}
+
+/* al cargar: enlace de recuperación > sesión guardada > login */
 (function(){
+  var qs=new URLSearchParams(location.search);
+  var rtok=qs.get('reset');
+  if(rtok){ _authArrancarReset(rtok); return; }
   var saved=null;
   try{ saved=JSON.parse(localStorage.getItem(AUTH_TKKEY)||'null'); }catch(e){}
   if(saved && saved.t){
