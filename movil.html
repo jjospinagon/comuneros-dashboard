@@ -60,6 +60,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
 .sel{background:#0f1a30;border:1px solid #f59e0b;border-radius:10px;padding:10px;margin-bottom:10px}
 .sel .n{color:#fbbf24;font-weight:800}
 .sel .d{font-size:12px;color:#e5e7eb;margin-top:2px}
+.blq{background:#0e1626;border:1px solid #253352;border-radius:10px;padding:10px 10px 12px;margin-bottom:10px}
+.blq:last-of-type{border-color:#3b4a6b}
+.blqTop{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1d2941;padding-bottom:5px;margin-bottom:2px}
+.blqNum{font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:.4px}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #333;border-top-color:#fbbf24;border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .vacio{color:#6b7280;font-size:12px;text-align:center;padding:14px}
@@ -105,26 +109,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
       <div class="card" id="cardForm" style="display:none">
         <h2>2 · Registro diario</h2>
         <div class="sel" id="selItem" onclick="deselItem()"></div>
-        <div class="grid2">
-          <div><label>Fecha</label><input type="date" id="inFecha"></div>
-          <div><label>Cantidad (elementos)</label><input type="text" id="dmQ" inputmode="decimal" oninput="calc()"></div>
-        </div>
-        <label>Descripción / ubicación (ej: Corte domiciliaria Mz 32 #10)</label>
-        <input id="inDesc" placeholder="Qué y dónde se ejecutó">
-        <label style="margin-top:10px">Dimensiones (solo las que apliquen)</label>
-        <div class="grid4">
-          <div><label>Alto m</label><input type="text" id="dmAlto" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Ancho m</label><input type="text" id="dmAncho" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Long. m</label><input type="text" id="dmLon" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Ø pulg</label><input type="text" id="dmDiam" inputmode="decimal" oninput="calc()"></div>
-        </div>
-        <div class="grid4" style="margin-top:6px">
-          <div><label>% Expan.</label><input type="text" id="dmExp" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Peso kg</label><input type="text" id="dmPeso" inputmode="decimal"></div>
-          <div><label>Área/Vol</label><input type="text" id="dmArea" inputmode="decimal" oninput="calc()"></div>
-          <div><label>Total <span id="lblU"></span></label><input type="text" id="inTotal" inputmode="decimal" style="border-color:#f59e0b"></div>
-        </div>
-        <div class="hint" id="hintCalc">Total automático según la unidad, amplificado por el % de expansión (35, 1.35 o 0.35 → +35%). Puedes corregirlo. ¿Tramos con dimensiones distintas? Guarda un registro por cada uno.</div>
+        <div id="bloques"></div>
+        <button class="btn btnS" onclick="addBloque()">➕ Insertar otro registro</button>
+        <div class="hint" id="hintCalc">Total automático según la unidad, amplificado por el % de expansión (35, 1.35 o 0.35 → +35%). Puedes corregirlo. Agrega un registro por cada ejecución con descripción o medidas distintas: se guardan todos juntos y cada uno ocupa su propia fila en el Excel.</div>
         <button class="btn btnP" id="btnEnviar" onclick="enviar()">✔ Guardar registro</button>
         <button class="btn btnS" onclick="cancelarReg()">✕ Cancelar ingreso</button>
       </div>
@@ -213,7 +200,6 @@ function volverInicio(){
 function iniciarTab(t){
   document.getElementById('vLogin').style.display='none';
   document.getElementById('vApp').style.display='block';
-  document.getElementById('inFecha').value=document.getElementById('inFecha').value||hoy();
   if(!document.getElementById('inMetaMes').value) document.getElementById('inMetaMes').value=mesAct();
   document.getElementById('lblMes').textContent=mesAct();
   if(!CAT.length) cargarCat(); else refrescarPend();
@@ -253,65 +239,157 @@ function filtrar(){
   pintarLista(r);
 }
 function selItem(n){
+  var ant=SEL?SEL.n:null;
   for(var i=0;i<CAT.length;i++) if(CAT[i].n===n){ SEL=CAT[i]; break; }
   if(!SEL) return;
   document.getElementById('selItem').innerHTML='<span class="n">'+SEL.n+' · '+SEL.u+'</span><div class="d">'+SEL.d+'</div><div class="hint">Toca para cambiar de ítem</div>';
-  document.getElementById('lblU').textContent=SEL.u;
   document.getElementById('cardForm').style.display='block';
   document.getElementById('cardBuscar').style.display='none';
-}
-function cancelarReg(){
-  var ids=['dmQ','dmAlto','dmAncho','dmDiam','dmExp','dmPeso','dmLon','dmArea','inTotal','inDesc'];
-  for(var i=0;i<ids.length;i++) document.getElementById(ids[i]).value='';
-  deselItem();
-  msg('Ingreso cancelado');
+  if(ant!==SEL.n){ document.getElementById('bloques').innerHTML=''; BLQ=0; addBloque(); }
+  else if(!document.querySelectorAll('#bloques .blq').length){ addBloque(); }
+  renumerar();
 }
 function deselItem(){
   SEL=null;
   document.getElementById('cardForm').style.display='none';
   document.getElementById('cardBuscar').style.display='block';
 }
-function num(id){ var s=String(document.getElementById(id).value||'').replace(',','.'); var v=parseFloat(s); return isNaN(v)?null:v; }
-function fexp(){
-  var e=num('dmExp');
-  if(e===null||e<=0) return 1;
-  if(e>=3) return 1+e/100;   /* 35  -> x1.35 */
-  if(e>=1) return e;          /* 1.35 -> x1.35 */
-  return 1+e;                 /* 0.35 -> x1.35 */
+function cancelarReg(){
+  document.getElementById('bloques').innerHTML=''; BLQ=0;
+  deselItem();
+  msg('Ingreso cancelado');
 }
-function calc(){
+
+/* ===== bloques: varios registros de la misma actividad ===== */
+var BLQ=0;
+function blqHTML(i,u){
+  return '<div class="blq" id="blq_'+i+'">'+
+    '<div class="blqTop"><span class="blqNum" id="num_'+i+'">Registro</span>'+
+      '<button class="btnR" onclick="delBloque('+i+')" title="Quitar este registro">✕</button></div>'+
+    '<div class="grid2">'+
+      '<div><label>Fecha</label><input type="date" id="f_'+i+'"></div>'+
+      '<div><label>Cantidad (elementos)</label><input type="text" id="q_'+i+'" inputmode="decimal" oninput="calc('+i+')"></div>'+
+    '</div>'+
+    '<label>Descripción / ubicación (ej: Corte domiciliaria Mz 32 #10)</label>'+
+    '<input id="d_'+i+'" placeholder="Qué y dónde se ejecutó">'+
+    '<label style="margin-top:10px">Dimensiones (solo las que apliquen)</label>'+
+    '<div class="grid4">'+
+      '<div><label>Alto m</label><input type="text" id="alto_'+i+'" inputmode="decimal" oninput="calc('+i+')"></div>'+
+      '<div><label>Ancho m</label><input type="text" id="ancho_'+i+'" inputmode="decimal" oninput="calc('+i+')"></div>'+
+      '<div><label>Long. m</label><input type="text" id="lon_'+i+'" inputmode="decimal" oninput="calc('+i+')"></div>'+
+      '<div><label>Ø pulg</label><input type="text" id="diam_'+i+'" inputmode="decimal" oninput="calc('+i+')"></div>'+
+    '</div>'+
+    '<div class="grid4" style="margin-top:6px">'+
+      '<div><label>% Expan.</label><input type="text" id="exp_'+i+'" inputmode="decimal" oninput="calc('+i+')"></div>'+
+      '<div><label>Peso kg</label><input type="text" id="peso_'+i+'" inputmode="decimal"></div>'+
+      '<div><label>Área/Vol</label><input type="text" id="area_'+i+'" inputmode="decimal" oninput="calc('+i+')"></div>'+
+      '<div><label>Total '+(u||'')+'</label><input type="text" id="total_'+i+'" inputmode="decimal" style="border-color:#f59e0b"></div>'+
+    '</div>'+
+  '</div>';
+}
+function addBloque(){
+  var cont=document.getElementById('bloques');
+  var prev=document.querySelectorAll('#bloques .blq');
+  var f=hoy();
+  if(prev.length){ var pf=document.getElementById('f_'+prev[prev.length-1].id.split('_')[1]); if(pf&&pf.value) f=pf.value; }
+  var i=BLQ++;
+  var tmp=document.createElement('div');
+  tmp.innerHTML=blqHTML(i, SEL?SEL.u:'');
+  cont.appendChild(tmp.firstChild);
+  var fi=document.getElementById('f_'+i); if(fi) fi.value=f;
+  renumerar();
+  if(prev.length){
+    var nb=document.getElementById('blq_'+i);
+    if(nb&&nb.scrollIntoView){ try{ nb.scrollIntoView({block:'center'}); }catch(e){ nb.scrollIntoView(); } }
+    var dd=document.getElementById('d_'+i); if(dd) dd.focus();
+  }
+  return i;
+}
+function delBloque(i){
+  var bs=document.querySelectorAll('#bloques .blq');
+  if(bs.length<=1){ limpiarBloque(i); msg('Registro limpiado'); return; }
+  var el=document.getElementById('blq_'+i);
+  if(el) el.parentNode.removeChild(el);
+  renumerar();
+}
+function limpiarBloque(i){
+  var ids=['q_','d_','alto_','ancho_','lon_','diam_','exp_','peso_','area_','total_'];
+  for(var k=0;k<ids.length;k++){ var e=document.getElementById(ids[k]+i); if(e) e.value=''; }
+}
+function renumerar(){
+  var bs=document.querySelectorAll('#bloques .blq');
+  for(var k=0;k<bs.length;k++){
+    var i=bs[k].id.split('_')[1];
+    var e=document.getElementById('num_'+i);
+    if(e) e.textContent=(bs.length>1)?('Registro '+(k+1)+' de '+bs.length):'Registro 1';
+  }
+  var b=document.getElementById('btnEnviar');
+  if(b && !b.disabled) b.innerHTML=(bs.length>1)?('✔ Guardar '+bs.length+' registros'):'✔ Guardar registro';
+}
+function idxBloques(){
+  var bs=document.querySelectorAll('#bloques .blq'), r=[];
+  for(var k=0;k<bs.length;k++) r.push(bs[k].id.split('_')[1]);
+  return r;
+}
+function num(id){ var e=document.getElementById(id); if(!e) return null; var s=String(e.value||'').replace(',','.'); var v=parseFloat(s); return isNaN(v)?null:v; }
+function fexp(i){
+  var e=num('exp_'+i);
+  if(e===null||e<=0) return 1;
+  if(e>=3) return 1+e/100;
+  if(e>=1) return e;
+  return 1+e;
+}
+function calc(i){
   if(!SEL) return;
   var u=(SEL.u||'').toUpperCase();
-  var q=num('dmQ'), alto=num('dmAlto'), ancho=num('dmAncho'), lon=num('dmLon'), area=num('dmArea');
+  var q=num('q_'+i), alto=num('alto_'+i), ancho=num('ancho_'+i), lon=num('lon_'+i), area=num('area_'+i);
   var t=null, qq=(q===null?1:q);
   if(area!==null) t=area;
   else if(u.indexOf('ML')>=0 && lon!==null) t=lon*qq;
   else if(u.indexOf('M2')>=0){ if(alto!==null&&ancho!==null) t=alto*ancho*qq; else if(lon!==null&&ancho!==null) t=lon*ancho*qq; }
   else if(u.indexOf('M3')>=0){ if(alto!==null&&ancho!==null&&lon!==null) t=alto*ancho*lon*qq; }
   else if(u.indexOf('UND')>=0 && q!==null) t=q;
-  if(t!==null) document.getElementById('inTotal').value=Math.round(t*fexp()*100)/100;
+  if(t!==null){ var e=document.getElementById('total_'+i); if(e) e.value=Math.round(t*fexp(i)*100)/100; }
 }
 function enviar(){
   if(!SEL){ msg('Elige un ítem', true); return; }
-  var f=document.getElementById('inFecha').value;
-  var t=num('inTotal');
-  if(!f){ msg('Falta la fecha', true); return; }
-  if(t===null||t<=0){ msg('Falta el total', true); return; }
-  var dm={};
-  var mp={dmQ:'q',dmAlto:'alto',dmAncho:'ancho',dmDiam:'diam',dmExp:'exp',dmPeso:'peso',dmLon:'lon',dmArea:'area'};
-  for(var id in mp){ var v=num(id); if(v!==null) dm[mp[id]]=v; }
+  var idx=idxBloques(), lote=[];
+  for(var k=0;k<idx.length;k++){
+    var i=idx[k];
+    var fe=document.getElementById('f_'+i);
+    var f=fe?fe.value:'';
+    var t=num('total_'+i);
+    var de=document.getElementById('d_'+i);
+    var dsc=de?(de.value||'').trim():'';
+    var vacio=(t===null && num('q_'+i)===null && num('alto_'+i)===null && num('ancho_'+i)===null && num('lon_'+i)===null && num('area_'+i)===null && !dsc);
+    if(vacio) continue;
+    if(!f){ msg('Registro '+(k+1)+': falta la fecha', true); return; }
+    if(t===null||t<=0){ msg('Registro '+(k+1)+': falta el total', true); return; }
+    var dm={};
+    var mp={q:'q',alto:'alto',ancho:'ancho',diam:'diam',exp:'exp',peso:'peso',lon:'lon',area:'area'};
+    for(var id in mp){ var v=num(id+'_'+i); if(v!==null) dm[mp[id]]=v; }
+    lote.push({f:f, d:dsc, dm:dm, t:t});
+  }
+  if(!lote.length){ msg('Llena al menos un registro', true); return; }
   var b=document.getElementById('btnEnviar');
-  b.disabled=true; b.innerHTML='<span class="spin"></span>Guardando…';
-  jsonp({action:'cant_add', item:SEL.n, fecha:f, desc:(document.getElementById('inDesc').value||'').trim(), dims:JSON.stringify(dm), total:t, user:''}, function(d){
-    b.disabled=false; b.innerHTML='✔ Guardar registro';
-    if(d && d.ok){
-      msg('Guardado ('+d.pend+' pendiente'+(d.pend>1?'s':'')+'). Puedes registrar otra ejecución del mismo ítem con otras dimensiones.');
-      document.getElementById('inDesc').value='';
-      var ids=['dmQ','dmAlto','dmAncho','dmDiam','dmExp','dmPeso','dmLon','dmArea','inTotal'];
-      for(var i=0;i<ids.length;i++) document.getElementById(ids[i]).value='';
+  b.disabled=true;
+  var okN=0;
+  var paso=function(k){
+    if(k>=lote.length){
+      b.disabled=false;
+      msg(okN>1?('Guardados '+okN+' registros de '+SEL.n):('Registro guardado en '+SEL.n));
+      document.getElementById('bloques').innerHTML=''; BLQ=0; addBloque();
       refrescarPend();
-    } else msg('Error: '+((d&&d.error)||'sin respuesta'), true);
-  });
+      return;
+    }
+    b.innerHTML='<span class="spin"></span>Guardando '+(k+1)+' de '+lote.length+'…';
+    var g=lote[k];
+    jsonp({action:'cant_add', item:SEL.n, fecha:g.f, desc:g.d, dims:JSON.stringify(g.dm), total:g.t, user:''}, function(d){
+      if(d && d.ok){ okN++; paso(k+1); }
+      else { b.disabled=false; renumerar(); msg('Error en el registro '+(k+1)+': '+((d&&d.error)||'sin respuesta'), true); refrescarPend(); }
+    });
+  };
+  paso(0);
 }
 
 /* ===== pendientes / volcado ===== */
@@ -340,21 +418,17 @@ function editarPend(id){
   jsonp({action:'cant_undo', id:id}, function(d){
     if(!(d&&d.ok)){ msg('No se pudo retirar de la cola', true); return; }
     selItem(g.it);
-    document.getElementById('inFecha').value=g.f||hoy();
-    document.getElementById('inDesc').value=g.d||'';
+    document.getElementById('bloques').innerHTML=''; BLQ=0;
+    var i=addBloque();
+    document.getElementById('f_'+i).value=g.f||hoy();
+    document.getElementById('d_'+i).value=g.d||'';
     var dm=g.dm||{};
-    var mp={dmQ:'q',dmAlto:'alto',dmAncho:'ancho',dmDiam:'diam',dmExp:'exp',dmPeso:'peso',dmLon:'lon',dmArea:'area'};
-    for(var idc in mp){ document.getElementById(idc).value=(dm[mp[idc]]!==undefined&&dm[mp[idc]]!==null)?dm[mp[idc]]:''; }
-    document.getElementById('inTotal').value=g.t||'';
+    var mp={q:'q',alto:'alto',ancho:'ancho',diam:'diam',exp:'exp',peso:'peso',lon:'lon',area:'area'};
+    for(var k in mp){ var e=document.getElementById(k+'_'+i); if(e) e.value=(dm[mp[k]]!==undefined&&dm[mp[k]]!==null)?dm[mp[k]]:''; }
+    document.getElementById('total_'+i).value=g.t||'';
     refrescarPend();
     window.scrollTo(0,0);
-    msg('Edita los campos y pulsa Guardar registro');
-  });
-}
-function quitar(id){
-  if(!confirm('¿Eliminar este registro pendiente?')) return;
-  jsonp({action:'cant_undo', id:id}, function(d){
-    if(d&&d.ok){ msg('Eliminado'); refrescarPend(); } else msg('Error al eliminar', true);
+    msg('Edita los campos y pulsa Guardar');
   });
 }
 function volcar(){
