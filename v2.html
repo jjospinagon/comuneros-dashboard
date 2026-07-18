@@ -11474,6 +11474,8 @@ if ('serviceWorker' in navigator) {
     .amsg2.err{display:block;color:#fca5a5;background:rgba(239,68,68,.1)}
     .amsg2.ok{display:block;color:#86efac;background:rgba(34,197,94,.1)}
     .acls{background:#1e293b;color:#e2e8f0;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit}
+    #content-overlay .aspin,#admin-overlay .aspin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:aspin .8s linear infinite;vertical-align:middle;margin-right:7px}
+    #content-overlay .ab:disabled{opacity:.6;cursor:progress}
     #content-overlay .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
     @media(max-width:560px){#content-overlay .cgrid{grid-template-columns:1fr}}
     #content-overlay .citem{display:flex;align-items:center;gap:9px;background:#0a1120;border:1px solid #1d2941;border-radius:9px;padding:10px 12px;cursor:pointer}
@@ -11511,7 +11513,7 @@ if ('serviceWorker' in navigator) {
     </div>
     <div id="content-grid" class="cgrid"></div>
     <div id="content-msg" class="amsg2"></div>
-    <button class="ab grn" style="padding:10px 18px" onclick="contentGuardar()">Guardar contenido</button>
+    <button id="content-save-btn" class="ab grn" style="padding:10px 18px" onclick="contentGuardar()">Guardar contenido</button>
   </div>
 </div>
 
@@ -11758,12 +11760,16 @@ function contentGuardar(){
   var sel=[];
   for(var i=0;i<_adminCat.length;i++){ if(_adminSel[_adminCat[i].k]) sel.push(_adminCat[i].k); }
   if(!sel.length){ document.getElementById('content-msg').textContent='Debe quedar al menos un contenido habilitado.'; document.getElementById('content-msg').className='amsg2 err'; return; }
+  var btn=document.getElementById('content-save-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="aspin"></span>Guardando\u2026'; }
+  var msg=document.getElementById('content-msg'); msg.textContent='Guardando cambios\u2026'; msg.className='amsg2 ok';
   _authRaw({action:'auth_modulos', token:AUTH.token, usuario:_adminUsuario, modulos:JSON.stringify(sel)}).then(function(r){
-    if(r&&r.ok){ document.getElementById('content-msg').textContent='Contenido actualizado ('+r.modulos.length+' modulos).'; document.getElementById('content-msg').className='amsg2 ok'; adminCargar();
-      setTimeout(contentCerrar,700);
+    if(btn){ btn.disabled=false; btn.innerHTML='Guardar contenido'; }
+    if(r&&r.ok){ msg.textContent='\u2713 Contenido actualizado ('+r.modulos.length+' m\u00f3dulos).'; msg.className='amsg2 ok'; adminCargar();
+      setTimeout(contentCerrar,900);
       /* si el admin se editó a sí mismo, re-aplicar en caliente */
       if(_adminUsuario===AUTH.usuario){ AUTH.modulos=r.modulos; AUTH_APLICAR_PERFIL(AUTH.perfil, r.modulos); }
-    } else { document.getElementById('content-msg').textContent=(r&&r.error)||'No se pudo guardar'; document.getElementById('content-msg').className='amsg2 err'; }
+    } else { msg.textContent=(r&&r.error)||'No se pudo guardar'; msg.className='amsg2 err'; }
   });
 }
 
