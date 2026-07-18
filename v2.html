@@ -704,218 +704,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 
 <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar modo día/noche" aria-label="Cambiar tema">🌙</button>
 
-<!-- ============ LOGIN GATE (v3 — HUD CONSTELACIÓN) ============ -->
-<div id="login-overlay" style="position:fixed;inset:0;background:#000000;z-index:99999;overflow-y:auto;padding:20px 16px;font-family:'Inter',system-ui,sans-serif">
-  <style>
-    @keyframes v3MGlow {0%,100%{filter:drop-shadow(0 0 14px rgba(34,211,238,.6)) drop-shadow(0 0 28px rgba(168,85,247,.3))}50%{filter:drop-shadow(0 0 22px rgba(34,211,238,.85)) drop-shadow(0 0 44px rgba(236,72,153,.45))}}
-    @keyframes v3OrbitFwd {0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
-    @keyframes v3OrbitRev {0%{transform:translate(-50%,-50%) rotate(360deg)}100%{transform:translate(-50%,-50%) rotate(0deg)}}
-    @keyframes v3PulseRing {0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.45}50%{transform:translate(-50%,-50%) scale(1.04);opacity:.85}}
-    @keyframes v3NodePulse {0%,100%{box-shadow:0 8px 24px -6px rgba(0,0,0,.6),0 0 0 0 rgba(34,211,238,0)}50%{box-shadow:0 8px 24px -6px rgba(0,0,0,.6),0 0 0 6px rgba(34,211,238,.12)}}
-    @keyframes v3GridShift {0%{background-position:0 0}100%{background-position:64px 64px}}
-    @keyframes v3StarPulse {0%,100%{opacity:.25}50%{opacity:.95}}
-    @keyframes v3Shimmer {0%{background-position:-200% 50%}100%{background-position:200% 50%}}
-    @keyframes v3ScanLine {0%{transform:translateY(-110%)}100%{transform:translateY(110%)}}
-    @keyframes v3GradShift {0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-    @keyframes v3LineFlow {0%{stroke-dashoffset:120}100%{stroke-dashoffset:0}}
-
-    /* Cuadricula translucida sobre fondo negro */
-    #login-overlay::before{content:"";position:fixed;inset:0;background-image:linear-gradient(to right, rgba(255,255,255,0.09) 1px, transparent 1px),linear-gradient(to bottom, rgba(255,255,255,0.09) 1px, transparent 1px);background-size:48px 48px;pointer-events:none;z-index:1}
-    #login-overlay::after{content:"";position:fixed;inset:0;background:transparent;pointer-events:none;z-index:1}
-
-    /* Stars layer */
-    #login-overlay .v3-stars{position:fixed;inset:0;pointer-events:none;z-index:1}
-    #login-overlay .v3-stars span{position:absolute;background:#fff;border-radius:50%;animation:v3StarPulse 4s ease-in-out infinite}
-
-    /* Wrap principal */
-    #login-overlay .v3-wrap{max-width:680px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:22px;min-height:calc(100vh - 40px);justify-content:center;position:relative;z-index:5}
-
-    /* Badge superior */
-    #login-overlay .v3-badge{display:inline-flex;align-items:center;gap:10px;padding:7px 18px;border-radius:999px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.28);color:#22d3ee;font-size:11px;letter-spacing:.24em;text-transform:uppercase;font-weight:700;backdrop-filter:blur(12px)}
-    #login-overlay .v3-badge .dot{width:7px;height:7px;border-radius:50%;background:#22d3ee;box-shadow:0 0 14px #22d3ee;animation:v3StarPulse 1.6s ease-in-out infinite}
-
-    /* HUD circular */
-    #login-overlay .v3-hud{position:relative;width:380px;height:380px;margin:0 auto;flex-shrink:0}
-    @media(max-width:480px){#login-overlay .v3-hud{width:320px;height:320px}}
-    #login-overlay .v3-hud .v3-ring{position:absolute;top:50%;left:50%;border-radius:50%;pointer-events:none}
-    #login-overlay .v3-hud .v3-ring.r1{width:100%;height:100%;border:1px solid rgba(34,211,238,.22);animation:v3PulseRing 4s ease-in-out infinite}
-    #login-overlay .v3-hud .v3-ring.r2{width:78%;height:78%;border:1px dashed rgba(34,211,238,.18);animation:v3OrbitFwd 32s linear infinite}
-    #login-overlay .v3-hud .v3-ring.r3{width:54%;height:54%;border:1px dashed rgba(168,85,247,.20);animation:v3OrbitRev 48s linear infinite}
-    #login-overlay .v3-hud .v3-ring.r4{width:124%;height:124%;border:1px dashed rgba(168,85,247,.10);animation:v3OrbitFwd 72s linear infinite}
-
-    /* SVG líneas centro→nodos */
-    #login-overlay .v3-hud svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-    #login-overlay .v3-hud svg.lines line{stroke:rgba(34,211,238,.32);stroke-width:1;stroke-dasharray:5 5;animation:v3LineFlow 18s linear infinite}
-
-    /* Centro: logo C */
-    #login-overlay .v3-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;display:flex;align-items:center;justify-content:center;animation:v3MGlow 3s ease-in-out infinite;z-index:3}
-    #login-overlay .v3-center::before{content:"";position:absolute;inset:-12px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.15) 0%,transparent 70%);z-index:-1}
-
-    /* 6 nodos orbitales */
-    #login-overlay .v3-node{position:absolute;width:62px;height:62px;display:flex;align-items:center;justify-content:center;border-radius:18px;backdrop-filter:blur(10px);transition:transform .35s cubic-bezier(.4,2,.5,1),filter .25s;cursor:default;font-size:24px;animation:v3NodePulse 3s ease-in-out infinite;z-index:4}
-    @media(max-width:480px){#login-overlay .v3-node{width:52px;height:52px;font-size:21px;border-radius:15px}}
-    #login-overlay .v3-node::after{content:attr(data-label);position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9.5px;font-weight:700;letter-spacing:.14em;color:#cbd5e1;opacity:0;transition:opacity .25s;pointer-events:none;text-transform:uppercase;background:rgba(7,11,31,.85);padding:3px 8px;border-radius:6px;border:1px solid rgba(34,211,238,.2)}
-    #login-overlay .v3-node:hover{transform:scale(1.18);filter:brightness(1.25)}
-    #login-overlay .v3-node:hover::after{opacity:1}
-
-    /* Posición de los 6 nodos en círculo (radio ~158 desde centro 190,190) */
-    /* 0° → contrato (E), 60° SE → obra, 120° NE → kpis, 180° NW → inventario, 240° SW → comunicaciones, 300° W → fotos */
-    #login-overlay .v3-node.n1{top:159px;right:-12px;background:linear-gradient(135deg,#a855f7,#22d3ee)}
-    #login-overlay .v3-node.n2{top:30px;right:39px;background:linear-gradient(135deg,#22c55e,#22d3ee)}
-    #login-overlay .v3-node.n3{top:30px;left:39px;background:linear-gradient(135deg,#22d3ee,#22d3ee)}
-    #login-overlay .v3-node.n4{top:159px;left:-12px;background:linear-gradient(135deg,#10b981,#22d3ee)}
-    #login-overlay .v3-node.n5{bottom:30px;left:39px;background:linear-gradient(135deg,#a855f7,#ef4444)}
-    #login-overlay .v3-node.n6{bottom:30px;right:39px;background:linear-gradient(135deg,#f59e0b,#ef4444)}
-    @media(max-width:480px){
-      #login-overlay .v3-node.n1{top:134px;right:-8px}
-      #login-overlay .v3-node.n2{top:24px;right:34px}
-      #login-overlay .v3-node.n3{top:24px;left:34px}
-      #login-overlay .v3-node.n4{top:134px;left:-8px}
-      #login-overlay .v3-node.n5{bottom:24px;left:34px}
-      #login-overlay .v3-node.n6{bottom:24px;right:34px}
-    }
-
-    /* Title block */
-    #login-overlay .v3-title{text-align:center;max-width:540px}
-    #login-overlay .v3-title h1{font-family:'Space Grotesk','Inter',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:-.8px;margin:0 0 8px;background:linear-gradient(120deg,#fff 0%,#a5f3fc 45%,#c4b5fd 100%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:v3GradShift 8s ease-in-out infinite}
-    #login-overlay .v3-title p{color:rgba(255,255,255,.58);font-size:13px;letter-spacing:.04em;line-height:1.6;margin:0}
-
-    /* Form card minimalista */
-    #login-overlay .v3-form{position:relative;background:rgba(0,0,0,.85);backdrop-filter:blur(24px);border:1px solid rgba(34,211,238,.22);border-radius:20px;padding:26px 24px 22px;width:100%;max-width:380px;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 60px -30px rgba(34,211,238,.35);overflow:hidden}
-    #login-overlay .v3-form::before{content:"";position:absolute;top:0;left:-50%;width:50%;height:2px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);animation:v3ScanLine 4s ease-in-out infinite;animation-name:none}
-    #login-overlay .v3-form::after{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(34,211,238,.6) 50%,transparent 100%)}
-    #login-overlay .v3-form-head{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)}
-    #login-overlay .v3-form-head .v3-mini-m{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid rgba(34,211,238,.4);display:flex;align-items:center;justify-content:center}
-    #login-overlay .v3-form-head h2{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff;margin:0;letter-spacing:-.3px}
-    #login-overlay .v3-form-head p{font-size:10px;color:#94a3b8;margin:2px 0 0;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
-
-    #login-overlay label.f-l{display:block;color:rgba(255,255,255,.6);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin:14px 0 6px}
-    #login-overlay input.f-i{width:100%;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#fff;font-size:13.5px;outline:none;font-family:inherit;transition:all .2s}
-    #login-overlay input.f-i:focus{border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.05);box-shadow:0 0 0 3px rgba(34,211,238,.08)}
-    #login-overlay input.f-i::placeholder{color:rgba(255,255,255,.25)}
-    #login-overlay #login-btn{width:100%;padding:13px;margin-top:20px;background:linear-gradient(90deg,#22d3ee,#10b981,#22d3ee);background-size:200% 100%;color:#fff;border:none;border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 14px 36px -8px rgba(16,185,129,.55),0 0 0 1px rgba(255,255,255,.05) inset;animation:v3GradShift 5s ease infinite;font-family:inherit;transition:transform .15s}
-    #login-overlay #login-btn:hover{transform:translateY(-1px);box-shadow:0 18px 44px -8px rgba(168,85,247,.7),0 0 0 1px rgba(255,255,255,.1) inset}
-    #login-overlay #login-btn:disabled{opacity:.6;cursor:not-allowed}
-    #login-overlay .v3-foot{text-align:center;color:rgba(255,255,255,.35);font-size:10.5px;margin-top:14px;line-height:1.5;letter-spacing:.04em}
-
-    /* Capacidades chips abajo (genéricos, sin números) */
-    #login-overlay .v3-caps{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:540px;margin:-2px auto 0}
-    #login-overlay .v3-caps span{font-size:10px;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.55);letter-spacing:.08em;font-weight:600;text-transform:uppercase}
-  </style>
-
-  <!-- Stars layer -->
-  <div class="v3-stars">
-    <span style="left:6%;top:14%;width:2px;height:2px;animation-delay:0s"></span>
-    <span style="left:14%;top:38%;width:1.5px;height:1.5px;animation-delay:.7s"></span>
-    <span style="left:88%;top:22%;width:2px;height:2px;animation-delay:1.4s"></span>
-    <span style="left:94%;top:48%;width:1px;height:1px;animation-delay:.3s"></span>
-    <span style="left:22%;top:72%;width:1.5px;height:1.5px;animation-delay:2.1s"></span>
-    <span style="left:78%;top:82%;width:2px;height:2px;animation-delay:1s"></span>
-    <span style="left:48%;top:6%;width:1.5px;height:1.5px;animation-delay:1.6s"></span>
-    <span style="left:12%;top:85%;width:1.5px;height:1.5px;animation-delay:.4s"></span>
-    <span style="left:92%;top:72%;width:2px;height:2px;animation-delay:1.2s"></span>
-    <span style="left:36%;top:28%;width:1px;height:1px;animation-delay:1.9s"></span>
-    <span style="left:68%;top:32%;width:1.5px;height:1.5px;animation-delay:.6s"></span>
-    <span style="left:5%;top:60%;width:1px;height:1px;animation-delay:2.4s"></span>
-  </div>
-
-  <div class="v3-wrap">
-
-    <!-- Badge -->
-    <div class="v3-badge">
-      <span class="dot"></span>
-      <span>Cockpit Contractual</span>
-    </div>
-
-    <!-- HUD circular: anillos + logo C centrado + 6 nodos orbitales -->
-    <div class="v3-hud">
-      <div class="v3-ring r4"></div>
-      <div class="v3-ring r1"></div>
-      <div class="v3-ring r2"></div>
-      <div class="v3-ring r3"></div>
-
-      <svg class="lines" viewBox="0 0 380 380" preserveAspectRatio="xMidYMid meet">
-        <g>
-          <line x1="190" y1="190" x2="350" y2="190"/>
-          <line x1="190" y1="190" x2="270" y2="51"/>
-          <line x1="190" y1="190" x2="110" y2="51"/>
-          <line x1="190" y1="190" x2="30" y2="190"/>
-          <line x1="190" y1="190" x2="110" y2="329"/>
-          <line x1="190" y1="190" x2="270" y2="329"/>
-        </g>
-      </svg>
-
-      <!-- Centro: logo C -->
-      <div class="v3-center">
-        <svg viewBox="0 0 260 240" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="v3MStroke" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#22d3ee"/>
-              <stop offset=".5" stop-color="#22d3ee"/>
-              <stop offset="1" stop-color="#10b981"/>
-            </linearGradient>
-            <radialGradient id="v3DotCore" cx=".5" cy=".5" r=".5">
-              <stop offset="0" stop-color="#ecfeff"/>
-              <stop offset=".3" stop-color="#22d3ee"/>
-              <stop offset="1" stop-color="#0891b2" stop-opacity=".4"/>
-            </radialGradient>
-          </defs>
-          <g stroke="url(#v3MStroke)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M 185.3 185.9 A 86 86 0 1 1 185.3 54.1"/>
-          </g>
-          <g stroke="#ecfeff" stroke-width="1.5">
-            <circle cx="185.3" cy="54.1" r="9" fill="url(#v3DotCore)"/>
-            <circle cx="185.3" cy="185.9" r="9" fill="url(#v3DotCore)"/>
-            <circle cx="44" cy="120" r="9" fill="url(#v3DotCore)"/>
-          </g>
-        </svg>
-      </div>
-
-      <!-- 6 nodos orbitales (módulos del sistema) -->
-      <div class="v3-node n1" data-label="Contrato"><svg class="ic"><use href="#ic-file"></use></svg></div>
-      <div class="v3-node n2" data-label="Obra"><svg class="ic"><use href="#ic-layout"></use></svg></div>
-      <div class="v3-node n3" data-label="Indicadores"><svg class="ic"><use href="#ic-dollar"></use></svg></div>
-      <div class="v3-node n4" data-label="Inventario"><svg class="ic"><use href="#ic-package"></use></svg></div>
-      <div class="v3-node n5" data-label="Comunicaciones"><svg class="ic"><use href="#ic-mail"></use></svg></div>
-      <div class="v3-node n6" data-label="Fotografías"><svg class="ic"><use href="#ic-camera"></use></svg></div>
-    </div>
-
-    <!-- Title -->
-    <div class="v3-title">
-      <h1>Sistema integral de control de obra</h1>
-      <p>Plataforma gerencial para seguimiento contractual en tiempo real · acceso restringido a personal autorizado</p>
-    </div>
-
-    <!-- Form -->
-    <div class="v3-form">
-      <div class="v3-form-head">
-        <div class="v3-mini-m">
-          <svg width="20" height="18" viewBox="0 0 260 240">
-            <g stroke="#22d3ee" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M 185.3 185.9 A 86 86 0 1 1 185.3 54.1"/>
-            </g>
-          </svg>
-        </div>
-        <div>
-          <h2>Identifícate</h2>
-          <p>Acceso autorizado</p>
-        </div>
-      </div>
-      <form id="login-form" onsubmit="return false;">
-        <label class="f-l" for="login-nombre">Nombre</label>
-        <input type="text" id="login-nombre" class="f-i" required maxlength="100" autocomplete="given-name" placeholder="Tu nombre">
-        <label class="f-l" for="login-apellidos">Apellidos</label>
-        <input type="text" id="login-apellidos" class="f-i" required maxlength="100" autocomplete="family-name" placeholder="Tus apellidos">
-        <label class="f-l" for="login-correo">Correo electrónico</label>
-        <input type="email" id="login-correo" class="f-i" required maxlength="100" autocomplete="email" placeholder="nombre@dominio.com">
-        <div id="login-error" style="display:none;color:#fca5a5;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30);border-radius:8px;padding:8px 12px;font-size:11.5px;margin-top:12px"></div>
-        <button id="login-btn" type="button" onclick="handleLogin();">Entrar al Cockpit →</button>
-      </form>
-      <p class="v3-foot">Tu registro queda almacenado en bitácora institucional<br>para trazabilidad de visitas al sistema.</p>
-    </div>
-
-  </div>
-</div>
+<!-- login viejo removido -->
 
 <!-- ============ MENU INICIAL ============ -->
 <div class="screen active" id="screen-menu">
@@ -3020,6 +2809,7 @@ function _mosShuffle(arr){
 
 /* JSONP local para el índice de fotos */
 function _mosJsonp(params, timeoutMs){
+  try{ if(window._authTk) params=window._authTk(params); }catch(e){}
   return new Promise((res) => {
     const cb = 'cb_mos_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
     let s;
@@ -3191,6 +2981,7 @@ const num = v => (v==null||isNaN(v))?'—':fmt2.format(v);
 const pct = v => (v==null||isNaN(v))?'—':(v*100).toLocaleString('es-CO',{maximumFractionDigits:2})+'%';
 
 function jsonp(url, params){
+  try{ if(window._authTk) params=window._authTk(params); }catch(e){}
   return new Promise((res,rej)=>{
     const cb='_cb_'+Date.now()+'_'+Math.floor(Math.random()*99999);
     const q=Object.assign({},params||{},{callback:cb});
@@ -6096,62 +5887,7 @@ document.addEventListener('click', e => {
   if(e.target && (e.target.id === 'alert-modal-close' || (e.target.closest && e.target.closest('#alert-modal-close')))){ closeAlertDetail(); }
 });
 
-/* ====================== LOGIN GATE ====================== */
-const LOGIN_KEY = 'comuneros_login_v1';
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-function showLoginError(msg){ const el = document.getElementById('login-error'); if(el){ el.textContent = msg; el.style.display = 'block'; } }
-function hideLoginError(){ const el = document.getElementById('login-error'); if(el){ el.style.display = 'none'; } }
-
-async function handleLogin(){
-  hideLoginError();
-  const nombre = (document.getElementById('login-nombre') || {value:''}).value.trim();
-  const apellidos = (document.getElementById('login-apellidos') || {value:''}).value.trim();
-  const correo = (document.getElementById('login-correo') || {value:''}).value.trim();
-  if(!nombre||!apellidos||!correo){showLoginError('Todos los campos son obligatorios');return;}
-  if(!EMAIL_REGEX.test(correo)){showLoginError('Correo con formato invalido (revisa el @ y dominio).');return;}
-  const btn = document.getElementById('login-btn'); if(btn) btn.disabled = true;
-  try{
-    const res=await jsonp(APPS_URL,{
-      action:'registrar_ingreso',
-      nombre:nombre,apellidos:apellidos,correo:correo,
-      ua:(navigator.userAgent||'').slice(0,200),
-      url:location.href.slice(0,200)
-    });
-    if(!res||!res.ok)throw new Error((res&&res.error)||'No fue posible registrar el ingreso. Intenta de nuevo.');
-    try{ localStorage.setItem(LOGIN_KEY, JSON.stringify({nombre,apellidos,correo,ts:Date.now()})); }catch(_){ }
-    const ov = document.getElementById('login-overlay'); if(ov) ov.style.display = 'none';
-    boot();
-  }catch(e){
-    showLoginError(e.message||'Error inesperado');
-    if(btn) btn.disabled = false;
-  }
-}
-
-/* Interceptar submit del form (el boton es type=submit dentro de #login-form) */
-document.addEventListener('DOMContentLoaded', function(){
-  const form = document.getElementById('login-form');
-  if(form){
-    form.addEventListener('submit', function(e){
-      e.preventDefault();
-      handleLogin();
-    });
-  }
-  // V2: visitante recurrente entra directo — la visita se registra igual en bitacora (background)
-  try{
-    var prev = JSON.parse(localStorage.getItem(LOGIN_KEY)||'null');
-    if (prev && prev.nombre && prev.correo && EMAIL_REGEX.test(prev.correo)){
-      var ov = document.getElementById('login-overlay'); if(ov) ov.style.display='none';
-      jsonp(APPS_URL,{
-        action:'registrar_ingreso',
-        nombre:prev.nombre, apellidos:prev.apellidos||'', correo:prev.correo,
-        ua:((navigator.userAgent||'')+' [recurrente]').slice(0,200),
-        url:location.href.slice(0,200)
-      }).catch(function(){});
-      boot();
-    }
-  }catch(_){}
-});
-/* boot() corre al login exitoso o al reingreso de visitante recurrente (V2) */
+/* login viejo removido: autenticacion real abajo */
 
 /* ====================== COMUNICACIONES (G3 monaco) ====================== */
 let CMS_LOADED = false;
@@ -11628,6 +11364,204 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('resize', function(){ try{ aplicar(pantallaActual()); }catch(_){} });
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+
+<!-- ============ AUTENTICACIÓN v1 (token de sesión) ============ -->
+<div id="auth-overlay" style="position:fixed;inset:0;background:#05070d;z-index:100000;overflow-y:auto;padding:24px 16px;font-family:'Inter',system-ui,sans-serif;display:flex;align-items:center;justify-content:center">
+  <style>
+    #auth-overlay .ac{width:100%;max-width:390px;background:linear-gradient(180deg,#0d1424,#0a0f1c);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:26px 24px 22px;box-shadow:0 30px 80px -20px rgba(0,0,0,.8)}
+    #auth-overlay .ah{text-align:center;margin-bottom:18px}
+    #auth-overlay .ah .em{font-size:34px}
+    #auth-overlay .ah h1{color:#fff;font-size:19px;font-weight:800;margin:8px 0 2px;font-family:'Space Grotesk',sans-serif}
+    #auth-overlay .ah p{color:#94a3b8;font-size:11px;letter-spacing:.05em}
+    #auth-overlay label{display:block;color:rgba(255,255,255,.55);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;margin:14px 0 6px}
+    #auth-overlay input{width:100%;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:10px;color:#fff;font-size:14px;outline:none;font-family:inherit}
+    #auth-overlay input:focus{border-color:rgba(34,211,238,.5);box-shadow:0 0 0 3px rgba(34,211,238,.08)}
+    #auth-overlay .abtn{width:100%;padding:13px;margin-top:18px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.03em}
+    #auth-overlay .abtn.p{background:linear-gradient(90deg,#22d3ee,#10b981);color:#04121a;box-shadow:0 14px 34px -10px rgba(16,185,129,.55)}
+    #auth-overlay .abtn.p:disabled{opacity:.6;cursor:not-allowed}
+    #auth-overlay .abtn.s{background:none;color:#93c5fd;border:1px solid rgba(147,197,253,.25);margin-top:10px;font-weight:600;font-size:12px;padding:10px}
+    #auth-overlay .alink{background:none;border:none;color:#64748b;font-size:11.5px;cursor:pointer;text-decoration:underline;padding:6px;font-family:inherit}
+    #auth-overlay .arow{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    #auth-overlay .amsg{display:none;font-size:12px;border-radius:8px;padding:9px 12px;margin-top:14px;line-height:1.35}
+    #auth-overlay .amsg.err{display:block;color:#fca5a5;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.30)}
+    #auth-overlay .amsg.ok{display:block;color:#86efac;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.30)}
+    #auth-overlay .afoot{text-align:center;color:rgba(255,255,255,.32);font-size:10px;margin-top:16px;line-height:1.5}
+    #auth-overlay .aspin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:aspin .8s linear infinite;vertical-align:middle;margin-right:7px}
+    @keyframes aspin{to{transform:rotate(360deg)}}
+  </style>
+  <div class="ac">
+    <div class="ah"><div class="em">🔐</div><h1>Cockpit Comuneros</h1><p>Reposición Alcantarillado · Contrato 023-2025</p></div>
+
+    <div id="au-login">
+      <label>Usuario</label>
+      <input id="au-user" autocapitalize="characters" autocomplete="username" placeholder="Tu usuario">
+      <label>Contraseña</label>
+      <input id="au-pass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')authLogin()">
+      <div id="au-msg" class="amsg"></div>
+      <button class="abtn p" id="au-btn" onclick="authLogin()">Ingresar</button>
+      <div class="arow">
+        <button class="alink" onclick="authVista('reg')">Primer ingreso · Registrarme</button>
+        <button class="alink" onclick="authVista('rec')">Olvidé mi contraseña</button>
+      </div>
+    </div>
+
+    <div id="au-reg" style="display:none">
+      <label>Usuario (el que te dio gerencia)</label>
+      <input id="ar-user" autocapitalize="characters" placeholder="Tu usuario">
+      <label>Crea tu contraseña</label>
+      <input id="ar-pass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      <label>Repite la contraseña</label>
+      <input id="ar-pass2" type="password" autocomplete="new-password" placeholder="Repite" onkeydown="if(event.key==='Enter')authRegister()">
+      <div id="ar-msg" class="amsg"></div>
+      <button class="abtn p" id="ar-btn" onclick="authRegister()">Registrarme y entrar</button>
+      <button class="abtn s" onclick="authVista('login')">← Volver a Ingresar</button>
+    </div>
+
+    <div id="au-rec" style="display:none">
+      <label>Usuario</label>
+      <input id="ac-user" autocapitalize="characters" placeholder="Tu usuario" onkeydown="if(event.key==='Enter')authRecuperar()">
+      <div id="ac-msg" class="amsg"></div>
+      <button class="abtn p" id="ac-btn" onclick="authRecuperar()">Enviar instrucciones</button>
+      <button class="abtn s" onclick="authVista('login')">← Volver a Ingresar</button>
+      <p class="afoot">Se restablece tu acceso y recibes un correo para crear una contraseña nueva.</p>
+    </div>
+
+    <p class="afoot">Acceso restringido a personal autorizado del contrato.<br>Cada ingreso queda en bitácora institucional.</p>
+  </div>
+</div>
+
+<script>
+/* ====== AUTENTICACIÓN: token de sesión validado en el backend ====== */
+var AUTH = { token:null, usuario:null, perfil:null };
+var AUTH_TKKEY = 'comuneros_auth_v1';
+
+/* helper usado por jsonp/_mosJsonp: adjunta el token a cada action protegido */
+window._authTk = function(params){
+  params = params || {};
+  try{
+    if(AUTH.token && params.action && String(params.action).indexOf('auth_')!==0 && params.token===undefined){
+      params.token = AUTH.token;
+    }
+  }catch(e){}
+  return params;
+};
+
+function _authSha256Hex(str){
+  var enc=new TextEncoder().encode(str);
+  return crypto.subtle.digest('SHA-256', enc).then(function(buf){
+    var b=new Uint8Array(buf), h='';
+    for(var i=0;i<b.length;i++) h+=('0'+b[i].toString(16)).slice(-2);
+    return h;
+  });
+}
+/* PBKDF2-SHA256(password, salt, 210000) -> 64 hex; la clave NUNCA sale del navegador */
+function _authClientHash(password, salt){
+  var enc=new TextEncoder();
+  return crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits'])
+    .then(function(key){
+      return crypto.subtle.deriveBits({name:'PBKDF2', salt:enc.encode(salt), iterations:210000, hash:'SHA-256'}, key, 256);
+    }).then(function(bits){
+      var b=new Uint8Array(bits), h='';
+      for(var i=0;i<b.length;i++) h+=('0'+b[i].toString(16)).slice(-2);
+      return h;
+    });
+}
+function _authRaw(params){
+  return new Promise(function(res){
+    var cb='_ac_'+Date.now()+'_'+Math.floor(Math.random()*99999);
+    var t=setTimeout(function(){ try{delete window[cb];}catch(e){} res({error:'Sin conexión con el servidor'}); }, 30000);
+    window[cb]=function(d){ clearTimeout(t); try{delete window[cb];}catch(e){} if(s.parentNode)s.parentNode.removeChild(s); res(d); };
+    var q=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
+    var s=document.createElement('script');
+    s.src=APPS_URL+'?'+q+'&callback='+cb;
+    s.onerror=function(){ clearTimeout(t); try{delete window[cb];}catch(e){} res({error:'Sin conexión'}); };
+    document.head.appendChild(s);
+  });
+}
+function _authMsg(id,txt,tipo){ var e=document.getElementById(id); if(!e)return; e.textContent=txt; e.className='amsg '+(tipo||'err'); }
+function _authClr(id){ var e=document.getElementById(id); if(e){ e.className='amsg'; e.textContent=''; } }
+function _authBtn(id,busy,txt){ var b=document.getElementById(id); if(!b)return; b.disabled=busy; b.innerHTML=busy?('<span class="aspin"></span>'+txt):txt; }
+
+function authVista(v){
+  document.getElementById('au-login').style.display=(v==='login')?'block':'none';
+  document.getElementById('au-reg').style.display=(v==='reg')?'block':'none';
+  document.getElementById('au-rec').style.display=(v==='rec')?'block':'none';
+}
+function authEntrar(d){
+  AUTH.token=d.token; AUTH.usuario=d.usuario; AUTH.perfil=d.perfil;
+  try{ localStorage.setItem(AUTH_TKKEY, JSON.stringify({t:d.token,u:d.usuario,p:d.perfil,x:d.expira})); }catch(e){}
+  var ov=document.getElementById('auth-overlay'); if(ov) ov.style.display='none';
+  if(window.AUTH_APLICAR_PERFIL) try{ AUTH_APLICAR_PERFIL(d.perfil); }catch(e){}
+  if(typeof boot==='function') boot();
+}
+function authLogin(){
+  _authClr('au-msg');
+  var u=(document.getElementById('au-user').value||'').trim();
+  var p=document.getElementById('au-pass').value||'';
+  if(!u||!p){ _authMsg('au-msg','Escribe usuario y contraseña'); return; }
+  _authBtn('au-btn',true,'Verificando…');
+  _authRaw({action:'auth_challenge',usuario:u}).then(function(ch){
+    if(!ch||!ch.salt){ _authBtn('au-btn',false,'Ingresar'); _authMsg('au-msg',(ch&&ch.error)||'No se pudo conectar'); return; }
+    return _authClientHash(p, ch.salt).then(function(hash){
+      return _authRaw({action:'auth_login',usuario:u,clientHash:hash});
+    }).then(function(r){
+      _authBtn('au-btn',false,'Ingresar');
+      if(r&&r.ok){ authEntrar(r); }
+      else _authMsg('au-msg',(r&&r.error)||'No fue posible ingresar');
+    });
+  }).catch(function(){ _authBtn('au-btn',false,'Ingresar'); _authMsg('au-msg','Error inesperado'); });
+}
+function authRegister(){
+  _authClr('ar-msg');
+  var u=(document.getElementById('ar-user').value||'').trim();
+  var p=document.getElementById('ar-pass').value||'';
+  var p2=document.getElementById('ar-pass2').value||'';
+  if(!u){ _authMsg('ar-msg','Escribe tu usuario'); return; }
+  if(p.length<6){ _authMsg('ar-msg','La contraseña debe tener al menos 6 caracteres'); return; }
+  if(p!==p2){ _authMsg('ar-msg','Las contraseñas no coinciden'); return; }
+  _authBtn('ar-btn',true,'Registrando…');
+  _authRaw({action:'auth_challenge',usuario:u}).then(function(ch){
+    if(!ch||!ch.salt){ _authBtn('ar-btn',false,'Registrarme y entrar'); _authMsg('ar-msg',(ch&&ch.error)||'No se pudo conectar'); return; }
+    return _authClientHash(p, ch.salt).then(function(hash){
+      return _authRaw({action:'auth_register',usuario:u,clientHash:hash});
+    }).then(function(r){
+      _authBtn('ar-btn',false,'Registrarme y entrar');
+      if(r&&r.ok){ authEntrar(r); }
+      else _authMsg('ar-msg',(r&&r.error)||'No fue posible registrar');
+    });
+  }).catch(function(){ _authBtn('ar-btn',false,'Registrarme y entrar'); _authMsg('ar-msg','Error inesperado'); });
+}
+function authRecuperar(){
+  _authClr('ac-msg');
+  var u=(document.getElementById('ac-user').value||'').trim();
+  if(!u){ _authMsg('ac-msg','Escribe tu usuario'); return; }
+  _authBtn('ac-btn',true,'Enviando…');
+  _authRaw({action:'auth_recuperar',usuario:u}).then(function(r){
+    _authBtn('ac-btn',false,'Enviar instrucciones');
+    _authMsg('ac-msg',(r&&r.msg)||'Si el usuario existe, se envió un correo.','ok');
+  });
+}
+function authLogout(){
+  if(AUTH.token) _authRaw({action:'auth_logout',token:AUTH.token});
+  try{ localStorage.removeItem(AUTH_TKKEY); }catch(e){}
+  location.reload();
+}
+
+/* al cargar: si hay token guardado y sigue válido, entra directo; si no, muestra login */
+(function(){
+  var saved=null;
+  try{ saved=JSON.parse(localStorage.getItem(AUTH_TKKEY)||'null'); }catch(e){}
+  if(saved && saved.t){
+    AUTH.token=saved.t;
+    _authRaw({action:'auth_check',token:saved.t}).then(function(r){
+      if(r&&r.ok){ AUTH.usuario=r.usuario; AUTH.perfil=r.perfil; authEntrar({token:saved.t,usuario:r.usuario,perfil:r.perfil,expira:saved.x}); }
+      else { AUTH.token=null; try{localStorage.removeItem(AUTH_TKKEY);}catch(e){} document.getElementById('auth-overlay').style.display='flex'; }
+    });
+  } else {
+    document.getElementById('auth-overlay').style.display='flex';
+  }
 })();
 </script>
 
