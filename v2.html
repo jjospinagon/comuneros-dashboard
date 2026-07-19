@@ -103,6 +103,10 @@
   /* Flex con wrap + justify-center: dinámico por ancho de pantalla.
      flex-basis 220px → caben 5/4/3/2/1 cols según viewport; max-width evita estiramiento
      excesivo; última fila incompleta queda centrada (vs left-aligned del grid). */
+  .crz{background:#0d1424;border:none;color:#94a3b8;font-size:12px;padding:7px 14px;cursor:pointer;font-family:inherit}
+  .crz.crz-on{background:rgba(34,211,238,.18);color:#67e8f9;font-weight:700}
+  .crb{background:#0d1424;border:1px solid rgba(255,255,255,.14);color:#cbd5e1;font-size:12px;padding:7px 12px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .crb:hover{border-color:#22d3ee;color:#67e8f9}
   .menu-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-top:14px}
   .menu-cards > .menu-card{flex:1 1 220px;min-width:220px;max-width:340px}
   @media(max-width:760px){.menu-cards{gap:12px} .menu-cards > .menu-card{flex-basis:calc(50% - 6px);max-width:none}}
@@ -879,6 +883,30 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div class="cta">Ver mapa de la obra <span class="arrow">→</span></div>
       </div>
 
+
+      <!-- CARD CRONOGRAMA DE OBRA (GANTT) -->
+      <div class="menu-card ind" onclick="goTo('crono')" style="background:linear-gradient(180deg,rgba(34,211,238,.06),rgba(20,26,55,.4))">
+        <div class="icon" style="background:linear-gradient(135deg,#22d3ee,#6366f1)"><svg class="ic"><use href="#ic-calendar"></use></svg></div>
+        <h2>Cronograma de Obra</h2>
+        <p class="desc">Diagrama de Gantt interactivo del contrato: actividades por tramos de ejecución (con sus pausas), avance real dentro de cada barra y vínculos entre ítems tipo MS Project (FC, CC, FF, CF).</p>
+        <div class="illust">
+          <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;opacity:.95">
+            <line x1="120" y1="6" x2="120" y2="74" stroke="rgba(239,68,68,.8)" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <rect x="10" y="10" width="70" height="10" rx="5" fill="rgba(34,211,238,.28)"/>
+            <rect x="10" y="10" width="52" height="10" rx="5" fill="rgba(34,211,238,.95)"/>
+            <rect x="95" y="10" width="40" height="10" rx="5" fill="rgba(34,211,238,.28)"/>
+            <rect x="30" y="32" width="55" height="10" rx="5" fill="rgba(99,102,241,.30)"/>
+            <rect x="30" y="32" width="30" height="10" rx="5" fill="rgba(99,102,241,.95)"/>
+            <rect x="110" y="32" width="55" height="10" rx="5" fill="rgba(99,102,241,.30)"/>
+            <rect x="60" y="54" width="80" height="10" rx="5" fill="rgba(251,191,36,.30)"/>
+            <rect x="60" y="54" width="18" height="10" rx="5" fill="rgba(251,191,36,.95)"/>
+            <path d="M85 37 L98 37 L98 20 L93 20" fill="none" stroke="rgba(148,163,184,.8)" stroke-width="1.5"/>
+            <path d="M96 22 L93 20 L96 18" fill="none" stroke="rgba(148,163,184,.8)" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="cta">Ver cronograma Gantt <span class="arrow">→</span></div>
+      </div>
+
       <!-- CARD CONTROL DE MAQUINARIA -->
       <div class="menu-card ind" onclick="goTo('maq')" style="background:linear-gradient(180deg,rgba(245,158,11,.05),rgba(20,26,55,.4))">
         <div class="icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><svg class="ic"><use href="#ic-truck"></use></svg></div>
@@ -1514,6 +1542,68 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     #screen-comunicaciones .cms-filtros-grid{grid-template-columns:1fr !important}
   }
 </style>
+
+<!-- ============ CRONOGRAMA DE OBRA (GANTT) ============ -->
+<div class="screen" id="screen-crono">
+  <div style="padding:18px;max-width:1600px;margin:0 auto">
+    <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+    <header style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 14px;gap:12px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:20px;color:#fff">📅 Cronograma de Obra · Gantt</h1>
+        <h2 style="margin:0;font-size:13px;color:#94a3b8;font-weight:400">Tramos de ejecución con pausas · avance real por barra · vínculos entre actividades</h2>
+      </div>
+      <div id="crono-kpis" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+    </header>
+
+    <div id="crono-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <div style="display:flex;border:1px solid rgba(255,255,255,.14);border-radius:9px;overflow:hidden">
+        <button class="crz" data-z="mes"    onclick="cronoZoom('mes')">Mes</button>
+        <button class="crz" data-z="semana" onclick="cronoZoom('semana')">Semana</button>
+        <button class="crz" data-z="dia"    onclick="cronoZoom('dia')">Día</button>
+      </div>
+      <button class="crb" onclick="cronoExpandir(true)">▾ Expandir</button>
+      <button class="crb" onclick="cronoExpandir(false)">▸ Colapsar</button>
+      <button class="crb" onclick="cronoHoy()">📍 Hoy</button>
+      <button class="crb" id="crono-link-btn" onclick="cronoModoVinculo()">🔗 Vincular actividades</button>
+      <select id="crono-cap-filtro" onchange="cronoRender()" style="background:#0d1424;border:1px solid rgba(255,255,255,.14);color:#e5e7eb;border-radius:9px;padding:7px 10px;font-size:12px"></select>
+      <span id="crono-hint" style="color:#64748b;font-size:11px"></span>
+    </div>
+
+    <div id="crono-wrap" style="position:relative;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:#0a0f1e;overflow:auto;max-height:76vh">
+      <div id="crono-cont" style="position:relative;display:inline-block;min-width:100%">
+        <div id="crono-grid"></div>
+        <svg id="crono-deps-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible"></svg>
+      </div>
+    </div>
+
+    <div id="crono-tip" style="display:none;position:fixed;z-index:10050;background:#111a30;border:1px solid rgba(34,211,238,.4);border-radius:10px;padding:10px 12px;font-size:11.5px;color:#e5e7eb;max-width:340px;box-shadow:0 12px 30px rgba(0,0,0,.6);pointer-events:none"></div>
+
+    <div id="crono-dep-modal" style="display:none;position:fixed;inset:0;background:rgba(3,5,10,.85);z-index:10060;align-items:center;justify-content:center">
+      <div style="background:#0d1424;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:20px;max-width:420px;width:92%">
+        <div style="color:#fff;font-weight:800;font-size:15px;margin-bottom:4px">🔗 Crear vínculo</div>
+        <div id="crono-dep-desc" style="color:#94a3b8;font-size:12px;margin-bottom:12px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <button class="crb crdep" data-t="FC" onclick="cronoDepCrear('FC')">FC · Fin → Comienzo</button>
+          <button class="crb crdep" data-t="CC" onclick="cronoDepCrear('CC')">CC · Comienzo → Comienzo</button>
+          <button class="crb crdep" data-t="FF" onclick="cronoDepCrear('FF')">FF · Fin → Fin</button>
+          <button class="crb crdep" data-t="CF" onclick="cronoDepCrear('CF')">CF · Comienzo → Fin</button>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button class="crb" onclick="cronoDepCancelar()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;color:#64748b;font-size:11px;display:flex;gap:16px;flex-wrap:wrap">
+      <span><span style="display:inline-block;width:22px;height:9px;border-radius:5px;background:rgba(34,211,238,.28);vertical-align:middle"></span> Programado</span>
+      <span><span style="display:inline-block;width:22px;height:9px;border-radius:5px;background:linear-gradient(90deg,#22d3ee,#10b981);vertical-align:middle"></span> Ejecutado</span>
+      <span><span style="display:inline-block;width:2px;height:12px;background:#ef4444;vertical-align:middle"></span> Hoy</span>
+      <span>➤ Vínculo (clic sobre la flecha para eliminarlo)</span>
+      <span>Los vínculos se guardan en este navegador</span>
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="screen-contrato">
   <div style="padding:18px;max-width:1280px;margin:0 auto">
     <button class="back-btn" onclick="goTo('menu')">← Menú</button>
@@ -3160,6 +3250,7 @@ function _goToInner(name){
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
   if(name==='loc'){ try{ locInit(); }catch(e){ console.warn('loc:',e); } }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
+  if(name==='crono'){ try{ cronoInit(); }catch(e){ console.warn('crono:',e); } }
   if(name==='analisis'){ try{ analisisCargar(); }catch(e){ console.warn('analisis:',e); } }
   if(name==='informe'){
     try{
@@ -11367,6 +11458,264 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
+<script>
+/* ====================== CRONOGRAMA GANTT (crono) ====================== */
+var CRONO_LOADED=false, CRONO_DATA=null, CRONO_ZOOM='semana', CRONO_COLAPSO={}, CRONO_MODO_LINK=false;
+var CRONO_SEL_ORIGEN=null, CRONO_SEL_DESTINO=null;
+var CRONO_PXD={mes:2.6, semana:7, dia:22};
+var CRONO_ROWH=34, CRONO_LEFTW=380, CRONO_HDR=46;
+var CRONO_T0=null, CRONO_T1=null;
+
+function cronoDeps(){ try{ return JSON.parse(localStorage.getItem('crono_deps_v1')||'[]'); }catch(e){ return []; } }
+function cronoDepsSave(d){ try{ localStorage.setItem('crono_deps_v1', JSON.stringify(d)); }catch(e){} }
+
+function cronoInit(){
+  if(CRONO_LOADED){ return; }
+  var g=document.getElementById('crono-grid');
+  g.innerHTML='<div style="padding:40px;text-align:center;color:#64748b">Cargando cronograma…</div>';
+  fetch('cronograma_data.json?v='+Date.now()).then(function(r){ return r.json(); }).then(function(d){
+    CRONO_DATA=d; CRONO_LOADED=true;
+    var caps={}; d.actividades.forEach(function(a){ caps[a.cap]=1; });
+    var sel=document.getElementById('crono-cap-filtro');
+    sel.innerHTML='<option value="">Todos los capítulos</option>'+Object.keys(caps).map(function(c){ return '<option value="'+c.replace(/"/g,'&quot;')+'">'+c+'</option>'; }).join('');
+    cronoRender();
+  }).catch(function(e){
+    g.innerHTML='<div style="padding:40px;text-align:center;color:#fca5a5">No se pudo cargar cronograma_data.json — '+e+'</div>';
+  });
+}
+function cronoZoom(z){ CRONO_ZOOM=z; cronoRender(); }
+function cronoExpandir(v){
+  if(!CRONO_DATA) return;
+  CRONO_DATA.actividades.forEach(function(a){ CRONO_COLAPSO[a.cap]=!v; });
+  cronoRender();
+}
+function cronoD(s){ var p=s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function cronoDias(a,b){ return Math.round((b-a)/86400000); }
+function cronoX(fecha){ return CRONO_LEFTW + cronoDias(CRONO_T0, fecha)*CRONO_PXD[CRONO_ZOOM]; }
+function cronoFmt(d){ return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear(); }
+function cronoMoney(v){ return '$'+Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+
+function cronoFilas(){
+  var filtro=document.getElementById('crono-cap-filtro').value;
+  var filas=[], capAct=null;
+  CRONO_DATA.actividades.forEach(function(a){
+    if(filtro && a.cap!==filtro) return;
+    if(a.cap!==capAct){ capAct=a.cap; filas.push({tipo:'cap', cap:a.cap}); }
+    if(!CRONO_COLAPSO[a.cap]) filas.push({tipo:'act', a:a});
+  });
+  return filas;
+}
+
+function cronoRender(){
+  if(!CRONO_DATA) return;
+  var pxd=CRONO_PXD[CRONO_ZOOM];
+  document.querySelectorAll('.crz').forEach(function(b){ b.classList.toggle('crz-on', b.getAttribute('data-z')===CRONO_ZOOM); });
+  var acts=CRONO_DATA.actividades;
+  var t0=null,t1=null;
+  acts.forEach(function(a){ a.tramos.forEach(function(t){
+    var i=cronoD(t[0]), f=cronoD(t[1]);
+    if(!t0||i<t0) t0=i; if(!t1||f>t1) t1=f;
+  });});
+  t0=new Date(t0.getFullYear(), t0.getMonth(), 1);
+  t1=new Date(t1.getFullYear(), t1.getMonth()+1, 15);
+  CRONO_T0=t0; CRONO_T1=t1;
+  var totalDias=cronoDias(t0,t1), tlW=totalDias*pxd;
+  var leftw=(window.innerWidth<700)?190:380; CRONO_LEFTW=leftw;
+
+  var filas=cronoFilas();
+  var H=CRONO_HDR+filas.length*CRONO_ROWH;
+  var W=leftw+tlW;
+  var hoy=new Date(); hoy.setHours(0,0,0,0);
+
+  var h='';
+  /* fondo columnas de mes + header */
+  h+='<div style="position:relative;width:'+W+'px;height:'+H+'px;font-family:Inter,system-ui,sans-serif">';
+  var m=new Date(t0);
+  while(m<t1){
+    var mFin=new Date(m.getFullYear(), m.getMonth()+1, 1);
+    var x=cronoX(m), wpx=cronoDias(m, (mFin<t1?mFin:t1))*pxd;
+    var nombre=m.toLocaleDateString('es-CO',{month:'short',year:'2-digit'}).replace('.','');
+    h+='<div style="position:absolute;left:'+x+'px;top:0;width:'+wpx+'px;height:'+H+'px;border-left:1px solid rgba(255,255,255,.05);'+(m.getMonth()%2?'background:rgba(255,255,255,.015)':'')+'"></div>';
+    h+='<div style="position:absolute;left:'+x+'px;top:0;width:'+wpx+'px;height:22px;line-height:22px;text-align:center;color:#94a3b8;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.08);background:#0d1424;white-space:nowrap;overflow:hidden">'+nombre+'</div>';
+    m=mFin;
+  }
+  /* sub-escala: semanas o dias */
+  if(CRONO_ZOOM!=='mes'){
+    var s=new Date(t0); s.setDate(s.getDate()+((8-s.getDay())%7)); /* proximo lunes */
+    var paso=(CRONO_ZOOM==='dia')?1:7;
+    var cur=(CRONO_ZOOM==='dia')?new Date(t0):s;
+    while(cur<t1){
+      var xs=cronoX(cur);
+      var lbl=(CRONO_ZOOM==='dia')?cur.getDate():('S'+('0'+cur.getDate()).slice(-2));
+      h+='<div style="position:absolute;left:'+xs+'px;top:22px;height:'+(H-22)+'px;border-left:1px dashed rgba(255,255,255,.045)"></div>';
+      h+='<div style="position:absolute;left:'+(xs+1)+'px;top:24px;color:#475569;font-size:9px">'+((CRONO_ZOOM==='dia')?cur.getDate():cronoFmt(cur).slice(0,5))+'</div>';
+      cur=new Date(cur); cur.setDate(cur.getDate()+paso);
+    }
+  }
+  /* franja header izquierda */
+  h+='<div style="position:sticky;left:0;top:0;width:'+leftw+'px;height:'+CRONO_HDR+'px;background:#0d1424;border-right:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1);z-index:30;position:absolute"></div>';
+  h+='<div style="position:absolute;left:10px;top:14px;color:#64748b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;z-index:31">Actividad</div>';
+
+  /* filas */
+  filas.forEach(function(f, idx){
+    var y=CRONO_HDR+idx*CRONO_ROWH;
+    if(f.tipo==='cap'){
+      var col=CRONO_COLAPSO[f.cap];
+      /* barra resumen del capitulo */
+      var minI=null,maxF=null,sumV=0,sumAv=0;
+      CRONO_DATA.actividades.forEach(function(a){ if(a.cap!==f.cap) return;
+        a.tramos.forEach(function(t){ var i=cronoD(t[0]),fn=cronoD(t[1]); if(!minI||i<minI)minI=i; if(!maxF||fn>maxF)maxF=fn; });
+        sumV+=a.vrTotal; sumAv+=a.vrTotal*Math.min(a.avance,1);
+      });
+      var avCap=sumV>0?(sumAv/sumV):0;
+      h+='<div onclick="CRONO_COLAPSO[\''+f.cap.replace(/'/g,"\\'")+'\']=!CRONO_COLAPSO[\''+f.cap.replace(/'/g,"\\'")+'\'];cronoRender()" style="position:absolute;left:0;top:'+y+'px;width:'+W+'px;height:'+CRONO_ROWH+'px;background:rgba(34,211,238,.055);border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer;z-index:5"></div>';
+      h+='<div style="position:absolute;left:10px;top:'+(y+8)+'px;color:#67e8f9;font-size:11.5px;font-weight:800;z-index:26;max-width:'+(leftw-70)+'px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none">'+(col?'▸':'▾')+' '+f.cap+'</div>';
+      h+='<div style="position:absolute;left:'+(leftw-52)+'px;top:'+(y+9)+'px;color:#94a3b8;font-size:10px;z-index:26;pointer-events:none">'+Math.round(avCap*100)+'%</div>';
+      if(minI&&maxF){
+        var xC=cronoX(minI), wC=Math.max(cronoDias(minI,maxF)*pxd,4);
+        h+='<div style="position:absolute;left:'+xC+'px;top:'+(y+13)+'px;width:'+wC+'px;height:7px;border-radius:4px;background:rgba(34,211,238,.18);border:1px solid rgba(34,211,238,.35);z-index:6;pointer-events:none"></div>';
+        h+='<div style="position:absolute;left:'+xC+'px;top:'+(y+13)+'px;width:'+(wC*Math.min(avCap,1))+'px;height:7px;border-radius:4px;background:rgba(34,211,238,.7);z-index:7;pointer-events:none"></div>';
+      }
+      return;
+    }
+    var a=f.a;
+    var sel=(CRONO_SEL_ORIGEN===a.item)?'background:rgba(251,191,36,.08);':'';
+    h+='<div style="position:absolute;left:0;top:'+y+'px;width:'+W+'px;height:'+CRONO_ROWH+'px;border-bottom:1px solid rgba(255,255,255,.035);'+sel+'"></div>';
+    /* panel izquierdo */
+    h+='<div class="crono-fila-izq" data-item="'+a.item+'" onclick="cronoClickFila(\''+a.item+'\')" style="position:absolute;left:0;top:'+y+'px;width:'+leftw+'px;height:'+CRONO_ROWH+'px;border-right:1px solid rgba(255,255,255,.1);background:'+(CRONO_SEL_ORIGEN===a.item?'#1b2440':'#0d1424')+';z-index:25;cursor:'+(CRONO_MODO_LINK?'crosshair':'default')+';display:flex;align-items:center;gap:8px;padding:0 10px;box-sizing:border-box">'+
+      '<span style="color:#fbbf24;font-size:10.5px;font-weight:800;flex:0 0 34px">'+a.item+'</span>'+
+      '<span style="color:#cbd5e1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">'+(a.desc||('Ítem '+a.item))+'</span>'+
+      '<span style="flex:0 0 36px;text-align:right;font-size:10px;font-weight:700;color:'+(a.avance>=1?'#4ade80':(a.avance>0?'#fbbf24':'#64748b'))+'">'+Math.round(Math.min(a.avance,9.99)*100)+'%</span></div>';
+    /* barras por tramo con relleno secuencial del avance */
+    var durTotal=0; a.tramos.forEach(function(t){ durTotal+=Math.max(cronoDias(cronoD(t[0]),cronoD(t[1])),1); });
+    var diasAv=Math.min(a.avance,1)*durTotal;
+    a.tramos.forEach(function(t,ti){
+      var i=cronoD(t[0]), fn=cronoD(t[1]);
+      var dur=Math.max(cronoDias(i,fn),1);
+      var x=cronoX(i), wpx=Math.max(dur*pxd,5);
+      var fill=Math.max(0,Math.min(dur,diasAv)); diasAv-=fill;
+      var fw=(fill/dur)*wpx;
+      h+='<div class="crono-bar" data-item="'+a.item+'" data-tr="'+ti+'" style="position:absolute;left:'+x+'px;top:'+(y+9)+'px;width:'+wpx+'px;height:15px;border-radius:8px;background:rgba(34,211,238,.22);border:1px solid rgba(34,211,238,.45);z-index:10;cursor:pointer;box-sizing:border-box">'+
+        (fw>1?'<div style="position:absolute;left:0;top:0;width:'+fw+'px;height:100%;border-radius:8px;background:linear-gradient(90deg,#22d3ee,#10b981);opacity:.92"></div>':'')+
+        '</div>';
+    });
+  });
+  /* linea HOY */
+  if(hoy>=t0 && hoy<=t1){
+    var xh=cronoX(hoy);
+    h+='<div style="position:absolute;left:'+xh+'px;top:22px;height:'+(H-22)+'px;border-left:2px solid rgba(239,68,68,.85);z-index:20;pointer-events:none"></div>';
+    h+='<div style="position:absolute;left:'+(xh-14)+'px;top:'+(CRONO_HDR-18)+'px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:6px;z-index:21;pointer-events:none">HOY</div>';
+  }
+  h+='</div>';
+  var g=document.getElementById('crono-grid');
+  g.innerHTML=h;
+  var svg=document.getElementById('crono-deps-svg');
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+  cronoPintarDeps(filas);
+  cronoKpis();
+  /* tooltips */
+  g.querySelectorAll('.crono-bar').forEach(function(b){
+    b.addEventListener('mousemove', cronoTipMove);
+    b.addEventListener('mouseleave', cronoTipHide);
+    b.addEventListener('click', function(ev){ ev.stopPropagation(); cronoClickFila(b.getAttribute('data-item')); });
+  });
+}
+
+function cronoKpis(){
+  var acts=CRONO_DATA.actividades, sumV=0,sumAv=0,n=0,en=0,fin=0;
+  acts.forEach(function(a){ sumV+=a.vrTotal; sumAv+=a.vrTotal*Math.min(a.avance,1); n++; if(a.avance>=1)fin++; else if(a.avance>0)en++; });
+  var k=document.getElementById('crono-kpis');
+  function kpi(v,l,c){ return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:6px 12px;text-align:center"><div style="color:'+c+';font-size:15px;font-weight:800">'+v+'</div><div style="color:#64748b;font-size:9px;text-transform:uppercase;letter-spacing:.05em">'+l+'</div></div>'; }
+  k.innerHTML=kpi(n,'Actividades','#fff')+kpi(en,'En ejecución','#fbbf24')+kpi(fin,'Terminadas','#4ade80')+kpi((sumV>0?Math.round(sumAv/sumV*100):0)+'%','Avance ponderado','#22d3ee');
+}
+
+function cronoTipMove(ev){
+  var b=ev.currentTarget, item=b.getAttribute('data-item'), ti=+b.getAttribute('data-tr');
+  var a=CRONO_DATA.actividades.filter(function(x){ return x.item===item; })[0];
+  if(!a) return;
+  var t=a.tramos[ti], i=cronoD(t[0]), f=cronoD(t[1]);
+  var tip=document.getElementById('crono-tip');
+  tip.innerHTML='<b style="color:#fbbf24">'+a.item+'</b> · '+(a.desc||'')+'<br>'+
+    '<span style="color:#94a3b8">Tramo '+(ti+1)+' de '+a.tramos.length+':</span> '+cronoFmt(i)+' → '+cronoFmt(f)+' ('+Math.max(cronoDias(i,f),1)+' días)<br>'+
+    '<span style="color:#94a3b8">Avance ítem:</span> <b style="color:'+(a.avance>=1?'#4ade80':'#22d3ee')+'">'+(a.avance*100).toFixed(1)+'%</b>'+
+    (a.resp?' · <span style="color:#94a3b8">Resp:</span> '+a.resp:'')+
+    (a.vrTotal?'<br><span style="color:#94a3b8">Vr. total:</span> '+cronoMoney(a.vrTotal):'');
+  tip.style.display='block';
+  tip.style.left=Math.min(ev.clientX+14, window.innerWidth-360)+'px';
+  tip.style.top=(ev.clientY+14)+'px';
+}
+function cronoTipHide(){ document.getElementById('crono-tip').style.display='none'; }
+function cronoHoy(){
+  var w=document.getElementById('crono-wrap');
+  var x=cronoX(new Date())-w.clientWidth/2;
+  w.scrollTo({left:Math.max(x,0), behavior:'smooth'});
+}
+
+/* ---- dependencias ---- */
+function cronoModoVinculo(){
+  CRONO_MODO_LINK=!CRONO_MODO_LINK;
+  CRONO_SEL_ORIGEN=null;
+  var btn=document.getElementById('crono-link-btn');
+  btn.style.background=CRONO_MODO_LINK?'rgba(251,191,36,.2)':'';
+  btn.style.borderColor=CRONO_MODO_LINK?'#fbbf24':'';
+  document.getElementById('crono-hint').textContent=CRONO_MODO_LINK?'Modo vínculo: toca la actividad PREDECESORA y luego la SUCESORA':'';
+  cronoRender();
+}
+function cronoClickFila(item){
+  if(!CRONO_MODO_LINK) return;
+  if(!CRONO_SEL_ORIGEN){ CRONO_SEL_ORIGEN=item; document.getElementById('crono-hint').textContent='Predecesora: '+item+' → ahora toca la SUCESORA'; cronoRender(); return; }
+  if(CRONO_SEL_ORIGEN===item){ CRONO_SEL_ORIGEN=null; cronoRender(); return; }
+  CRONO_SEL_DESTINO=item;
+  document.getElementById('crono-dep-desc').textContent='Predecesora '+CRONO_SEL_ORIGEN+' → Sucesora '+item+'. Elige el tipo de relación:';
+  document.getElementById('crono-dep-modal').style.display='flex';
+}
+function cronoDepCrear(tipo){
+  var deps=cronoDeps();
+  deps=deps.filter(function(d){ return !(d.de===CRONO_SEL_ORIGEN && d.a===CRONO_SEL_DESTINO); });
+  deps.push({de:CRONO_SEL_ORIGEN, a:CRONO_SEL_DESTINO, tipo:tipo});
+  cronoDepsSave(deps);
+  cronoDepCancelar();
+  CRONO_SEL_ORIGEN=null;
+  document.getElementById('crono-hint').textContent='Vínculo creado.';
+  cronoRender();
+}
+function cronoDepCancelar(){ document.getElementById('crono-dep-modal').style.display='none'; CRONO_SEL_DESTINO=null; }
+function cronoDepEliminar(idx){
+  if(!confirm('¿Eliminar este vínculo?')) return;
+  var deps=cronoDeps(); deps.splice(idx,1); cronoDepsSave(deps); cronoRender();
+}
+
+function cronoPintarDeps(filas){
+  var svg=document.getElementById('crono-deps-svg');
+  var pxd=CRONO_PXD[CRONO_ZOOM];
+  var yDe={}, actDe={};
+  filas.forEach(function(f,idx){ if(f.tipo==='act'){ yDe[f.a.item]=CRONO_HDR+idx*CRONO_ROWH+16; actDe[f.a.item]=f.a; } });
+  var deps=cronoDeps(), s='';
+  deps.forEach(function(d, di){
+    var A=actDe[d.de], B=actDe[d.a];
+    if(!A||!B) return;
+    var aIni=cronoD(A.tramos[0][0]), aFin=cronoD(A.tramos[A.tramos.length-1][1]);
+    var bIni=cronoD(B.tramos[0][0]), bFin=cronoD(B.tramos[B.tramos.length-1][1]);
+    var x1=(d.tipo==='FC'||d.tipo==='FF')?cronoX(aFin):cronoX(aIni);
+    var x2=(d.tipo==='FC'||d.tipo==='CC')?cronoX(bIni):cronoX(bFin);
+    var y1=yDe[d.de], y2=yDe[d.a];
+    /* violacion: la sucesora arranca/termina antes de lo que exige el vinculo */
+    var viola=false;
+    if(d.tipo==='FC') viola = bIni<aFin;
+    if(d.tipo==='CC') viola = bIni<aIni;
+    if(d.tipo==='FF') viola = bFin<aFin;
+    if(d.tipo==='CF') viola = bFin<aIni;
+    var col=viola?'#ef4444':'#94a3b8';
+    var mx=x1+14;
+    var path='M'+x1+' '+y1+' L'+mx+' '+y1+' L'+mx+' '+(y2-(y2>y1?10:-10))+' L'+(x2-8)+' '+(y2-(y2>y1?10:-10))+' L'+(x2-8)+' '+y2+' L'+x2+' '+y2;
+    s+='<path d="'+path+'" fill="none" stroke="'+col+'" stroke-width="1.6" opacity=".9" style="pointer-events:stroke;cursor:pointer" onclick="cronoDepEliminar('+di+')"><title>'+d.de+' → '+d.a+' ('+d.tipo+')'+(viola?' · CONFLICTO DE FECHAS':'')+' — clic para eliminar</title></path>';
+    s+='<path d="M'+(x2-6)+' '+(y2-4)+' L'+x2+' '+y2+' L'+(x2-6)+' '+(y2+4)+' Z" fill="'+col+'"/>';
+    s+='<text x="'+(mx+4)+'" y="'+((y1+y2)/2)+'" fill="'+col+'" font-size="9" font-weight="700">'+d.tipo+'</text>';
+  });
+  svg.innerHTML=s;
+}
+</script>
+
 <!-- ============ AUTENTICACIÓN v1 (token de sesión) ============ -->
 <div id="auth-overlay" style="position:fixed;inset:0;background:#05070d;z-index:100000;overflow-y:auto;padding:24px 16px;font-family:'Inter',system-ui,sans-serif;display:flex;align-items:center;justify-content:center">
   <style>
@@ -11826,7 +12175,7 @@ function AUTH_APLICAR_PERFIL(perfil, modulos){
   }catch(e2){}
 }
 function _adminModuloConocido(key){
-  var cat=(_adminCat&&_adminCat.length)?_adminCat:[{k:'ejecdiaria'},{k:'obra'},{k:'rendimientos'},{k:'loc'},{k:'maq'},{k:'mo'},{k:'inventario'},{k:'indicadores'},{k:'contrato'},{k:'informe'},{k:'comunicaciones'},{k:'fotos'}];
+  var cat=(_adminCat&&_adminCat.length)?_adminCat:[{k:'ejecdiaria'},{k:'obra'},{k:'rendimientos'},{k:'loc'},{k:'maq'},{k:'mo'},{k:'inventario'},{k:'indicadores'},{k:'contrato'},{k:'informe'},{k:'comunicaciones'},{k:'fotos'},{k:'crono'}];
   for(var i=0;i<cat.length;i++){ if(cat[i].k===key) return true; }
   return false;
 }
