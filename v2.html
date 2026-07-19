@@ -11528,7 +11528,7 @@ function cronoCSVaTramos(inis,fins){
   return out;
 }
 function cronoInit(){
-  if(CRONO_LOADED){ return; }
+  if(CRONO_LOADED){ cronoRender(); return; }
   var g=document.getElementById('crono-grid');
   g.innerHTML='<div style="padding:40px;text-align:center;color:#64748b">Cargando cronograma…</div>';
   cronoJsonp({action:'crono_datos'}).then(function(r){
@@ -11566,6 +11566,15 @@ function cronoNombres(){
 }
 function cronoArrancar(){
   CRONO_LOADED=true;
+  if(!window._cronoThemeObs){
+    window._cronoThemeObs=new MutationObserver(function(){
+      try{
+        var sc=document.getElementById('screen-crono');
+        if(CRONO_LOADED && sc && sc.classList.contains('active')) cronoRender();
+      }catch(_e){}
+    });
+    window._cronoThemeObs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  }
   var caps={}; CRONO_DATA.actividades.forEach(function(a){ caps[a.cap]=1; });
   var sel=document.getElementById('crono-cap-filtro');
   sel.innerHTML='<option value="">Todos los capítulos</option>'+Object.keys(caps).map(function(c){ return '<option value="'+c.replace(/"/g,'&quot;')+'">'+c+'</option>'; }).join('');
