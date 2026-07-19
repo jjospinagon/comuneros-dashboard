@@ -1569,6 +1569,9 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <button class="crb" onclick="cronoExpandir(false)">▸ Colapsar</button>
       <button class="crb" onclick="cronoHoy()">📍 Hoy</button>
       <button class="crb" id="crono-link-btn" onclick="cronoModoVinculo()">🔗 Vincular</button>
+      <button class="crb" id="crono-refresh-btn" onclick="cronoActualizarExcel()" title="Trae al cockpit lo último del Excel">🔄 Actualizar</button>
+      <button class="crb" id="crono-save-btn" onclick="cronoGuardarExcel()" title="Escribe en el Excel las fechas cambiadas aquí">💾 Guardar en Excel</button>
+      <button class="crb" onclick="cronoPDF()" title="Descarga en una sola hoja exactamente lo que ves">⬇ PDF</button>
       <select id="crono-cap-filtro" onchange="cronoRender()" style="background:#0d1424;border:1px solid rgba(255,255,255,.14);color:#e5e7eb;border-radius:9px;padding:7px 10px;font-size:12px"></select>
       <span id="crono-estado" style="color:#64748b;font-size:11px"></span>
       <span id="crono-hint" style="color:#fbbf24;font-size:11px"></span>
@@ -11810,7 +11813,7 @@ function cronoModoVinculo(){
   var btn=document.getElementById('crono-link-btn');
   btn.style.background=CRONO_MODO_LINK?'rgba(251,191,36,.2)':'';
   btn.style.borderColor=CRONO_MODO_LINK?'#fbbf24':'';
-  document.getElementById('crono-hint').textContent=CRONO_MODO_LINK?'Modo vínculo: toca la PREDECESORA y luego la SUCESORA':'';
+  document.getElementById('crono-hint').textContent=CRONO_MODO_LINK?'Modo vínculo: toca PREDECESORA y luego SUCESORA. Repite las veces que quieras: una actividad puede tener varias predecesoras y sucesoras.':'';
   cronoRender();
 }
 function cronoClickFila(item){
@@ -11843,6 +11846,166 @@ function cronoDepsPersistir(){
     });
   }
 }
+
+/* ---- sincronizacion manual con el Excel ---- */
+function cronoActualizarExcel(){
+  var b=document.getElementById('crono-refresh-btn'), est=document.getElementById('crono-estado');
+  b.disabled=true; b.textContent='🔄 Trayendo del Excel…';
+  est.textContent='Leyendo el Excel (puede tardar ~20 s)…';
+  cronoJsonp({action:'crono_sync'}).then(function(r){
+    if(!(r&&r.ok)){ b.disabled=false; b.textContent='🔄 Actualizar'; est.textContent='No se pudo leer el Excel'; return; }
+    return cronoJsonp({action:'crono_datos'}).then(function(d){
+      b.disabled=false; b.textContent='🔄 Actualizar';
+      if(d&&d.ok){
+        d.actividades.forEach(function(a){ a.tramos=cronoCSVaTramos(a.inicios,a.fines); });
+        CRONO_DATA={actividades:d.actividades.filter(function(a){return a.tramos.length;})};
+        CRONO_DEPS=d.deps||[];
+        est.textContent='✓ Actualizado desde el Excel · corte '+(d.actualizado||'');
+        cronoRender();
+      } else est.textContent='Sincronizó pero no pude recargar; refresca la página.';
+    });
+  });
+}
+function cronoGuardarExcel(){
+  var b=document.getElementById('crono-save-btn'), est=document.getElementById('crono-estado');
+  b.disabled=true; b.textContent='💾 Guardando…';
+  est.textContent='Escribiendo las fechas en ANALISIS COMUNEROS.xlsx…';
+  cronoJsonp({action:'crono_aplicar'}).then(function(r){
+    b.disabled=false; b.textContent='💾 Guardar en Excel';
+    if(r&&r.ok) est.textContent='✓ '+(r.aplicados||0)+' actividad(es) escritas en el Excel';
+    else est.textContent=(r&&r.error)||'No se pudo escribir en el Excel';
+  });
+}
+
+/* ---- PDF de una sola hoja con lo visible ---- */
+function cronoPDF(){
+  var est=document.getElementById('crono-estado');
+  est.textContent='Generando PDF…';
+  function go(){
+    try{
+      var filas=cronoFilas(), pxd=CRONO_PX;
+      var HDR=44, ROW=24, leftw=520;
+      var t0=CRONO_T0, t1=CRONO_T1;
+      var tlW=cronoDias(t0,t1)*pxd;
+      var W=Math.round(leftw+tlW+150), H=Math.round(HDR+filas.length*ROW+18);
+      var esc=Math.min(2, 4200/Math.max(W,H));
+      var cv=document.createElement('canvas');
+      cv.width=Math.round(W*esc); cv.height=Math.round(H*esc);
+      var g=cv.getContext('2d'); g.scale(esc,esc);
+      g.fillStyle='#ffffff'; g.fillRect(0,0,W,H);
+      function X(f){ return leftw+cronoDias(t0,f)*pxd; }
+      /* fondos de mes */
+      var m=new Date(t0);
+      while(m<t1){
+        var mf=new Date(m.getFullYear(),m.getMonth()+1,1);
+        var x=X(m), wpx=cronoDias(m,(mf<t1?mf:t1))*pxd;
+        if(m.getMonth()%2){ g.fillStyle='#f2f5f9'; g.fillRect(x,HDR,wpx,H-HDR); }
+        m=mf;
+      }
+      /* filas */
+      var yDe={}, actDe={};
+      filas.forEach(function(f,idx){
+        var y=HDR+idx*ROW;
+        if(f.tipo==='cap'){
+          var cc=cronoCapColor(f.cap);
+          g.fillStyle='#eef1f6'; g.fillRect(0,y,W,ROW);
+          g.fillStyle=cc; g.fillRect(4,y+7,8,8);
+          g.fillStyle='#0f172a'; g.font='700 10px Arial'; g.textAlign='left';
+          g.fillText(f.cap, 18, y+15);
+          var minI=null,maxF=null;
+          CRONO_DATA.actividades.forEach(function(a){ if(a.cap!==f.cap) return;
+            a.tramos.forEach(function(t){ var i=cronoD(t[0]),fn=cronoD(t[1]); if(!minI||i<minI)minI=i; if(!maxF||fn>maxF)maxF=fn; }); });
+          if(minI&&maxF){
+            g.globalAlpha=.85; g.fillStyle=cc;
+            g.fillRect(X(minI), y+9, Math.max(cronoDias(minI,maxF)*pxd,3), 5);
+            g.globalAlpha=1;
+          }
+          return;
+        }
+        var a=f.a, cc2=cronoCapColor(a.cap);
+        yDe[a.item]=y+ROW/2; actDe[a.item]=a;
+        g.strokeStyle='#e5e9f0'; g.beginPath(); g.moveTo(0,y+ROW); g.lineTo(W,y+ROW); g.stroke();
+        g.fillStyle='#b45309'; g.font='700 9px Arial'; g.textAlign='left';
+        g.fillText(a.item, 6, y+15);
+        g.fillStyle='#1e293b'; g.font='9px Arial';
+        var d=(a.desc||('Ítem '+a.item)); if(d.length>62) d=d.slice(0,60)+'…';
+        g.fillText(d, 40, y+15);
+        g.fillStyle='#475569'; g.textAlign='right';
+        g.fillText(Math.round(Math.min(a.avance,9.99)*100)+'%', leftw-8, y+15);
+        g.textAlign='left';
+        var durTotal=0; a.tramos.forEach(function(t){ durTotal+=Math.max(cronoDias(cronoD(t[0]),cronoD(t[1])),1); });
+        var diasAv=Math.min(a.avance,1)*durTotal, lastX=leftw;
+        a.tramos.forEach(function(t){
+          var i=cronoD(t[0]), fn=cronoD(t[1]);
+          var dur=Math.max(cronoDias(i,fn),1);
+          var x=X(i), wpx=Math.max(dur*pxd,3);
+          var fill=Math.max(0,Math.min(dur,diasAv)); diasAv-=fill;
+          g.globalAlpha=.3; g.fillStyle=cc2; g.fillRect(x,y+8,wpx,9);
+          g.globalAlpha=1;
+          if(fill>0){ g.fillStyle=cc2; g.fillRect(x,y+8,(fill/dur)*wpx,9); }
+          lastX=Math.max(lastX,x+wpx);
+        });
+        if(a.resp){ g.fillStyle='#64748b'; g.font='8px Arial'; g.fillText(a.resp, lastX+6, y+15); }
+      });
+      /* lineas y rotulos de mes */
+      m=new Date(t0);
+      g.font='700 10px Arial';
+      while(m<t1){
+        var mf2=new Date(m.getFullYear(),m.getMonth()+1,1);
+        var x2=X(m), w2=cronoDias(m,(mf2<t1?mf2:t1))*pxd;
+        g.strokeStyle='#cbd5e1'; g.beginPath(); g.moveTo(x2,0); g.lineTo(x2,H); g.stroke();
+        g.fillStyle='#334155'; g.textAlign='center';
+        g.fillText(m.toLocaleDateString('es-CO',{month:'short',year:'2-digit'}).replace('.','').toUpperCase(), x2+w2/2, 15);
+        m=mf2;
+      }
+      g.strokeStyle='#94a3b8'; g.beginPath(); g.moveTo(leftw,0); g.lineTo(leftw,H); g.stroke();
+      g.beginPath(); g.moveTo(0,HDR); g.lineTo(W,HDR); g.stroke();
+      g.fillStyle='#0f172a'; g.font='700 12px Arial'; g.textAlign='left';
+      g.fillText('CRONOGRAMA DE OBRA · Contrato 023 de 2025 · Comuneros', 6, 15);
+      g.font='9px Arial'; g.fillStyle='#64748b';
+      g.fillText('Generado '+cronoFmt(new Date())+' desde el Cockpit', 6, 30);
+      /* hoy */
+      var hoy=new Date(); hoy.setHours(0,0,0,0);
+      if(hoy>=t0&&hoy<=t1){
+        var xh=X(hoy);
+        g.strokeStyle='#ef4444'; g.lineWidth=1.5;
+        g.beginPath(); g.moveTo(xh,HDR-6); g.lineTo(xh,H); g.stroke(); g.lineWidth=1;
+        g.fillStyle='#ef4444'; g.font='700 8px Arial'; g.textAlign='center';
+        g.fillText('HOY', xh, HDR-9);
+      }
+      /* flechas de vinculos */
+      CRONO_DEPS.forEach(function(dp){
+        var A=actDe[dp.de], B=actDe[dp.a];
+        if(!A||!B) return;
+        var aIni=cronoD(A.tramos[0][0]), aFin=cronoD(A.tramos[A.tramos.length-1][1]);
+        var bIni=cronoD(B.tramos[0][0]), bFin=cronoD(B.tramos[B.tramos.length-1][1]);
+        var x1=(dp.tipo==='FC'||dp.tipo==='FF')?X(aFin):X(aIni);
+        var x2b=(dp.tipo==='FC'||dp.tipo==='CC')?X(bIni):X(bFin);
+        var y1=yDe[dp.de], y2=yDe[dp.a];
+        var viola=(dp.tipo==='FC'&&bIni<aFin)||(dp.tipo==='CC'&&bIni<aIni)||(dp.tipo==='FF'&&bFin<aFin)||(dp.tipo==='CF'&&bFin<aIni);
+        g.strokeStyle=viola?'#ef4444':'#475569';
+        var mx=x1+8, my=(y2>y1)?(y1+ROW/2):(y1-ROW/2);
+        g.beginPath(); g.moveTo(x1,y1); g.lineTo(mx,y1); g.lineTo(mx,my); g.lineTo(x2b-7,my); g.lineTo(x2b-7,y2); g.lineTo(x2b-1,y2); g.stroke();
+        g.fillStyle=viola?'#ef4444':'#475569';
+        g.beginPath(); g.moveTo(x2b-6,y2-3); g.lineTo(x2b,y2); g.lineTo(x2b-6,y2+3); g.closePath(); g.fill();
+      });
+      var img=cv.toDataURL('image/jpeg',0.92);
+      var pdf=new jspdf.jsPDF({orientation:(W>=H?'landscape':'portrait'), unit:'px', format:[W,H], compress:true});
+      pdf.addImage(img,'JPEG',0,0,W,H);
+      pdf.save('Cronograma_Comuneros_'+new Date().toISOString().slice(0,10)+'.pdf');
+      est.textContent='✓ PDF descargado (1 hoja, '+filas.length+' filas visibles)';
+    }catch(e){ est.textContent='Error generando PDF: '+e; }
+  }
+  if(window.jspdf){ go(); }
+  else{
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=go;
+    s.onerror=function(){ est.textContent='No se pudo cargar el generador de PDF'; };
+    document.head.appendChild(s);
+  }
+}
+
 function cronoPintarDeps(filas){
   var svg=document.getElementById('crono-deps-svg');
   var yDe={}, actDe={};
