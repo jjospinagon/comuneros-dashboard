@@ -2090,6 +2090,94 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   </div>
 </div>
 
+<!-- ============ BITÁCORA DE OBRA ============ -->
+<style>
+  #screen-bitacora .wrap{max-width:1500px;margin:0 auto;padding:18px}
+  #screen-bitacora .topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  #screen-bitacora h1{margin:0;font-size:20px;color:#fff}
+  #screen-bitacora h2{margin:0;font-size:12.5px;color:#94a3b8;font-weight:400}
+  #screen-bitacora .bt-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#e5e7eb;border-radius:9px;padding:7px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  #screen-bitacora .bt-btn:hover{background:rgba(255,255,255,.11)}
+  #screen-bitacora .bt-btn.primary{background:linear-gradient(135deg,#22d3ee,#10b981);color:#04263b;font-weight:800;border:none}
+  #screen-bitacora .bt-btn.amber{background:linear-gradient(135deg,#f59e0b,#f97316);color:#1a1206;font-weight:800;border:none}
+  #screen-bitacora input[type=date],#screen-bitacora input[type=text],#screen-bitacora input[type=number],#screen-bitacora textarea,#screen-bitacora select{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.13);color:#fff;padding:6px 9px;border-radius:8px;font-size:12.5px;font-family:inherit;outline:none;color-scheme:dark}
+  #screen-bitacora .bt-two{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+  @media(max-width:960px){#screen-bitacora .bt-two{grid-template-columns:1fr}}
+  #screen-bitacora .bt-panel{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px}
+  #screen-bitacora .bt-list-item{padding:9px 11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:8px;cursor:pointer;background:rgba(255,255,255,.02)}
+  #screen-bitacora .bt-list-item:hover{background:rgba(34,211,238,.09);border-color:rgba(34,211,238,.4)}
+  #screen-bitacora .bt-list-item.sel{background:rgba(34,211,238,.14);border-color:#22d3ee}
+  #screen-bitacora .bt-fld{margin-bottom:9px}
+  #screen-bitacora .bt-fld label{display:block;font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:700;margin-bottom:3px}
+  #screen-bitacora .bt-fld input,#screen-bitacora .bt-fld textarea,#screen-bitacora .bt-fld select{width:100%;box-sizing:border-box}
+  #screen-bitacora .bt-grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  #screen-bitacora .bt-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  #screen-bitacora .bt-sec{font-size:12px;font-weight:800;color:#22d3ee;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;border-bottom:1px solid rgba(34,211,238,.25);padding-bottom:4px}
+  /* Hoja de previsualización (imita el Excel, lista para imprimir) */
+  #screen-bitacora .bt-hoja{background:#fff;color:#111;border-radius:6px;padding:0;width:820px;max-width:100%;margin:0 auto;font-family:Arial,Helvetica,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  #screen-bitacora .bt-hoja *{box-sizing:border-box}
+  #screen-bitacora .bt-hoja table{width:100%;border-collapse:collapse}
+  #screen-bitacora .bt-hoja td,#screen-bitacora .bt-hoja th{border:1px solid #7f8790;padding:3px 6px;font-size:11px;vertical-align:middle;color:#111}
+  #screen-bitacora .bt-hoja .h-title{font-size:17px;font-weight:800;text-align:center;letter-spacing:.03em}
+  #screen-bitacora .bt-hoja .h-band{background:#1f4e79;color:#fff;font-weight:800;text-align:center;text-transform:uppercase;font-size:11.5px;letter-spacing:.04em}
+  #screen-bitacora .bt-hoja .h-lbl{background:#eef2f7;font-weight:700}
+  #screen-bitacora .bt-hoja .h-logo{font-weight:800;color:#1f4e79;text-align:center;font-size:13px}
+  #screen-bitacora .bt-hoja .h-val{white-space:pre-wrap}
+  #screen-bitacora .bt-hoja .h-events{height:210px;vertical-align:top;white-space:pre-wrap}
+  #screen-bitacora .bt-hoja .h-firma{height:46px;text-align:center;vertical-align:bottom;font-size:10px;color:#333}
+  #bt-preview-wrap{overflow:auto;max-height:74vh;background:#334;border-radius:12px;padding:16px}
+  @media print{
+    body *{visibility:hidden !important}
+    #bt-preview-wrap,#bt-preview-wrap *{visibility:visible !important}
+    #bt-preview-wrap{position:absolute;left:0;top:0;max-height:none;background:#fff;padding:0}
+    #screen-bitacora .bt-hoja{box-shadow:none;width:100%}
+    .bt-hoja-page{page-break-after:always}
+  }
+</style>
+<div class="screen" id="screen-bitacora">
+  <div class="wrap">
+    <div class="topbar">
+      <button class="back-btn" onclick="goTo('ejecdiaria')">← Ejecución diaria</button>
+      <div style="flex:1">
+        <h1>📓 Bitácora de Obra</h1>
+        <h2>Formato GTO-P-04-R-01 · diligenciamiento virtual · listo para imprimir y firmar</h2>
+      </div>
+    </div>
+    <div class="topbar" style="margin-bottom:8px">
+      <button class="bt-btn primary" onclick="bitacoraNueva()">➕ Nueva bitácora</button>
+      <span style="color:#64748b;font-size:12px">Ver:</span>
+      <select id="bt-modo" onchange="bitacoraModo()"><option value="dia">Por día</option><option value="rango">Por rango</option></select>
+      <label id="bt-lbl-d" style="color:#94a3b8;font-size:12px">Fecha <input type="date" id="bt-f-dia"></label>
+      <label id="bt-lbl-r1" style="display:none;color:#94a3b8;font-size:12px">Desde <input type="date" id="bt-f-desde"></label>
+      <label id="bt-lbl-r2" style="display:none;color:#94a3b8;font-size:12px">Hasta <input type="date" id="bt-f-hasta"></label>
+      <button class="bt-btn" onclick="bitacoraListar()">🔎 Buscar</button>
+      <span id="bt-estado" style="color:#64748b;font-size:11.5px"></span>
+    </div>
+
+    <div class="bt-two">
+      <div>
+        <div class="bt-panel" id="bt-list-panel">
+          <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Bitácoras guardadas</div>
+          <div id="bt-list"><div style="color:#64748b;font-size:12px;text-align:center;padding:14px">Elige una fecha y presiona Buscar.</div></div>
+        </div>
+        <!-- Formulario (oculto hasta Nueva/editar) -->
+        <div class="bt-panel" id="bt-form-panel" style="display:none;margin-top:0">
+          <div id="bt-form"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px" id="bt-preview-actions" style="display:none">
+          <button class="bt-btn amber" onclick="bitacoraGuardar()" id="bt-btn-guardar" style="display:none">💾 Guardar</button>
+          <button class="bt-btn" onclick="bitacoraDescargarExcel()" id="bt-btn-xls" style="display:none">⬇ Descargar Excel</button>
+          <button class="bt-btn" onclick="bitacoraImprimir()" id="bt-btn-print" style="display:none">🖨 Imprimir / PDF</button>
+          <button class="bt-btn" onclick="bitacoraEditar()" id="bt-btn-editar" style="display:none">✏ Editar</button>
+        </div>
+        <div id="bt-preview-wrap"><div style="color:#94a3b8;text-align:center;padding:60px 10px">La previsualización aparecerá aquí.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ VISTA CONTROL DE MAQUINARIA ============ -->
 <style>
   #screen-maq .wrap{max-width:1500px;margin:0 auto;padding:18px}
@@ -12395,6 +12483,10 @@ function authEntrar(d){
   var esAdmin=['GERENCIA1','GERENCIA2','DIRECTOR','DESARROLLO'].indexOf(d.perfil)>=0;
   var fab=document.getElementById('admin-fab'); if(fab) fab.style.display=esAdmin?'block':'none';
   if(window.AUTH_APLICAR_PERFIL) try{ AUTH_APLICAR_PERFIL(d.perfil, d.modulos); }catch(e){}
+  /* fotos: el mosaico/índice intentan cargar antes del login (sin token → NO_AUTH).
+     Con la sesión ya activa, se reinician las banderas y se recargan con token válido. */
+  try{ MOSAICO_LOADED=false; FOTOS_LOADED=false; }catch(e){}
+  try{ if(typeof mosaicoCargar==='function') setTimeout(mosaicoCargar, 200); }catch(e){}
   if(typeof boot==='function') boot();
 }
 function authLogin(){
