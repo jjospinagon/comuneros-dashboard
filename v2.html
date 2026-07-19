@@ -11545,6 +11545,21 @@ function cronoInit(){
     }
   });
 }
+
+/* completa descripciones vacias con el catalogo oficial de items (hoja CANTIDADES) */
+function cronoNombres(){
+  cronoJsonp({action:'cant_catalogo'}).then(function(r){
+    if(!(r&&r.items)) return;
+    var map={};
+    r.items.forEach(function(it){ var k=parseFloat(it.n); if(!isNaN(k)) map[k.toFixed(2)]=it.d; });
+    var n=0;
+    CRONO_DATA.actividades.forEach(function(a){
+      var k=parseFloat(a.item); k=isNaN(k)?String(a.item):k.toFixed(2);
+      if((!a.desc||!a.desc.trim()) && map[k]){ a.desc=map[k]; n++; }
+    });
+    if(n) cronoRender();
+  });
+}
 function cronoArrancar(){
   CRONO_LOADED=true;
   var caps={}; CRONO_DATA.actividades.forEach(function(a){ caps[a.cap]=1; });
@@ -11555,6 +11570,7 @@ function cronoArrancar(){
     w.addEventListener('wheel', function(ev){ if(!ev.ctrlKey) return; ev.preventDefault(); cronoZoomStep(ev.deltaY<0?1:-1); }, {passive:false});
   }
   cronoRender();
+  cronoNombres();
 }
 function cronoZoom(z){ CRONO_PX=(z==='mes')?2.6:(z==='semana')?7:22; cronoRender(); }
 function cronoZoomStep(dir){ CRONO_PX=Math.max(0.9, Math.min(40, CRONO_PX*(dir>0?1.3:1/1.3))); cronoRender(); }
@@ -11862,6 +11878,7 @@ function cronoActualizarExcel(){
         CRONO_DEPS=d.deps||[];
         est.textContent='✓ Actualizado desde el Excel · corte '+(d.actualizado||'');
         cronoRender();
+        cronoNombres();
       } else est.textContent='Sincronizó pero no pude recargar; refresca la página.';
     });
   });
