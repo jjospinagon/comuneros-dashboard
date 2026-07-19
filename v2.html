@@ -1575,7 +1575,8 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <button class="crb" id="crono-link-btn" onclick="cronoModoVinculo()">🔗 Vincular</button>
       <button class="crb" id="crono-refresh-btn" onclick="cronoActualizarExcel()" title="Trae al cockpit lo último del Excel">🔄 Actualizar</button>
       <button class="crb" id="crono-save-btn" onclick="cronoGuardarExcel()" title="Escribe en el Excel las fechas cambiadas aquí">💾 Guardar en Excel</button>
-      <button class="crb" onclick="cronoPDF()" title="Descarga en una sola hoja exactamente lo que ves">⬇ PDF</button>
+      <button class="crb" id="crono-cols-btn" onclick="cronoColsMenu()" title="Elige qué columnas se ven (arrastra el divisor para agrandar las barras)">🧮 Columnas</button>
+      <button class="crb" onclick="cronoPDF()" title="Elige qué columnas exportar y descarga en una sola hoja">⬇ PDF</button>
       <select id="crono-cap-filtro" onchange="cronoRender()" style="background:#0d1424;border:1px solid rgba(255,255,255,.14);color:#e5e7eb;border-radius:9px;padding:7px 10px;font-size:12px"></select>
       <span id="crono-estado" style="color:#64748b;font-size:11px"></span>
       <span id="crono-hint" style="color:#fbbf24;font-size:11px"></span>
@@ -11492,6 +11493,44 @@ var CRONO_PX=7; /* px por dia (zoom continuo) */
 var CRONO_ROWH=30, CRONO_LEFTW=560, CRONO_HDR=44;
 var CRONO_T0=null, CRONO_T1=null;
 var CRONO_CAP_COLORES=['#f59e0b','#a3e635','#fb923c','#38bdf8','#f472b6','#22d3ee','#c084fc','#4ade80'];
+/* anchos de columnas del panel izquierdo (px) — arrastrables */
+var CRONO_COLW={item:38, desc:224, ini:78, fin:78, pred:74, pct:44};
+/* visibilidad de columnas (pantalla + PDF) */
+var CRONO_COLS={ini:true, fin:true, pred:true, pct:true, resp:true};
+try{ var _cw=JSON.parse(localStorage.getItem('crono_colw_v1')||'null'); if(_cw) for(var _k in _cw){ if(CRONO_COLW[_k]!=null) CRONO_COLW[_k]=_cw[_k]; } }catch(_e){}
+try{ var _cc=JSON.parse(localStorage.getItem('crono_cols_v1')||'null'); if(_cc) for(var _k2 in _cc){ if(CRONO_COLS[_k2]!=null) CRONO_COLS[_k2]=!!_cc[_k2]; } }catch(_e){}
+function cronoColsGuardar(){ try{ localStorage.setItem('crono_colw_v1',JSON.stringify(CRONO_COLW)); localStorage.setItem('crono_cols_v1',JSON.stringify(CRONO_COLS)); }catch(e){} }
+/* arrastre del divisor (redimensiona Actividad => área de barras) y de columnas */
+function cronoColDrag(ev, key){
+  ev.preventDefault(); ev.stopPropagation();
+  var startX=ev.clientX, tgt=(key==='split')?'desc':key, startW=CRONO_COLW[tgt];
+  var minW=(tgt==='pct')?30:(tgt==='desc')?90:44;
+  var raf=null;
+  document.body.style.cursor='col-resize'; document.body.style.userSelect='none';
+  function mv(e){
+    CRONO_COLW[tgt]=Math.max(minW, startW+(e.clientX-startX));
+    if(!raf) raf=requestAnimationFrame(function(){ raf=null; cronoRender(); });
+  }
+  function up(){ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); document.body.style.cursor=''; document.body.style.userSelect=''; cronoColsGuardar(); cronoRender(); }
+  document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+}
+/* menú desplegable de columnas visibles */
+function cronoColsMenu(){
+  var m=document.getElementById('crono-cols-menu');
+  if(m){ m.parentNode.removeChild(m); return; }
+  var btn=document.getElementById('crono-cols-btn');
+  var r=btn.getBoundingClientRect();
+  m=document.createElement('div'); m.id='crono-cols-menu';
+  m.style.cssText='position:fixed;left:'+r.left+'px;top:'+(r.bottom+4)+'px;z-index:10060;background:#111a30;border:1px solid rgba(148,163,184,.3);border-radius:10px;padding:8px 10px;box-shadow:0 12px 30px rgba(0,0,0,.5);font-size:12px;color:#e5e7eb;min-width:150px';
+  var defs=[['ini','Inicio'],['fin','Fin'],['pred','Predecesoras'],['pct','% Avance'],['resp','Responsable']];
+  m.innerHTML='<div style="font-weight:700;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Columnas visibles</div>'+
+    defs.map(function(d){ return '<label style="display:flex;align-items:center;gap:8px;padding:4px 2px;cursor:pointer"><input type="checkbox" data-col="'+d[0]+'" '+(CRONO_COLS[d[0]]?'checked':'')+' style="accent-color:#22d3ee">'+d[1]+'</label>'; }).join('');
+  document.body.appendChild(m);
+  m.querySelectorAll('input[data-col]').forEach(function(chk){
+    chk.addEventListener('change', function(){ CRONO_COLS[chk.getAttribute('data-col')]=chk.checked; cronoColsGuardar(); cronoRender(); });
+  });
+  setTimeout(function(){ document.addEventListener('mousedown', function cerrar(e){ if(m && !m.contains(e.target) && e.target.id!=='crono-cols-btn'){ if(m.parentNode)m.parentNode.removeChild(m); document.removeEventListener('mousedown',cerrar); } }); }, 0);
+}
 
 function cronoCapColor(cap){
   if(!CRONO_DATA) return CRONO_CAP_COLORES[0];
@@ -11626,7 +11665,18 @@ function cronoRender(){
     b.classList.toggle('crz-on', on);
   });
   var movil=window.innerWidth<760;
-  var leftw=movil?210:560; CRONO_LEFTW=leftw;
+  var CW=CRONO_COLW, GAP=6, PADL=10, PADR=8;
+  var showIni=!movil&&CRONO_COLS.ini, showFin=!movil&&CRONO_COLS.fin, showPred=!movil&&CRONO_COLS.pred, showPct=CRONO_COLS.pct;
+  var wItem=movil?30:CW.item, wDesc=movil?Math.max(CW.desc,110):CW.desc;
+  var cols=[{k:'item',w:wItem},{k:'desc',w:wDesc}];
+  if(showIni) cols.push({k:'ini',w:CW.ini});
+  if(showFin) cols.push({k:'fin',w:CW.fin});
+  if(showPred) cols.push({k:'pred',w:CW.pred});
+  if(showPct) cols.push({k:'pct',w:CW.pct});
+  var _xc=PADL, colEdge={};
+  cols.forEach(function(c){ _xc+=c.w; colEdge[c.k]=_xc; _xc+=GAP; });
+  var leftw=PADL + cols.reduce(function(s,c){return s+c.w;},0) + GAP*(cols.length-1) + PADR;
+  CRONO_LEFTW=leftw;
   var acts=CRONO_DATA.actividades, t0=null,t1=null;
   acts.forEach(function(a){ a.tramos.forEach(function(t){
     var i=cronoD(t[0]), f=cronoD(t[1]);
@@ -11664,14 +11714,23 @@ function cronoRender(){
     }
   }
   /* header panel izq */
-  h+='<div style="position:absolute;left:0;top:0;width:'+leftw+'px;height:'+CRONO_HDR+'px;background:'+CT.hdr+';border-right:2px solid '+CT.border+';border-bottom:1px solid '+CT.border+';z-index:30;display:flex;align-items:flex-end;padding:0 0 6px 10px;box-sizing:border-box;gap:6px">'+
-    '<span style="color:#64748b;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;flex:0 0 '+(movil?30:38)+'px">Ítem</span>'+
-    '<span style="color:#64748b;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;flex:1">Actividad</span>'+
-    (movil?'' :
-    '<span style="color:#64748b;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;flex:0 0 78px">Inicio</span>'+
-    '<span style="color:#64748b;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;flex:0 0 78px">Fin</span>'+
-    '<span style="color:#64748b;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;flex:0 0 74px">Pred.</span>')+
-    '<span style="color:#64748b;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;flex:0 0 34px;text-align:right;padding-right:8px">%</span></div>';
+  var thStyle='color:#64748b;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;';
+  h+='<div style="position:absolute;left:0;top:0;width:'+leftw+'px;height:'+CRONO_HDR+'px;background:'+CT.hdr+';border-right:2px solid '+CT.border+';border-bottom:1px solid '+CT.border+';z-index:30;display:flex;align-items:flex-end;padding:0 '+PADR+'px 6px '+PADL+'px;box-sizing:border-box;gap:'+GAP+'px">'+
+    '<span style="'+thStyle+'flex:0 0 '+wItem+'px">Ítem</span>'+
+    '<span style="'+thStyle+'flex:0 0 '+wDesc+'px">Actividad</span>'+
+    (showIni?'<span style="'+thStyle+'flex:0 0 '+CW.ini+'px">Inicio</span>':'')+
+    (showFin?'<span style="'+thStyle+'flex:0 0 '+CW.fin+'px">Fin</span>':'')+
+    (showPred?'<span style="'+thStyle+'flex:0 0 '+CW.pred+'px">Pred.</span>':'')+
+    (showPct?'<span style="'+thStyle+'flex:0 0 '+CW.pct+'px;text-align:right">%</span>':'')+'</div>';
+  /* asas de redimensionado de columnas + divisor principal (no en móvil) */
+  if(!movil){
+    ['desc','ini','fin','pred'].forEach(function(k){
+      if(colEdge[k]==null) return;
+      h+='<div onmousedown="cronoColDrag(event,\''+k+'\')" title="Arrastra para ajustar la columna" style="position:absolute;left:'+(colEdge[k]-3)+'px;top:0;width:6px;height:'+CRONO_HDR+'px;cursor:col-resize;z-index:31"></div>';
+    });
+    /* divisor grande: línea a la derecha de las columnas, antes de las barras */
+    h+='<div onmousedown="cronoColDrag(event,\'split\')" title="Arrastra para agrandar o reducir el área de barras" style="position:absolute;left:'+(leftw-3)+'px;top:0;width:7px;height:'+H+'px;cursor:col-resize;z-index:32;background:linear-gradient(90deg,transparent,'+CT.border+',transparent)"></div>';
+  }
 
   filas.forEach(function(f, idx){
     var y=CRONO_HDR+idx*CRONO_ROWH;
@@ -11687,7 +11746,7 @@ function cronoRender(){
       h+='<div style="position:absolute;left:0;top:'+y+'px;width:'+leftw+'px;height:'+CRONO_ROWH+'px;background:'+CT.capBg+';border-right:2px solid '+CT.border+';z-index:26;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;pointer-events:none">'+
         '<span style="width:9px;height:9px;border-radius:2px;background:'+cc+';margin-right:8px;flex:0 0 auto"></span>'+
         '<span style="color:'+CT.tx+';font-size:11.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">'+(col?'▸':'▾')+' '+f.cap+'</span>'+
-        '<span style="color:'+cc+';font-size:10.5px;font-weight:800;padding-right:8px">'+Math.round(avCap*100)+'%</span></div>';
+        (showPct?'<span style="color:'+cc+';font-size:10.5px;font-weight:800;padding-right:8px">'+(avCap*100).toFixed(2)+'%</span>':'')+'</div>';
       if(minI&&maxF){
         var xC=cronoX(minI), wC=Math.max(cronoDias(minI,maxF)*pxd,4);
         h+='<div style="position:absolute;left:'+xC+'px;top:'+(y+11)+'px;width:'+wC+'px;height:8px;border-radius:2px;background:'+cc+';opacity:.35;z-index:6;pointer-events:none"></div>';
@@ -11702,14 +11761,13 @@ function cronoRender(){
     var csv=cronoTramosCSV(a);
     var pred=cronoPredTexto(a.item);
     h+='<div style="position:absolute;left:0;top:'+y+'px;width:'+W+'px;height:'+CRONO_ROWH+'px;border-bottom:1px solid '+CT.lineD+'"></div>';
-    h+='<div class="crono-fila-izq" data-item="'+a.item+'" style="position:absolute;left:0;top:'+y+'px;width:'+leftw+'px;height:'+CRONO_ROWH+'px;border-right:2px solid '+CT.border+';background:'+selBg+';z-index:25;display:flex;align-items:center;gap:6px;padding:0 0 0 10px;box-sizing:border-box;font-size:11px">'+
-      '<span onclick="cronoClickFila(\''+a.item+'\')" style="color:'+cc2+';font-weight:800;flex:0 0 '+(movil?30:38)+'px;font-size:10.5px;cursor:'+(CRONO_MODO_LINK?'crosshair':'default')+'">'+a.item+'</span>'+
-      '<span onclick="cronoClickFila(\''+a.item+'\')" title="'+(a.desc||'').replace(/"/g,'&quot;')+'" style="color:'+CT.tx2+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;cursor:'+(CRONO_MODO_LINK?'crosshair':'default')+'">'+(a.desc||('Ítem '+a.item))+'</span>'+
-      (movil?'' :
-      '<span onclick="cronoFechaAbrir(\''+a.item+'\')" title="'+csv.ini+'" style="color:#7dd3fc;flex:0 0 78px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(125,211,252,.5)">'+csv.ini.split(',')[0]+(a.tramos.length>1?' +'+(a.tramos.length-1):'')+'</span>'+
-      '<span onclick="cronoFechaAbrir(\''+a.item+'\')" title="'+csv.fin+'" style="color:#7dd3fc;flex:0 0 78px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(125,211,252,.5)">'+csv.fin.split(',').slice(-1)[0]+(a.tramos.length>1?' ·'+a.tramos.length+'et':'')+'</span>'+
-      '<span onclick="cronoPredAbrir(\''+a.item+'\')" title="'+(pred||'Sin predecesoras — clic para agregar')+'" style="color:'+(pred?'#fbbf24':'#475569')+';flex:0 0 74px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(251,191,36,.4)">'+(pred||'—')+'</span>')+
-      '<span style="flex:0 0 34px;text-align:right;padding-right:8px;font-size:10px;font-weight:800;color:'+(a.avance>=1?'#4ade80':(a.avance>0?'#fbbf24':'#64748b'))+'">'+Math.round(Math.min(a.avance,9.99)*100)+'%</span></div>';
+    h+='<div class="crono-fila-izq" data-item="'+a.item+'" style="position:absolute;left:0;top:'+y+'px;width:'+leftw+'px;height:'+CRONO_ROWH+'px;border-right:2px solid '+CT.border+';background:'+selBg+';z-index:25;display:flex;align-items:center;gap:'+GAP+'px;padding:0 '+PADR+'px 0 '+PADL+'px;box-sizing:border-box;font-size:11px">'+
+      '<span onclick="cronoClickFila(\''+a.item+'\')" style="color:'+cc2+';font-weight:800;flex:0 0 '+wItem+'px;font-size:10.5px;cursor:'+(CRONO_MODO_LINK?'crosshair':'default')+'">'+a.item+'</span>'+
+      '<span onclick="cronoClickFila(\''+a.item+'\')" title="'+(a.desc||'').replace(/"/g,'&quot;')+'" style="color:'+CT.tx2+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 '+wDesc+'px;cursor:'+(CRONO_MODO_LINK?'crosshair':'default')+'">'+(a.desc||('Ítem '+a.item))+'</span>'+
+      (showIni?'<span onclick="cronoFechaAbrir(\''+a.item+'\')" title="'+csv.ini+'" style="color:#7dd3fc;flex:0 0 '+CW.ini+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(125,211,252,.5)">'+csv.ini.split(',')[0]+(a.tramos.length>1?' +'+(a.tramos.length-1):'')+'</span>':'')+
+      (showFin?'<span onclick="cronoFechaAbrir(\''+a.item+'\')" title="'+csv.fin+'" style="color:#7dd3fc;flex:0 0 '+CW.fin+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(125,211,252,.5)">'+csv.fin.split(',').slice(-1)[0]+(a.tramos.length>1?' ·'+a.tramos.length+'et':'')+'</span>':'')+
+      (showPred?'<span onclick="cronoPredAbrir(\''+a.item+'\')" title="'+(pred||'Sin predecesoras — clic para agregar')+'" style="color:'+(pred?'#fbbf24':'#475569')+';flex:0 0 '+CW.pred+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(251,191,36,.4)">'+(pred||'—')+'</span>':'')+
+      (showPct?'<span style="flex:0 0 '+CW.pct+'px;text-align:right;font-size:10px;font-weight:800;color:'+(a.avance>=1?'#4ade80':(a.avance>0?'#fbbf24':'#64748b'))+'">'+(Math.min(a.avance,9.99)*100).toFixed(2)+'%</span>':'')+'</div>';
     /* barras */
     var durTotal=0; a.tramos.forEach(function(t){ durTotal+=Math.max(cronoDias(cronoD(t[0]),cronoD(t[1])),1); });
     var diasAv=Math.min(a.avance,1)*durTotal;
@@ -11726,7 +11784,7 @@ function cronoRender(){
       lastX=x+wpx;
     });
     /* responsable a la derecha de la ultima barra (estilo Project) */
-    if(a.resp && pxd>=2){
+    if(a.resp && pxd>=2 && CRONO_COLS.resp){
       h+='<div style="position:absolute;left:'+(lastX+8)+'px;top:'+(y+8)+'px;height:14px;line-height:14px;color:'+CT.mut+';font-size:9.5px;white-space:nowrap;z-index:9;pointer-events:none">'+a.resp+'</div>';
     }
   });
