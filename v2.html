@@ -11970,13 +11970,40 @@ function cronoGuardarExcel(){
 }
 
 /* ---- PDF de una sola hoja con lo visible ---- */
+/* ---- PDF: primero pregunta qué columnas exportar ---- */
 function cronoPDF(){
+  var prev=document.getElementById('crono-pdf-modal'); if(prev) prev.parentNode.removeChild(prev);
+  var ov=document.createElement('div'); ov.id='crono-pdf-modal';
+  ov.style.cssText='position:fixed;inset:0;z-index:10070;background:rgba(2,6,18,.62);display:flex;align-items:center;justify-content:center';
+  var defs=[['ini','Inicio'],['fin','Fin'],['pred','Predecesoras'],['pct','% Avance'],['resp','Responsable']];
+  ov.innerHTML='<div style="background:#0f1830;border:1px solid rgba(148,163,184,.28);border-radius:16px;padding:20px 22px;width:340px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.6);color:#e5e7eb;font-family:Inter,system-ui,sans-serif">'+
+    '<div style="font-size:15px;font-weight:800;margin-bottom:4px">⬇ Exportar cronograma a PDF</div>'+
+    '<div style="font-size:11.5px;color:#94a3b8;margin-bottom:12px">Selecciona qué columnas quieres que aparezcan (por seguridad). El PDF respeta el zoom y lo que está expandido/colapsado en pantalla.</div>'+
+    defs.map(function(d){ return '<label style="display:flex;align-items:center;gap:9px;padding:6px 2px;cursor:pointer;font-size:13px"><input type="checkbox" data-pcol="'+d[0]+'" '+(CRONO_COLS[d[0]]?'checked':'')+' style="accent-color:#22d3ee;width:15px;height:15px">'+d[1]+'</label>'; }).join('')+
+    '<div style="display:flex;gap:8px;margin-top:16px">'+
+    '<button onclick="(function(){var m=document.getElementById(\'crono-pdf-modal\');if(m)m.parentNode.removeChild(m);})()" style="flex:1;background:transparent;border:1px solid rgba(148,163,184,.3);color:#cbd5e1;border-radius:9px;padding:9px;font-size:13px;cursor:pointer">Cancelar</button>'+
+    '<button id="crono-pdf-go" style="flex:2;background:#22d3ee;border:none;color:#04121a;font-weight:800;border-radius:9px;padding:9px;font-size:13px;cursor:pointer">Generar PDF</button>'+
+    '</div></div>';
+  document.body.appendChild(ov);
+  document.getElementById('crono-pdf-go').addEventListener('click', function(){
+    var opts={ini:false,fin:false,pred:false,pct:false,resp:false};
+    ov.querySelectorAll('input[data-pcol]').forEach(function(c){ opts[c.getAttribute('data-pcol')]=c.checked; });
+    ov.parentNode.removeChild(ov);
+    cronoPDFGenerar(opts);
+  });
+}
+function cronoPDFGenerar(opts){
   var est=document.getElementById('crono-estado');
   est.textContent='Generando PDF…';
   function go(){
     try{
       var filas=cronoFilas(), pxd=CRONO_PX;
-      var HDR=44, ROW=24, leftw=520;
+      var HDR=46, ROW=24;
+      var descX=40, descW=270;
+      var cW={ini:64,fin:64,pred:70,pct:40};
+      var colX={}, cx=descX+descW;
+      ['ini','fin','pred','pct'].forEach(function(k){ if(opts[k]){ colX[k]=cx; cx+=cW[k]; } });
+      var leftw=cx+10;
       var t0=CRONO_T0, t1=CRONO_T1;
       var tlW=cronoDias(t0,t1)*pxd;
       var W=Math.round(leftw+tlW+150), H=Math.round(HDR+filas.length*ROW+18);
@@ -11994,6 +12021,14 @@ function cronoPDF(){
         if(m.getMonth()%2){ g.fillStyle='#f2f5f9'; g.fillRect(x,HDR,wpx,H-HDR); }
         m=mf;
       }
+      /* encabezados de columnas seleccionadas */
+      g.fillStyle='#64748b'; g.font='700 8px Arial';
+      g.textAlign='left'; g.fillText('ÍTEM',6,HDR-4); g.fillText('ACTIVIDAD',descX,HDR-4);
+      g.textAlign='center';
+      if(opts.ini) g.fillText('INICIO', colX.ini+cW.ini/2, HDR-4);
+      if(opts.fin) g.fillText('FIN', colX.fin+cW.fin/2, HDR-4);
+      if(opts.pred) g.fillText('PRED.', colX.pred+cW.pred/2, HDR-4);
+      if(opts.pct){ g.textAlign='right'; g.fillText('%', colX.pct+cW.pct-4, HDR-4); }
       /* filas */
       var yDe={}, actDe={};
       filas.forEach(function(f,idx){
@@ -12020,10 +12055,15 @@ function cronoPDF(){
         g.fillStyle='#b45309'; g.font='700 9px Arial'; g.textAlign='left';
         g.fillText(a.item, 6, y+15);
         g.fillStyle='#1e293b'; g.font='9px Arial';
-        var d=(a.desc||('Ítem '+a.item)); if(d.length>62) d=d.slice(0,60)+'…';
-        g.fillText(d, 40, y+15);
-        g.fillStyle='#475569'; g.textAlign='right';
-        g.fillText(Math.round(Math.min(a.avance,9.99)*100)+'%', leftw-8, y+15);
+        var maxc=Math.floor(descW/5.2);
+        var d=(a.desc||('Ítem '+a.item)); if(d.length>maxc) d=d.slice(0,maxc-1)+'…';
+        g.fillText(d, descX, y+15);
+        var csv=cronoTramosCSV(a);
+        g.font='8px Arial'; g.fillStyle='#0f5da8'; g.textAlign='center';
+        if(opts.ini) g.fillText(csv.ini.split(',')[0]+(a.tramos.length>1?' +'+(a.tramos.length-1):''), colX.ini+cW.ini/2, y+15);
+        if(opts.fin) g.fillText(csv.fin.split(',').slice(-1)[0], colX.fin+cW.fin/2, y+15);
+        if(opts.pred){ var pr=cronoPredTexto(a.item)||'—'; if(pr.length>11)pr=pr.slice(0,10)+'…'; g.fillStyle='#92400e'; g.fillText(pr, colX.pred+cW.pred/2, y+15); }
+        if(opts.pct){ g.fillStyle='#475569'; g.font='700 9px Arial'; g.textAlign='right'; g.fillText((Math.min(a.avance,9.99)*100).toFixed(2)+'%', colX.pct+cW.pct-4, y+15); }
         g.textAlign='left';
         var durTotal=0; a.tramos.forEach(function(t){ durTotal+=Math.max(cronoDias(cronoD(t[0]),cronoD(t[1])),1); });
         var diasAv=Math.min(a.avance,1)*durTotal, lastX=leftw;
@@ -12037,7 +12077,7 @@ function cronoPDF(){
           if(fill>0){ g.fillStyle=cc2; g.fillRect(x,y+8,(fill/dur)*wpx,9); }
           lastX=Math.max(lastX,x+wpx);
         });
-        if(a.resp){ g.fillStyle='#64748b'; g.font='8px Arial'; g.fillText(a.resp, lastX+6, y+15); }
+        if(opts.resp && a.resp){ g.fillStyle='#64748b'; g.font='8px Arial'; g.fillText(a.resp, lastX+6, y+15); }
       });
       /* lineas y rotulos de mes */
       m=new Date(t0);
