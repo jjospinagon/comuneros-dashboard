@@ -11810,16 +11810,15 @@ function bitacoraGuardar(){
   /* 1) guarda local siempre (respaldo inmediato) */
   var loc=bitaLocal().filter(function(x){ return x.id!==r.id; });
   var rl=JSON.parse(JSON.stringify(r)); rl._local=true; loc.unshift(rl); bitaLocalSet(loc);
-  /* 2) intenta backend: guarda JSON + Excel en Drive (año/mes/día) */
-  bitacoraExcelB64(r).then(function(b64){
-    return bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:JSON.stringify(r), xlsx_b64:b64||'', nombre:'GTO-P-04-R-01 Bitacora '+r.fecha+'.xlsx'});
-  }).then(function(res){
+  /* 2) backend: guarda el registro y GENERA el Excel en el servidor,
+        dejándolo en Drive dentro de Año/Mes/Día (no se manda el archivo por la URL) */
+  bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:JSON.stringify(r), nombre:'GTO-P-04-R-01 Bitacora '+r.fecha+'.xlsx'}).then(function(res){
     if(btn){ btn.disabled=false; btn.textContent='💾 Guardar'; }
     if(res&&res.ok){
-      est.textContent='✓ Guardada en Drive: '+r.fecha+(res.carpeta?(' · '+res.carpeta):'');
+      est.textContent='✓ Guardada en Drive · carpeta '+(res.carpeta||r.fecha)+' · Excel generado';
       var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr);
     } else {
-      est.textContent='✓ Guardada localmente. (Drive se activará al desplegar el backend de bitácora.)';
+      est.textContent='✓ Guardada en este equipo (no hubo respuesta del servidor; se reintenta al volver a guardar).';
     }
     BITA_STATE.editing=false; bitacoraCancelar(); bitacoraListar(); bitacoraPreview(r);
   });
