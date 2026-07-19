@@ -11885,6 +11885,26 @@ function bitacoraDescargarExcel(){
 <script>
 /* ====================== CRONOGRAMA GANTT (crono) v2 estilo Project ====================== */
 var CRONO_LOADED=false, CRONO_DATA=null, CRONO_DEPS=[], CRONO_COLAPSO={}, CRONO_MODO_LINK=false;
+/* fuente activa del cronograma: oficial (Excel) o propio (localStorage) */
+var CRONO_SRC={tipo:'oficial', id:'', nombre:'CRONOGRAMA OBRA COMUNEROS'};
+var CRONO_CUSTOM_KEY='cronos_custom_v1';
+function cronoCustomAll(){ try{ return JSON.parse(localStorage.getItem(CRONO_CUSTOM_KEY)||'[]'); }catch(e){ return []; } }
+function cronoCustomSet(a){ try{ localStorage.setItem(CRONO_CUSTOM_KEY, JSON.stringify(a)); }catch(e){} }
+function cronoCustomGet(id){ return cronoCustomAll().filter(function(c){return c.id===id;})[0]; }
+function cronoCustomSave(){
+  if(CRONO_SRC.tipo!=='custom' || !CRONO_DATA) return;
+  var payload={ id:CRONO_SRC.id, nombre:CRONO_SRC.nombre,
+    actividades:CRONO_DATA.actividades.map(function(a){ var c=cronoTramosCSV(a); return {item:a.item,desc:a.desc,cap:a.cap,resp:a.resp||'',avance:a.avance||0,inicios:c.ini,fines:c.fin,vrTotal:a.vrTotal||0}; }),
+    deps:CRONO_DEPS, actualizado:new Date().toISOString() };
+  var found=false, all=cronoCustomAll().map(function(c){ if(c.id===CRONO_SRC.id){ found=true; return payload; } return c; });
+  if(!found) all.unshift(payload);
+  cronoCustomSet(all);
+}
+function cronoModoUI(){
+  var custom=CRONO_SRC.tipo==='custom';
+  ['crono-addact-btn','crono-rename-btn'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=custom?'':'none'; });
+  ['crono-refresh-btn','crono-save-btn'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=custom?'none':''; });
+}
 var CRONO_SEL_ORIGEN=null, CRONO_SEL_DESTINO=null, CRONO_EDIT_ITEM=null, CRONO_BACKEND=false;
 var CRONO_PX=7; /* px por dia (zoom continuo) */
 var CRONO_ROWH=30, CRONO_LEFTW=560, CRONO_HDR=44;
@@ -11964,26 +11984,164 @@ function cronoCSVaTramos(inis,fins){
   return out;
 }
 function cronoInit(){
-  if(CRONO_LOADED){ cronoRender(); return; }
+  cronoModoUI();
   var g=document.getElementById('crono-grid');
+  var tit=document.getElementById('crono-titulo');
   g.innerHTML='<div style="padding:40px;text-align:center;color:#64748b">Cargando cronograma…</div>';
+  /* --- cronograma propio (editable, en este navegador) --- */
+  if(CRONO_SRC.tipo==='custom'){
+    var c=cronoCustomGet(CRONO_SRC.id)||{actividades:[],deps:[],nombre:CRONO_SRC.nombre};
+    CRONO_SRC.nombre=c.nombre||CRONO_SRC.nombre; CRONO_BACKEND=false; CRONO_COLAPSO={};
+    var acts=(c.actividades||[]).map(function(a){ var o={item:a.item,desc:a.desc,cap:a.cap,resp:a.resp||'',avance:a.avance||0,vrTotal:a.vrTotal||0}; o.tramos=cronoCSVaTramos(a.inicios,a.fines); return o; }).filter(function(a){return a.tramos.length;});
+    CRONO_DATA={actividades:acts}; CRONO_DEPS=c.deps||[];
+    if(tit) tit.textContent='📝 '+(c.nombre||CRONO_SRC.nombre);
+    document.getElementById('crono-estado').textContent='Cronograma propio · edición libre (se guarda en este navegador)';
+    cronoArrancar();
+    return;
+  }
+  /* --- cronograma oficial (del Excel) --- */
+  if(tit) tit.textContent='📅 CRONOGRAMA OBRA COMUNEROS';
   cronoJsonp({action:'crono_datos'}).then(function(r){
     if(r && r.ok && r.actividades && r.actividades.length){
       CRONO_BACKEND=true;
       r.actividades.forEach(function(a){ a.tramos=cronoCSVaTramos(a.inicios,a.fines); });
       CRONO_DATA={actividades:r.actividades.filter(function(a){return a.tramos.length;})};
       CRONO_DEPS=r.deps||[];
+      window._cronoOficialCache=CRONO_DATA;
       document.getElementById('crono-estado').textContent='Sincronizado con el Excel · corte '+(r.actualizado||'');
       cronoArrancar();
     } else {
       fetch('cronograma_data.json?v='+Date.now()).then(function(x){return x.json();}).then(function(d){
-        CRONO_DATA=d; CRONO_DEPS=[];
+        CRONO_DATA=d; CRONO_DEPS=[]; CRONO_BACKEND=false;
         try{ CRONO_DEPS=JSON.parse(localStorage.getItem('crono_deps_v1')||'[]'); }catch(e){}
+        window._cronoOficialCache=d;
         document.getElementById('crono-estado').textContent='Datos locales (sin conexión al backend)';
         cronoArrancar();
       }).catch(function(e){ g.innerHTML='<div style="padding:40px;text-align:center;color:#fca5a5">No se pudo cargar el cronograma — '+e+'</div>'; });
     }
   });
+}
+
+/* ---- galería de cronogramas (miniatura + crear) ---- */
+function cronoAbrirOficial(){ CRONO_SRC={tipo:'oficial', id:'', nombre:'CRONOGRAMA OBRA COMUNEROS'}; CRONO_LOADED=false; goTo('crono'); }
+function cronoAbrirCustom(id){ var c=cronoCustomGet(id); if(!c) return; CRONO_SRC={tipo:'custom', id:id, nombre:c.nombre}; CRONO_LOADED=false; goTo('crono'); }
+function cronoCrearNuevo(){
+  var nombre=prompt('Nombre del nuevo cronograma (puedes cambiarlo luego):','Cronograma '+(cronoCustomAll().length+1));
+  if(nombre===null) return; nombre=(nombre||'').trim()||('Cronograma '+(cronoCustomAll().length+1));
+  var id='CR'+Date.now();
+  var all=cronoCustomAll(); all.unshift({id:id, nombre:nombre, actividades:[], deps:[], actualizado:new Date().toISOString()});
+  cronoCustomSet(all);
+  cronoAbrirCustom(id);
+}
+function cronoRenombrar(){
+  if(CRONO_SRC.tipo!=='custom') return;
+  var nv=prompt('Nuevo nombre del cronograma:', CRONO_SRC.nombre);
+  if(nv===null) return; nv=(nv||'').trim(); if(!nv) return;
+  CRONO_SRC.nombre=nv;
+  var all=cronoCustomAll().map(function(c){ if(c.id===CRONO_SRC.id){ c.nombre=nv; } return c; }); cronoCustomSet(all);
+  var tit=document.getElementById('crono-titulo'); if(tit) tit.textContent='📝 '+nv;
+}
+function cronoRenombrarCard(id){
+  var c=cronoCustomGet(id); if(!c) return;
+  var nv=prompt('Nuevo nombre:', c.nombre); if(nv===null) return; nv=(nv||'').trim(); if(!nv) return;
+  var all=cronoCustomAll().map(function(x){ if(x.id===id){ x.nombre=nv; } return x; }); cronoCustomSet(all);
+  cronoHubRender();
+}
+function cronoEliminarCustom(id){
+  var c=cronoCustomGet(id); if(!c) return;
+  if(!confirm('¿Eliminar el cronograma «'+c.nombre+'»? Esta acción no se puede deshacer.')) return;
+  cronoCustomSet(cronoCustomAll().filter(function(x){return x.id!==id;}));
+  cronoHubRender();
+}
+function cronoAvanceEditar(item){
+  if(CRONO_SRC.tipo!=='custom') return;
+  var a=cronoAct(item); if(!a) return;
+  var v=prompt('% de avance de «'+(a.desc||item)+'» (0 a 100):', ((a.avance||0)*100).toFixed(2));
+  if(v===null) return;
+  var num=parseFloat(String(v).replace(',','.')); if(isNaN(num)){ alert('Número inválido'); return; }
+  a.avance=Math.max(0, Math.min(100, num))/100;
+  cronoCustomSave(); cronoRender();
+  document.getElementById('crono-estado').textContent='Avance de '+item+' actualizado ✓';
+}
+function cronoAgregarActividad(){
+  if(CRONO_SRC.tipo!=='custom') return;
+  if(!CRONO_DATA) CRONO_DATA={actividades:[]};
+  var desc=prompt('Descripción de la actividad:',''); if(desc===null) return;
+  var capPrev=(CRONO_DATA.actividades[0]&&CRONO_DATA.actividades[0].cap)||'GENERAL';
+  var cap=prompt('Capítulo / grupo:', capPrev); if(cap===null) return; cap=(cap||'GENERAL').trim()||'GENERAL';
+  var ini=prompt('Fecha de inicio (dd/mm/aaaa):', cronoFmt(new Date())); if(ini===null) return;
+  var fin=prompt('Fecha de fin (dd/mm/aaaa):', cronoFmt(new Date(Date.now()+7*86400000))); if(fin===null) return;
+  var tramos=cronoCSVaTramos(ini,fin);
+  if(!tramos.length){ alert('Fechas inválidas. Usa dd/mm/aaaa y el fin no puede ser anterior al inicio.'); return; }
+  var item=prompt('Ítem / número (identificador):', String(CRONO_DATA.actividades.length+1)); if(item===null) return;
+  item=(item||String(CRONO_DATA.actividades.length+1)).trim();
+  var resp=prompt('Responsable (opcional):','')||'';
+  var a={item:item, desc:desc||('Ítem '+item), cap:cap, resp:resp, avance:0, vrTotal:0}; a.tramos=tramos;
+  CRONO_DATA.actividades.push(a); CRONO_DATA._capIdx=null;
+  cronoCustomSave();
+  cronoArrancar();
+  document.getElementById('crono-estado').textContent='Actividad agregada ✓ · clic en la barra o en Inicio/Fin para editar; % con doble clic no, usa el modal';
+}
+function cronoHubRender(){
+  var grid=document.getElementById('cronohub-grid'); if(!grid) return;
+  function card(oficial,id,nombre,sub,extra){
+    var cid=oficial?'thumb-oficial':('thumb-'+id);
+    var onc=oficial?'cronoAbrirOficial()':("cronoAbrirCustom('"+id+"')");
+    var tools=oficial?'':('<div style="position:absolute;top:8px;right:8px;display:flex;gap:5px;z-index:2">'+
+      '<button title="Renombrar" onclick="event.stopPropagation();cronoRenombrarCard(\''+id+'\')" style="background:rgba(2,6,18,.7);border:1px solid rgba(255,255,255,.2);color:#e5e7eb;border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:12px">✎</button>'+
+      '<button title="Eliminar" onclick="event.stopPropagation();cronoEliminarCustom(\''+id+'\')" style="background:rgba(2,6,18,.7);border:1px solid rgba(239,68,68,.5);color:#fca5a5;border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:12px">🗑</button></div>');
+    return '<div onclick="'+onc+'" style="cursor:pointer;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;position:relative;transition:border-color .15s" onmouseover="this.style.borderColor=\'#22d3ee\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,.1)\'">'+
+      tools+
+      '<canvas id="'+cid+'" width="540" height="200" style="width:100%;height:150px;display:block;background:#0b1020"></canvas>'+
+      '<div style="padding:11px 13px">'+
+        '<div style="font-weight:800;color:#fff;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(oficial?'📅 ':'📝 ')+String(nombre).replace(/</g,'&lt;')+'</div>'+
+        '<div style="color:#94a3b8;font-size:11.5px;margin-top:2px">'+sub+'</div>'+
+        (extra||'')+
+      '</div></div>';
+  }
+  var html=card(true,'','CRONOGRAMA OBRA COMUNEROS','Oficial · sincronizado con el Excel · clic para abrir');
+  var customs=cronoCustomAll();
+  customs.forEach(function(c){ html+=card(false,c.id,c.nombre,((c.actividades||[]).length)+' actividad(es) · propio'); });
+  html+='<div onclick="cronoCrearNuevo()" style="cursor:pointer;border:2px dashed rgba(34,211,238,.4);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:210px;color:#22d3ee;background:rgba(34,211,238,.04)"><div style="font-size:38px;line-height:1">＋</div><div style="font-weight:800;margin-top:6px">Crear cronograma</div><div style="color:#94a3b8;font-size:11px;margin-top:2px">Estructura tipo MS Project, editable</div></div>';
+  grid.innerHTML=html;
+  /* miniaturas */
+  if(window._cronoOficialCache){ cronoMiniThumb('thumb-oficial', window._cronoOficialCache); }
+  else {
+    cronoJsonp({action:'crono_datos'}).then(function(r){
+      var d=null;
+      if(r&&r.ok&&r.actividades){ r.actividades.forEach(function(a){a.tramos=cronoCSVaTramos(a.inicios,a.fines);}); d={actividades:r.actividades.filter(function(a){return a.tramos.length;})}; }
+      if(d){ window._cronoOficialCache=d; cronoMiniThumb('thumb-oficial', d); }
+      else { fetch('cronograma_data.json?v='+Date.now()).then(function(x){return x.json();}).then(function(dd){ window._cronoOficialCache=dd; cronoMiniThumb('thumb-oficial', dd); }).catch(function(){}); }
+    });
+  }
+  customs.forEach(function(c){
+    var acts=(c.actividades||[]).map(function(a){ var o={avance:a.avance||0,cap:a.cap}; o.tramos=cronoCSVaTramos(a.inicios,a.fines); return o; }).filter(function(a){return a.tramos.length;});
+    cronoMiniThumb('thumb-'+c.id, {actividades:acts});
+  });
+}
+function cronoMiniThumb(canvasId, data){
+  var cv=document.getElementById(canvasId); if(!cv) return;
+  var g=cv.getContext('2d'); var W=cv.width, H=cv.height;
+  g.fillStyle='#0b1020'; g.fillRect(0,0,W,H);
+  var acts=(data&&data.actividades)||[];
+  if(!acts.length){ g.fillStyle='#475569'; g.font='16px Arial'; g.textAlign='center'; g.fillText('Sin actividades aún', W/2, H/2); return; }
+  var t0=null,t1=null;
+  acts.forEach(function(a){ (a.tramos||[]).forEach(function(t){ var i=cronoD(t[0]),f=cronoD(t[1]); if(!t0||i<t0)t0=i; if(!t1||f>t1)t1=f; }); });
+  if(!t0||!t1){ return; }
+  var span=Math.max(cronoDias(t0,t1),1);
+  var pad=10, n=Math.min(acts.length, 16), rh=(H-2*pad)/n;
+  var pal=['#f59e0b','#a3e635','#fb923c','#38bdf8','#f472b6','#22d3ee','#c084fc','#4ade80'];
+  for(var k=0;k<n;k++){
+    var a=acts[k], y=pad+k*rh+rh*0.2, bh=Math.max(rh*0.55,3), col=pal[k%pal.length];
+    (a.tramos||[]).forEach(function(t){
+      var i=cronoD(t[0]),f=cronoD(t[1]);
+      var x=pad+(cronoDias(t0,i)/span)*(W-2*pad);
+      var w=Math.max((cronoDias(i,f)/span)*(W-2*pad),2);
+      g.globalAlpha=.32; g.fillStyle=col; g.fillRect(x,y,w,bh);
+      g.globalAlpha=1; g.fillStyle=col; g.fillRect(x,y,w*Math.min(a.avance||0,1),bh);
+    });
+  }
+  g.globalAlpha=1;
 }
 
 /* completa descripciones vacias con el catalogo oficial de items (hoja CANTIDADES) */
@@ -12019,7 +12177,7 @@ function cronoArrancar(){
     w.addEventListener('wheel', function(ev){ if(!ev.ctrlKey) return; ev.preventDefault(); cronoZoomStep(ev.deltaY<0?1:-1); }, {passive:false});
   }
   cronoRender();
-  cronoNombres();
+  if(CRONO_SRC.tipo!=='custom') cronoNombres();
 }
 function cronoZoom(z){ CRONO_PX=(z==='mes')?2.6:(z==='semana')?7:22; cronoRender(); }
 function cronoZoomStep(dir){ CRONO_PX=Math.max(0.9, Math.min(40, CRONO_PX*(dir>0?1.3:1/1.3))); cronoRender(); }
@@ -12051,6 +12209,14 @@ function cronoFilas(){
 
 function cronoRender(){
   if(!CRONO_DATA) return;
+  if(!CRONO_DATA.actividades || !CRONO_DATA.actividades.length){
+    var ge=document.getElementById('crono-grid');
+    if(ge) ge.innerHTML='<div style="padding:50px 20px;text-align:center;color:#94a3b8">'+
+      '<div style="font-size:15px;font-weight:700;color:#e5e7eb;margin-bottom:6px">Cronograma vacío</div>'+
+      (CRONO_SRC.tipo==='custom'?'Usa el botón <b style="color:#22d3ee">➕ Actividad</b> para empezar a agregar actividades; las barras aparecerán automáticamente.':'Sin actividades para mostrar.')+'</div>';
+    try{ cronoKpis(); }catch(_k){}
+    return;
+  }
   var pxd=CRONO_PX;
   var LGT=document.body.classList.contains('light');
   var CT=LGT?{hdr:'#e8eef6',hdrTx:'#334155',line:'rgba(15,23,42,.14)',lineD:'rgba(15,23,42,.08)',mesAlt:'rgba(15,23,42,.035)',rowBg:'#ffffff',selBg:'#fde68a',capBg:'#eef2f7',capRowBg:'rgba(15,23,42,.05)',tx:'#0f172a',tx2:'#334155',mut:'#64748b',border:'rgba(15,23,42,.22)'}
@@ -12164,7 +12330,7 @@ function cronoRender(){
       (showIni?'<span onclick="cronoFechaAbrir(\''+a.item+'\')" title="'+csv.ini+'" style="color:#7dd3fc;flex:0 0 '+CW.ini+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(125,211,252,.5)">'+csv.ini.split(',')[0]+(a.tramos.length>1?' +'+(a.tramos.length-1):'')+'</span>':'')+
       (showFin?'<span onclick="cronoFechaAbrir(\''+a.item+'\')" title="'+csv.fin+'" style="color:#7dd3fc;flex:0 0 '+CW.fin+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(125,211,252,.5)">'+csv.fin.split(',').slice(-1)[0]+(a.tramos.length>1?' ·'+a.tramos.length+'et':'')+'</span>':'')+
       (showPred?'<span onclick="cronoPredAbrir(\''+a.item+'\')" title="'+(pred||'Sin predecesoras — clic para agregar')+'" style="color:'+(pred?'#fbbf24':'#475569')+';flex:0 0 '+CW.pred+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(251,191,36,.4)">'+(pred||'—')+'</span>':'')+
-      (showPct?'<span style="flex:0 0 '+CW.pct+'px;text-align:right;font-size:10px;font-weight:800;color:'+(a.avance>=1?'#4ade80':(a.avance>0?'#fbbf24':'#64748b'))+'">'+(Math.min(a.avance,9.99)*100).toFixed(2)+'%</span>':'')+'</div>';
+      (showPct?'<span '+(CRONO_SRC.tipo==='custom'?'onclick="cronoAvanceEditar(\''+a.item+'\')" title="Clic para editar el % de avance" style="cursor:pointer;border-bottom:1px dotted rgba(148,163,184,.5);':'style="')+'flex:0 0 '+CW.pct+'px;text-align:right;font-size:10px;font-weight:800;color:'+(a.avance>=1?'#4ade80':(a.avance>0?'#fbbf24':'#64748b'))+'">'+(Math.min(a.avance,9.99)*100).toFixed(2)+'%</span>':'')+'</div>';
     /* barras */
     var durTotal=0; a.tramos.forEach(function(t){ durTotal+=Math.max(cronoDias(cronoD(t[0]),cronoD(t[1])),1); });
     var diasAv=Math.min(a.avance,1)*durTotal;
@@ -12269,7 +12435,8 @@ function cronoFechaGuardar(){
       if(r&&r.ok){ document.getElementById('crono-estado').textContent='Fechas de '+CRONO_EDIT_ITEM+' guardadas ✓ (se replican al Excel)'; aplicar(); }
       else { btn.disabled=false; btn.textContent='Guardar fechas'; msg.textContent=(r&&r.error)||'No se pudo guardar en el servidor'; msg.style.display='block'; }
     });
-  } else { aplicar(); document.getElementById('crono-estado').textContent='Guardado solo en esta pantalla (sin backend)'; }
+  } else if(CRONO_SRC.tipo==='custom'){ a.tramos=tramos; cronoCustomSave(); document.getElementById('crono-fecha-modal').style.display='none'; btn.disabled=false; btn.textContent='Guardar fechas'; cronoRender(); document.getElementById('crono-estado').textContent='Fechas guardadas ✓ (cronograma propio)'; }
+  else { aplicar(); document.getElementById('crono-estado').textContent='Guardado solo en esta pantalla (sin backend)'; }
 }
 
 /* ---- predecesoras (texto estilo Project) ---- */
@@ -12327,6 +12494,7 @@ function cronoDepEliminar(idx){
   CRONO_DEPS.splice(idx,1); cronoDepsPersistir(); cronoRender();
 }
 function cronoDepsPersistir(){
+  if(CRONO_SRC.tipo==='custom'){ cronoCustomSave(); document.getElementById('crono-estado').textContent='Vínculos guardados ✓ (cronograma propio)'; return; }
   try{ localStorage.setItem('crono_deps_v1', JSON.stringify(CRONO_DEPS)); }catch(e){}
   if(CRONO_BACKEND){
     cronoJsonp({action:'crono_set_deps', deps:JSON.stringify(CRONO_DEPS)}).then(function(r){
