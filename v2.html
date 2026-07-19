@@ -889,7 +889,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
 
 
       <!-- CARD CRONOGRAMA DE OBRA (GANTT) -->
-      <div class="menu-card ind" onclick="goTo('crono')" style="background:linear-gradient(180deg,rgba(34,211,238,.06),rgba(20,26,55,.4))">
+      <div class="menu-card ind" onclick="goTo('cronohub')" style="background:linear-gradient(180deg,rgba(34,211,238,.06),rgba(20,26,55,.4))">
         <div class="icon" style="background:linear-gradient(135deg,#22d3ee,#6366f1)"><svg class="ic"><use href="#ic-calendar"></use></svg></div>
         <h2>Cronograma de Obra</h2>
         <p class="desc">Diagrama de Gantt interactivo del contrato: actividades por tramos de ejecución (con sus pausas), avance real dentro de cada barra y vínculos entre ítems tipo MS Project (FC, CC, FF, CF).</p>
@@ -1547,13 +1547,28 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   }
 </style>
 
+<!-- ============ CRONOGRAMAS (GALERÍA) ============ -->
+<div class="screen" id="screen-cronohub">
+  <div style="padding:18px;max-width:1400px;margin:0 auto">
+    <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+    <header style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 18px;gap:12px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:20px;color:#fff">📅 Cronogramas de Obra</h1>
+        <h2 style="margin:0;font-size:13px;color:#94a3b8;font-weight:400">Abre el cronograma oficial o crea los tuyos, con la misma estructura tipo MS Project</h2>
+      </div>
+      <button class="crb" onclick="cronoCrearNuevo()" style="background:linear-gradient(135deg,#22d3ee,#10b981);color:#04263b;font-weight:800;border:none;border-radius:10px;padding:10px 16px;font-size:13px;cursor:pointer">➕ Crear cronograma</button>
+    </header>
+    <div id="cronohub-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
+  </div>
+</div>
+
 <!-- ============ CRONOGRAMA DE OBRA (GANTT) ============ -->
 <div class="screen" id="screen-crono">
   <div style="padding:18px;max-width:1720px;margin:0 auto">
-    <button class="back-btn" onclick="goTo('menu')">← Menú</button>
+    <button class="back-btn" onclick="goTo('cronohub')">← Cronogramas</button>
     <header style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;margin:12px 0 14px;gap:12px;flex-wrap:wrap">
       <div>
-        <h1 style="margin:0;font-size:20px;color:#fff">📅 Cronograma de Obra · Gantt</h1>
+        <h1 id="crono-titulo" style="margin:0;font-size:20px;color:#fff">📅 Cronograma de Obra · Gantt</h1>
         <h2 id="crono-sub" style="margin:0;font-size:13px;color:#94a3b8;font-weight:400">Tramos con pausas · avance real · vínculos FC/CC/FF/CF · fechas editables</h2>
       </div>
       <div id="crono-kpis" style="display:flex;gap:10px;flex-wrap:wrap"></div>
@@ -1573,6 +1588,8 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <button class="crb" onclick="cronoExpandir(false)">▸ Colapsar</button>
       <button class="crb" onclick="cronoHoy()">📍 Hoy</button>
       <button class="crb" id="crono-link-btn" onclick="cronoModoVinculo()">🔗 Vincular</button>
+      <button class="crb" id="crono-addact-btn" onclick="cronoAgregarActividad()" title="Agregar una actividad nueva" style="display:none">➕ Actividad</button>
+      <button class="crb" id="crono-rename-btn" onclick="cronoRenombrar()" title="Renombrar este cronograma" style="display:none">✎ Renombrar</button>
       <button class="crb" id="crono-refresh-btn" onclick="cronoActualizarExcel()" title="Trae al cockpit lo último del Excel">🔄 Actualizar</button>
       <button class="crb" id="crono-save-btn" onclick="cronoGuardarExcel()" title="Escribe en el Excel las fechas cambiadas aquí">💾 Guardar en Excel</button>
       <button class="crb" id="crono-cols-btn" onclick="cronoColsMenu()" title="Elige qué columnas se ven (arrastra el divisor para agrandar las barras)">🧮 Columnas</button>
@@ -1980,6 +1997,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         </label>
         <button class="back-btn" onclick="ejecDiariaIrAyer()" id="ed-ayer-btn" title="Volver al día de ayer">Ayer</button>
         <button class="back-btn" onclick="ejecDiariaRefrescar()" id="ed-refresh-btn">Refrescar</button>
+        <button class="back-btn" id="ed-bita-btn" onclick="goTo('bitacora')" title="Bitácora de obra (GTO-P-04-R-01)" style="background:linear-gradient(135deg,#f59e0b,#f97316);color:#1a1206;font-weight:800;border:none">📓 Bitácora</button>
         <button class="back-btn" id="ed-rep-btn" onclick="repAbrir()" title="Generar reporte de rendimiento en PDF" style="background:linear-gradient(135deg,#22d3ee,#10b981);color:#04263b;font-weight:800;border:none">Generar reporte</button>
       </div>
     </div>
@@ -3361,8 +3379,10 @@ function _goToInner(name){
   if(name==='inventario' && !INV_LOADED){ invLoadData(); }
   if(name==='comunicaciones' && !CMS_LOADED){ cmsLoadData(); }
   if(name==='fotos' && !FOTOS_LOADED){ fotosCargarIndice(); }
+  if(name==='bitacora'){ try{ bitacoraInit(); }catch(e){ console.warn('bitacora:',e); } }
   if(name==='loc'){ try{ locInit(); }catch(e){ console.warn('loc:',e); } }
   if(name==='obra' && !OBRA_LOADED){ obraCargar(); }
+  if(name==='cronohub'){ try{ cronoHubRender(); }catch(e){ console.warn('cronohub:',e); } }
   if(name==='crono'){ try{ cronoInit(); }catch(e){ console.warn('crono:',e); } }
   if(name==='analisis'){ try{ analisisCargar(); }catch(e){ console.warn('analisis:',e); } }
   if(name==='informe'){
@@ -11426,6 +11446,7 @@ if ('serviceWorker' in navigator) {
 (function(){
   var MODS=[
     ['ejecdiaria','ic-calendar','Ejecución Diaria','OPERACIÓN'],
+    ['bitacora','ic-file','Bitácora de Obra','OPERACIÓN'],
     ['obra','ic-layout','Ejecución de Obra','OPERACIÓN'],
     ['rendimientos','ic-trending','Rendimientos','OPERACIÓN'],
     ['analisis','ic-ai','Lectura IA','OPERACIÓN'],
@@ -11433,7 +11454,7 @@ if ('serviceWorker' in navigator) {
     ['mo','ic-users','Mano de Obra','RECURSOS'],
     ['inventario','ic-package','Inventario','RECURSOS'],
     ['loc','ic-map','Localización','RECURSOS'],
-    ['crono','ic-calendar','Cronograma de Obra','RECURSOS'],
+    ['cronohub','ic-calendar','Cronograma de Obra','RECURSOS'],
     ['indicadores','ic-dollar','Indicadores','CONTRACTUAL'],
     ['contrato','ic-file','Contrato','CONTRACTUAL'],
     ['informe','ic-file','Informe Ejecutivo','CONTRACTUAL'],
@@ -11571,6 +11592,294 @@ if ('serviceWorker' in navigator) {
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
+</script>
+
+<script>
+/* ====================== BITÁCORA DE OBRA (GTO-P-04-R-01) ====================== */
+var BITA_KEY='bitacora_v1';
+var BITA_STATE={records:[], current:null, editing:false, dirty:false};
+var BITA_DEF={contrato:'023 de 2025', objeto:'', contratista:'', interventor:''};
+
+function bitaJsonp(params){
+  params=params||{};
+  if(window._authTk) params=_authTk(params);
+  return new Promise(function(res){
+    var cb='_bt'+Date.now()+'_'+Math.floor(Math.random()*99999);
+    var t=setTimeout(function(){ try{delete window[cb];}catch(e){} res(null); }, 25000);
+    window[cb]=function(d){ clearTimeout(t); try{delete window[cb];}catch(e){} if(s.parentNode)s.parentNode.removeChild(s); res(d); };
+    var q=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
+    var s=document.createElement('script'); s.src=APPS_URL+'?'+q+'&callback='+cb;
+    s.onerror=function(){ clearTimeout(t); res(null); };
+    document.head.appendChild(s);
+  });
+}
+function bitaLocal(){ try{ return JSON.parse(localStorage.getItem(BITA_KEY)||'[]'); }catch(e){ return []; } }
+function bitaLocalSet(arr){ try{ localStorage.setItem(BITA_KEY, JSON.stringify(arr)); }catch(e){} }
+function bitaEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function bitaHoy(){ var d=new Date(); return d.toISOString().slice(0,10); }
+function bitaFmt(f){ if(!f) return '—'; var p=String(f).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):f; }
+function bitaDiaSemana(f){ try{ var p=f.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][d.getDay()]; }catch(e){ return ''; } }
+
+function bitacoraInit(){
+  var hoy=bitaHoy();
+  var fd=document.getElementById('bt-f-dia'); if(fd&&!fd.value) fd.value=hoy;
+  var d1=document.getElementById('bt-f-desde'), d2=document.getElementById('bt-f-hasta');
+  if(d2&&!d2.value) d2.value=hoy;
+  if(d1&&!d1.value){ var w=new Date(Date.now()-6*86400000); d1.value=w.toISOString().slice(0,10); }
+  bitacoraListar();
+}
+function bitacoraModo(){
+  var m=document.getElementById('bt-modo').value;
+  document.getElementById('bt-lbl-d').style.display=(m==='dia')?'':'none';
+  document.getElementById('bt-lbl-r1').style.display=(m==='rango')?'':'none';
+  document.getElementById('bt-lbl-r2').style.display=(m==='rango')?'':'none';
+}
+function bitacoraListar(){
+  var est=document.getElementById('bt-estado'); est.textContent='Buscando…';
+  var m=document.getElementById('bt-modo').value, desde, hasta;
+  if(m==='dia'){ desde=hasta=document.getElementById('bt-f-dia').value; }
+  else{ desde=document.getElementById('bt-f-desde').value; hasta=document.getElementById('bt-f-hasta').value; }
+  if(!desde||!hasta){ est.textContent='Selecciona fecha(s).'; return; }
+  /* combina backend (si existe) + local */
+  bitaJsonp({action:'bitacora_listar', desde:desde, hasta:hasta}).then(function(r){
+    var reg=(r&&r.ok&&Array.isArray(r.registros))?r.registros:[];
+    var loc=bitaLocal().filter(function(x){ return x.fecha>=desde && x.fecha<=hasta; });
+    var map={}; reg.concat(loc).forEach(function(x){ map[x.id||x.fecha]=x; });
+    var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
+    BITA_STATE.records=arr;
+    bitacoraRenderLista();
+    est.textContent=arr.length?(arr.length+' bitácora(s)'):'Sin bitácoras en ese rango.';
+  });
+}
+function bitacoraRenderLista(){
+  var cont=document.getElementById('bt-list'); var arr=BITA_STATE.records||[];
+  if(!arr.length){ cont.innerHTML='<div style="color:#64748b;font-size:12px;text-align:center;padding:14px">No hay bitácoras. Crea una con «Nueva bitácora».</div>'; return; }
+  cont.innerHTML=arr.map(function(r){
+    var sel=(BITA_STATE.current&&BITA_STATE.current.id===r.id)?' sel':'';
+    var loc=(r._local?'<span style="color:#f59e0b;font-size:9.5px"> · solo local</span>':'');
+    return '<div class="bt-list-item'+sel+'" onclick="bitacoraVer(\''+bitaEsc(r.id)+'\')">'+
+      '<div style="font-weight:700;color:#e5e7eb;font-size:12.5px">📅 '+bitaFmt(r.fecha)+' · '+bitaDiaSemana(r.fecha)+loc+'</div>'+
+      '<div style="color:#94a3b8;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+bitaEsc((r.eventos||'Sin eventos registrados').slice(0,70))+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* ---------- formulario ---------- */
+function bitacoraNueva(){
+  var base={ id:'BIT-'+bitaHoy()+'-'+Date.now(), fecha:document.getElementById('bt-f-dia').value||bitaHoy(),
+    contrato:BITA_DEF.contrato, objeto:BITA_DEF.objeto, contratista:BITA_DEF.contratista, interventor:BITA_DEF.interventor,
+    dia:'', tiempo:'Soleado', lluviaHoras:'',
+    pDirector:'', pResidente:'', pMaestro:'', pInspector:'', pSocial:'', pOficiales:'', pAyudantes:'', pOtros:'', pOtrosEsp:'',
+    afiliaciones:'', planCalidad:'', eventos:'',
+    eqRana:'', eqCanguro:'', eqMezcladora:'', eqVibrador:'', eqMixer:'', eqCortadora:'', eqOtros:'',
+    firmaResidente:'', firmaResidenteInterv:'', firmaContratista:'', firmaSupervision:'' };
+  BITA_STATE.current=base; BITA_STATE.editing=true;
+  bitacoraForm(base); bitacoraPreview(base);
+}
+function bitacoraEditar(){ if(BITA_STATE.current){ BITA_STATE.editing=true; bitacoraForm(BITA_STATE.current); } }
+function _btF(label,id,val,ph,type){ return '<div class="bt-fld"><label>'+label+'</label><input type="'+(type||'text')+'" id="bt-i-'+id+'" value="'+bitaEsc(val)+'" placeholder="'+(ph||'')+'"></div>'; }
+function _btN(label,id,val){ return '<div class="bt-fld"><label>'+label+'</label><input type="number" min="0" step="1" id="bt-i-'+id+'" value="'+bitaEsc(val)+'"></div>'; }
+function bitacoraForm(r){
+  document.getElementById('bt-form-panel').style.display='';
+  document.getElementById('bt-list-panel').style.display='none';
+  var h='';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="color:#22d3ee;font-size:13px">Diligenciar bitácora</b><button class="bt-btn" onclick="bitacoraCancelar()">✕ Cerrar</button></div>';
+  h+='<div class="bt-fld"><label>Fecha del reporte</label><input type="date" id="bt-i-fecha" value="'+bitaEsc(r.fecha)+'"></div>';
+  h+='<div class="bt-sec">Datos del contrato</div>';
+  h+=_btF('Contrato No.','contrato',r.contrato);
+  h+='<div class="bt-fld"><label>Objeto</label><textarea id="bt-i-objeto" rows="2">'+bitaEsc(r.objeto)+'</textarea></div>';
+  h+='<div class="bt-grid2">'+_btF('Contratista','contratista',r.contratista)+_btF('Interventor','interventor',r.interventor)+'</div>';
+  h+='<div class="bt-sec">Seguimiento</div>';
+  h+='<div class="bt-grid2">'+
+     '<div class="bt-fld"><label>Estado del tiempo</label><select id="bt-i-tiempo"><option>Soleado</option><option>Nublado</option><option>Lluvioso</option><option>Variable</option></select></div>'+
+     _btN('Horas de lluvia','lluviaHoras',r.lluviaHoras)+'</div>';
+  h+='<div class="bt-sec">Cantidad de personal (No.)</div>';
+  h+='<div class="bt-grid3">'+_btN('Director de obra','pDirector',r.pDirector)+_btN('Ing. Residente','pResidente',r.pResidente)+_btN('Maestro','pMaestro',r.pMaestro)+'</div>';
+  h+='<div class="bt-grid3">'+_btN('Insp. Seg. Ind.','pInspector',r.pInspector)+_btN('Prof. Social','pSocial',r.pSocial)+_btN('Oficiales','pOficiales',r.pOficiales)+'</div>';
+  h+='<div class="bt-grid3">'+_btN('Ayudantes','pAyudantes',r.pAyudantes)+_btN('Otros','pOtros',r.pOtros)+_btF('Especifique (otros)','pOtrosEsp',r.pOtrosEsp)+'</div>';
+  h+='<div class="bt-fld"><label>Chequeo interventor de afiliaciones (Seg. Social)</label><select id="bt-i-afiliaciones"><option value="">—</option><option value="Si">Sí</option><option value="No">No</option></select></div>';
+  h+='<div class="bt-sec">Equipo utilizado (No.)</div>';
+  h+='<div class="bt-grid3">'+_btN('Rana','eqRana',r.eqRana)+_btN('Canguro','eqCanguro',r.eqCanguro)+_btN('Mezcladora','eqMezcladora',r.eqMezcladora)+'</div>';
+  h+='<div class="bt-grid3">'+_btN('Vibrador','eqVibrador',r.eqVibrador)+_btN('Mixer','eqMixer',r.eqMixer)+_btN('Cortadora','eqCortadora',r.eqCortadora)+'</div>';
+  h+=_btF('Especifique (otros equipos)','eqOtros',r.eqOtros);
+  h+='<div class="bt-sec">Plan de calidad</div>';
+  h+='<div class="bt-fld"><label>Chequeo acciones proyectadas en el Plan de Calidad</label><textarea id="bt-i-planCalidad" rows="3">'+bitaEsc(r.planCalidad)+'</textarea></div>';
+  h+='<div class="bt-sec">Eventos del día</div>';
+  h+='<div class="bt-fld"><textarea id="bt-i-eventos" rows="8" placeholder="Describe las actividades y novedades del día…">'+bitaEsc(r.eventos)+'</textarea></div>';
+  h+='<div class="bt-sec">Firmas (nombres)</div>';
+  h+='<div class="bt-grid2">'+_btF('Residente de la obra','firmaResidente',r.firmaResidente)+_btF('Residente interventoría','firmaResidenteInterv',r.firmaResidenteInterv)+'</div>';
+  h+='<div class="bt-grid2">'+_btF('Vo.Bo. Contratista','firmaContratista',r.firmaContratista)+_btF('Vo.Bo. Apoyo supervisión','firmaSupervision',r.firmaSupervision)+'</div>';
+  h+='<div style="display:flex;gap:8px;margin-top:12px"><button class="bt-btn primary" style="flex:1" onclick="bitacoraAplicarPreview()">👁 Previsualizar</button><button class="bt-btn amber" style="flex:1" onclick="bitacoraGuardar()">💾 Guardar</button></div>';
+  document.getElementById('bt-form').innerHTML=h;
+  var sel=document.getElementById('bt-i-tiempo'); if(sel) sel.value=r.tiempo||'Soleado';
+  var af=document.getElementById('bt-i-afiliaciones'); if(af) af.value=r.afiliaciones||'';
+  ['bt-i-eventos','bt-i-planCalidad','bt-i-objeto'].forEach(function(id){ var e=document.getElementById(id); if(e) e.addEventListener('input', bitacoraAplicarPreview); });
+}
+function bitacoraLeerForm(){
+  var r=BITA_STATE.current||{}; var g=function(id){ var e=document.getElementById('bt-i-'+id); return e?e.value:''; };
+  ['fecha','contrato','objeto','contratista','interventor','tiempo','lluviaHoras',
+   'pDirector','pResidente','pMaestro','pInspector','pSocial','pOficiales','pAyudantes','pOtros','pOtrosEsp',
+   'afiliaciones','planCalidad','eventos','eqRana','eqCanguro','eqMezcladora','eqVibrador','eqMixer','eqCortadora','eqOtros',
+   'firmaResidente','firmaResidenteInterv','firmaContratista','firmaSupervision'].forEach(function(k){ r[k]=g(k); });
+  if(!r.id) r.id='BIT-'+r.fecha+'-'+Date.now();
+  BITA_STATE.current=r; return r;
+}
+function bitacoraAplicarPreview(){ bitacoraPreview(bitacoraLeerForm()); }
+function bitacoraCancelar(){
+  document.getElementById('bt-form-panel').style.display='none';
+  document.getElementById('bt-list-panel').style.display='';
+  BITA_STATE.editing=false;
+}
+
+/* ---------- previsualización imprimible (imita el formato) ---------- */
+function _btV(v){ v=(v==null?'':String(v)).trim(); return v?bitaEsc(v):'&nbsp;'; }
+function bitacoraPreviewHTML(r){
+  function xif(cond){ return cond?'X':''; }
+  var pg1='<div class="bt-hoja bt-hoja-page"><table>'+
+    '<tr><td class="h-logo" style="width:22%">MONACO<br><span style="font-size:9px;color:#555">Construcciones</span></td>'+
+        '<td class="h-title" colspan="3">Bitácora de Obra</td>'+
+        '<td style="width:20%;font-size:9px">Código: GTO-P-04-R-01<br>Versión: 02<br>Vigente: 11/10/2022<br>Página: 1 de 2</td></tr>'+
+    '<tr><td class="h-band" colspan="5">Datos Generales del Contrato</td></tr>'+
+    '<tr><td class="h-lbl" style="width:16%">Contrato No:</td><td colspan="4" class="h-val">'+_btV(r.contrato)+'</td></tr>'+
+    '<tr><td class="h-lbl">Objeto:</td><td colspan="4" class="h-val">'+_btV(r.objeto)+'</td></tr>'+
+    '<tr><td class="h-lbl">Contratista:</td><td colspan="2" class="h-val">'+_btV(r.contratista)+'</td><td class="h-lbl" style="width:14%">Interventor:</td><td class="h-val">'+_btV(r.interventor)+'</td></tr>'+
+    '<tr><td class="h-band" colspan="5">Datos de Seguimiento a la Obra</td></tr>'+
+    '<tr><td class="h-lbl">Fecha del reporte:</td><td class="h-val">'+bitaFmt(r.fecha)+'</td><td class="h-lbl">Día:</td><td colspan="2" class="h-val">'+_btV(bitaDiaSemana(r.fecha))+'</td></tr>'+
+    '<tr><td class="h-lbl">Estado del tiempo:</td><td class="h-val">'+_btV(r.tiempo)+'</td><td class="h-lbl">Horas de lluvia:</td><td colspan="2" class="h-val">'+_btV(r.lluviaHoras)+'</td></tr>'+
+    '<tr><td class="h-band" colspan="5">Cantidad de Personal (No.)</td></tr>'+
+    '<tr><td class="h-lbl">Director de obra</td><td class="h-val">'+_btV(r.pDirector)+'</td><td class="h-lbl">Oficiales</td><td colspan="2" class="h-val">'+_btV(r.pOficiales)+'</td></tr>'+
+    '<tr><td class="h-lbl">Ingeniero residente</td><td class="h-val">'+_btV(r.pResidente)+'</td><td class="h-lbl">Ayudantes</td><td colspan="2" class="h-val">'+_btV(r.pAyudantes)+'</td></tr>'+
+    '<tr><td class="h-lbl">Maestro</td><td class="h-val">'+_btV(r.pMaestro)+'</td><td class="h-lbl">Otros</td><td colspan="2" class="h-val">'+_btV(r.pOtros)+'</td></tr>'+
+    '<tr><td class="h-lbl">Inspector Seg. Industrial</td><td class="h-val">'+_btV(r.pInspector)+'</td><td class="h-lbl">Especifique (otros)</td><td colspan="2" class="h-val">'+_btV(r.pOtrosEsp)+'</td></tr>'+
+    '<tr><td class="h-lbl">Profesional social</td><td class="h-val">'+_btV(r.pSocial)+'</td><td class="h-lbl">Chequeo afiliaciones</td><td colspan="2" class="h-val">'+_btV(r.afiliaciones)+'</td></tr>'+
+    '<tr><td class="h-band" colspan="5">Equipo Utilizado</td></tr>'+
+    '<tr><td class="h-lbl">Rana</td><td class="h-val">'+_btV(r.eqRana)+'</td><td class="h-lbl">Vibrador</td><td colspan="2" class="h-val">'+_btV(r.eqVibrador)+'</td></tr>'+
+    '<tr><td class="h-lbl">Canguro</td><td class="h-val">'+_btV(r.eqCanguro)+'</td><td class="h-lbl">Mixer</td><td colspan="2" class="h-val">'+_btV(r.eqMixer)+'</td></tr>'+
+    '<tr><td class="h-lbl">Mezcladora</td><td class="h-val">'+_btV(r.eqMezcladora)+'</td><td class="h-lbl">Cortadora</td><td colspan="2" class="h-val">'+_btV(r.eqCortadora)+'</td></tr>'+
+    '<tr><td class="h-lbl">Especifique (otros)</td><td colspan="4" class="h-val">'+_btV(r.eqOtros)+'</td></tr>'+
+    '<tr><td class="h-band" colspan="5">Chequeo acciones proyectadas en el Plan de Calidad</td></tr>'+
+    '<tr><td colspan="5" class="h-val" style="height:70px;vertical-align:top">'+_btV(r.planCalidad)+'</td></tr>'+
+    '<tr><td class="h-band" colspan="5">Eventos del Día</td></tr>'+
+    '<tr><td colspan="5" class="h-events">'+_btV(r.eventos)+'</td></tr>'+
+    '<tr><td colspan="2" class="h-firma">'+_btV(r.firmaResidente)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Nombre y Firma Residente de la obra</span></td>'+
+        '<td colspan="3" class="h-firma">'+_btV(r.firmaResidenteInterv)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Nombre y Firma Residente Interventoría</span></td></tr>'+
+    '<tr><td colspan="2" class="h-firma">'+_btV(r.firmaContratista)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Vo.Bo. Firma Contratista</span></td>'+
+        '<td colspan="3" class="h-firma">'+_btV(r.firmaSupervision)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Vo.Bo. Firma Apoyo a la Supervisión</span></td></tr>'+
+    '</table></div>';
+  return pg1;
+}
+function bitacoraPreview(r){
+  document.getElementById('bt-preview-wrap').innerHTML=bitacoraPreviewHTML(r);
+  var acts=document.getElementById('bt-preview-actions'); acts.style.display='flex';
+  ['bt-btn-guardar','bt-btn-xls','bt-btn-print','bt-btn-editar'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=''; });
+  document.getElementById('bt-btn-editar').style.display = BITA_STATE.editing?'none':'';
+}
+function bitacoraVer(id){
+  var r=(BITA_STATE.records||[]).filter(function(x){return x.id===id;})[0]; if(!r) return;
+  BITA_STATE.current=r; BITA_STATE.editing=false;
+  bitacoraCancelar(); bitacoraRenderLista(); bitacoraPreview(r);
+}
+function bitacoraImprimir(){ window.print(); }
+
+/* ---------- guardado (local + backend Drive por año/mes/día) ---------- */
+function bitacoraGuardar(){
+  var r=BITA_STATE.editing?bitacoraLeerForm():BITA_STATE.current;
+  if(!r){ return; }
+  if(!r.fecha){ alert('Indica la fecha del reporte.'); return; }
+  var btn=document.getElementById('bt-btn-guardar'); if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
+  var est=document.getElementById('bt-estado'); est.textContent='Guardando bitácora…';
+  /* 1) guarda local siempre (respaldo inmediato) */
+  var loc=bitaLocal().filter(function(x){ return x.id!==r.id; });
+  var rl=JSON.parse(JSON.stringify(r)); rl._local=true; loc.unshift(rl); bitaLocalSet(loc);
+  /* 2) intenta backend: guarda JSON + Excel en Drive (año/mes/día) */
+  bitacoraExcelB64(r).then(function(b64){
+    return bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:JSON.stringify(r), xlsx_b64:b64||'', nombre:'GTO-P-04-R-01 Bitacora '+r.fecha+'.xlsx'});
+  }).then(function(res){
+    if(btn){ btn.disabled=false; btn.textContent='💾 Guardar'; }
+    if(res&&res.ok){
+      est.textContent='✓ Guardada en Drive: '+r.fecha+(res.carpeta?(' · '+res.carpeta):'');
+      var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr);
+    } else {
+      est.textContent='✓ Guardada localmente. (Drive se activará al desplegar el backend de bitácora.)';
+    }
+    BITA_STATE.editing=false; bitacoraCancelar(); bitacoraListar(); bitacoraPreview(r);
+  });
+}
+
+/* ---------- generación del Excel diligenciado (SheetJS) ---------- */
+function _btXLSXlib(){
+  return new Promise(function(res,rej){
+    if(window.XLSX) return res(window.XLSX);
+    var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=function(){ res(window.XLSX); }; s.onerror=function(){ rej(new Error('no XLSX')); };
+    document.head.appendChild(s);
+  });
+}
+function bitacoraWorkbook(r){
+  var XLSX=window.XLSX;
+  var A=[]; function row(a){ A.push(a); }
+  row(['MONACO Construcciones','', 'BITÁCORA DE OBRA','','','','Código: GTO-P-04-R-01']);
+  row(['','','','','','','Versión: 02 · Vigente: 11/10/2022 · Página 1 de 2']);
+  row([]);
+  row(['DATOS GENERALES DEL CONTRATO']);
+  row(['Contrato No:', r.contrato]);
+  row(['Objeto:', r.objeto]);
+  row(['Contratista:', r.contratista, '', 'Interventor:', r.interventor]);
+  row([]);
+  row(['DATOS DE SEGUIMIENTO A LA OBRA']);
+  row(['Fecha del reporte:', bitaFmt(r.fecha), '', 'Día:', bitaDiaSemana(r.fecha)]);
+  row(['Estado del tiempo:', r.tiempo, '', 'Horas de lluvia:', r.lluviaHoras]);
+  row([]);
+  row(['CANTIDAD DE PERSONAL (No.)']);
+  row(['Director de obra', r.pDirector, '', 'Oficiales', r.pOficiales]);
+  row(['Ingeniero residente', r.pResidente, '', 'Ayudantes', r.pAyudantes]);
+  row(['Maestro', r.pMaestro, '', 'Otros', r.pOtros]);
+  row(['Inspector Seg. Industrial', r.pInspector, '', 'Especifique (otros)', r.pOtrosEsp]);
+  row(['Profesional social', r.pSocial, '', 'Chequeo afiliaciones', r.afiliaciones]);
+  row([]);
+  row(['EQUIPO UTILIZADO']);
+  row(['Rana', r.eqRana, '', 'Vibrador', r.eqVibrador]);
+  row(['Canguro', r.eqCanguro, '', 'Mixer', r.eqMixer]);
+  row(['Mezcladora', r.eqMezcladora, '', 'Cortadora', r.eqCortadora]);
+  row(['Especifique (otros):', r.eqOtros]);
+  row([]);
+  row(['CHEQUEO ACCIONES PROYECTADAS EN EL PLAN DE CALIDAD']);
+  row([r.planCalidad]);
+  row([]);
+  row(['EVENTOS DEL DÍA']);
+  row([r.eventos]);
+  row([]);
+  row([]);
+  row([r.firmaResidente, '', '', r.firmaResidenteInterv]);
+  row(['Nombre y Firma Residente de la obra','','','Nombre y Firma Residente Interventoría']);
+  row([r.firmaContratista, '', '', r.firmaSupervision]);
+  row(['Vo.Bo. Firma Contratista','','','Vo.Bo. Firma Apoyo a la Supervisión']);
+  var ws=XLSX.utils.aoa_to_sheet(A);
+  ws['!cols']=[{wch:26},{wch:18},{wch:4},{wch:22},{wch:20},{wch:4},{wch:34}];
+  ws['!merges']=[
+    {s:{r:0,c:2},e:{r:0,c:5}}, {s:{r:3,c:0},e:{r:3,c:6}}, {s:{r:8,c:0},e:{r:8,c:6}},
+    {s:{r:12,c:0},e:{r:12,c:6}}, {s:{r:18,c:0},e:{r:18,c:6}}, {s:{r:23,c:0},e:{r:23,c:6}},
+    {s:{r:26,c:0},e:{r:26,c:6}}, {s:{r:5,c:1},e:{r:5,c:6}}, {s:{r:24,c:0},e:{r:24,c:6}}, {s:{r:27,c:0},e:{r:27,c:6}}
+  ];
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Bitacora');
+  return wb;
+}
+function bitacoraExcelB64(r){
+  return _btXLSXlib().then(function(XLSX){
+    var wb=bitacoraWorkbook(r);
+    return XLSX.write(wb, {bookType:'xlsx', type:'base64'});
+  }).catch(function(){ return ''; });
+}
+function bitacoraDescargarExcel(){
+  var r=BITA_STATE.editing?bitacoraLeerForm():BITA_STATE.current; if(!r) return;
+  var est=document.getElementById('bt-estado'); est.textContent='Generando Excel…';
+  _btXLSXlib().then(function(XLSX){
+    var wb=bitacoraWorkbook(r);
+    XLSX.writeFile(wb, 'GTO-P-04-R-01 Bitacora '+r.fecha+'.xlsx');
+    est.textContent='✓ Excel descargado.';
+  }).catch(function(){ est.textContent='No se pudo cargar el generador de Excel.'; });
+}
 </script>
 
 <script>
