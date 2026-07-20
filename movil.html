@@ -209,6 +209,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
           <div><label class="lb">Residente obra</label><input type="text" id="bt-firmaResidente" class="in"></div>
           <div><label class="lb">Residente interv.</label><input type="text" id="bt-firmaResidenteInterv" class="in"></div>
         </div>
+        <div class="row2">
+          <div><label class="lb">Director de obra</label><input type="text" id="bt-firmaDirectorObra" class="in"></div>
+          <div><label class="lb">Director interv.</label><input type="text" id="bt-firmaDirectorInterv" class="in"></div>
+        </div>
         <button class="btn" id="bt-guardar" onclick="bitaGuardar()" style="margin-top:12px">💾 Guardar bitácora en Drive</button>
         <div id="bt-est" style="font-size:12px;color:#94a3b8;margin-top:8px;text-align:center"></div>
       </div>
@@ -587,6 +591,7 @@ function bitaGuardar(){
     eqVibrador:g('eqVibrador'), eqMixer:g('eqMixer'), eqCortadora:g('eqCortadora'), eqOtros:g('eqOtros'),
     planCalidad:g('planCalidad'), eventos:g('eventos'),
     firmaResidente:g('firmaResidente'), firmaResidenteInterv:g('firmaResidenteInterv'),
+    firmaDirectorObra:g('firmaDirectorObra'), firmaDirectorInterv:g('firmaDirectorInterv'),
     origen:'movil', usuario:(typeof NOM!=='undefined'?NOM:'') };
   var btn=document.getElementById('bt-guardar'), est=document.getElementById('bt-est');
   btn.disabled=true; btn.textContent='Guardando…'; est.textContent='Generando el formato y subiéndolo a Drive…';

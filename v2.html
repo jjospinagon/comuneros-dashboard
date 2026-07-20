@@ -11764,7 +11764,7 @@ function bitacoraNueva(){
     pDirector:'', pResidente:'', pMaestro:'', pInspector:'', pSocial:'', pOficiales:'', pAyudantes:'', pOtros:'', pOtrosEsp:'',
     afiliaciones:'', planCalidad:'', eventos:'',
     eqRana:'', eqCanguro:'', eqMezcladora:'', eqVibrador:'', eqMixer:'', eqCortadora:'', eqOtros:'',
-    firmaResidente:'', firmaResidenteInterv:'', firmaContratista:'', firmaSupervision:'' };
+    firmaResidente:'', firmaResidenteInterv:'', firmaDirectorObra:'', firmaDirectorInterv:'' };
   BITA_STATE.current=base; BITA_STATE.editing=true;
   bitacoraForm(base); bitacoraPreview(base);
 }
@@ -11800,7 +11800,7 @@ function bitacoraForm(r){
   h+='<div class="bt-fld"><textarea id="bt-i-eventos" rows="8" placeholder="Describe las actividades y novedades del día…">'+bitaEsc(r.eventos)+'</textarea></div>';
   h+='<div class="bt-sec">Firmas (nombres)</div>';
   h+='<div class="bt-grid2">'+_btF('Residente de la obra','firmaResidente',r.firmaResidente)+_btF('Residente interventoría','firmaResidenteInterv',r.firmaResidenteInterv)+'</div>';
-  h+='<div class="bt-grid2">'+_btF('Vo.Bo. Contratista','firmaContratista',r.firmaContratista)+_btF('Vo.Bo. Apoyo supervisión','firmaSupervision',r.firmaSupervision)+'</div>';
+  h+='<div class="bt-grid2">'+_btF('Director de obra','firmaDirectorObra',r.firmaDirectorObra)+_btF('Director de interventoría','firmaDirectorInterv',r.firmaDirectorInterv)+'</div>';
   h+='<div style="display:flex;gap:8px;margin-top:12px"><button class="bt-btn primary" style="flex:1" onclick="bitacoraAplicarPreview()">👁 Previsualizar</button><button class="bt-btn amber" style="flex:1" onclick="bitacoraGuardar()">💾 Guardar</button></div>';
   document.getElementById('bt-form').innerHTML=h;
   var sel=document.getElementById('bt-i-tiempo'); if(sel) sel.value=r.tiempo||'Soleado';
@@ -11812,7 +11812,7 @@ function bitacoraLeerForm(){
   ['fecha','contrato','objeto','contratista','interventor','tiempo','lluviaHoras',
    'pDirector','pResidente','pMaestro','pInspector','pSocial','pOficiales','pAyudantes','pOtros','pOtrosEsp',
    'afiliaciones','planCalidad','eventos','eqRana','eqCanguro','eqMezcladora','eqVibrador','eqMixer','eqCortadora','eqOtros',
-   'firmaResidente','firmaResidenteInterv','firmaContratista','firmaSupervision'].forEach(function(k){ r[k]=g(k); });
+   'firmaResidente','firmaResidenteInterv','firmaDirectorObra','firmaDirectorInterv'].forEach(function(k){ r[k]=g(k); });
   if(!r.id) r.id='BIT-'+r.fecha+'-'+Date.now();
   BITA_STATE.current=r; return r;
 }
@@ -11855,8 +11855,8 @@ function bitacoraPreviewHTML(r){
     '<tr><td colspan="5" class="h-events">'+_btV(r.eventos)+'</td></tr>'+
     '<tr><td colspan="2" class="h-firma">'+_btV(r.firmaResidente)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Nombre y Firma Residente de la obra</span></td>'+
         '<td colspan="3" class="h-firma">'+_btV(r.firmaResidenteInterv)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Nombre y Firma Residente Interventoría</span></td></tr>'+
-    '<tr><td colspan="2" class="h-firma">'+_btV(r.firmaContratista)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Vo.Bo. Firma Contratista</span></td>'+
-        '<td colspan="3" class="h-firma">'+_btV(r.firmaSupervision)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Vo.Bo. Firma Apoyo a la Supervisión</span></td></tr>'+
+    '<tr><td colspan="2" class="h-firma">'+_btV(r.firmaDirectorObra)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Nombre y Firma Director de Obra</span></td>'+
+        '<td colspan="3" class="h-firma">'+_btV(r.firmaDirectorInterv)+'<br><span style="border-top:1px solid #333;display:block;margin-top:16px;padding-top:2px">Nombre y Firma Director de Interventoría</span></td></tr>'+
     '</table></div>';
   return pg1;
 }
@@ -11943,8 +11943,8 @@ function bitacoraWorkbook(r){
   row([]);
   row([r.firmaResidente, '', '', r.firmaResidenteInterv]);
   row(['Nombre y Firma Residente de la obra','','','Nombre y Firma Residente Interventoría']);
-  row([r.firmaContratista, '', '', r.firmaSupervision]);
-  row(['Vo.Bo. Firma Contratista','','','Vo.Bo. Firma Apoyo a la Supervisión']);
+  row([r.firmaDirectorObra, '', '', r.firmaDirectorInterv]);
+  row(['Nombre y Firma Director de Obra','','','Nombre y Firma Director de Interventoria']);
   var ws=XLSX.utils.aoa_to_sheet(A);
   ws['!cols']=[{wch:26},{wch:18},{wch:4},{wch:22},{wch:20},{wch:4},{wch:34}];
   ws['!merges']=[
