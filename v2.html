@@ -2271,6 +2271,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
           <button class="bt-btn" onclick="bitacoraDescargarExcel()" id="bt-btn-xls" style="display:none">⬇ Descargar Excel</button>
           <button class="bt-btn" onclick="bitacoraImprimir()" id="bt-btn-print" style="display:none">🖨 Imprimir / PDF</button>
           <button class="bt-btn" onclick="bitacoraEditar()" id="bt-btn-editar" style="display:none">✏ Editar</button>
+          <button class="bt-btn" onclick="bitacoraEliminar()" id="bt-btn-eliminar" style="display:none;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.5);color:#fca5a5">🗑 Eliminar</button>
         </div>
         <div class="bt-nota">Vista de referencia. <b>El documento oficial</b> (con los logos PROYECTA y MIPG) se genera en el servidor sobre tu plantilla GTO-P-04-R-01: úsalo con <b>⬇ Descargar Excel</b> o <b>🖨 Imprimir / PDF</b>.</div><div id="bt-preview-wrap"><div style="color:#94a3b8;text-align:center;padding:60px 10px">La previsualización aparecerá aquí.</div></div>
       </div>
@@ -11866,7 +11867,7 @@ function bitacoraPreviewHTML(r){
 function bitacoraPreview(r){
   document.getElementById('bt-preview-wrap').innerHTML=bitacoraPreviewHTML(r);
   var acts=document.getElementById('bt-preview-actions'); acts.style.display='flex';
-  ['bt-btn-guardar','bt-btn-xls','bt-btn-print','bt-btn-editar'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=''; });
+  ['bt-btn-guardar','bt-btn-xls','bt-btn-print','bt-btn-editar','bt-btn-eliminar'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=''; });
   document.getElementById('bt-btn-editar').style.display = BITA_STATE.editing?'none':'';
 }
 function bitacoraVer(id){
@@ -11874,6 +11875,32 @@ function bitacoraVer(id){
   BITA_STATE.current=r; BITA_STATE.editing=false;
   bitacoraCancelar(); bitacoraRenderLista(); bitacoraPreview(r);
 }
+/* ---------- eliminar una bitácora (registro + archivos en Drive) ---------- */
+function bitacoraEliminar(){
+  var r = BITA_STATE.current;
+  if(!r){ return; }
+  if(!confirm('¿Eliminar la bitácora del '+bitaFmt(r.fecha)+'?\n\nSe borra el registro y se envían a la papelera de Drive el Excel y el PDF de ese día.')) return;
+  var btn=document.getElementById('bt-btn-eliminar');
+  var est=document.getElementById('bt-estado');
+  _btSpin(btn,'Eliminando…');
+  est.innerHTML='<span class="bt-spin"></span>Eliminando la bitácora…';
+  /* fuera del respaldo local */
+  bitaLocalSet(bitaLocal().filter(function(x){ return x.id!==r.id; }));
+  bitaJsonp({action:'bitacora_eliminar', id:r.id}).then(function(res){
+    _btSpinOff(btn,'🗑 Eliminar');
+    if(res && res.ok){
+      est.textContent='✓ Bitácora eliminada'+(res.archivos?(' · '+res.archivos+' archivo(s) a la papelera'):'');
+    } else {
+      est.textContent='Se quitó de este equipo. En el servidor: '+((res&&res.error)||'sin respuesta');
+    }
+    BITA_STATE.current=null; BITA_STATE.editing=false;
+    bitacoraCancelar();
+    document.getElementById('bt-preview-wrap').innerHTML='<div style="color:#94a3b8;text-align:center;padding:60px 10px">La previsualización aparecerá aquí.</div>';
+    var acts=document.getElementById('bt-preview-actions'); if(acts) acts.style.display='none';
+    bitacoraListar();
+  });
+}
+
 /* ---------- generación y entrega del formato REAL (plantilla original) ----------
    Todo sale del servidor: copia tu plantilla GTO-P-04-R-01 (con los logos PROYECTA
    y MIPG), la diligencia y devuelve el .xlsx y el .pdf ya guardados en Drive.
