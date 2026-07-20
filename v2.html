@@ -680,6 +680,16 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     #sn-toggle:hover{opacity:1;width:30px}
     body.sn-modulo:not(.sn-show) #sn-toggle{display:flex}
     body.light #side-nav{background:linear-gradient(180deg,#ffffff,#f1f5f9);border-right-color:#cbd5e1}
+    /* --- modo colapsado: solo iconos --- */
+    body.sn-mini #side-nav{width:60px;padding:14px 6px}
+    body.sn-mini.sn-offset .screen:not(#screen-menu){padding-left:60px}
+    body.sn-mini #side-nav .sn-brand div:not(.sn-pin),
+    body.sn-mini #side-nav .sn-sec,
+    body.sn-mini #side-nav .sn-item span{display:none}
+    body.sn-mini #side-nav .sn-item{justify-content:center;padding:9px 4px}
+    body.sn-mini #side-nav .sn-brand{justify-content:center;padding:6px 0 0}
+    body.sn-mini .sn-pin{margin-left:0}
+    body.sn-mini #sn-collapse{transform:rotate(180deg)}
   }
   .sn-brand{display:flex;align-items:center;gap:9px;padding:6px 8px 0}
   .sn-brand .t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;letter-spacing:-.2px}
@@ -694,13 +704,58 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   .sn-item .ic{width:16px;height:16px;flex-shrink:0}
   body.light .sn-item{color:#334155}
   body.light .sn-item:hover{background:rgba(15,23,42,.06);color:#0f172a}
+
+  /* ==================== BARRIDO GENERAL DE VISTAS MÓVILES ====================
+     Corrige textos que se salen del recuadro, barras que se superponen y
+     tablas que desbordan en pantallas pequeñas. */
+  @media(max-width:768px){
+    html,body{overflow-x:hidden;max-width:100vw}
+    .screen{padding-left:0 !important;padding-right:0 !important}
+    .screen .wrap,.screen>div{max-width:100% !important}
+    .screen .wrap{padding:12px !important}
+    /* barras superiores: que envuelvan en vez de superponerse */
+    .topbar{flex-wrap:wrap !important;gap:8px !important;align-items:flex-start !important}
+    .topbar>div,.topbar>label,.topbar>button{max-width:100%}
+    .topbar-title{font-size:15px !important}
+    header{flex-wrap:wrap !important;gap:8px !important}
+    h1{font-size:17px !important;line-height:1.25;word-break:break-word}
+    h2{font-size:12px !important;line-height:1.35;word-break:break-word}
+    /* cualquier tabla ancha se desplaza en lugar de romper la caja */
+    table{min-width:0 !important;font-size:11.5px !important}
+    .maq-tbl-wrap,.ed-tbl-wrap,.tbl-wrap,[class*="tbl-wrap"]{overflow-x:auto !important;-webkit-overflow-scrolling:touch}
+    /* KPIs y rejillas: máximo 2 columnas */
+    .ed-kpis,.maq-kpis,[class*="-kpis"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important}
+    [class*="-kpi"] .v{font-size:16px !important;word-break:break-word}
+    [class*="-kpi"] .l,[class*="-kpi"] .s{font-size:9.5px !important}
+    [class*="grid-detail"],.bt-two,.bt-grid2,.bt-grid3{grid-template-columns:1fr !important}
+    /* menú principal: una sola columna, sin desbordes */
+    .menu-grid,[class*="menu-grid"]{grid-template-columns:1fr !important}
+    .menu-card{padding:14px !important}
+    .menu-card p.desc{font-size:12px !important}
+    /* botones y chips que no quepan */
+    button,.crb,.bt-btn,.back-btn{max-width:100%;white-space:normal}
+    select,input[type=date],input[type=text],input[type=number],textarea{max-width:100%;box-sizing:border-box}
+    /* FAB y overlays que tapaban contenido */
+    #fab-nav{top:auto !important;bottom:14px !important;right:10px !important}
+    /* bitácora: la hoja se ve completa desplazable */
+    #screen-bitacora .bt-hoja{width:100% !important;min-width:640px}
+    #bt-preview-wrap{padding:8px !important;max-height:62vh !important}
+    /* modales a pantalla casi completa */
+    [id$="-modal"]>div{width:96vw !important;max-width:96vw !important}
+  }
+  @media(max-width:480px){
+    .ed-kpis,.maq-kpis,[class*="-kpis"]{grid-template-columns:1fr !important}
+    .screen .wrap{padding:9px !important}
+    h1{font-size:16px !important}
+  }
 </style>
 <button id="sn-toggle" onclick="snShow()" title="Mostrar barra de módulos" aria-label="Mostrar módulos"><svg class="ic" style="width:13px;height:13px"><use href="#ic-layout"></use></svg></button>
 <aside id="side-nav" aria-label="Módulos">
   <div class="sn-brand">
     <svg viewBox="0 0 260 240" width="22" height="20" aria-hidden="true"><path d="M 185.3 185.9 A 86 86 0 1 1 185.3 54.1" stroke="#22d3ee" stroke-width="26" fill="none" stroke-linecap="round"/></svg>
     <div><div class="t">Comuneros</div><div class="s">Cockpit</div></div>
-    <button class="sn-pin" id="sn-pin" onclick="snTogglePin()" title="Fijar la barra en los módulos"><svg class="ic" style="width:14px;height:14px"><use href="#ic-pin"></use></svg></button>
+    <button class="sn-pin" id="sn-collapse" onclick="snToggleMini()" title="Encoger / expandir la barra" style="margin-left:auto">‹‹</button>
+    <button class="sn-pin" id="sn-pin" onclick="snTogglePin()" title="Fijar la barra en los módulos" style="margin-left:4px"><svg class="ic" style="width:14px;height:14px"><use href="#ic-pin"></use></svg></button>
   </div>
   <nav id="sn-list" style="display:flex;flex-direction:column;gap:2px"></nav>
 </aside>
@@ -2163,6 +2218,11 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-bitacora .bt-hoja .h-events{height:210px;vertical-align:top;white-space:pre-wrap}
   #screen-bitacora .bt-hoja .h-firma{height:46px;text-align:center;vertical-align:bottom;font-size:10px;color:#333}
   #bt-preview-wrap{overflow:auto;max-height:74vh;background:#334;border-radius:12px;padding:16px}
+  body.light #bt-preview-wrap{background:#dfe6ef}
+  body.light #screen-bitacora .bt-panel{background:rgba(255,255,255,.75);border-color:rgba(15,23,42,.12)}
+  body.light #screen-bitacora .bt-btn{background:rgba(15,23,42,.06);border-color:rgba(15,23,42,.18);color:#0f172a}
+  body.light #screen-bitacora h1,body.light #screen-bitacora .bt-list-item{color:#0f172a}
+  body.light #screen-bitacora input,body.light #screen-bitacora textarea,body.light #screen-bitacora select{background:#fff;color:#0f172a;border-color:rgba(15,23,42,.2);color-scheme:light}
   @media print{
     body *{visibility:hidden !important}
     #bt-preview-wrap,#bt-preview-wrap *{visibility:visible !important}
@@ -11487,6 +11547,12 @@ if ('serviceWorker' in navigator) {
   function loginVisible(){ var o=document.getElementById('login-overlay'); return !!(o && getComputedStyle(o).display!=='none'); }
 
   window.snShow=function(){ document.body.classList.add('sn-show'); };
+  var MINI_KEY='monaco_sn_mini_v1';
+  function mini(){ try{ return localStorage.getItem(MINI_KEY)==='1'; }catch(_){ return false; } }
+  window.snToggleMini=function(){
+    var v=!mini(); try{ localStorage.setItem(MINI_KEY, v?'1':'0'); }catch(_){}
+    document.body.classList.toggle('sn-mini', v);
+  };
   window.snTogglePin=function(){
     var v=!pinned(); try{ localStorage.setItem(PIN_KEY, v?'1':'0'); }catch(_){}
     var b=document.getElementById('sn-pin'); if(b) b.classList.toggle('on', v);
@@ -11600,6 +11666,7 @@ if ('serviceWorker' in navigator) {
   function init(){
     render();
     var b=document.getElementById('sn-pin'); if(b) b.classList.toggle('on', pinned());
+    document.body.classList.toggle('sn-mini', mini());
     if(typeof _goToInner==='function' && !window._snHooked){
       window._snHooked=true;
       var orig=_goToInner;
@@ -11617,7 +11684,13 @@ if ('serviceWorker' in navigator) {
 /* ====================== BITÁCORA DE OBRA (GTO-P-04-R-01) ====================== */
 var BITA_KEY='bitacora_v1';
 var BITA_STATE={records:[], current:null, editing:false, dirty:false};
-var BITA_DEF={contrato:'023 de 2025', objeto:'', contratista:'', interventor:''};
+/* Datos fijos del contrato: vienen predeterminados en cada bitácora nueva */
+var BITA_DEF={
+  contrato:'023 de 2025',
+  objeto:'Construcción del sistema de alcantarillado y obras complementarias — Barrio Comuneros, Montenegro (Quindío)',
+  contratista:'CONSORCIO INFRARED COMUNEROS 2025',
+  interventor:'UT INTERCOMUNEROS 2025'
+};
 
 function bitaJsonp(params){
   params=params||{};
@@ -11913,7 +11986,7 @@ function cronoCustomGet(id){ return cronoCustomAll().filter(function(c){return c
 function cronoCustomSave(){
   if(CRONO_SRC.tipo!=='custom' || !CRONO_DATA) return;
   var payload={ id:CRONO_SRC.id, nombre:CRONO_SRC.nombre,
-    actividades:CRONO_DATA.actividades.map(function(a){ var c=cronoTramosCSV(a); return {item:a.item,desc:a.desc,cap:a.cap,resp:a.resp||'',avance:a.avance||0,inicios:c.ini,fines:c.fin,vrTotal:a.vrTotal||0}; }),
+    actividades:CRONO_DATA.actividades.map(function(a){ var c=cronoTramosCSV(a); return {item:a.item,desc:a.desc,cap:a.cap,resp:a.resp||'',avance:a.avance||0,inicios:c.ini,fines:c.fin,vrTotal:a.vrTotal||0,und:a.und||'',cant:a.cant||0}; }),
     deps:CRONO_DEPS, actualizado:new Date().toISOString() };
   var found=false, all=cronoCustomAll().map(function(c){ if(c.id===CRONO_SRC.id){ found=true; return payload; } return c; });
   if(!found) all.unshift(payload);
@@ -12011,7 +12084,7 @@ function cronoInit(){
   if(CRONO_SRC.tipo==='custom'){
     var c=cronoCustomGet(CRONO_SRC.id)||{actividades:[],deps:[],nombre:CRONO_SRC.nombre};
     CRONO_SRC.nombre=c.nombre||CRONO_SRC.nombre; CRONO_BACKEND=false; CRONO_COLAPSO={};
-    var acts=(c.actividades||[]).map(function(a){ var o={item:a.item,desc:a.desc,cap:a.cap,resp:a.resp||'',avance:a.avance||0,vrTotal:a.vrTotal||0}; o.tramos=cronoCSVaTramos(a.inicios,a.fines); return o; }).filter(function(a){return a.tramos.length;});
+    var acts=(c.actividades||[]).map(function(a){ var o={item:a.item,desc:a.desc,cap:a.cap,resp:a.resp||'',avance:a.avance||0,vrTotal:a.vrTotal||0,und:a.und||'',cant:a.cant||0}; o.tramos=cronoCSVaTramos(a.inicios,a.fines); return o; }).filter(function(a){return a.tramos.length;});
     CRONO_DATA={actividades:acts}; CRONO_DEPS=c.deps||[];
     if(tit) tit.textContent='📝 '+(c.nombre||CRONO_SRC.nombre);
     document.getElementById('crono-estado').textContent='Cronograma propio · edición libre (se guarda en este navegador)';
@@ -12071,6 +12144,63 @@ function cronoEliminarCustom(id){
   if(!confirm('¿Eliminar el cronograma «'+c.nombre+'»? Esta acción no se puede deshacer.')) return;
   cronoCustomSet(cronoCustomAll().filter(function(x){return x.id!==id;}));
   cronoHubRender();
+}
+/* ---- editor completo de una actividad (solo cronogramas propios) ---- */
+function cronoActEditar(item){
+  if(CRONO_SRC.tipo!=='custom') return;
+  var a=cronoAct(item); if(!a) return;
+  var csv=cronoTramosCSV(a);
+  var prev=document.getElementById('crono-act-modal'); if(prev) prev.parentNode.removeChild(prev);
+  var ov=document.createElement('div'); ov.id='crono-act-modal';
+  ov.style.cssText='position:fixed;inset:0;z-index:10080;background:rgba(2,6,18,.65);display:flex;align-items:center;justify-content:center;padding:12px';
+  function fld(l,id,v,tipo){ return '<div style="margin-bottom:8px"><label style="display:block;font-size:10.5px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-bottom:3px">'+l+'</label>'+
+    '<input id="ca-'+id+'" type="'+(tipo||'text')+'" value="'+String(v==null?'':v).replace(/"/g,'&quot;')+'" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,.45);border:1px solid rgba(148,163,184,.3);color:#fff;border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;color-scheme:dark"></div>'; }
+  ov.innerHTML='<div style="background:#0f1830;border:1px solid rgba(148,163,184,.3);border-radius:16px;padding:18px 20px;width:520px;max-width:96vw;max-height:92vh;overflow:auto;color:#e5e7eb;font-family:Inter,system-ui,sans-serif">'+
+    '<div style="font-size:15px;font-weight:800;margin-bottom:10px">✎ Editar actividad</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+fld('Ítem','item',a.item)+fld('Capítulo / grupo','cap',a.cap)+'</div>'+
+    fld('Descripción','desc',a.desc)+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'+fld('Unidad','und',a.und||'')+fld('Cantidad','cant',a.cant||'','number')+fld('Valor total','vrTotal',a.vrTotal||'','number')+'</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+fld('Responsable','resp',a.resp||'')+fld('% Avance (0-100)','avance',((a.avance||0)*100).toFixed(2),'number')+'</div>'+
+    fld('Fechas de inicio (dd/mm/aaaa, coma = etapas)','ini',csv.ini)+
+    fld('Fechas de fin (dd/mm/aaaa, coma = etapas)','fin',csv.fin)+
+    '<div id="ca-msg" style="display:none;color:#fca5a5;font-size:12px;margin:6px 0"></div>'+
+    '<div style="display:flex;gap:8px;margin-top:14px">'+
+      '<button id="ca-del" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.5);color:#fca5a5;border-radius:9px;padding:9px 12px;font-size:13px;cursor:pointer">🗑 Eliminar</button>'+
+      '<div style="flex:1"></div>'+
+      '<button id="ca-cancel" style="background:transparent;border:1px solid rgba(148,163,184,.3);color:#cbd5e1;border-radius:9px;padding:9px 14px;font-size:13px;cursor:pointer">Cancelar</button>'+
+      '<button id="ca-ok" style="background:#22d3ee;border:none;color:#04121a;font-weight:800;border-radius:9px;padding:9px 18px;font-size:13px;cursor:pointer">Guardar</button>'+
+    '</div></div>';
+  document.body.appendChild(ov);
+  var cerrar=function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); };
+  document.getElementById('ca-cancel').onclick=cerrar;
+  document.getElementById('ca-del').onclick=function(){
+    if(!confirm('¿Eliminar la actividad «'+(a.desc||a.item)+'»? También se quitan sus vínculos.')) return;
+    CRONO_DATA.actividades=CRONO_DATA.actividades.filter(function(x){ return x!==a; });
+    CRONO_DEPS=CRONO_DEPS.filter(function(d){ return d.de!==a.item && d.a!==a.item; });
+    CRONO_DATA._capIdx=null; cronoCustomSave(); cerrar(); cronoArrancar();
+  };
+  document.getElementById('ca-ok').onclick=function(){
+    var g=function(id){ var e=document.getElementById('ca-'+id); return e?e.value.trim():''; };
+    var msg=document.getElementById('ca-msg');
+    var tramos=cronoCSVaTramos(g('ini'), g('fin'));
+    var nI=g('ini').split(',').filter(function(x){return x.trim();}).length;
+    var nF=g('fin').split(',').filter(function(x){return x.trim();}).length;
+    if(!tramos.length || nI!==nF || tramos.length!==nI){
+      msg.textContent='Revisa las fechas: misma cantidad de inicios y fines, dd/mm/aaaa, y el fin no puede ser anterior al inicio.';
+      msg.style.display='block'; return;
+    }
+    var nuevoItem=g('item')||a.item;
+    if(nuevoItem!==a.item){
+      CRONO_DEPS.forEach(function(d){ if(d.de===a.item) d.de=nuevoItem; if(d.a===a.item) d.a=nuevoItem; });
+    }
+    a.item=nuevoItem; a.cap=g('cap')||'GENERAL'; a.desc=g('desc')||('Ítem '+a.item);
+    a.und=g('und'); a.cant=parseFloat(g('cant'))||0; a.vrTotal=parseFloat(g('vrTotal'))||0;
+    a.resp=g('resp');
+    var av=parseFloat(g('avance')); a.avance=isNaN(av)?0:Math.max(0,Math.min(100,av))/100;
+    a.tramos=tramos;
+    CRONO_DATA._capIdx=null; cronoCustomSave(); cerrar(); cronoArrancar();
+    document.getElementById('crono-estado').textContent='Actividad actualizada ✓';
+  };
 }
 function cronoAvanceEditar(item){
   if(CRONO_SRC.tipo!=='custom') return;
@@ -12345,7 +12475,7 @@ function cronoRender(){
     h+='<div style="position:absolute;left:0;top:'+y+'px;width:'+W+'px;height:'+CRONO_ROWH+'px;border-bottom:1px solid '+CT.lineD+'"></div>';
     h+='<div class="crono-fila-izq" data-item="'+a.item+'" style="position:absolute;left:0;top:'+y+'px;width:'+leftw+'px;height:'+CRONO_ROWH+'px;border-right:2px solid '+CT.border+';background:'+selBg+';z-index:25;display:flex;align-items:center;gap:'+GAP+'px;padding:0 '+PADR+'px 0 '+PADL+'px;box-sizing:border-box;font-size:11px">'+
       '<span onclick="cronoClickFila(\''+a.item+'\')" style="color:'+cc2+';font-weight:800;flex:0 0 '+wItem+'px;font-size:10.5px;cursor:'+(CRONO_MODO_LINK?'crosshair':'default')+'">'+a.item+'</span>'+
-      '<span onclick="cronoClickFila(\''+a.item+'\')" title="'+(a.desc||'').replace(/"/g,'&quot;')+'" style="color:'+CT.tx2+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 '+wDesc+'px;cursor:'+(CRONO_MODO_LINK?'crosshair':'default')+'">'+(a.desc||('Ítem '+a.item))+'</span>'+
+      '<span onclick="'+((CRONO_SRC.tipo==='custom'&&!CRONO_MODO_LINK)?('cronoActEditar(\''+a.item+'\')'):('cronoClickFila(\''+a.item+'\')'))+'" title="'+((CRONO_SRC.tipo==='custom'&&!CRONO_MODO_LINK)?'Clic para editar toda la actividad':(a.desc||'')).replace(/"/g,'&quot;')+'" style="color:'+CT.tx2+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 '+wDesc+'px;cursor:'+(CRONO_MODO_LINK?'crosshair':(CRONO_SRC.tipo==='custom'?'pointer':'default'))+'">'+(a.desc||('Ítem '+a.item))+'</span>'+
       (showIni?'<span onclick="cronoFechaAbrir(\''+a.item+'\')" title="'+csv.ini+'" style="color:#7dd3fc;flex:0 0 '+CW.ini+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(125,211,252,.5)">'+csv.ini.split(',')[0]+(a.tramos.length>1?' +'+(a.tramos.length-1):'')+'</span>':'')+
       (showFin?'<span onclick="cronoFechaAbrir(\''+a.item+'\')" title="'+csv.fin+'" style="color:#7dd3fc;flex:0 0 '+CW.fin+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(125,211,252,.5)">'+csv.fin.split(',').slice(-1)[0]+(a.tramos.length>1?' ·'+a.tramos.length+'et':'')+'</span>':'')+
       (showPred?'<span onclick="cronoPredAbrir(\''+a.item+'\')" title="'+(pred||'Sin predecesoras — clic para agregar')+'" style="color:'+(pred?'#fbbf24':'#475569')+';flex:0 0 '+CW.pred+'px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted rgba(251,191,36,.4)">'+(pred||'—')+'</span>':'')+

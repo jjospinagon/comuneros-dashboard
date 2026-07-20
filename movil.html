@@ -155,12 +155,71 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
       </div>
     </div>
 
+    <!-- ===================== BITÁCORA DE OBRA ===================== -->
+    <div id="tabBita" style="display:none">
+      <div class="card">
+        <div class="ttl">📓 Bitácora de obra · GTO-P-04-R-01</div>
+        <label class="lb">Fecha del reporte</label>
+        <input type="date" id="bt-fecha" class="in">
+        <div class="row2">
+          <div><label class="lb">Estado del tiempo</label>
+            <select id="bt-tiempo" class="in"><option>Soleado</option><option>Nublado</option><option>Lluvioso</option><option>Variable</option></select></div>
+          <div><label class="lb">Horas de lluvia</label><input type="number" min="0" max="24" id="bt-lluvia" class="in"></div>
+        </div>
+        <div class="ttl2">Personal (No.)</div>
+        <div class="row2">
+          <div><label class="lb">Director</label><input type="number" min="0" id="bt-pDirector" class="in"></div>
+          <div><label class="lb">Ing. residente</label><input type="number" min="0" id="bt-pResidente" class="in"></div>
+        </div>
+        <div class="row2">
+          <div><label class="lb">Maestro</label><input type="number" min="0" id="bt-pMaestro" class="in"></div>
+          <div><label class="lb">Oficiales</label><input type="number" min="0" id="bt-pOficiales" class="in"></div>
+        </div>
+        <div class="row2">
+          <div><label class="lb">Ayudantes</label><input type="number" min="0" id="bt-pAyudantes" class="in"></div>
+          <div><label class="lb">Otros</label><input type="number" min="0" id="bt-pOtros" class="in"></div>
+        </div>
+        <div class="row2">
+          <div><label class="lb">Insp. Seg. Ind.</label><input type="number" min="0" id="bt-pInspector" class="in"></div>
+          <div><label class="lb">Prof. social</label><input type="number" min="0" id="bt-pSocial" class="in"></div>
+        </div>
+        <label class="lb">Chequeo afiliaciones</label>
+        <select id="bt-afiliaciones" class="in"><option value="">—</option><option value="Si">Sí</option><option value="No">No</option></select>
+        <div class="ttl2">Equipo utilizado (No.)</div>
+        <div class="row2">
+          <div><label class="lb">Rana</label><input type="number" min="0" id="bt-eqRana" class="in"></div>
+          <div><label class="lb">Canguro</label><input type="number" min="0" id="bt-eqCanguro" class="in"></div>
+        </div>
+        <div class="row2">
+          <div><label class="lb">Mezcladora</label><input type="number" min="0" id="bt-eqMezcladora" class="in"></div>
+          <div><label class="lb">Vibrador</label><input type="number" min="0" id="bt-eqVibrador" class="in"></div>
+        </div>
+        <div class="row2">
+          <div><label class="lb">Mixer</label><input type="number" min="0" id="bt-eqMixer" class="in"></div>
+          <div><label class="lb">Cortadora</label><input type="number" min="0" id="bt-eqCortadora" class="in"></div>
+        </div>
+        <label class="lb">Otros equipos</label><input type="text" id="bt-eqOtros" class="in">
+        <div class="ttl2">Plan de calidad</div>
+        <textarea id="bt-planCalidad" class="in" rows="3" placeholder="Acciones chequeadas…"></textarea>
+        <div class="ttl2">Eventos del día</div>
+        <textarea id="bt-eventos" class="in" rows="6" placeholder="Describe lo ejecutado y las novedades…"></textarea>
+        <div class="ttl2">Firmas (nombres)</div>
+        <div class="row2">
+          <div><label class="lb">Residente obra</label><input type="text" id="bt-firmaResidente" class="in"></div>
+          <div><label class="lb">Residente interv.</label><input type="text" id="bt-firmaResidenteInterv" class="in"></div>
+        </div>
+        <button class="btn" id="bt-guardar" onclick="bitaGuardar()" style="margin-top:12px">💾 Guardar bitácora en Drive</button>
+        <div id="bt-est" style="font-size:12px;color:#94a3b8;margin-top:8px;text-align:center"></div>
+      </div>
+    </div>
+
   </div>
   <div class="tabs">
     <button id="tbReg" class="on" onclick="tab('reg')"><span class="ic">📝</span>Registro</button>
     <button id="tbMetas" onclick="tab('metas')"><span class="ic">🎯</span>Metas</button>
     <button id="tbAcum" onclick="tab('acum')"><span class="ic">📊</span>Ejecutado</button>
     <button id="tbMseg" onclick="tab('mseg')"><span class="ic">📈</span>Seguim.</button>
+    <button id="tbBita" onclick="tab('bita')"><span class="ic">📓</span>Bitácora</button>
   </div>
 </div>
 
@@ -503,13 +562,39 @@ function guardarMeta(){
 }
 /* ===== tabs ===== */
 function tab(t){
-  var vs={reg:'tabReg',metas:'tabMetas',acum:'tabAcum',mseg:'tabMseg'};
-  var bs={reg:'tbReg',metas:'tbMetas',acum:'tbAcum',mseg:'tbMseg'};
+  var vs={reg:'tabReg',metas:'tabMetas',acum:'tabAcum',mseg:'tabMseg',bita:'tabBita'};
+  var bs={reg:'tbReg',metas:'tbMetas',acum:'tbAcum',mseg:'tbMseg',bita:'tbBita'};
   for(var k in vs){
-    document.getElementById(vs[k]).style.display=(t===k)?'block':'none';
-    document.getElementById(bs[k]).className=(t===k)?'on':'';
+    var pv=document.getElementById(vs[k]), pb=document.getElementById(bs[k]);
+    if(pv) pv.style.display=(t===k)?'block':'none';
+    if(pb) pb.className=(t===k)?'on':'';
   }
   if(t==='acum'||t==='mseg') cargarResumen(t);
+  if(t==='bita'){ var f=document.getElementById('bt-fecha'); if(f&&!f.value) f.value=hoy(); }
+}
+
+/* ===== bitácora de obra: se guarda en la misma carpeta de Drive que el cockpit ===== */
+function bitaGuardar(){
+  var f=document.getElementById('bt-fecha').value;
+  if(!f){ msg('Indica la fecha del reporte', true); return; }
+  var g=function(id){ var e=document.getElementById('bt-'+id); return e?e.value:''; };
+  var d={ fecha:f, tiempo:g('tiempo'), lluviaHoras:g('lluvia'),
+    pDirector:g('pDirector'), pResidente:g('pResidente'), pMaestro:g('pMaestro'),
+    pOficiales:g('pOficiales'), pAyudantes:g('pAyudantes'), pOtros:g('pOtros'),
+    pInspector:g('pInspector'), pSocial:g('pSocial'), afiliaciones:g('afiliaciones'),
+    eqRana:g('eqRana'), eqCanguro:g('eqCanguro'), eqMezcladora:g('eqMezcladora'),
+    eqVibrador:g('eqVibrador'), eqMixer:g('eqMixer'), eqCortadora:g('eqCortadora'), eqOtros:g('eqOtros'),
+    planCalidad:g('planCalidad'), eventos:g('eventos'),
+    firmaResidente:g('firmaResidente'), firmaResidenteInterv:g('firmaResidenteInterv'),
+    origen:'movil', usuario:(typeof NOM!=='undefined'?NOM:'') };
+  var btn=document.getElementById('bt-guardar'), est=document.getElementById('bt-est');
+  btn.disabled=true; btn.textContent='Guardando…'; est.textContent='Generando el formato y subiéndolo a Drive…';
+  jsonp({action:'bitacora_guardar', fecha:f, id:'BIT-'+f+'-movil', datos:JSON.stringify(d),
+         nombre:'GTO-P-04-R-01 Bitacora '+f+'.xlsx'}, function(r){
+    btn.disabled=false; btn.textContent='💾 Guardar bitácora en Drive';
+    if(r&&r.ok){ est.textContent='✓ Guardada en Drive · carpeta '+(r.carpeta||f); msg('Bitácora guardada'); }
+    else{ est.textContent=''; msg((r&&r.error)||'No se pudo guardar la bitácora', true); }
+  }, 60000);
 }
 
 /* ===== resumen: acumulados + metas ===== */
