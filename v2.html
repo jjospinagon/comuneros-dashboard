@@ -2217,6 +2217,9 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   #screen-bitacora .bt-hoja .h-val{white-space:pre-wrap}
   #screen-bitacora .bt-hoja .h-events{height:210px;vertical-align:top;white-space:pre-wrap}
   #screen-bitacora .bt-hoja .h-firma{height:46px;text-align:center;vertical-align:bottom;font-size:10px;color:#333}
+  #screen-bitacora .bt-spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:btspin .8s linear infinite;vertical-align:-2px;margin-right:7px}
+  @keyframes btspin{to{transform:rotate(360deg)}}
+  #screen-bitacora .bt-nota{font-size:11.5px;color:#94a3b8;text-align:center;margin-bottom:8px;line-height:1.4}
   #bt-preview-wrap{overflow:auto;max-height:74vh;background:#334;border-radius:12px;padding:16px}
   body.light #bt-preview-wrap{background:#dfe6ef}
   body.light #screen-bitacora .bt-panel{background:rgba(255,255,255,.75);border-color:rgba(15,23,42,.12)}
@@ -2269,7 +2272,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
           <button class="bt-btn" onclick="bitacoraImprimir()" id="bt-btn-print" style="display:none">🖨 Imprimir / PDF</button>
           <button class="bt-btn" onclick="bitacoraEditar()" id="bt-btn-editar" style="display:none">✏ Editar</button>
         </div>
-        <div id="bt-preview-wrap"><div style="color:#94a3b8;text-align:center;padding:60px 10px">La previsualización aparecerá aquí.</div></div>
+        <div class="bt-nota">Vista de referencia. <b>El documento oficial</b> (con los logos PROYECTA y MIPG) se genera en el servidor sobre tu plantilla GTO-P-04-R-01: úsalo con <b>⬇ Descargar Excel</b> o <b>🖨 Imprimir / PDF</b>.</div><div id="bt-preview-wrap"><div style="color:#94a3b8;text-align:center;padding:60px 10px">La previsualización aparecerá aquí.</div></div>
       </div>
     </div>
   </div>
@@ -11871,105 +11874,90 @@ function bitacoraVer(id){
   BITA_STATE.current=r; BITA_STATE.editing=false;
   bitacoraCancelar(); bitacoraRenderLista(); bitacoraPreview(r);
 }
-function bitacoraImprimir(){ window.print(); }
+/* ---------- generación y entrega del formato REAL (plantilla original) ----------
+   Todo sale del servidor: copia tu plantilla GTO-P-04-R-01 (con los logos PROYECTA
+   y MIPG), la diligencia y devuelve el .xlsx y el .pdf ya guardados en Drive.
+   Aquí NO se arma ningún formato: se descarga/imprime exactamente ese archivo. */
+
+function _btSpin(btn, texto){
+  if(!btn) return;
+  btn.disabled=true;
+  btn.innerHTML='<span class="bt-spin"></span>'+texto;
+}
+function _btSpinOff(btn, texto){
+  if(!btn) return;
+  btn.disabled=false; btn.innerHTML=texto;
+}
+
+/* Guarda en el servidor y devuelve {idXlsx, idPdf}. Reutiliza lo ya generado. */
+function bitacoraAsegurarArchivo(cb, btn, textoBtn){
+  var r = BITA_STATE.editing ? bitacoraLeerForm() : BITA_STATE.current;
+  if(!r){ cb(null); return; }
+  if(!r.fecha){ alert('Indica la fecha del reporte.'); cb(null); return; }
+  if(r._idXlsx && r._idPdf){ cb(r); return; }
+  var est=document.getElementById('bt-estado');
+  _btSpin(btn, 'Generando…');
+  est.textContent='Generando el formato oficial en el servidor…';
+  bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:JSON.stringify(r),
+             nombre:'GTO-P-04-R-01 Bitacora '+r.fecha}).then(function(res){
+    _btSpinOff(btn, textoBtn);
+    if(res && res.ok){
+      r._idXlsx=res.idXlsx||''; r._idPdf=res.idPdf||'';
+      est.textContent='✓ Formato generado en Drive · carpeta '+(res.carpeta||r.fecha);
+      cb(r);
+    } else {
+      est.textContent=(res&&res.error) ? ('No se pudo generar: '+res.error) : 'No hubo respuesta del servidor.';
+      cb(null);
+    }
+  });
+}
+
+/* Imprime el PDF REAL del formato (sin encabezados ni URL del navegador) */
+function bitacoraImprimir(){
+  var btn=document.getElementById('bt-btn-print');
+  bitacoraAsegurarArchivo(function(r){
+    if(!r) return;
+    if(r._idPdf){ window.open('https://drive.google.com/file/d/'+r._idPdf+'/view','_blank'); }
+    else if(r._idXlsx){ window.open('https://drive.google.com/file/d/'+r._idXlsx+'/view','_blank'); }
+    document.getElementById('bt-estado').textContent='✓ Se abrió el formato en PDF · usa Imprimir desde ahí';
+  }, btn, '🖨 Imprimir / PDF');
+}
+
+/* Descarga el Excel REAL diligenciado (la plantilla original, no una copia) */
+function bitacoraDescargarExcel(){
+  var btn=document.getElementById('bt-btn-xls');
+  bitacoraAsegurarArchivo(function(r){
+    if(!r || !r._idXlsx) return;
+    window.open('https://drive.google.com/uc?export=download&id='+r._idXlsx,'_blank');
+    document.getElementById('bt-estado').textContent='✓ Descargando el formato diligenciado (.xlsx)';
+  }, btn, '⬇ Descargar Excel');
+}
 
 /* ---------- guardado (local + backend Drive por año/mes/día) ---------- */
 function bitacoraGuardar(){
   var r=BITA_STATE.editing?bitacoraLeerForm():BITA_STATE.current;
   if(!r){ return; }
   if(!r.fecha){ alert('Indica la fecha del reporte.'); return; }
-  var btn=document.getElementById('bt-btn-guardar'); if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
-  var est=document.getElementById('bt-estado'); est.textContent='Guardando bitácora…';
-  /* 1) guarda local siempre (respaldo inmediato) */
+  var btn=document.getElementById('bt-btn-guardar');
+  _btSpin(btn, 'Guardando…');
+  var est=document.getElementById('bt-estado');
+  est.innerHTML='<span class="bt-spin"></span>Guardando y generando el formato oficial…';
+  /* 1) respaldo local inmediato */
   var loc=bitaLocal().filter(function(x){ return x.id!==r.id; });
   var rl=JSON.parse(JSON.stringify(r)); rl._local=true; loc.unshift(rl); bitaLocalSet(loc);
-  /* 2) backend: guarda el registro y GENERA el Excel en el servidor,
-        dejándolo en Drive dentro de Año/Mes/Día (no se manda el archivo por la URL) */
-  bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:JSON.stringify(r), nombre:'GTO-P-04-R-01 Bitacora '+r.fecha+'.xlsx'}).then(function(res){
-    if(btn){ btn.disabled=false; btn.textContent='💾 Guardar'; }
+  /* 2) servidor: registra y genera .xlsx + .pdf desde la plantilla original */
+  bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:JSON.stringify(r),
+             nombre:'GTO-P-04-R-01 Bitacora '+r.fecha}).then(function(res){
+    _btSpinOff(btn, '💾 Guardar');
     if(res&&res.ok){
-      est.textContent='✓ Guardada en Drive · carpeta '+(res.carpeta||r.fecha)+' · Excel generado';
+      r._idXlsx=res.idXlsx||''; r._idPdf=res.idPdf||'';
+      est.textContent='✓ Guardada en Drive · carpeta '+(res.carpeta||r.fecha)+' · Excel y PDF generados';
       var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr);
     } else {
-      est.textContent='✓ Guardada en este equipo (no hubo respuesta del servidor; se reintenta al volver a guardar).';
+      est.textContent='✓ Guardada en este equipo (sin respuesta del servidor; se reintenta al volver a guardar).';
     }
     BITA_STATE.editing=false; bitacoraCancelar(); bitacoraListar(); bitacoraPreview(r);
   });
-}
-
-/* ---------- generación del Excel diligenciado (SheetJS) ---------- */
-function _btXLSXlib(){
-  return new Promise(function(res,rej){
-    if(window.XLSX) return res(window.XLSX);
-    var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload=function(){ res(window.XLSX); }; s.onerror=function(){ rej(new Error('no XLSX')); };
-    document.head.appendChild(s);
-  });
-}
-function bitacoraWorkbook(r){
-  var XLSX=window.XLSX;
-  var A=[]; function row(a){ A.push(a); }
-  row(['MONACO Construcciones','', 'BITÁCORA DE OBRA','','','','Código: GTO-P-04-R-01']);
-  row(['','','','','','','Versión: 02 · Vigente: 11/10/2022 · Página 1 de 2']);
-  row([]);
-  row(['DATOS GENERALES DEL CONTRATO']);
-  row(['Contrato No:', r.contrato]);
-  row(['Objeto:', r.objeto]);
-  row(['Contratista:', r.contratista, '', 'Interventor:', r.interventor]);
-  row([]);
-  row(['DATOS DE SEGUIMIENTO A LA OBRA']);
-  row(['Fecha del reporte:', bitaFmt(r.fecha), '', 'Día:', bitaDiaSemana(r.fecha)]);
-  row(['Estado del tiempo:', r.tiempo, '', 'Horas de lluvia:', r.lluviaHoras]);
-  row([]);
-  row(['CANTIDAD DE PERSONAL (No.)']);
-  row(['Director de obra', r.pDirector, '', 'Oficiales', r.pOficiales]);
-  row(['Ingeniero residente', r.pResidente, '', 'Ayudantes', r.pAyudantes]);
-  row(['Maestro', r.pMaestro, '', 'Otros', r.pOtros]);
-  row(['Inspector Seg. Industrial', r.pInspector, '', 'Especifique (otros)', r.pOtrosEsp]);
-  row(['Profesional social', r.pSocial, '', 'Chequeo afiliaciones', r.afiliaciones]);
-  row([]);
-  row(['EQUIPO UTILIZADO']);
-  row(['Rana', r.eqRana, '', 'Vibrador', r.eqVibrador]);
-  row(['Canguro', r.eqCanguro, '', 'Mixer', r.eqMixer]);
-  row(['Mezcladora', r.eqMezcladora, '', 'Cortadora', r.eqCortadora]);
-  row(['Especifique (otros):', r.eqOtros]);
-  row([]);
-  row(['CHEQUEO ACCIONES PROYECTADAS EN EL PLAN DE CALIDAD']);
-  row([r.planCalidad]);
-  row([]);
-  row(['EVENTOS DEL DÍA']);
-  row([r.eventos]);
-  row([]);
-  row([]);
-  row([r.firmaResidente, '', '', r.firmaResidenteInterv]);
-  row(['Nombre y Firma Residente de la obra','','','Nombre y Firma Residente Interventoría']);
-  row([r.firmaDirectorObra, '', '', r.firmaDirectorInterv]);
-  row(['Nombre y Firma Director de Obra','','','Nombre y Firma Director de Interventoria']);
-  var ws=XLSX.utils.aoa_to_sheet(A);
-  ws['!cols']=[{wch:26},{wch:18},{wch:4},{wch:22},{wch:20},{wch:4},{wch:34}];
-  ws['!merges']=[
-    {s:{r:0,c:2},e:{r:0,c:5}}, {s:{r:3,c:0},e:{r:3,c:6}}, {s:{r:8,c:0},e:{r:8,c:6}},
-    {s:{r:12,c:0},e:{r:12,c:6}}, {s:{r:18,c:0},e:{r:18,c:6}}, {s:{r:23,c:0},e:{r:23,c:6}},
-    {s:{r:26,c:0},e:{r:26,c:6}}, {s:{r:5,c:1},e:{r:5,c:6}}, {s:{r:24,c:0},e:{r:24,c:6}}, {s:{r:27,c:0},e:{r:27,c:6}}
-  ];
-  var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Bitacora');
-  return wb;
-}
-function bitacoraExcelB64(r){
-  return _btXLSXlib().then(function(XLSX){
-    var wb=bitacoraWorkbook(r);
-    return XLSX.write(wb, {bookType:'xlsx', type:'base64'});
-  }).catch(function(){ return ''; });
-}
-function bitacoraDescargarExcel(){
-  var r=BITA_STATE.editing?bitacoraLeerForm():BITA_STATE.current; if(!r) return;
-  var est=document.getElementById('bt-estado'); est.textContent='Generando Excel…';
-  _btXLSXlib().then(function(XLSX){
-    var wb=bitacoraWorkbook(r);
-    XLSX.writeFile(wb, 'GTO-P-04-R-01 Bitacora '+r.fecha+'.xlsx');
-    est.textContent='✓ Excel descargado.';
-  }).catch(function(){ est.textContent='No se pudo cargar el generador de Excel.'; });
 }
 </script>
 
