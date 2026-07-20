@@ -11805,7 +11805,7 @@ function bitacoraForm(r){
   h+='<div class="bt-sec">Firmas (nombres)</div>';
   h+='<div class="bt-grid2">'+_btF('Residente de la obra','firmaResidente',r.firmaResidente)+_btF('Residente interventoría','firmaResidenteInterv',r.firmaResidenteInterv)+'</div>';
   h+='<div class="bt-grid2">'+_btF('Director de obra','firmaDirectorObra',r.firmaDirectorObra)+_btF('Director de interventoría','firmaDirectorInterv',r.firmaDirectorInterv)+'</div>';
-  h+='<div style="display:flex;gap:8px;margin-top:12px"><button class="bt-btn primary" style="flex:1" onclick="bitacoraAplicarPreview()">👁 Previsualizar</button><button class="bt-btn amber" style="flex:1" onclick="bitacoraGuardar()">💾 Guardar</button></div>';
+  h+='<div style="display:flex;gap:8px;margin-top:12px"><button class="bt-btn primary" style="flex:1" onclick="bitacoraAplicarPreview()">👁 Previsualizar</button><button class="bt-btn amber" id="bt-form-guardar" style="flex:1" onclick="bitacoraGuardar()">💾 Guardar</button></div>';
   document.getElementById('bt-form').innerHTML=h;
   var sel=document.getElementById('bt-i-tiempo'); if(sel) sel.value=r.tiempo||'Soleado';
   var af=document.getElementById('bt-i-afiliaciones'); if(af) af.value=r.afiliaciones||'';
@@ -11865,10 +11865,31 @@ function bitacoraPreviewHTML(r){
   return pg1;
 }
 function bitacoraPreview(r){
-  document.getElementById('bt-preview-wrap').innerHTML=bitacoraPreviewHTML(r);
+  var wrap=document.getElementById('bt-preview-wrap');
   var acts=document.getElementById('bt-preview-actions'); acts.style.display='flex';
   ['bt-btn-guardar','bt-btn-xls','bt-btn-print','bt-btn-editar','bt-btn-eliminar'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=''; });
   document.getElementById('bt-btn-editar').style.display = BITA_STATE.editing?'none':'';
+  /* Si el documento oficial ya está generado, se muestra ESE (tu formato real,
+     con los logos), no una recreación. Si aún no existe, se ofrece generarlo. */
+  if(r && r._idPdf){
+    wrap.innerHTML='<iframe src="https://drive.google.com/file/d/'+r._idPdf+'/preview" '+
+      'style="width:100%;height:72vh;border:0;border-radius:8px;background:#fff" allow="autoplay"></iframe>';
+    return;
+  }
+  wrap.innerHTML='<div style="text-align:center;padding:38px 16px;color:#cbd5e1">'+
+    '<div style="font-size:15px;font-weight:700;margin-bottom:6px">Documento aún no generado</div>'+
+    '<div style="font-size:12.5px;color:#94a3b8;max-width:430px;margin:0 auto 16px">'+
+    'Diligencia los campos y pulsa <b>Guardar</b>. El formato oficial GTO-P-04-R-01 '+
+    'se arma en el servidor sobre tu plantilla y aparecerá aquí tal cual, listo para imprimir.</div>'+
+    '<button class="bt-btn primary" onclick="bitacoraVerDocumento()">👁 Generar y ver el documento</button>'+
+    '</div>';
+}
+
+/* Genera el documento y lo muestra embebido */
+function bitacoraVerDocumento(){
+  bitacoraAsegurarArchivo(function(r){
+    if(r) bitacoraPreview(r);
+  }, null, '');
 }
 function bitacoraVer(id){
   var r=(BITA_STATE.records||[]).filter(function(x){return x.id===id;})[0]; if(!r) return;
@@ -11884,7 +11905,6 @@ function bitacoraEliminar(){
   var est=document.getElementById('bt-estado');
   _btSpin(btn,'Eliminando…');
   est.innerHTML='<span class="bt-spin"></span>Eliminando la bitácora…';
-  /* fuera del respaldo local */
   bitaLocalSet(bitaLocal().filter(function(x){ return x.id!==r.id; }));
   bitaJsonp({action:'bitacora_eliminar', id:r.id}).then(function(res){
     _btSpinOff(btn,'🗑 Eliminar');
@@ -11916,20 +11936,19 @@ function _btSpinOff(btn, texto){
   btn.disabled=false; btn.innerHTML=texto;
 }
 
-/* Guarda en el servidor y devuelve {idXlsx, idPdf}. Reutiliza lo ya generado. */
+/* Genera SIEMPRE el archivo con los datos actuales y devuelve {_idXlsx,_idPdf} */
 function bitacoraAsegurarArchivo(cb, btn, textoBtn){
   var r = BITA_STATE.editing ? bitacoraLeerForm() : BITA_STATE.current;
   if(!r){ cb(null); return; }
   if(!r.fecha){ alert('Indica la fecha del reporte.'); cb(null); return; }
-  if(r._idXlsx && r._idPdf){ cb(r); return; }
   var est=document.getElementById('bt-estado');
   _btSpin(btn, 'Generando…');
-  est.textContent='Generando el formato oficial en el servidor…';
-  bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:JSON.stringify(r),
-             nombre:'GTO-P-04-R-01 Bitacora '+r.fecha}).then(function(res){
+  est.innerHTML='<span class="bt-spin"></span>Generando el formato oficial con los datos actuales…';
+  bitacoraEnviar(r).then(function(res){
     _btSpinOff(btn, textoBtn);
     if(res && res.ok){
       r._idXlsx=res.idXlsx||''; r._idPdf=res.idPdf||'';
+      var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr);
       est.textContent='✓ Formato generado en Drive · carpeta '+(res.carpeta||r.fecha);
       cb(r);
     } else {
@@ -11944,8 +11963,8 @@ function bitacoraImprimir(){
   var btn=document.getElementById('bt-btn-print');
   bitacoraAsegurarArchivo(function(r){
     if(!r) return;
-    if(r._idPdf){ window.open('https://drive.google.com/file/d/'+r._idPdf+'/view','_blank'); }
-    else if(r._idXlsx){ window.open('https://drive.google.com/file/d/'+r._idXlsx+'/view','_blank'); }
+    var id = r._idPdf || r._idXlsx;
+    if(id) window.open('https://drive.google.com/file/d/'+id+'/view','_blank');
     document.getElementById('bt-estado').textContent='✓ Se abrió el formato en PDF · usa Imprimir desde ahí';
   }, btn, '🖨 Imprimir / PDF');
 }
@@ -11960,28 +11979,55 @@ function bitacoraDescargarExcel(){
   }, btn, '⬇ Descargar Excel');
 }
 
+/* ---------- envío del registro al servidor ----------
+   El JSON puede ser largo (los eventos del día). Como JSONP viaja por la URL y
+   ésta tiene un límite, si el texto es grande se manda partido en trozos y el
+   servidor lo vuelve a armar. Así deja de quedarse en "solo local". */
+function bitacoraEnviar(r){
+  var datos = JSON.stringify(r);
+  var nombre = 'GTO-P-04-R-01 Bitacora '+r.fecha;
+  if(datos.length <= 1200){
+    return bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:datos, nombre:nombre});
+  }
+  var TAM=1200, partes=[];
+  for(var i=0;i<datos.length;i+=TAM) partes.push(datos.slice(i,i+TAM));
+  var tk = 'T'+Date.now()+'_'+Math.floor(Math.random()*99999);
+  var cadena = Promise.resolve();
+  partes.forEach(function(parte, idx){
+    cadena = cadena.then(function(){
+      return bitaJsonp({action:'bitacora_chunk', tk:tk, i:idx, n:partes.length, parte:parte});
+    });
+  });
+  return cadena.then(function(){
+    return bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id,
+                      chunk_tk:tk, chunk_n:partes.length, nombre:nombre});
+  });
+}
+
 /* ---------- guardado (local + backend Drive por año/mes/día) ---------- */
 function bitacoraGuardar(){
   var r=BITA_STATE.editing?bitacoraLeerForm():BITA_STATE.current;
   if(!r){ return; }
   if(!r.fecha){ alert('Indica la fecha del reporte.'); return; }
+  /* el reloj se muestra en el botón que exista: el de la barra y el del formulario */
   var btn=document.getElementById('bt-btn-guardar');
-  _btSpin(btn, 'Guardando…');
+  var btnF=document.getElementById('bt-form-guardar');
+  _btSpin(btn,'Guardando…'); _btSpin(btnF,'Guardando…');
   var est=document.getElementById('bt-estado');
   est.innerHTML='<span class="bt-spin"></span>Guardando y generando el formato oficial…';
-  /* 1) respaldo local inmediato */
+  /* respaldo local inmediato */
   var loc=bitaLocal().filter(function(x){ return x.id!==r.id; });
   var rl=JSON.parse(JSON.stringify(r)); rl._local=true; loc.unshift(rl); bitaLocalSet(loc);
-  /* 2) servidor: registra y genera .xlsx + .pdf desde la plantilla original */
-  bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:JSON.stringify(r),
-             nombre:'GTO-P-04-R-01 Bitacora '+r.fecha}).then(function(res){
-    _btSpinOff(btn, '💾 Guardar');
+  /* al cambiar los datos, los archivos anteriores ya no sirven */
+  r._idXlsx=''; r._idPdf='';
+  bitacoraEnviar(r).then(function(res){
+    _btSpinOff(btn,'💾 Guardar'); _btSpinOff(btnF,'💾 Guardar');
     if(res&&res.ok){
       r._idXlsx=res.idXlsx||''; r._idPdf=res.idPdf||'';
-      est.textContent='✓ Guardada en Drive · carpeta '+(res.carpeta||r.fecha)+' · Excel y PDF generados';
+      est.textContent='✓ Guardada en Drive · carpeta '+(res.carpeta||r.fecha)+' · Excel y PDF reemplazados';
       var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr);
     } else {
-      est.textContent='✓ Guardada en este equipo (sin respuesta del servidor; se reintenta al volver a guardar).';
+      est.textContent='⚠ Guardada solo en este equipo · '+((res&&res.error)||'sin respuesta del servidor');
     }
     BITA_STATE.editing=false; bitacoraCancelar(); bitacoraListar(); bitacoraPreview(r);
   });
