@@ -12111,7 +12111,7 @@ function bitaVoz(btn, id){
     ta.value=(ta.value?(ta.value.replace(/\s+$/,'')+(/[.;!?]$/.test(ta.value.trim())?' ':'. ')):'')+txt;
   };
   var fin=function(){ _bitaRec=null; btn.textContent='🎤 Dictar'; btn.style.borderColor=''; btn.style.color='';
-    if(est) est.textContent='Dictado detenido. Puedes pulir con «Redacción técnica».'; };
+    if(est) est.textContent='Dictado detenido. Pulsa «Transcripción» para redactarlo.'; };
   rec.onend=fin;
   rec.onerror=function(e){ fin(); if(est) est.textContent='No se pudo escuchar ('+(e.error||'error')+'). Revisa el permiso del micrófono.'; };
   try{ rec.start(); }catch(e){ fin(); }
@@ -12123,17 +12123,19 @@ function bitaVoz(btn, id){
 var BITA_GLOSARIO=[
   [/\b(hueco|hoyo|zanja)s?\b/gi,'excavación'],
   [/\babrimos\s+(excavación|la\s+excavación)\b/gi,'se ejecutó excavación'],
-  [/\btubos?\b/gi,'tubería'],
+  [/\btubos\b/gi,'tuberías'],
+  [/\btubo\b/gi,'tubería'],
   [/\b(pegamos|pusimos|metimos|instalamos)\s+(la\s+)?tubería\b/gi,'se instaló tubería'],
   [/\b(echamos|vaciamos|fundimos)\s+(el\s+)?concreto\b/gi,'se realizó vaciado de concreto'],
   [/\bfundimos\b/gi,'se fundió'],
   [/\b(rompimos|picamos)\s+(el\s+)?(pavimento|anden|andén)\b/gi,'se ejecutó demolición de $3'],
   [/\btapamos\s+(la\s+)?(excavación|zanja)\b/gi,'se realizó lleno y compactación'],
   [/\brellenamos\b/gi,'se realizó lleno compactado'],
-  [/\bcajas?\s+de\s+inspección\b/gi,'caja de inspección'],
-  [/\bc[aá]maras?\b/gi,'cámara de inspección'],
+  
+  [/\bc[aá]mara(s)?\b(?!\s+de\s+inspecci)/gi,'cámara$1 de inspección'],
   [/\btapas?\s+de\s+(la\s+)?cámara\b/gi,'placa tapa de cámara'],
-  [/\bacometidas?\b/gi,'acometida domiciliaria'],
+  [/\bacometidas\b(?!\s+domicili)/gi,'acometidas domiciliarias'],
+  [/\bacometida\b(?!\s+domicili)/gi,'acometida domiciliaria'],
   [/\b(\d+(?:[.,]\d+)?)\s*metros?\b/gi,'$1 ml'],
   [/\bsacamos\s+(el\s+)?escombro\b/gi,'se realizó retiro y transporte de escombros'],
   [/\bles?\s+echamos\s+triturado\b/gi,'se instaló cimentación en triturado'],
@@ -12346,7 +12348,7 @@ function bitacoraForm(r){
   h+='<div class="bt-sec">Eventos del día</div>';
   h+='<div style="display:flex;gap:6px;margin-bottom:6px">'+
      '<button type="button" class="bt-btn" id="bt-voz-btn" onclick="bitaVoz(this,\'bt-i-eventos\')" title="Dicta con tu voz lo ejecutado en el día">🎤 Dictar</button>'+
-     '<button type="button" class="bt-btn" onclick="bitaTecnica(\'bt-i-eventos\')" title="Convierte lo dictado a redacción técnica de obra">🛠 Redacción técnica</button>'+
+     '<button type="button" class="bt-btn" onclick="bitaTecnica(\'bt-i-eventos\')" title="Redacta con IA lo dictado como texto técnico de bitácora">📝 Transcripción</button>'+
      '<span id="bt-voz-est" style="font-size:10.5px;color:#94a3b8;align-self:center"></span></div>';
   h+='<div class="bt-fld"><textarea id="bt-i-eventos" rows="8" placeholder="Describe o dicta las actividades y novedades del día…">'+bitaEsc(r.eventos)+'</textarea></div>';
   h+='<div class="bt-sec">Firmas (nombres)</div>';
