@@ -4016,13 +4016,14 @@ async function locCargarDiseno(){
     if(!LOC_DIS){ var r=await fetch('diseno_redes.json?v=1'); LOC_DIS=await r.json(); }
     if(!LOC_MAP.getSource('loc-dis')) LOC_MAP.addSource('loc-dis',{type:'geojson',data:LOC_DIS});
     var antes=LOC_MAP.getLayer('loc-dib-l')?'loc-dib-l':(LOC_MAP.getLayer('loc-tmp-l')?'loc-tmp-l':undefined);
+    var _disW=['interpolate',['linear'],['zoom'],13,0.6,15,1.1,16.5,1.8,18,2.6,19.5,3.4];
     if(!LOC_MAP.getLayer('loc-dis-san')) LOC_MAP.addLayer({id:'loc-dis-san',type:'line',source:'loc-dis',
       filter:['==',['get','s'],'SAN'],
-      paint:{'line-color':'#9ca3af','line-width':2.4,'line-opacity':.95},
+      paint:{'line-color':'#9ca3af','line-width':_disW,'line-opacity':.95},
       layout:{'line-cap':'round','line-join':'round'}},antes);
     if(!LOC_MAP.getLayer('loc-dis-plu')) LOC_MAP.addLayer({id:'loc-dis-plu',type:'line',source:'loc-dis',
       filter:['!=',['get','s'],'SAN'],
-      paint:{'line-color':'#9ca3af','line-width':2.4,'line-opacity':.95,'line-dasharray':[2,2]},
+      paint:{'line-color':'#9ca3af','line-width':_disW,'line-opacity':.95,'line-dasharray':[2,2]},
       layout:{'line-join':'round'}},antes);
     var pop=function(e){
       if(LOC_HERR) return;
@@ -4090,7 +4091,10 @@ function _locDibujosRender(){
   else{
     LOC_MAP.addSource('loc-dib',{type:'geojson',data:g});
     LOC_MAP.addLayer({id:'loc-dib-l',type:'line',source:'loc-dib',
-      paint:{'line-color':['get','c'],'line-width':5,'line-opacity':.95},
+      /* el ancho sigue al zoom: de lejos finas para que no se superpongan las redes */
+      paint:{'line-color':['get','c'],
+             'line-width':['interpolate',['linear'],['zoom'],13,1.1,15,1.9,16.5,3.1,18,5,19.5,7],
+             'line-opacity':.95},
       layout:{'line-cap':'round','line-join':'round'}});
     LOC_MAP.on('click','loc-dib-l',function(e){
       var p=e.features[0].properties;
