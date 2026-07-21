@@ -2887,6 +2887,8 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
           <span><span style="display:inline-block;width:18px;height:4px;background:#3b82f6;border-radius:2px;vertical-align:middle"></span> Plu. construida</span>
           <span><span style="display:inline-block;width:18px;height:4px;background:#d946ef;border-radius:2px;vertical-align:middle"></span> San. proyectada</span>
           <span><span style="display:inline-block;width:18px;height:4px;background:#7dd3fc;border-radius:2px;vertical-align:middle"></span> Plu. proyectada</span>
+          <span><span style="display:inline-block;width:18px;height:4px;background:#f9a8d4;border-radius:2px;vertical-align:middle"></span> San. pendiente (parcial)</span>
+          <span><span style="display:inline-block;width:18px;height:4px;background:#93c5fd;border-radius:2px;vertical-align:middle"></span> Plu. pendiente (parcial)</span>
           <span><span style="display:inline-block;width:18px;height:0;border-top:3px solid #9ca3af;vertical-align:middle"></span> Diseño san.</span>
           <span><span style="display:inline-block;width:18px;height:0;border-top:3px dashed #9ca3af;vertical-align:middle"></span> Diseño plu.</span>
           <span><span style="display:inline-block;width:9px;height:9px;background:#ef4444;border-radius:50%;vertical-align:middle"></span> Cámara san.</span>
@@ -3842,14 +3844,24 @@ function _locDibujosRenderLf(){
   var capas=[];
   LOC_DIBUJOS.forEach(function(l){
     var t=LOC_TIPOS[l.tipo]||{c:'#ffffff',n:l.tipo};
-    var cs=(l.coords||[]).map(function(c){ return [c[1],c[0]]; });
-    if(cs.length<2) return;
+    if((l.coords||[]).length<2) return;
     var proy=(l.tipo||'').indexOf('proy')>=0;
-    var pl=L.polyline(cs,{color:t.c,weight:5,opacity:.95,
-                          dashArray: proy ? '9,7' : null});
-    pl.bindPopup('<b>'+t.n+'</b><br>Longitud: '+Math.round(_locLen(l.coords))+' m'+
-                 (l.fecha?('<br><span style="font-size:11px;color:#64748b">'+l.fecha+'</span>'):''));
-    capas.push(pl);
+    var p=parseFloat(l.p); if(isNaN(p)||p<=0) p=100;
+    var pop='<b>'+t.n+'</b><br>Longitud: '+Math.round(_locLen(l.coords))+' m'+
+      ((l.tipo==='san_const'||l.tipo==='plu_const')
+        ? ('<br>Construido: <b>'+p+'%</b> <a href="#" onclick="_locEditPct(\''+l.id+'\');return false" style="color:#0e7490;font-weight:700">✎ cambiar</a>') : '')+
+      (l.fecha?('<br><span style="font-size:11px;color:#64748b">'+l.fecha+'</span>'):'');
+    function poli(coords,color,dash){
+      var pl=L.polyline(coords.map(function(c){return [c[1],c[0]];}),{color:color,weight:5,opacity:.95,dashArray:dash||null});
+      pl.bindPopup(pop); capas.push(pl);
+    }
+    if(p<100 && LOC_PEND_COLOR[l.tipo]){
+      var sp=_locSplitCoords(l.coords, p/100);
+      if(sp.a) poli(sp.a, t.c, null);
+      if(sp.b) poli(sp.b, LOC_PEND_COLOR[l.tipo], null);
+    } else {
+      poli(l.coords, t.c, proy?'9,7':null);
+    }
   });
   if(capas.length) LOC_CAPA_DIB=L.layerGroup(capas).addTo(LOC_MAP);
 }
@@ -3903,15 +3915,66 @@ function _locTmpDraw(){
 function locTerminar(){
   if(!LOC_HERR||LOC_HERR==='borrar'||LOC_TMP.length<2){ if(LOC_TMP.length<2){ var e=document.getElementById('loc-dib-estado'); if(e) e.textContent='La línea necesita al menos 2 puntos.'; } return; }
   var tipo=LOC_HERR, coords=LOC_TMP.slice();
+  /* construccion parcial: en tramos construidos se pregunta hasta donde va.
+     100 = calle completa; menos = el resto queda en tono claro (pendiente). */
+  var pct=100;
+  if(tipo==='san_const'||tipo==='plu_const'){
+    var v=prompt('¿Qué porcentaje del tramo está realmente construido?\n100 = tramo completo · p. ej. 60 = va el 60 % y el resto queda pendiente (tono claro)','100');
+    if(v===null){ return; }
+    pct=parseFloat(String(v).replace(',','.')); if(isNaN(pct)) pct=100;
+    pct=Math.max(1,Math.min(100,pct));
+  }
   var est=document.getElementById('loc-dib-estado'); if(est) est.textContent='💾 Guardando línea…';
   var cs=coords.map(function(c){ return c[0].toFixed(6)+','+c[1].toFixed(6); }).join(';');
-  jsonp(APPS_URL,{action:'loc_linea_add',tipo:tipo,coords:cs,_ts:Date.now()}).then(function(r){
+  jsonp(APPS_URL,{action:'loc_linea_add',tipo:tipo,coords:cs,pct:pct,_ts:Date.now()}).then(function(r){
     if(r&&r.ok){
-      LOC_DIBUJOS.push({id:r.id,tipo:tipo,coords:coords,fecha:r.fecha||new Date().toISOString().slice(0,16).replace('T',' ')});
+      LOC_DIBUJOS.push({id:r.id,tipo:tipo,coords:coords,p:pct,fecha:r.fecha||new Date().toISOString().slice(0,16).replace('T',' ')});
       LOC_TMP=[]; _locTmpDraw(); _locDibujosRender();
-      if(est) est.textContent='✅ Línea guardada ('+LOC_TIPOS[tipo].n+', '+Math.round(_locLen(coords))+' m). Sigue dibujando o cambia de herramienta.';
+      if(est) est.textContent='✅ Línea guardada ('+LOC_TIPOS[tipo].n+', '+Math.round(_locLen(coords))+' m'+(pct<100?(', construido '+pct+'%'):'')+'). Sigue dibujando o cambia de herramienta.';
     } else if(est) est.textContent='❌ No se pudo guardar: '+((r&&r.error)||'error');
   },function(){ if(est) est.textContent='❌ Error de conexión al guardar.'; });
+}
+
+/* colores del tramo PENDIENTE de una construccion parcial */
+var LOC_PEND_COLOR={ san_const:'#f9a8d4', plu_const:'#93c5fd' };
+/* parte una polilinea en la fraccion f (0-1) de su longitud real */
+function _locSplitCoords(coords, f){
+  var total=_locLen(coords); if(total<=0||f>=1) return {a:coords, b:null};
+  if(f<=0) return {a:null, b:coords};
+  var objetivo=total*f, acum=0;
+  for(var i=1;i<coords.length;i++){
+    var d=_locHav(coords[i-1],coords[i]);
+    if(acum+d>=objetivo){
+      var t=d>0?(objetivo-acum)/d:0;
+      var px=coords[i-1][0]+(coords[i][0]-coords[i-1][0])*t;
+      var py=coords[i-1][1]+(coords[i][1]-coords[i-1][1])*t;
+      var corte=[px,py];
+      return {a:coords.slice(0,i).concat([corte]), b:[corte].concat(coords.slice(i))};
+    }
+    acum+=d;
+  }
+  return {a:coords, b:null};
+}
+/* cambiar el % construido de una linea existente (recrea el registro) */
+function _locEditPct(id){
+  var lin=LOC_DIBUJOS.filter(function(x){return x.id===id;})[0]; if(!lin) return;
+  var v=prompt('Porcentaje construido del tramo (1-100):', String(lin.p||100));
+  if(v===null) return;
+  var pct=parseFloat(String(v).replace(',','.')); if(isNaN(pct)) return;
+  pct=Math.max(1,Math.min(100,pct));
+  var cs=lin.coords.map(function(c){ return c[0].toFixed(6)+','+c[1].toFixed(6); }).join(';');
+  var est=document.getElementById('loc-dib-estado'); if(est) est.textContent='💾 Actualizando % construido…';
+  jsonp(APPS_URL,{action:'loc_linea_del',id:id,_ts:Date.now()}).then(function(){
+    jsonp(APPS_URL,{action:'loc_linea_add',tipo:lin.tipo,coords:cs,pct:pct,_ts:Date.now()}).then(function(r){
+      if(r&&r.ok){
+        LOC_DIBUJOS=LOC_DIBUJOS.filter(function(x){return x.id!==id;});
+        LOC_DIBUJOS.push({id:r.id,tipo:lin.tipo,coords:lin.coords,p:pct,fecha:r.fecha||lin.fecha});
+        _locDibujosRender();
+        try{ if(window._locPopupRef) window._locPopupRef.remove(); }catch(_){}
+        if(est) est.textContent='✅ Tramo actualizado: construido '+pct+'%.';
+      } else if(est) est.textContent='❌ No se pudo actualizar.';
+    },function(){});
+  },function(){ if(est) est.textContent='❌ Error de conexión.'; });
 }
 var LOC_DIS=null;
 function _locPopup(lngLat,html){
@@ -3980,11 +4043,20 @@ function locCargarDibujos(){
 function _locDibujosRender(){
   if(LOC_MODO==='leaflet'){ _locDibujosRenderLf(); return; }
   if(!LOC_MAP||LOC_MODO!=='gl') return;
-  var g={type:'FeatureCollection',features:LOC_DIBUJOS.map(function(l){
+  var feats=[];
+  LOC_DIBUJOS.forEach(function(l){
     var t=LOC_TIPOS[l.tipo]||{c:'#fff',n:l.tipo};
-    return {type:'Feature',properties:{id:l.id,tipo:l.tipo,c:t.c,nombre:t.n,fecha:l.fecha||'',m:Math.round(_locLen(l.coords))},
-            geometry:{type:'LineString',coordinates:l.coords}};
-  })};
+    var p=parseFloat(l.p); if(isNaN(p)||p<=0) p=100;
+    var base={id:l.id,tipo:l.tipo,nombre:t.n,fecha:l.fecha||'',m:Math.round(_locLen(l.coords)),pct:p};
+    if(p<100 && LOC_PEND_COLOR[l.tipo]){
+      var sp=_locSplitCoords(l.coords, p/100);
+      if(sp.a) feats.push({type:'Feature',properties:Object.assign({c:t.c},base),geometry:{type:'LineString',coordinates:sp.a}});
+      if(sp.b) feats.push({type:'Feature',properties:Object.assign({c:LOC_PEND_COLOR[l.tipo],pend:1},base),geometry:{type:'LineString',coordinates:sp.b}});
+    } else {
+      feats.push({type:'Feature',properties:Object.assign({c:t.c},base),geometry:{type:'LineString',coordinates:l.coords}});
+    }
+  });
+  var g={type:'FeatureCollection',features:feats};
   if(LOC_MAP.getSource('loc-dib')) LOC_MAP.getSource('loc-dib').setData(g);
   else{
     LOC_MAP.addSource('loc-dib',{type:'geojson',data:g});
@@ -4024,6 +4096,13 @@ function _locDibujosRender(){
             html='<b>Tramo '+mejor.de+' → '+mejor.a+'</b><br>'+p.nombre+(_dm&&_dm.p?(' · Ø '+_dm.p+'\"'):'')+'<br>'+mejor.m.toFixed(1)+' m'+
                  (trs.length>1?('<br><span style="font-size:11px;color:#64748b">línea completa: '+trs.length+' tramos · '+p.m+' m</span>'):'');
           }
+        }
+        /* construccion parcial: % y edicion (solo tramos construidos) */
+        if(p.tipo==='san_const'||p.tipo==='plu_const'){
+          var pctL=parseFloat(p.pct)||100;
+          html+='<br><span style="font-size:11.5px">Construido: <b style="color:'+(pctL>=100?'#22c55e':'#fbbf24')+'">'+pctL+'%</b>'+
+                (pctL<100?' <span style="color:#64748b">· resto en tono claro</span>':'')+'</span>'+
+                ' <a href="#" onclick="_locEditPct(\''+p.id+'\');return false" style="color:#22d3ee;font-size:11px;font-weight:700">✎ cambiar</a>';
         }
         html+='<br><span style="font-size:11px;color:#64748b">'+p.fecha+'</span>';
         _locPopup(e.lngLat,html);
