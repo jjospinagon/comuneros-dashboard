@@ -11744,7 +11744,11 @@ function bitacoraListar(){
     var loc=bitaLocal().filter(function(x){ return x.fecha>=desde && x.fecha<=hasta; });
     /* el del servidor va de ultimo para que gane: trae _idPdf/_idXlsx y el estado real */
     var map={}; loc.concat(reg).forEach(function(x){ map[x.id||x.fecha]=x; });
-    var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
+    var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){
+      var d=(b.fecha||'').localeCompare(a.fecha||'');
+      if(d!==0) return d;
+      return (b._version||1)-(a._version||1);   /* del mismo dia, la version mas alta primero */
+    });
     BITA_STATE.records=arr;
     bitacoraRenderLista();
 
@@ -11774,8 +11778,13 @@ function bitacoraToggleMes(k){
 function _btItemHTML(r){
   var sel=(BITA_STATE.current&&BITA_STATE.current.id===r.id)?' sel':'';
   var loc=(r._local?'<span style="color:#f59e0b;font-size:9.5px"> · solo local</span>':'');
+  /* si hay mas de una bitacora del mismo dia, se distinguen por version */
+  var ver=(r._version>1)
+    ? '<span style="margin-left:6px;padding:1px 6px;border-radius:5px;background:rgba(168,85,247,.18);'+
+      'border:1px solid rgba(168,85,247,.4);color:#c084fc;font-size:9.5px;font-weight:700">v'+r._version+'</span>'
+    : '';
   return '<div class="bt-list-item'+sel+'" onclick="bitacoraVer(\''+bitaEsc(r.id)+'\')">'+
-    '<div style="font-weight:700;color:#e5e7eb;font-size:12.5px">📅 '+bitaFmt(r.fecha)+' · '+bitaDiaSemana(r.fecha)+loc+'</div>'+
+    '<div style="font-weight:700;color:#e5e7eb;font-size:12.5px">📅 '+bitaFmt(r.fecha)+' · '+bitaDiaSemana(r.fecha)+ver+loc+'</div>'+
     '<div style="color:#94a3b8;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+bitaEsc((r.eventos||'Sin eventos registrados').slice(0,70))+'</div>'+
   '</div>';
 }
