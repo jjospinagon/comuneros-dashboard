@@ -13335,6 +13335,17 @@ function authEntrar(d){
      Con la sesión ya activa, se reinician las banderas y se recargan con token válido. */
   try{ MOSAICO_LOADED=false; FOTOS_LOADED=false; }catch(e){}
   try{ if(typeof mosaicoCargar==='function') setTimeout(mosaicoCargar, 200); }catch(e){}
+  /* localizacion: si el mapa ya se inicializo antes del login, la primera carga de
+     trazados salio sin token y fue rechazada (NO_AUTH). Con la sesion activa se
+     recargan trazados y diseño; si el mapa aun no existe, locInit los traera. */
+  try{
+    if(LOC_MAP){
+      setTimeout(function(){
+        try{ locCargarDibujos(); }catch(e){}
+        try{ if(typeof locCargarDiseno==='function') locCargarDiseno(); }catch(e){}
+      }, 300);
+    }
+  }catch(e){}
   if(typeof boot==='function') boot();
 }
 function authLogin(){
