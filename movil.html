@@ -136,6 +136,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         </div>
         <button class="btn btnP" onclick="guardarMeta()">✔ Guardar meta</button>
       </div>
+
+      <!-- cumplimiento por cuadrilla · desagregado semanal (meta mensual / 4) -->
+      <div class="card" style="margin-top:14px">
+        <h2>Cumplimiento por cuadrilla <span class="pill" id="mvCuadMes"></span></h2>
+        <div id="mvCuadBox" style="font-size:12px;color:#94a3b8">Cargando…</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:8px;line-height:1.5">
+          Meta semanal = meta mensual ÷ 4. Semanas del mes: S1 (1–7), S2 (8–14), S3 (15–21), S4 (22–fin).
+          🏆 = meta techo (bonificación) · ✔ = meta mínima contractual.
+        </div>
+      </div>
     </div>
 
     <div id="tabAcum" style="display:none">
@@ -239,6 +249,43 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
 <script>
 var API='https://script.google.com/macros/s/AKfycbxtP8Q6PQ0AGFDnU1UpGg40lZ6nuiYMf_-QqGlxCd2PMNXIiSBirkyKkU6q7h4IOOL-/exec';
 var CAT=[], SEL=null, ROL='', NOM='', METAS={}, HIST={}, PENDM={};
+
+/* ===== metas por cuadrilla (mismas del cockpit) =====
+   La cuadrilla se deduce del item registrado: si la actividad es de una
+   sola cuadrilla queda automatica; si la comparten (2/5 tuberia, 7/8
+   camaras) la app pide elegir entre esas dos. */
+var MV_CUAD=[
+ {n:1, act:'Fundición de tapas',            und:'tapas', techo:85,   minima:75,
+  items:['4.08','4.09','4.10','4.33','4.34','4.35']},
+ {n:2, act:'Instalación tubería principal', und:'ml',    techo:300,  minima:240,
+  items:['3.04','3.07','3.08','3.09','3.10','3.11','3.12','3.13','3.14','3.15','3.16']},
+ {n:5, act:'Instalación tubería principal', und:'ml',    techo:300,  minima:240,
+  items:['3.04','3.07','3.08','3.09','3.10','3.11','3.12','3.13','3.14','3.15','3.16']},
+ {n:3, act:'Demolición y fundición de cajas', und:'cajas', techo:85, minima:75, kw:/caja/i},
+ {n:4, act:'Conexión de acometidas',        und:'conexiones', techo:85, minima:75, kw:/acometid|domicili|silla/i},
+ {n:6, act:'Flejado de acero',              und:'kg',    techo:9500, minima:8100, kw:/acero|fleje/i},
+ {n:7, act:'Demolición y construcción de cámaras', und:'ml', techo:50, minima:40, kw:/c[aá]mara/i},
+ {n:8, act:'Demolición y construcción de cámaras', und:'ml', techo:50, minima:40, kw:/c[aá]mara/i}
+];
+var MV_EXPL={}; MV_CUAD.forEach(function(c){ (c.items||[]).forEach(function(i){ MV_EXPL[i]=true; }); });
+function mvCuadsDe(it, desc){
+  return MV_CUAD.filter(function(c){
+    if(c.items) return c.items.indexOf(it)>=0;
+    if(c.kw) return !MV_EXPL[it] && c.kw.test(desc||'');
+    return false;
+  }).map(function(c){ return c.n; });
+}
+function mvCuadOpts(){
+  var cands = SEL ? mvCuadsDe(SEL.n, SEL.d) : [];
+  if(cands.length===1){
+    return {req:false, html:'<option value="'+cands[0]+'" selected>Cuadrilla '+cands[0]+' · automática</option>'};
+  }
+  if(cands.length>1){
+    return {req:true, html:'<option value="">⚠ Elige la cuadrilla</option>'+
+      cands.map(function(n){ return '<option value="'+n+'">Cuadrilla '+n+'</option>'; }).join('')};
+  }
+  return {req:false, html:'<option value="">— Sin meta asociada —</option>'};
+}
 var FESTIVOS=['2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03','2026-05-01','2026-05-18','2026-06-08','2026-06-15','2026-06-29','2026-07-20','2026-08-07','2026-08-17','2026-10-12','2026-11-02','2026-11-16','2026-12-08','2026-12-25','2027-01-01','2027-01-11'];
 var _cbN=0;
 function jsonp(params, cb, tmo){
@@ -337,8 +384,7 @@ function blqHTML(i,u){
     '<div class="grid2">'+
       '<div><label>Fecha</label><input type="date" id="f_'+i+'"></div>'+
       '<div><label>Cuadrilla</label><select id="cu_'+i+'" class="in" style="width:100%">'+
-        '<option value="">— Sin asignar —</option>'+
-        [1,2,3,4,5,6,7,8].map(function(n){return '<option value="'+n+'">Cuadrilla '+n+'</option>';}).join('')+
+        mvCuadOpts().html+
       '</select></div>'+
     '</div>'+
     '<div class="grid2">'+
@@ -450,7 +496,9 @@ function enviar(){
     var mp={q:'q',alto:'alto',ancho:'ancho',diam:'diam',exp:'exp',peso:'peso',lon:'lon',area:'area'};
     for(var id in mp){ var v=num(id+'_'+i); if(v!==null) dm[mp[id]]=v; }
     var cuSel=document.getElementById('cu_'+i);
-    lote.push({f:f, d:dsc, dm:dm, t:t, cu:(cuSel?cuSel.value:'')});
+    var cuVal=cuSel?cuSel.value:'';
+    if(mvCuadOpts().req && !cuVal){ msg('Registro '+(k+1)+': esta actividad la hacen dos cuadrillas — elige cuál la ejecutó', true); return; }
+    lote.push({f:f, d:dsc, dm:dm, t:t, cu:cuVal});
   }
   if(!lote.length){ msg('Llena al menos un registro', true); return; }
   var b=document.getElementById('btnEnviar');
@@ -593,7 +641,62 @@ function tab(t){
     if(pb) pb.className=(t===k)?'on':'';
   }
   if(t==='acum'||t==='mseg') cargarResumen(t);
+  if(t==='metas') mvCuadRender();
   if(t==='bita'){ var f=document.getElementById('bt-fecha'); if(f&&!f.value) f.value=hoy(); }
+}
+
+/* ===== cumplimiento por cuadrilla con desagregado semanal ===== */
+function mvSemana(dia){ return Math.min(3, Math.floor((dia-1)/7)); }  /* 0..3 */
+function mvCuadRender(){
+  var box=document.getElementById('mvCuadBox'); if(!box) return;
+  var mes=mesAct();
+  var lbl=document.getElementById('mvCuadMes'); if(lbl) lbl.textContent=mes;
+  box.textContent='Cargando…';
+  var catIdx={}; CAT.forEach(function(c){ catIdx[c.n]=c.d||''; });
+  jsonp({action:'cant_log', _ts:Date.now()}, function(r){
+    if(!r || !r.log){ box.textContent='No se pudieron cargar los registros.'; return; }
+    var mesAv={}, semAv={};
+    MV_CUAD.forEach(function(c){ mesAv[c.n]=0; semAv[c.n]=[0,0,0,0]; });
+    var pendComp=0;
+    r.log.forEach(function(g){
+      if(String(g.f||'').slice(0,7)!==mes) return;
+      var t=parseFloat(g.t)||0; if(t<=0) return;
+      var dia=parseInt(String(g.f).slice(8,10),10)||1, wk=mvSemana(dia);
+      var q=parseInt(g.q,10);
+      if(q && mesAv[q]!==undefined){ mesAv[q]+=t; semAv[q][wk]+=t; return; }
+      var d=mvCuadsDe(g.it, catIdx[g.it]||'');
+      if(d.length===1){ mesAv[d[0]]+=t; semAv[d[0]][wk]+=t; }
+      else if(d.length>1) pendComp+=t;
+    });
+    var wkNow=mvSemana(new Date().getDate());
+    var html=MV_CUAD.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
+      var mT=c.techo, mS=mT/4, mMin=c.minima;
+      var av=mesAv[c.n], sv=semAv[c.n][wkNow];
+      var pS=mS>0?sv/mS*100:0, pM=mT>0?av/mT*100:0, pMin=mMin>0?av/mMin*100:0;
+      function col(p){ return p>=100?'#22c55e':(p>=70?'#fbbf24':'#f87171'); }
+      function fx(v){ return (Math.round(v*100)/100).toLocaleString('es-CO'); }
+      var sems=semAv[c.n].map(function(v,ix){
+        var p=mS>0?Math.min(100,v/mS*100):0;
+        return '<div style="flex:1;text-align:center">'+
+          '<div style="height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden">'+
+            '<div style="height:100%;width:'+p+'%;background:'+col(v/mS*100)+'"></div></div>'+
+          '<div style="font-size:9px;color:'+(ix===wkNow?'#22d3ee':'#64748b')+';margin-top:2px">S'+(ix+1)+(ix===wkNow?'·hoy':'')+'</div></div>';
+      }).join('');
+      return '<div style="border-bottom:1px solid rgba(255,255,255,.07);padding:9px 0">'+
+        '<div style="display:flex;justify-content:space-between;align-items:baseline">'+
+          '<b style="color:#e5e7eb">Cuadrilla '+c.n+'</b>'+
+          '<span style="font-size:10px;color:#64748b">'+c.act+' ['+c.und+']</span></div>'+
+        '<div style="margin-top:4px;font-size:11px">Semana actual: <b style="color:'+col(pS)+'">'+fx(sv)+'</b> / '+fx(mS)+
+          ' ('+pS.toFixed(2).replace('.',',')+'%)</div>'+
+        '<div style="display:flex;gap:5px;margin-top:5px">'+sems+'</div>'+
+        '<div style="margin-top:6px;font-size:11px">Mes: '+fx(av)+' / '+fx(mT)+
+          ' 🏆 <b style="color:'+col(pM)+'">'+pM.toFixed(2).replace('.',',')+'%</b>'+
+          ' · mínima '+fx(mMin)+' ✔ <b style="color:'+col(pMin)+'">'+pMin.toFixed(2).replace('.',',')+'%</b></div>'+
+      '</div>';
+    }).join('');
+    if(pendComp>0) html+='<div style="color:#fbbf24;font-size:10.5px;margin-top:8px">⚠ Hay '+ (Math.round(pendComp*100)/100) +' registrados sin cuadrilla en actividades compartidas (2/5, 7/8): elige la cuadrilla al registrar.</div>';
+    box.innerHTML=html;
+  }, 45000);
 }
 
 /* ===== bitácora de obra: se guarda en la misma carpeta de Drive que el cockpit ===== */

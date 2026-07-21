@@ -10238,19 +10238,23 @@ function cmCargar(){
     var cat=res[0], lg=(res[1]&&res[1].log)||[];
     var regs=lg.filter(function(r){ return String(r.f||'').slice(0,7)===mes; });
 
-    var porCuad={}, sinAsignar=[];
-    CM_CUADRILLAS.forEach(function(c){ porCuad[c.n]=0; });
+    var porCuad={}, porSem={}, sinAsignar=[];
+    CM_CUADRILLAS.forEach(function(c){ porCuad[c.n]=0; porSem[c.n]=[0,0,0,0]; });
+    var wkDe=function(f){ var d=parseInt(String(f).slice(8,10),10)||1; return Math.min(3, Math.floor((d-1)/7)); };
     regs.forEach(function(r){
       var t=parseFloat(r.t)||0; if(t<=0) return;
       var desc=cat[r.it]||'';
+      var wk=wkDe(r.f);
       var q=parseInt(r.q,10);
-      if(q && porCuad[q]!==undefined){ porCuad[q]+=t; return; }
+      if(q && porCuad[q]!==undefined){ porCuad[q]+=t; porSem[q][wk]+=t; return; }
       /* sin cuadrilla: se asigna solo si la actividad es de una unica cuadrilla */
       var duenos=CM_CUADRILLAS.filter(function(c){ return cmItemDe(c,r.it,desc); });
-      if(duenos.length===1){ porCuad[duenos[0].n]+=t; }
+      if(duenos.length===1){ porCuad[duenos[0].n]+=t; porSem[duenos[0].n][wk]+=t; }
       else if(duenos.length>1){ sinAsignar.push({it:r.it,t:t,desc:desc}); }
       /* si no corresponde a ninguna actividad con meta, no cuenta aqui */
     });
+    var esMesActual=(mes===cmMesActual());
+    var wkHoy=esMesActual? Math.min(3, Math.floor((new Date().getDate()-1)/7)) : -1;
 
     var fmt=function(v,und){ return (Math.round(v*100)/100).toLocaleString('es-CO')+' '+und; };
     var pct=function(v,m){ return m>0 ? Math.round(v/m*10000)/100 : 0; };
@@ -10272,6 +10276,19 @@ function cmCargar(){
           ' · <b style="color:'+colT+'">'+pT.toFixed(2).replace('.',',')+'%</b>'+(pT>=100?' 🏆':'')+'</div>'+barra(pT,colT)+
         '<div style="font-size:11px;color:#94a3b8;margin-top:8px">Meta mínima (contractual): <b style="color:#e5e7eb">'+fmt(c.minima,c.und)+'</b>'+
           ' · <b style="color:'+colM+'">'+pM.toFixed(2).replace('.',',')+'%</b>'+(pM>=100?' ✔':'')+'</div>'+barra(pM,colM)+
+        /* desagregado semanal: meta techo mensual / 4 */
+        '<div style="font-size:10px;color:#94a3b8;margin-top:10px">Semanas · meta '+fmt(c.techo/4,c.und)+' c/u</div>'+
+        '<div style="display:flex;gap:5px;margin-top:4px">'+
+          porSem[c.n].map(function(v,ix){
+            var pw=c.techo>0? v/(c.techo/4)*100 : 0;
+            var cw=pw>=100?'#22c55e':(pw>=70?'#fbbf24':'#f87171');
+            var hoyMark=(ix===wkHoy);
+            return '<div style="flex:1;text-align:center" title="Semana '+(ix+1)+': '+fmt(v,c.und)+' ('+pw.toFixed(2).replace('.',',')+'%)">'+
+              '<div style="height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden'+(hoyMark?';outline:1px solid #22d3ee':'')+'">'+
+                '<div style="height:100%;width:'+Math.min(100,pw)+'%;background:'+cw+'"></div></div>'+
+              '<div style="font-size:9px;color:'+(hoyMark?'#22d3ee':'#64748b')+';margin-top:2px">S'+(ix+1)+'</div></div>';
+          }).join('')+
+        '</div>'+
       '</div>';
     }).join('');
 
