@@ -12114,17 +12114,40 @@ var BITA_GLOSARIO=[
   [/\bempezamos\b/gi,'se dio inicio a'],
   [/\bseguimos\s+con\b/gi,'se continuó con']
 ];
-function bitaTecnica(id){
-  var ta=document.getElementById(id); if(!ta||!ta.value.trim()) return;
+function bitaGlosarioLocal(ta){
   var t=' '+ta.value.trim()+' ';
   BITA_GLOSARIO.forEach(function(g){ t=t.replace(g[0],g[1]); });
-  /* limpieza: espacios, mayúscula tras punto, punto final */
   t=t.replace(/\s{2,}/g,' ').trim();
   t=t.replace(/(^|[.!?]\s+)([a-záéíóúñ])/g,function(m,a,b){ return a+b.toUpperCase(); });
   if(!/[.!?]$/.test(t)) t+='.';
   ta.value=t;
+}
+function bitaTecnica(id){
+  var ta=document.getElementById(id); if(!ta||!ta.value.trim()) return;
   var est=document.getElementById('bt-voz-est');
-  if(est) est.textContent='Redacción ajustada con el glosario técnico — revisa antes de guardar.';
+  var txt=ta.value.trim();
+  /* JSONP viaja por URL: si el dictado es muy largo, se pule localmente */
+  if(txt.length>1800){
+    bitaGlosarioLocal(ta);
+    if(est) est.textContent='Texto muy largo para la IA ('+txt.length+' caracteres): se aplicó el glosario local.';
+    return;
+  }
+  if(est) est.textContent='🤖 Redactando con Gemini…';
+  jsonp(APPS_URL,{action:'bitacora_redactar',texto:txt,_ts:Date.now()}).then(function(r){
+    if(r && r.ok && r.texto){
+      ta.value=r.texto;
+      if(est) est.textContent='✓ Redactado con Gemini — revisa y ajusta antes de guardar.';
+    } else if(r && r.error==='SIN_CLAVE'){
+      bitaGlosarioLocal(ta);
+      if(est) est.textContent='Falta GEMINI_API_KEY en el servidor: se aplicó el glosario local.';
+    } else {
+      bitaGlosarioLocal(ta);
+      if(est) est.textContent='IA no disponible ('+((r&&r.error)||'sin respuesta')+'): se aplicó el glosario local.';
+    }
+  }, function(){
+    bitaGlosarioLocal(ta);
+    if(est) est.textContent='Sin conexión con el servidor: se aplicó el glosario local.';
+  });
 }
 function bitaHoy(){ var d=new Date(); return d.toISOString().slice(0,10); }
 function bitaFmt(f){ if(!f) return '—'; var p=String(f).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):f; }
