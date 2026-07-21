@@ -12211,6 +12211,17 @@ function bitaTecnica(id){
 function bitaHoy(){ var d=new Date(); return d.toISOString().slice(0,10); }
 function bitaFmt(f){ if(!f) return '—'; var p=String(f).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):f; }
 function bitaDiaSemana(f){ try{ var p=f.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][d.getDay()]; }catch(e){ return ''; } }
+/* Nº de día contado desde el inicio del proyecto (6-nov-2025 = día 1); plazo total 485 días (hasta 5-mar-2027) */
+var BITA_DIAS_TOT=485;
+function bitaDiaNum(f){ try{ var p=String(f).slice(0,10).split('-'); var fb=new Date(+p[0],+p[1]-1,+p[2]); var f0=new Date(2025,10,6); return Math.max(1, Math.round((fb-f0)/86400000)+1); }catch(e){ return ''; } }
+function _btSel(label,id,val){
+  var ops=['','CRISTIAN MAURICIO TRUJILLO','DANY MISHELL SALAZAR','RODRIGO REYES','JHON BYRON ARIAS'];
+  var h='<div class="bt-fld"><label>'+label+'</label><select id="bt-i-'+id+'">';
+  var hallado=false;
+  ops.forEach(function(o){ var s=(o===String(val||''))?' selected':''; if(s)hallado=true; h+='<option value="'+bitaEsc(o)+'"'+s+'>'+(o||'—')+'</option>'; });
+  if(!hallado && val) h+='<option value="'+bitaEsc(val)+'" selected>'+bitaEsc(val)+'</option>';
+  return h+'</select></div>';
+}
 
 function bitacoraInit(){
   var hoy=bitaHoy();
@@ -12359,7 +12370,7 @@ function bitacoraForm(r){
   h+='<div class="bt-sec">Seguimiento</div>';
   h+='<div class="bt-grid2">'+
      '<div class="bt-fld"><label>Estado del tiempo</label><select id="bt-i-tiempo"><option>Soleado</option><option>Nublado</option><option>Lluvioso</option><option>Variable</option></select></div>'+
-     _btN('Horas de lluvia','lluviaHoras',r.lluviaHoras)+'</div>';
+     _btF('Horas de lluvia (lapsos)','lluviaHoras',r.lluviaHoras,'Ej: 7-9, 12-14, 20-23')+'</div>';
   h+='<div class="bt-sec">Cantidad de personal (No.)</div>';
   h+='<div class="bt-grid3">'+_btN('Director de obra','pDirector',r.pDirector)+_btN('Ing. Residente','pResidente',r.pResidente)+_btN('Maestro','pMaestro',r.pMaestro)+'</div>';
   h+='<div class="bt-grid3">'+_btN('Insp. Seg. Ind.','pInspector',r.pInspector)+_btN('Prof. Social','pSocial',r.pSocial)+_btN('Oficiales','pOficiales',r.pOficiales)+'</div>';
@@ -12378,8 +12389,8 @@ function bitacoraForm(r){
      '<span id="bt-voz-est" style="font-size:10.5px;color:#94a3b8;align-self:center"></span></div>';
   h+='<div class="bt-fld"><textarea id="bt-i-eventos" rows="8" placeholder="Describe o dicta las actividades y novedades del día…">'+bitaEsc(r.eventos)+'</textarea></div>';
   h+='<div class="bt-sec">Firmas (nombres)</div>';
-  h+='<div class="bt-grid2">'+_btF('Residente de la obra','firmaResidente',r.firmaResidente)+_btF('Residente interventoría','firmaResidenteInterv',r.firmaResidenteInterv)+'</div>';
-  h+='<div class="bt-grid2">'+_btF('Director de obra','firmaDirectorObra',r.firmaDirectorObra)+_btF('Director de interventoría','firmaDirectorInterv',r.firmaDirectorInterv)+'</div>';
+  h+='<div class="bt-grid2">'+_btSel('Residente de la obra','firmaResidente',r.firmaResidente)+_btSel('Residente interventoría','firmaResidenteInterv',r.firmaResidenteInterv)+'</div>';
+  h+='<div class="bt-grid2">'+_btSel('Director de obra','firmaDirectorObra',r.firmaDirectorObra)+_btSel('Director de interventoría','firmaDirectorInterv',r.firmaDirectorInterv)+'</div>';
   h+='<div style="display:flex;gap:8px;margin-top:12px"><button class="bt-btn primary" style="flex:1" onclick="bitacoraAplicarPreview()">👁 Previsualizar</button><button class="bt-btn amber" id="bt-form-guardar" style="flex:1" onclick="bitacoraGuardar()">💾 Guardar</button></div>';
   document.getElementById('bt-form').innerHTML=h;
   var sel=document.getElementById('bt-i-tiempo'); if(sel) sel.value=r.tiempo||'Soleado';
@@ -12415,7 +12426,7 @@ function bitacoraPreviewHTML(r){
     '<tr><td class="h-lbl">Objeto:</td><td colspan="4" class="h-val">'+_btV(r.objeto)+'</td></tr>'+
     '<tr><td class="h-lbl">Contratista:</td><td colspan="2" class="h-val">'+_btV(r.contratista)+'</td><td class="h-lbl" style="width:14%">Interventor:</td><td class="h-val">'+_btV(r.interventor)+'</td></tr>'+
     '<tr><td class="h-band" colspan="5">Datos de Seguimiento a la Obra</td></tr>'+
-    '<tr><td class="h-lbl">Fecha del reporte:</td><td class="h-val">'+bitaFmt(r.fecha)+'</td><td class="h-lbl">Día:</td><td colspan="2" class="h-val">'+_btV(bitaDiaSemana(r.fecha))+'</td></tr>'+
+    '<tr><td class="h-lbl">Fecha del reporte:</td><td class="h-val">'+bitaFmt(r.fecha)+'</td><td class="h-lbl">Día:</td><td class="h-val">'+_btV(bitaDiaNum(r.fecha))+'</td><td class="h-val"><b>De:</b> '+BITA_DIAS_TOT+'</td></tr>'+
     '<tr><td class="h-lbl">Estado del tiempo:</td><td class="h-val">'+_btV(r.tiempo)+'</td><td class="h-lbl">Horas de lluvia:</td><td colspan="2" class="h-val">'+_btV(r.lluviaHoras)+'</td></tr>'+
     '<tr><td class="h-band" colspan="5">Cantidad de Personal (No.)</td></tr>'+
     '<tr><td class="h-lbl">Director de obra</td><td class="h-val">'+_btV(r.pDirector)+'</td><td class="h-lbl">Oficiales</td><td colspan="2" class="h-val">'+_btV(r.pOficiales)+'</td></tr>'+

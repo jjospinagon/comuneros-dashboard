@@ -175,7 +175,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         <div class="row2">
           <div><label class="lb">Estado del tiempo</label>
             <select id="bt-tiempo" class="in"><option>Soleado</option><option>Nublado</option><option>Lluvioso</option><option>Variable</option></select></div>
-          <div><label class="lb">Horas de lluvia</label><input type="number" min="0" max="24" id="bt-lluvia" class="in"></div>
+          <div><label class="lb">Horas de lluvia (lapsos)</label><input type="text" id="bt-lluvia" class="in" placeholder="Ej: 7-9, 12-14, 20-23"></div>
         </div>
         <div class="ttl2">Personal (No.)</div>
         <div class="row2">
@@ -221,12 +221,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         <textarea id="bt-eventos" class="in" rows="6" placeholder="Describe o dicta lo ejecutado y las novedades…"></textarea>
         <div class="ttl2">Firmas (nombres)</div>
         <div class="row2">
-          <div><label class="lb">Residente obra</label><input type="text" id="bt-firmaResidente" class="in"></div>
-          <div><label class="lb">Residente interv.</label><input type="text" id="bt-firmaResidenteInterv" class="in"></div>
+          <div><label class="lb">Residente obra</label><select id="bt-firmaResidente" class="in"><option value=""></option><option>CRISTIAN MAURICIO TRUJILLO</option><option>DANY MISHELL SALAZAR</option><option>RODRIGO REYES</option><option>JHON BYRON ARIAS</option></select></div>
+          <div><label class="lb">Residente interv.</label><select id="bt-firmaResidenteInterv" class="in"><option value=""></option><option>CRISTIAN MAURICIO TRUJILLO</option><option>DANY MISHELL SALAZAR</option><option>RODRIGO REYES</option><option>JHON BYRON ARIAS</option></select></div>
         </div>
         <div class="row2">
-          <div><label class="lb">Director de obra</label><input type="text" id="bt-firmaDirectorObra" class="in"></div>
-          <div><label class="lb">Director interv.</label><input type="text" id="bt-firmaDirectorInterv" class="in"></div>
+          <div><label class="lb">Director de obra</label><select id="bt-firmaDirectorObra" class="in"><option value=""></option><option>CRISTIAN MAURICIO TRUJILLO</option><option>DANY MISHELL SALAZAR</option><option>RODRIGO REYES</option><option>JHON BYRON ARIAS</option></select></div>
+          <div><label class="lb">Director interv.</label><select id="bt-firmaDirectorInterv" class="in"><option value=""></option><option>CRISTIAN MAURICIO TRUJILLO</option><option>DANY MISHELL SALAZAR</option><option>RODRIGO REYES</option><option>JHON BYRON ARIAS</option></select></div>
         </div>
         <button class="btn" id="bt-guardar" onclick="bitaGuardar()" style="margin-top:12px">💾 Guardar bitácora en Drive</button>
         <div id="bt-est" style="font-size:12px;color:#94a3b8;margin-top:8px;text-align:center"></div>
@@ -564,6 +564,13 @@ function editarPend(id){
     refrescarPend();
     window.scrollTo(0,0);
     msg('Edita los campos y pulsa Guardar');
+  });
+}
+function quitar(id){
+  if(!confirm('¿Eliminar este registro pendiente? No se escribirá en el Excel.')) return;
+  jsonp({action:'cant_undo', id:id}, function(d){
+    if(d && d.ok){ msg('Registro eliminado'); refrescarPend(); }
+    else msg('No se pudo eliminar: '+((d&&d.error)||'sin respuesta'), true);
   });
 }
 function volcar(){
