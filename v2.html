@@ -3920,7 +3920,7 @@ function locTerminar(){
   if(!LOC_HERR||LOC_HERR==='borrar'||LOC_TMP.length<2){ if(LOC_TMP.length<2){ var e=document.getElementById('loc-dib-estado'); if(e) e.textContent='La línea necesita al menos 2 puntos.'; } return; }
   var tipo=LOC_HERR, coords=LOC_TMP.slice();
   /* construccion parcial: en tramos construidos se pregunta hasta donde va.
-     100 = calle completa; menos = el resto queda en tono claro (pendiente). */
+     100 = calle completa; menos = el resto queda en amarillo (pendiente). */
   var pct=100;
   if(tipo==='san_const'||tipo==='plu_const'){
     var v=prompt('¿Qué porcentaje del tramo está realmente construido?\n100 = tramo completo · p. ej. 60 = va el 60 % y el resto queda en AMARILLO (pendiente)','100');
