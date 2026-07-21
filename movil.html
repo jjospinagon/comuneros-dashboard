@@ -716,6 +716,74 @@ function mvCuadRender(){
   }, 45000);
 }
 
+/* ===== dictado por voz (Web Speech API del navegador, español) ===== */
+var _bitaRec=null;
+function bitaVoz(btn, id){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var est=document.getElementById('bt-voz-est');
+  if(!SR){ if(est) est.textContent='Este navegador no soporta dictado (usa Chrome).'; return; }
+  if(_bitaRec){ try{ _bitaRec.stop(); }catch(e){} return; }   /* segundo clic = detener */
+  var ta=document.getElementById(id); if(!ta) return;
+  var rec=new SR(); _bitaRec=rec;
+  rec.lang='es-CO'; rec.continuous=true; rec.interimResults=false;
+  btn.textContent='⏹ Detener'; btn.style.borderColor='#ef4444'; btn.style.color='#fca5a5';
+  if(est) est.textContent='🔴 Escuchando… habla con calma; toca Detener al terminar.';
+  rec.onresult=function(ev){
+    var txt='';
+    for(var i=ev.resultIndex;i<ev.results.length;i++){ if(ev.results[i].isFinal) txt+=ev.results[i][0].transcript+' '; }
+    txt=txt.trim(); if(!txt) return;
+    txt=txt.charAt(0).toUpperCase()+txt.slice(1);
+    ta.value=(ta.value?(ta.value.replace(/\s+$/,'')+(/[.;!?]$/.test(ta.value.trim())?' ':'. ')):'')+txt;
+  };
+  var fin=function(){ _bitaRec=null; btn.textContent='🎤 Dictar'; btn.style.borderColor=''; btn.style.color='';
+    if(est) est.textContent='Dictado detenido. Puedes pulir con «Redacción técnica».'; };
+  rec.onend=fin;
+  rec.onerror=function(e){ fin(); if(est) est.textContent='No se pudo escuchar ('+(e.error||'error')+'). Revisa el permiso del micrófono.'; };
+  try{ rec.start(); }catch(e){ fin(); }
+}
+
+/* ===== redacción técnica: glosario coloquial → términos de obra =====
+   Es una ayuda local basada en reglas (no inteligencia artificial):
+   normaliza términos y arma frases tipo informe. Siempre revisable. */
+var BITA_GLOSARIO=[
+  [/\b(hueco|hoyo|zanja)s?\b/gi,'excavación'],
+  [/\babrimos\s+(excavación|la\s+excavación)\b/gi,'se ejecutó excavación'],
+  [/\btubos?\b/gi,'tubería'],
+  [/\b(pegamos|pusimos|metimos|instalamos)\s+(la\s+)?tubería\b/gi,'se instaló tubería'],
+  [/\b(echamos|vaciamos|fundimos)\s+(el\s+)?concreto\b/gi,'se realizó vaciado de concreto'],
+  [/\bfundimos\b/gi,'se fundió'],
+  [/\b(rompimos|picamos)\s+(el\s+)?(pavimento|anden|andén)\b/gi,'se ejecutó demolición de $3'],
+  [/\btapamos\s+(la\s+)?(excavación|zanja)\b/gi,'se realizó lleno y compactación'],
+  [/\brellenamos\b/gi,'se realizó lleno compactado'],
+  [/\bcajas?\s+de\s+inspección\b/gi,'caja de inspección'],
+  [/\bc[aá]maras?\b/gi,'cámara de inspección'],
+  [/\btapas?\s+de\s+(la\s+)?cámara\b/gi,'placa tapa de cámara'],
+  [/\bacometidas?\b/gi,'acometida domiciliaria'],
+  [/\b(\d+(?:[.,]\d+)?)\s*metros?\b/gi,'$1 ml'],
+  [/\bsacamos\s+(el\s+)?escombro\b/gi,'se realizó retiro y transporte de escombros'],
+  [/\bles?\s+echamos\s+triturado\b/gi,'se instaló cimentación en triturado'],
+  [/\bfleje(s)?\b/gi,'flejado de acero'],
+  [/\bla\s+gente\b/gi,'el personal'],
+  [/\bpelaos?\b/gi,'ayudantes'],
+  [/\bhicimos\b/gi,'se ejecutó'],
+  [/\bterminamos\b/gi,'se culminó'],
+  [/\bempezamos\b/gi,'se dio inicio a'],
+  [/\bseguimos\s+con\b/gi,'se continuó con']
+];
+function bitaTecnica(id){
+  var ta=document.getElementById(id); if(!ta||!ta.value.trim()) return;
+  var t=' '+ta.value.trim()+' ';
+  BITA_GLOSARIO.forEach(function(g){ t=t.replace(g[0],g[1]); });
+  /* limpieza: espacios, mayúscula tras punto, punto final */
+  t=t.replace(/\s{2,}/g,' ').trim();
+  t=t.replace(/(^|[.!?]\s+)([a-záéíóúñ])/g,function(m,a,b){ return a+b.toUpperCase(); });
+  if(!/[.!?]$/.test(t)) t+='.';
+  ta.value=t;
+  var est=document.getElementById('bt-voz-est');
+  if(est) est.textContent='Redacción ajustada con el glosario técnico — revisa antes de guardar.';
+}
+function bitaHoy(){ var d=new Date(); return d.toISOString().slice(0,10); }
+
 /* ===== bitácora de obra: se guarda en la misma carpeta de Drive que el cockpit ===== */
 function bitaGuardar(){
   var f=document.getElementById('bt-fecha').value;
