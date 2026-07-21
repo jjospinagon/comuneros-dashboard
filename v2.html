@@ -1663,6 +1663,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <button class="crb" onclick="cronoHoy()">📍 Hoy</button>
       <button class="crb" id="crono-link-btn" onclick="cronoModoVinculo()">🔗 Vincular</button>
       <button class="crb" id="crono-addact-btn" onclick="cronoAgregarActividad()" title="Agregar una actividad nueva" style="display:none">➕ Actividad</button>
+      <button class="crb" id="crono-filas-btn" onclick="cronoEditorFilas()" title="Editar el cronograma como tabla: filas, capítulos y datos" style="display:none">📋 Editar filas</button>
       <button class="crb" id="crono-rename-btn" onclick="cronoRenombrar()" title="Renombrar este cronograma" style="display:none">✎ Renombrar</button>
       <button class="crb" id="crono-refresh-btn" onclick="cronoActualizarExcel()" title="Trae al cockpit lo último del Excel">🔄 Actualizar</button>
       <button class="crb" id="crono-save-btn" onclick="cronoGuardarExcel()" title="Escribe en el Excel las fechas cambiadas aquí">💾 Guardar en Excel</button>
@@ -3905,14 +3906,25 @@ function locCargarDibujos(){
   var est=document.getElementById('loc-estado');
   jsonp(APPS_URL,{action:'loc_lineas',_ts:Date.now()}).then(function(r){
     if(r&&r.ok){
+      window._locReintento=false;
       LOC_DIBUJOS=r.lineas||[];
       if(LOC_MODO==='leaflet') _locDibujosRenderLf(); else _locDibujosRender();
       if(est&&LOC_DIBUJOS.length) est.textContent=LOC_DIBUJOS.length+' trazado(s) cargado(s)';
+      /* espejo del estado en el minimapa del menu, que copia el texto una sola vez */
+      try{ var me=document.getElementById('md-map-est'); if(me) me.textContent=est?est.textContent:''; }catch(e){}
     } else if(r && r.error==='NO_AUTH'){
-      /* sesion caducada: el dato existe, lo que falta es volver a autenticarse */
-      if(est) est.innerHTML='<span style="color:#f59e0b">⚠ Tu sesión caducó. Los trazados están guardados '+
-        'en el servidor, pero hay que iniciar sesión de nuevo para verlos. </span>'+
-        '<a href="#" onclick="authReiniciarSesion();return false" style="color:#22d3ee;font-weight:700">Iniciar sesión</a>';
+      /* sin token = aun no ha iniciado sesion; con token = la sesion caduco */
+      var hayTk=false; try{ hayTk=!!(AUTH&&AUTH.token); }catch(e){}
+      if(hayTk && !window._locReintento){
+        /* primer rechazo con token presente: reintenta una vez (pudo ser una carrera con el login) */
+        window._locReintento=true;
+        setTimeout(locCargarDibujos, 1500);
+        return;
+      }
+      if(est) est.innerHTML = hayTk
+        ? ('<span style="color:#f59e0b">⚠ Tu sesión caducó. Los trazados están guardados en el servidor. </span>'+
+           '<a href="#" onclick="authReiniciarSesion();return false" style="color:#22d3ee;font-weight:700">Iniciar sesión de nuevo</a>')
+        : ('<span style="color:#f59e0b">⚠ Inicia sesión para ver los trazados guardados.</span>');
     } else {
       /* que un fallo del servidor no se vea igual que "no hay nada dibujado" */
       if(est) est.innerHTML='<span style="color:#f59e0b">⚠ No se pudieron cargar los trazados'+
@@ -12216,7 +12228,7 @@ function cronoCustomSave(){
 }
 function cronoModoUI(){
   var custom=CRONO_SRC.tipo==='custom';
-  ['crono-addact-btn','crono-rename-btn'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=custom?'':'none'; });
+  ['crono-addact-btn','crono-rename-btn','crono-filas-btn'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=custom?'':'none'; });
   ['crono-refresh-btn','crono-save-btn'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=custom?'none':''; });
 }
 var CRONO_SEL_ORIGEN=null, CRONO_SEL_DESTINO=null, CRONO_EDIT_ITEM=null, CRONO_BACKEND=false;
@@ -12311,6 +12323,7 @@ function cronoInit(){
     if(tit) tit.textContent='📝 '+(c.nombre||CRONO_SRC.nombre);
     document.getElementById('crono-estado').textContent='Cronograma propio · edición libre (se guarda en este navegador)';
     cronoArrancar();
+    if(window._cronoAbrirEditor){ window._cronoAbrirEditor=false; setTimeout(cronoEditorFilas, 150); }
     return;
   }
   /* --- cronograma oficial (del Excel) --- */
@@ -12345,6 +12358,7 @@ function cronoCrearNuevo(){
   var id='CR'+Date.now();
   var all=cronoCustomAll(); all.unshift({id:id, nombre:nombre, actividades:[], deps:[], actualizado:new Date().toISOString()});
   cronoCustomSet(all);
+  window._cronoAbrirEditor=true;   /* al abrir, va directo al editor de filas */
   cronoAbrirCustom(id);
 }
 function cronoRenombrar(){
@@ -12453,6 +12467,138 @@ function cronoAgregarActividad(){
   cronoArrancar();
   document.getElementById('crono-estado').textContent='Actividad agregada ✓ · clic en la barra o en Inicio/Fin para editar; % con doble clic no, usa el modal';
 }
+/* ============================================================
+   EDITOR DE FILAS (solo cronogramas propios)
+   El cronograma se edita como una tabla: cada fila es una
+   actividad o un TÍTULO DE CAPÍTULO. Un título agrupa todas las
+   filas que le siguen hasta el próximo título, y en el Gantt esa
+   agrupación es colapsable. Columnas: Ítem · Actividad · Inicio ·
+   Fin · Predecesoras · % avance.
+   ============================================================ */
+function cronoEditorFilas(){
+  if(CRONO_SRC.tipo!=='custom') return;
+  if(!CRONO_DATA) CRONO_DATA={actividades:[]};
+
+  /* --- estado del editor: lista plana de filas --- */
+  var filas=[];
+  var capAct=null;
+  (CRONO_DATA.actividades||[]).forEach(function(a){
+    if(a.cap!==capAct){ capAct=a.cap; filas.push({tit:true, desc:capAct}); }
+    var csv=cronoTramosCSV(a);
+    filas.push({tit:false, item:a.item, desc:a.desc, ini:csv.ini, fin:csv.fin,
+                pred:cronoPredTexto(a.item), pct:((a.avance||0)*100).toFixed(2),
+                resp:a.resp||'', und:a.und||'', cant:a.cant||0, vrTotal:a.vrTotal||0});
+  });
+  if(!filas.length) filas.push({tit:true, desc:'1. CAPÍTULO 1'});
+
+  var prev=document.getElementById('crono-filas-modal'); if(prev) prev.parentNode.removeChild(prev);
+  var ov=document.createElement('div'); ov.id='crono-filas-modal';
+  ov.style.cssText='position:fixed;inset:0;z-index:10090;background:rgba(2,6,18,.7);display:flex;align-items:center;justify-content:center;padding:10px';
+
+  function inp(cls,val,ph,w){
+    return '<input class="cf-'+cls+'" value="'+String(val==null?'':val).replace(/"/g,'&quot;')+'" placeholder="'+(ph||'')+'" '+
+      'style="width:'+w+'px;box-sizing:border-box;background:rgba(0,0,0,.4);border:1px solid rgba(148,163,184,.25);'+
+      'color:#fff;border-radius:6px;padding:5px 7px;font-size:12px;font-family:inherit">';
+  }
+  function filaHTML(f,i){
+    var btns='<div style="display:flex;gap:3px;flex-shrink:0">'+
+      '<button onclick="cronoFilaMover('+i+',-1)" title="Subir" style="background:none;border:1px solid rgba(148,163,184,.25);color:#94a3b8;border-radius:5px;width:22px;height:24px;cursor:pointer;font-size:10px">▲</button>'+
+      '<button onclick="cronoFilaMover('+i+',1)" title="Bajar" style="background:none;border:1px solid rgba(148,163,184,.25);color:#94a3b8;border-radius:5px;width:22px;height:24px;cursor:pointer;font-size:10px">▼</button>'+
+      '<button onclick="cronoFilaInsertar('+i+')" title="Insertar fila debajo" style="background:none;border:1px solid rgba(34,211,238,.4);color:#22d3ee;border-radius:5px;width:22px;height:24px;cursor:pointer;font-size:12px">＋</button>'+
+      '<button onclick="cronoFilaBorrar('+i+')" title="Eliminar fila" style="background:none;border:1px solid rgba(239,68,68,.4);color:#fca5a5;border-radius:5px;width:22px;height:24px;cursor:pointer;font-size:11px">✕</button></div>';
+    var tit='<label title="Marcar como título de capítulo" style="display:flex;align-items:center;gap:4px;flex-shrink:0;font-size:10px;color:#94a3b8;cursor:pointer">'+
+      '<input type="checkbox" class="cf-tit" '+(f.tit?'checked':'')+' onchange="cronoFilaTipo('+i+',this.checked)">Título</label>';
+    if(f.tit){
+      return '<div class="cf-row" data-i="'+i+'" style="display:flex;align-items:center;gap:6px;padding:5px 8px;'+
+        'background:rgba(34,211,238,.10);border-left:3px solid #22d3ee;border-bottom:1px solid rgba(255,255,255,.05)">'+
+        tit+inp('desc',f.desc,'Nombre del capítulo (p. ej. 1. PRELIMINARES)',420)+
+        '<div style="flex:1;color:#64748b;font-size:10.5px">agrupa y colapsa las filas de abajo hasta el próximo título</div>'+btns+'</div>';
+    }
+    return '<div class="cf-row" data-i="'+i+'" style="display:flex;align-items:center;gap:6px;padding:4px 8px;padding-left:26px;border-bottom:1px solid rgba(255,255,255,.05)">'+
+      tit+inp('item',f.item,'Ítem',52)+inp('desc',f.desc,'Descripción de la actividad',260)+
+      inp('ini',f.ini,'dd/mm/aaaa',95)+inp('fin',f.fin,'dd/mm/aaaa',95)+
+      inp('pred',f.pred,'p.ej. 1.01FC',85)+inp('pct',f.pct,'%',48)+btns+'</div>';
+  }
+  function render(){
+    var cont=document.getElementById('cf-lista');
+    cont.innerHTML=filas.map(filaHTML).join('');
+  }
+  /* leer los inputs de vuelta al estado antes de cualquier mutación */
+  function leer(){
+    var rows=document.querySelectorAll('#cf-lista .cf-row');
+    rows.forEach(function(r){
+      var i=parseInt(r.getAttribute('data-i'),10), f=filas[i]; if(!f) return;
+      var g=function(c){ var e=r.querySelector('.cf-'+c); return e?e.value:''; };
+      f.desc=g('desc');
+      if(!f.tit){ f.item=g('item'); f.ini=g('ini'); f.fin=g('fin'); f.pred=g('pred'); f.pct=g('pct'); }
+    });
+  }
+  window.cronoFilaTipo=function(i,esTit){ leer(); filas[i].tit=esTit;
+    if(esTit){ delete filas[i].item; } else { filas[i].item=filas[i].item||''; filas[i].ini=filas[i].ini||''; filas[i].fin=filas[i].fin||''; filas[i].pred=filas[i].pred||''; filas[i].pct=filas[i].pct||'0'; }
+    render(); };
+  window.cronoFilaInsertar=function(i){ leer();
+    filas.splice(i+1,0,{tit:false,item:'',desc:'',ini:'',fin:'',pred:'',pct:'0',resp:'',und:'',cant:0,vrTotal:0}); render(); };
+  window.cronoFilaBorrar=function(i){ leer(); filas.splice(i,1); if(!filas.length) filas.push({tit:true,desc:'1. CAPÍTULO 1'}); render(); };
+  window.cronoFilaMover=function(i,d){ leer(); var j=i+d; if(j<0||j>=filas.length) return;
+    var t=filas[i]; filas[i]=filas[j]; filas[j]=t; render(); };
+  window.cronoFilaAgregarFinal=function(tit){ leer();
+    filas.push(tit?{tit:true,desc:''}:{tit:false,item:'',desc:'',ini:'',fin:'',pred:'',pct:'0',resp:'',und:'',cant:0,vrTotal:0});
+    render();
+    var c=document.getElementById('cf-lista'); c.scrollTop=c.scrollHeight; };
+
+  ov.innerHTML='<div style="background:#0f1830;border:1px solid rgba(148,163,184,.3);border-radius:16px;display:flex;flex-direction:column;width:940px;max-width:97vw;max-height:94vh;color:#e5e7eb;font-family:Inter,system-ui,sans-serif">'+
+    '<div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08)">'+
+      '<div style="font-size:15px;font-weight:800;flex:1">📋 Filas del cronograma · '+String(CRONO_SRC.nombre).replace(/</g,'&lt;')+'</div>'+
+      '<button onclick="cronoFilaAgregarFinal(true)" style="background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.4);color:#22d3ee;border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer;font-weight:700">＋ Título de capítulo</button>'+
+      '<button onclick="cronoFilaAgregarFinal(false)" style="background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.4);color:#22d3ee;border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer;font-weight:700">＋ Actividad</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:6px;padding:6px 8px 6px 34px;font-size:9.5px;color:#94a3b8;text-transform:uppercase;font-weight:700;letter-spacing:.04em;border-bottom:1px solid rgba(255,255,255,.06)">'+
+      '<div style="width:44px"></div><div style="width:52px">Ítem</div><div style="width:260px">Actividad</div>'+
+      '<div style="width:95px">Inicio</div><div style="width:95px">Fin</div><div style="width:85px">Pred.</div><div style="width:48px">%</div></div>'+
+    '<div id="cf-lista" style="overflow:auto;flex:1;min-height:120px"></div>'+
+    '<div id="cf-msg" style="display:none;color:#fca5a5;font-size:12px;padding:6px 18px"></div>'+
+    '<div style="display:flex;gap:8px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.08)">'+
+      '<div style="flex:1;color:#64748b;font-size:11px;align-self:center">Fechas dd/mm/aaaa (coma = varias etapas) · Pred.: ítem + tipo FC/CC/FF/CF, separadas por coma</div>'+
+      '<button id="cf-cancel" style="background:transparent;border:1px solid rgba(148,163,184,.3);color:#cbd5e1;border-radius:9px;padding:9px 14px;font-size:13px;cursor:pointer">Cancelar</button>'+
+      '<button id="cf-ok" style="background:#22d3ee;border:none;color:#04121a;font-weight:800;border-radius:9px;padding:9px 18px;font-size:13px;cursor:pointer">Guardar cronograma</button>'+
+    '</div></div>';
+  document.body.appendChild(ov);
+  render();
+
+  var cerrar=function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); };
+  document.getElementById('cf-cancel').onclick=cerrar;
+  document.getElementById('cf-ok').onclick=function(){
+    leer();
+    var msg=document.getElementById('cf-msg');
+    var acts=[], deps=[], cap='GENERAL', errores=[], vistos={};
+    filas.forEach(function(f,idx){
+      if(f.tit){ var n=(f.desc||'').trim(); if(n) cap=n; return; }
+      var item=(f.item||'').trim(), desc=(f.desc||'').trim();
+      if(!item && !desc && !(f.ini||'').trim()) return;  /* fila vacía: se ignora */
+      if(!item) item=String(acts.length+1);
+      if(vistos[item]){ errores.push('Fila '+(idx+1)+': el ítem «'+item+'» está repetido.'); return; }
+      vistos[item]=true;
+      var tramos=cronoCSVaTramos(f.ini||'', f.fin||'');
+      if(!tramos.length){ errores.push('Fila '+(idx+1)+' («'+(desc||item)+'»): fechas inválidas.'); return; }
+      var pct=parseFloat(String(f.pct||'0').replace(',','.')); if(isNaN(pct)) pct=0;
+      var a={item:item, desc:desc||('Ítem '+item), cap:cap, resp:f.resp||'',
+             avance:Math.max(0,Math.min(100,pct))/100, und:f.und||'', cant:f.cant||0, vrTotal:f.vrTotal||0};
+      a.tramos=tramos; acts.push(a);
+      String(f.pred||'').split(',').map(function(s){return s.trim();}).filter(Boolean).forEach(function(tok){
+        var mm=/^(.+?)(FC|CC|FF|CF)?$/i.exec(tok); if(!mm) return;
+        deps.push({de:mm[1].trim(), a:item, tipo:(mm[2]||'FC').toUpperCase()});
+      });
+    });
+    if(!acts.length) errores.push('El cronograma quedaría sin actividades.');
+    /* predecesoras que apuntan a items inexistentes */
+    deps=deps.filter(function(d){ if(!vistos[d.de]){ errores.push('Predecesora «'+d.de+'» no existe como ítem.'); return false; } return true; });
+    if(errores.length){ msg.innerHTML=errores.slice(0,5).join('<br>'); msg.style.display='block'; return; }
+    CRONO_DATA={actividades:acts}; CRONO_DEPS=deps; CRONO_DATA._capIdx=null; CRONO_COLAPSO={};
+    cronoCustomSave(); cerrar(); cronoArrancar();
+    document.getElementById('crono-estado').textContent='Cronograma guardado ✓ · '+acts.length+' actividad(es)';
+  };
+}
+
 function cronoHubRender(){
   var grid=document.getElementById('cronohub-grid'); if(!grid) return;
   function card(oficial,id,nombre,sub,extra){
