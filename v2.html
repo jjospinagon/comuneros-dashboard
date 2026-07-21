@@ -11740,7 +11740,8 @@ function bitacoraListar(){
   bitaJsonp({action:'bitacora_listar', desde:desde, hasta:hasta}).then(function(r){
     var reg=(r&&r.ok&&Array.isArray(r.registros))?r.registros:[];
     var loc=bitaLocal().filter(function(x){ return x.fecha>=desde && x.fecha<=hasta; });
-    var map={}; reg.concat(loc).forEach(function(x){ map[x.id||x.fecha]=x; });
+    /* el del servidor va de ultimo para que gane: trae _idPdf/_idXlsx y el estado real */
+    var map={}; loc.concat(reg).forEach(function(x){ map[x.id||x.fecha]=x; });
     var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
     BITA_STATE.records=arr;
     bitacoraRenderLista();
@@ -11948,7 +11949,7 @@ function bitacoraAsegurarArchivo(cb, btn, textoBtn){
     _btSpinOff(btn, textoBtn);
     if(res && res.ok){
       r._idXlsx=res.idXlsx||''; r._idPdf=res.idPdf||'';
-      var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr);
+      var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; x._idXlsx=r._idXlsx; x._idPdf=r._idPdf; } return x; }); bitaLocalSet(arr);
       est.textContent='✓ Formato generado en Drive · carpeta '+(res.carpeta||r.fecha);
       cb(r);
     } else {
@@ -12025,7 +12026,7 @@ function bitacoraGuardar(){
     if(res&&res.ok){
       r._idXlsx=res.idXlsx||''; r._idPdf=res.idPdf||'';
       est.textContent='✓ Guardada en Drive · carpeta '+(res.carpeta||r.fecha)+' · Excel y PDF reemplazados';
-      var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr);
+      var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; x._idXlsx=r._idXlsx; x._idPdf=r._idPdf; } return x; }); bitaLocalSet(arr);
     } else {
       /* Pudo vencer la espera aunque el servidor sí terminara: se verifica. */
       est.innerHTML='<span class="bt-spin"></span>Comprobando si el servidor alcanzó a guardarla…';
