@@ -128,7 +128,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
     <div id="tabMetas" style="display:none">
       <div class="card">
         <h2>Meta mensual <span class="pill" id="lblMes"></span></h2>
-        <label>Ítem</label>
+        <label>Actividad (cuadrilla)</label>
         <select id="selMetaItem"></select>
         <div class="grid2">
           <div><label>Cantidad meta del mes</label><input type="text" id="inMetaQ" inputmode="decimal"></div>
@@ -605,9 +605,21 @@ function esperarSync(){
 
 /* ===== metas ===== */
 function pintarSelMetas(){
+  /* la meta mensual se registra por ACTIVIDAD DE CUADRILLA (las 8 del plan
+     de metas), no por item del presupuesto */
   var h='';
-  for(var i=0;i<CAT.length;i++) h+='<option value="'+CAT[i].n+'">'+CAT[i].n+' — '+CAT[i].d.slice(0,50)+' ('+CAT[i].u+')</option>';
+  MV_CUAD.slice().sort(function(a,b){return a.n-b.n;}).forEach(function(c){
+    h+='<option value="C'+c.n+'">Cuadrilla '+c.n+' — '+c.act+' ('+c.und+')</option>';
+  });
   document.getElementById('selMetaItem').innerHTML=h;
+  /* precarga la meta techo de la cuadrilla elegida como sugerencia */
+  var sel=document.getElementById('selMetaItem');
+  sel.onchange=function(){
+    var n=parseInt((sel.value||'').replace('C',''),10);
+    var c=MV_CUAD.filter(function(x){return x.n===n;})[0];
+    var q=document.getElementById('inMetaQ');
+    if(c&&q&&!q.value) q.value=c.techo;
+  };
 }
 function diasHabiles(mes){
   var p=mes.split('-'), y=+p[0], m=+p[1];

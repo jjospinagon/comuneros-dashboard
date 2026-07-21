@@ -687,11 +687,17 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     body.sn-mini #side-nav .sn-sec,
     body.sn-mini #side-nav .sn-item span{display:none}
     body.sn-mini #side-nav .sn-item{justify-content:center;padding:9px 4px}
-    body.sn-mini #side-nav .sn-brand{justify-content:center;padding:6px 0 0}
-    body.sn-mini .sn-pin{margin-left:0}
+    /* en mini los dos botones (encoger y pin) no caben en fila: se apilan */
+    body.sn-mini #side-nav .sn-brand{flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:6px 0 0}
+    body.sn-mini #side-nav{overflow-x:hidden}
+    body.sn-mini .sn-pin{margin-left:0 !important}
     body.sn-mini #sn-collapse{transform:rotate(180deg)}
     /* el boton Usuarios se encoge junto con la barra para no quedar "medio salido" */
     body.sn-mini #admin-fab{max-width:44px;overflow:hidden;white-space:nowrap;padding:11px 12px;left:8px}
+    /* sin desborde horizontal: era lo que creaba la barra inferior que tapaba el boton Usuarios */
+    html,body{overflow-x:hidden}
+    #side-nav{padding-bottom:74px}   /* la lista no queda debajo del boton Usuarios */
+    #admin-fab{bottom:20px !important}
   }
   .sn-brand{display:flex;align-items:center;gap:9px;padding:6px 8px 0}
   .sn-brand .t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;letter-spacing:-.2px}
@@ -1715,9 +1721,15 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <div style="color:#fff;font-weight:800;font-size:15px;margin-bottom:4px">🗓 Editar fechas · <span id="crono-f-item" style="color:#fbbf24"></span></div>
         <div style="color:#94a3b8;font-size:11.5px;margin-bottom:12px">Formato <b>dd/mm/aaaa</b>. Si la actividad se ejecuta en varias etapas, separa cada etapa con coma. El inicio N corresponde al fin N.</div>
         <label style="color:#94a3b8;font-size:11px">Fechas de inicio</label>
-        <input id="crono-f-ini" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff;padding:9px 11px;font-size:12.5px;margin:4px 0 10px;font-family:monospace">
+        <div style="display:flex;gap:5px;margin:4px 0 10px">
+          <input id="crono-f-ini" style="flex:1;min-width:0;box-sizing:border-box;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff;padding:9px 11px;font-size:12.5px;font-family:monospace">
+          <button onclick="cronoFilaCal(this)" onmousedown="event.preventDefault()" title="Elegir en el calendario" style="background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.35);color:#22d3ee;border-radius:8px;width:36px;cursor:pointer;font-size:14px;flex-shrink:0">📅</button>
+        </div>
         <label style="color:#94a3b8;font-size:11px">Fechas de fin</label>
-        <input id="crono-f-fin" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff;padding:9px 11px;font-size:12.5px;margin:4px 0 6px;font-family:monospace">
+        <div style="display:flex;gap:5px;margin:4px 0 6px">
+          <input id="crono-f-fin" style="flex:1;min-width:0;box-sizing:border-box;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#fff;padding:9px 11px;font-size:12.5px;font-family:monospace">
+          <button onclick="cronoFilaCal(this)" onmousedown="event.preventDefault()" title="Elegir en el calendario" style="background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.35);color:#22d3ee;border-radius:8px;width:36px;cursor:pointer;font-size:14px;flex-shrink:0">📅</button>
+        </div>
         <div id="crono-f-msg" style="display:none;color:#fca5a5;font-size:11.5px;background:rgba(239,68,68,.1);border-radius:8px;padding:7px 10px;margin-bottom:6px"></div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
           <button class="crb" onclick="document.getElementById('crono-fecha-modal').style.display='none'">Cancelar</button>
@@ -12717,33 +12729,7 @@ function cronoEditorFilas(){
     filas.push(tit?{tit:true,desc:''}:{tit:false,item:'',desc:'',ini:'',fin:'',pred:'',pct:'0',resp:'',und:'',cant:0,vrTotal:0});
     render();
     var c=document.getElementById('cf-lista'); c.scrollTop=c.scrollHeight; };
-  /* calendario nativo sobre el campo de texto: escribe dd/mm/aaaa.
-     Reemplaza la última fecha de la casilla; para agregar una etapa,
-     escribe una coma y vuelve a abrir el calendario. */
-  window.cronoFilaCal=function(btn){
-    var txt=btn.previousElementSibling; if(!txt) return;
-    var d=document.createElement('input'); d.type='date';
-    d.style.cssText='position:fixed;opacity:0;pointer-events:none;width:0;height:0';
-    var r=btn.getBoundingClientRect(); d.style.left=r.left+'px'; d.style.top=r.bottom+'px';
-    document.body.appendChild(d);
-    /* precarga: la ultima fecha valida de la casilla */
-    try{
-      var ult=(txt.value||'').split(',').pop().trim();
-      var mm=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(ult);
-      if(mm) d.value=mm[3]+'-'+mm[2]+'-'+mm[1];
-    }catch(e){}
-    d.onchange=function(){
-      if(d.value){
-        var p=d.value.split('-'); var f=p[2]+'/'+p[1]+'/'+p[0];
-        var partes=(txt.value||'').split(',');
-        partes[partes.length-1]=f;
-        txt.value=partes.map(function(s){return s.trim();}).filter(Boolean).join(', ');
-      }
-      if(d.parentNode) d.parentNode.removeChild(d);
-    };
-    d.addEventListener('blur',function(){ setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },300); });
-    try{ d.showPicker(); }catch(e){ try{ d.focus(); d.click(); }catch(e2){} }
-  };
+  /* (el calendario cronoFilaCal es global: sirve aqui y en «Editar fechas» del Gantt) */
 
   ov.innerHTML='<div style="background:#0f1830;border:1px solid rgba(148,163,184,.3);border-radius:16px;display:flex;flex-direction:column;width:940px;max-width:97vw;max-height:94vh;color:#e5e7eb;font-family:Inter,system-ui,sans-serif">'+
     '<div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08)">'+
@@ -12806,6 +12792,38 @@ function cronoEditorFilas(){
       }, 450);
     }, 350);
   };
+}
+
+/* Calendario nativo sobre un campo de texto dd/mm/aaaa.
+   Reemplaza la última fecha de la casilla; para agregar una etapa se
+   escribe una coma y se vuelve a abrir. Se usa en el editor de filas
+   y en el modal «Editar fechas» del Gantt. */
+function cronoFilaCal(btn){
+  var txt=btn.previousElementSibling; if(!txt) return;
+  var d=document.createElement('input'); d.type='date';
+  /* con tamaño 0 el navegador manda el calendario a la esquina; con 1x1
+     pegado al boton, se abre junto a lo que se esta editando */
+  d.style.cssText='position:fixed;opacity:0.01;width:1px;height:1px;border:0;padding:0;margin:0;z-index:10099;pointer-events:none';
+  var r=btn.getBoundingClientRect();
+  d.style.left=Math.round(r.left)+'px';
+  d.style.top=Math.round(r.top+r.height/2)+'px';
+  document.body.appendChild(d);
+  try{
+    var ult=(txt.value||'').split(',').pop().trim();
+    var mm=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(ult);
+    if(mm) d.value=mm[3]+'-'+mm[2]+'-'+mm[1];
+  }catch(e){}
+  d.onchange=function(){
+    if(d.value){
+      var p=d.value.split('-'); var f=p[2]+'/'+p[1]+'/'+p[0];
+      var partes=(txt.value||'').split(',');
+      partes[partes.length-1]=f;
+      txt.value=partes.map(function(s){return s.trim();}).filter(Boolean).join(', ');
+    }
+    if(d.parentNode) d.parentNode.removeChild(d);
+  };
+  d.addEventListener('blur',function(){ setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },300); });
+  try{ d.showPicker(); }catch(e){ try{ d.focus(); d.click(); }catch(e2){} }
 }
 
 function cronoHubRender(){
