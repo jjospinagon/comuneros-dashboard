@@ -2567,6 +2567,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <button class="mo-tab" data-mo-tab="org" onclick="moTab('org')">🧑‍🏭 Organigrama</button>
       <button class="mo-tab" data-mo-tab="dist" onclick="moTab('dist')">🗂️ Distribución de Cuadrillas</button>
       <button class="mo-tab" data-mo-tab="edit" onclick="moTab('edit')">✏️ Edición Colaboradores</button>
+      <button class="mo-tab" data-mo-tab="metas" onclick="moTab('metas')">🎯 Cumplimiento de metas</button>
     </div>
 
     <!-- ============ TAB ASISTENCIA DIARIA ============ -->
@@ -2770,6 +2771,23 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         </table>
       </div>
     </div> <!-- /mo-pane-edit -->
+
+    <!-- ===== CUMPLIMIENTO DE METAS POR CUADRILLA ===== -->
+    <div id="mo-pane-metas" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <label style="font-size:11px;color:#94a3b8;font-weight:700">MES</label>
+        <input type="month" id="cm-mes" style="background:rgba(0,0,0,.45);border:1px solid rgba(148,163,184,.3);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;color-scheme:dark" onchange="cmCargar()">
+        <button class="bt-btn" onclick="cmCargar()" style="padding:7px 14px">↻ Actualizar</button>
+        <span id="cm-estado" style="font-size:11.5px;color:#64748b"></span>
+      </div>
+      <div id="cm-avisos"></div>
+      <div id="cm-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px"></div>
+      <div style="font-size:11px;color:#64748b;margin-top:14px;line-height:1.6">
+        La <b>meta techo</b> es el objetivo mensual que habilita la bonificación de la cuadrilla. La <b>meta mínima</b> es la exigencia
+        contractual según el tiempo restante de ejecución. El avance se alimenta automáticamente del registro diario de la app de obra
+        (cada registro trae su cuadrilla) y del consolidado de seguimiento de metas; aquí no se digita nada.
+      </div>
+    </div>
 
   </div>
 </div>
@@ -10153,7 +10171,123 @@ function moTab(t){
   if (t === 'dist') { try{ distCargar(); }catch(_){} }
   var pEd=document.getElementById('mo-pane-edit'); if(pEd) pEd.style.display = (t === 'edit') ? 'block' : 'none';
   if (t === 'edit') { try{ editColabCargar(); }catch(_){} }
+  var pMet=document.getElementById('mo-pane-metas'); if(pMet) pMet.style.display = (t === 'metas') ? 'block' : 'none';
+  if (t === 'metas') { try{ cmCargar(); }catch(_){} }
   if (t === 'trab' && !TRAB_LOADED) trabCargar();
+}
+
+/* ============================================================
+   CUMPLIMIENTO DE METAS POR CUADRILLA
+   Dos metas por cuadrilla:
+     · techo  = objetivo mensual (habilita la bonificación)
+     · minima = exigencia contractual por el tiempo restante
+   El avance sale del registro diario de la app de obra: cada
+   registro trae su cuadrilla (campo q). Los registros antiguos
+   sin cuadrilla se asignan por actividad cuando la actividad es
+   de una sola cuadrilla; si la comparten (2 y 5, 7 y 8) quedan
+   como "sin asignar" y se avisan aparte.
+   ============================================================ */
+var CM_CUADRILLAS=[
+ {n:1, act:'Fundición de tapas',                                   und:'tapas',      techo:85,   minima:75,
+  items:['4.08','4.09','4.10','4.33','4.34','4.35']},
+ {n:2, act:'Instalación de tubería de redes principales (pluvial y sanitaria)', und:'ml', techo:300, minima:240,
+  items:['3.04','3.07','3.08','3.09','3.10','3.11','3.12','3.13','3.14','3.15','3.16']},
+ {n:5, act:'Instalación de tubería de redes principales (pluvial y sanitaria)', und:'ml', techo:300, minima:240,
+  items:['3.04','3.07','3.08','3.09','3.10','3.11','3.12','3.13','3.14','3.15','3.16']},
+ {n:3, act:'Demolición de cajas existentes y fundición de cajas nuevas', und:'cajas', techo:85, minima:75,
+  kw:/caja/i},
+ {n:4, act:'Conexión de acometidas domiciliarias',                 und:'conexiones', techo:85,   minima:75,
+  kw:/acometid|domicili|silla/i},
+ {n:6, act:'Flejado de acero',                                     und:'kg',         techo:9500, minima:8100,
+  kw:/acero|fleje/i},
+ {n:7, act:'Demolición y construcción de cámaras',                 und:'ml',         techo:50,   minima:40,
+  kw:/c[aá]mara/i},
+ {n:8, act:'Demolición y construcción de cámaras',                 und:'ml',         techo:50,   minima:40,
+  kw:/c[aá]mara/i}
+];
+var CM_CAT=null;   /* catálogo item->desc para el mapeo por actividad */
+/* items reclamados explícitamente por alguna cuadrilla: las palabras clave no los tocan */
+var CM_EXPLICITOS={};
+CM_CUADRILLAS.forEach(function(c){ (c.items||[]).forEach(function(i){ CM_EXPLICITOS[i]=true; }); });
+
+function cmMesActual(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2); }
+
+function cmItemDe(c, it, desc){
+  if(c.items) return c.items.indexOf(it)>=0;
+  if(c.kw) return !CM_EXPLICITOS[it] && c.kw.test(desc||'');
+  return false;
+}
+/* cuadrillas que comparten actividad no pueden repartirse un registro sin cuadrilla */
+function cmActividadCompartida(it, desc){
+  var n=0; CM_CUADRILLAS.forEach(function(c){ if(cmItemDe(c,it,desc)) n++; });
+  return n>1;
+}
+
+function cmCargar(){
+  var est=document.getElementById('cm-estado');
+  var mesEl=document.getElementById('cm-mes');
+  if(mesEl && !mesEl.value) mesEl.value=cmMesActual();
+  var mes=(mesEl&&mesEl.value)||cmMesActual();
+  est.textContent='Cargando registros…';
+
+  var pCat = CM_CAT ? Promise.resolve(CM_CAT)
+    : jsonp(APPS_URL,{action:'cant_catalogo'}).then(function(r){
+        CM_CAT={}; ((r&&r.items)||[]).forEach(function(i){ CM_CAT[i.n]=i.d||''; }); return CM_CAT; });
+
+  Promise.all([pCat, jsonp(APPS_URL,{action:'cant_log',_ts:Date.now()})]).then(function(res){
+    var cat=res[0], lg=(res[1]&&res[1].log)||[];
+    var regs=lg.filter(function(r){ return String(r.f||'').slice(0,7)===mes; });
+
+    var porCuad={}, sinAsignar=[];
+    CM_CUADRILLAS.forEach(function(c){ porCuad[c.n]=0; });
+    regs.forEach(function(r){
+      var t=parseFloat(r.t)||0; if(t<=0) return;
+      var desc=cat[r.it]||'';
+      var q=parseInt(r.q,10);
+      if(q && porCuad[q]!==undefined){ porCuad[q]+=t; return; }
+      /* sin cuadrilla: se asigna solo si la actividad es de una unica cuadrilla */
+      var duenos=CM_CUADRILLAS.filter(function(c){ return cmItemDe(c,r.it,desc); });
+      if(duenos.length===1){ porCuad[duenos[0].n]+=t; }
+      else if(duenos.length>1){ sinAsignar.push({it:r.it,t:t,desc:desc}); }
+      /* si no corresponde a ninguna actividad con meta, no cuenta aqui */
+    });
+
+    var fmt=function(v,und){ return (Math.round(v*100)/100).toLocaleString('es-CO')+' '+und; };
+    var pct=function(v,m){ return m>0 ? Math.round(v/m*10000)/100 : 0; };
+    var grid=document.getElementById('cm-grid');
+    grid.innerHTML=CM_CUADRILLAS.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
+      var av=porCuad[c.n]||0;
+      var pT=pct(av,c.techo), pM=pct(av,c.minima);
+      var colT=pT>=100?'#22c55e':(pT>=70?'#fbbf24':'#f87171');
+      var colM=pM>=100?'#22c55e':(pM>=70?'#fbbf24':'#f87171');
+      function barra(p,col){ return '<div style="height:8px;border-radius:5px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:4px">'+
+        '<div style="height:100%;width:'+Math.min(100,p)+'%;background:'+col+'"></div></div>'; }
+      return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px">'+
+        '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">'+
+          '<span style="font-size:17px;font-weight:800;color:#a855f7">Cuadrilla '+c.n+'</span>'+
+          '<span style="font-size:10.5px;color:#64748b">['+c.und+']</span></div>'+
+        '<div style="font-size:11.5px;color:#94a3b8;margin-bottom:10px;min-height:28px">'+c.act+'</div>'+
+        '<div style="font-size:12px;color:#e5e7eb;margin-bottom:8px">Avance del mes: <b>'+fmt(av,c.und)+'</b></div>'+
+        '<div style="font-size:11px;color:#94a3b8">Meta techo (bonificación): <b style="color:#e5e7eb">'+fmt(c.techo,c.und)+'</b>'+
+          ' · <b style="color:'+colT+'">'+pT.toFixed(2).replace('.',',')+'%</b>'+(pT>=100?' 🏆':'')+'</div>'+barra(pT,colT)+
+        '<div style="font-size:11px;color:#94a3b8;margin-top:8px">Meta mínima (contractual): <b style="color:#e5e7eb">'+fmt(c.minima,c.und)+'</b>'+
+          ' · <b style="color:'+colM+'">'+pM.toFixed(2).replace('.',',')+'%</b>'+(pM>=100?' ✔':'')+'</div>'+barra(pM,colM)+
+      '</div>';
+    }).join('');
+
+    var av=document.getElementById('cm-avisos');
+    if(sinAsignar.length){
+      var tot={};
+      sinAsignar.forEach(function(s){ tot[s.it]=(tot[s.it]||0)+s.t; });
+      av.innerHTML='<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:10px;'+
+        'padding:10px 14px;margin-bottom:12px;font-size:11.5px;color:#fbbf24">⚠ Hay avance de actividades compartidas registrado '+
+        '<b>sin cuadrilla</b> (no se puede atribuir a 2/5 ni 7/8): '+
+        Object.keys(tot).map(function(k){ return k+' ('+ (Math.round(tot[k]*100)/100) +')'; }).join(' · ')+
+        '. Pídele al residente elegir la cuadrilla en la app al registrar.</div>';
+    } else av.innerHTML='';
+
+    est.textContent=regs.length+' registro(s) del mes '+mes;
+  }, function(){ est.textContent='No se pudieron cargar los registros.'; });
 }
 
 function trabSetVentana(d){

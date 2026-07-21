@@ -372,6 +372,12 @@ function addBloque(){
   tmp.innerHTML=blqHTML(i, SEL?SEL.u:'');
   cont.appendChild(tmp.firstChild);
   var fi=document.getElementById('f_'+i); if(fi) fi.value=f;
+  /* la cuadrilla se hereda del registro anterior para no re-seleccionarla cada vez */
+  if(prev.length){
+    var pc=document.getElementById('cu_'+prev[prev.length-1].id.split('_')[1]);
+    var nc=document.getElementById('cu_'+i);
+    if(pc&&nc) nc.value=pc.value;
+  }
   renumerar();
   if(prev.length){
     var nb=document.getElementById('blq_'+i);
@@ -460,7 +466,7 @@ function enviar(){
     }
     b.innerHTML='<span class="spin"></span>Guardando '+(k+1)+' de '+lote.length+'…';
     var g=lote[k];
-    jsonp({action:'cant_add', item:SEL.n, fecha:g.f, desc:g.d, dims:JSON.stringify(g.dm), total:g.t, user:''}, function(d){
+    jsonp({action:'cant_add', item:SEL.n, fecha:g.f, desc:g.d, dims:JSON.stringify(g.dm), total:g.t, cuad:(g.cu||''), user:''}, function(d){
       if(d && d.ok){ okN++; paso(k+1); }
       else { b.disabled=false; renumerar(); msg('Error en el registro '+(k+1)+': '+((d&&d.error)||'sin respuesta'), true); refrescarPend(); }
     });
