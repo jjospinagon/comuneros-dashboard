@@ -11696,12 +11696,12 @@ var BITA_DEF={
   interventor:'UT INTERCOMUNEROS 2025'
 };
 
-function bitaJsonp(params){
+function bitaJsonp(params, tmo){
   params=params||{};
   if(window._authTk) params=_authTk(params);
   return new Promise(function(res){
     var cb='_bt'+Date.now()+'_'+Math.floor(Math.random()*99999);
-    var t=setTimeout(function(){ try{delete window[cb];}catch(e){} res(null); }, 25000);
+    var t=setTimeout(function(){ try{delete window[cb];}catch(e){} res(null); }, tmo||25000);
     window[cb]=function(d){ clearTimeout(t); try{delete window[cb];}catch(e){} if(s.parentNode)s.parentNode.removeChild(s); res(d); };
     var q=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
     var s=document.createElement('script'); s.src=APPS_URL+'?'+q+'&callback='+cb;
@@ -11987,7 +11987,7 @@ function bitacoraEnviar(r){
   var datos = JSON.stringify(r);
   var nombre = 'GTO-P-04-R-01 Bitacora '+r.fecha;
   if(datos.length <= 1200){
-    return bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:datos, nombre:nombre});
+    return bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id, datos:datos, nombre:nombre}, 180000);
   }
   var TAM=1200, partes=[];
   for(var i=0;i<datos.length;i+=TAM) partes.push(datos.slice(i,i+TAM));
@@ -12000,7 +12000,7 @@ function bitacoraEnviar(r){
   });
   return cadena.then(function(){
     return bitaJsonp({action:'bitacora_guardar', fecha:r.fecha, id:r.id,
-                      chunk_tk:tk, chunk_n:partes.length, nombre:nombre});
+                      chunk_tk:tk, chunk_n:partes.length, nombre:nombre}, 180000);
   });
 }
 
@@ -12027,7 +12027,17 @@ function bitacoraGuardar(){
       est.textContent='✓ Guardada en Drive · carpeta '+(res.carpeta||r.fecha)+' · Excel y PDF reemplazados';
       var arr=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr);
     } else {
-      est.textContent='⚠ Guardada solo en este equipo · '+((res&&res.error)||'sin respuesta del servidor');
+      /* Pudo vencer la espera aunque el servidor sí terminara: se verifica. */
+      est.innerHTML='<span class="bt-spin"></span>Comprobando si el servidor alcanzó a guardarla…';
+      bitaJsonp({action:'bitacora_ver', id:r.id}, 30000).then(function(vr){
+        if(vr && vr.ok && vr.registro && vr.registro._url){
+          est.textContent='✓ Guardada en Drive (el servidor terminó después de la espera)';
+          var arr2=bitaLocal().map(function(x){ if(x.id===r.id){ x._local=false; } return x; }); bitaLocalSet(arr2);
+        } else {
+          est.textContent='⚠ Guardada solo en este equipo · '+((res&&res.error)||'sin respuesta del servidor');
+        }
+        bitacoraListar();
+      });
     }
     BITA_STATE.editing=false; bitacoraCancelar(); bitacoraListar(); bitacoraPreview(r);
   });
