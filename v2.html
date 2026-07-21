@@ -3773,6 +3773,7 @@ function _locRenderGL(){
   LOC_CAMARAS.forEach(function(c){
     var col=c.color||'#0ea5e9';
     var el=document.createElement('div');
+    el.className='loc-cam-mk';
     el.style.cssText='width:13px;height:13px;border-radius:50%;background:'+col+';border:2px solid #0b1229;box-shadow:0 0 5px '+col+';cursor:pointer';
     el.title=c.id;
     var rn=(c.red&&LOC_REDES[c.red])?LOC_REDES[c.red].nombre:'';
@@ -3798,6 +3799,25 @@ function _locRenderGL(){
     LOC_CAMARAS.forEach(function(c){ bb.extend([c.lng,c.lat]); });
     LOC_MAP.fitBounds(bb,{padding:70,maxZoom:17.5});
   }
+  _locEscalarCamaras();
+  if(!LOC_MAP._camZoomHook){
+    LOC_MAP._camZoomHook=true;
+    var _raf=null;
+    LOC_MAP.on('zoom',function(){ if(!_raf) _raf=requestAnimationFrame(function(){ _raf=null; _locEscalarCamaras(); }); });
+  }
+}
+
+/* Las cámaras se encogen al alejar el zoom, igual que las líneas,
+   para que las dos redes no se tapen entre sí en la vista general. */
+function _locEscalarCamaras(){
+  if(!LOC_MAP||LOC_MODO!=='gl') return;
+  var z=LOC_MAP.getZoom();
+  /* 13 -> 5px · 15 -> 8px · 17 -> 12px · 18.5+ -> 14px */
+  var s=Math.round(Math.max(4, Math.min(14, (z-11.8)*1.95)));
+  var bw=s>=9?2:1;
+  document.querySelectorAll('.loc-cam-mk').forEach(function(el){
+    el.style.width=s+'px'; el.style.height=s+'px'; el.style.borderWidth=bw+'px';
+  });
 }
 
 /* ---------- Fallback Leaflet raster (solo si MapLibre no carga) ---------- */
@@ -3912,7 +3932,7 @@ function _locTmpDraw(){
   if(LOC_MAP.getSource('loc-tmp')) LOC_MAP.getSource('loc-tmp').setData(g);
   else{
     LOC_MAP.addSource('loc-tmp',{type:'geojson',data:g});
-    LOC_MAP.addLayer({id:'loc-tmp-l',type:'line',source:'loc-tmp',paint:{'line-color':['get','c'],'line-width':4,'line-dasharray':[1.5,1.5]}});
+    LOC_MAP.addLayer({id:'loc-tmp-l',type:'line',source:'loc-tmp',paint:{'line-color':['get','c'],'line-width':['interpolate',['linear'],['zoom'],13,1.5,16,3,19,5],'line-dasharray':[1.5,1.5]}});
     LOC_MAP.addLayer({id:'loc-tmp-p',type:'circle',source:'loc-tmp',paint:{'circle-radius':5,'circle-color':['get','c'],'circle-stroke-color':'#0b1229','circle-stroke-width':1.5}});
   }
 }
