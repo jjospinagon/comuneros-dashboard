@@ -213,11 +213,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         <div class="ttl2">Plan de calidad</div>
         <textarea id="bt-planCalidad" class="in" rows="3" placeholder="Acciones chequeadas…"></textarea>
         <div class="ttl2">Eventos del día</div>
-        <div style="display:flex;gap:6px;margin-bottom:6px">
-          <button type="button" class="btn btnS" style="flex:0 0 auto;padding:8px 12px" id="bt-voz-btn" onclick="bitaVoz(this,'bt-eventos')">🎤 Dictar</button>
-          <button type="button" class="btn btnS" style="flex:0 0 auto;padding:8px 12px" onclick="bitaTecnica('bt-eventos')">🛠 Técnica</button>
-          <span id="bt-voz-est" style="font-size:10px;color:#94a3b8;align-self:center"></span>
+        <div style="display:flex;gap:8px;margin-bottom:4px;align-items:stretch">
+          <button type="button" class="btn btnS" style="flex:1;width:auto;margin:0;padding:9px 0" id="bt-voz-btn" onclick="bitaVoz(this,'bt-eventos')">🎤 Dictar</button>
+          <button type="button" class="btn btnS" style="flex:1;width:auto;margin:0;padding:9px 0" onclick="bitaTecnica('bt-eventos')">🛠 Técnica</button>
         </div>
+        <div id="bt-voz-est" style="font-size:10.5px;color:#94a3b8;margin-bottom:6px;min-height:13px"></div>
         <textarea id="bt-eventos" class="in" rows="6" placeholder="Describe o dicta lo ejecutado y las novedades…"></textarea>
         <div class="ttl2">Firmas (nombres)</div>
         <div class="row2">

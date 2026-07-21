@@ -3854,6 +3854,8 @@ function _locDibujosRenderLf(){
     var pop='<b>'+t.n+'</b><br>Longitud: '+Math.round(_locLen(l.coords))+' m'+
       ((l.tipo==='san_const'||l.tipo==='plu_const')
         ? ('<br>Construido: <b>'+p+'%</b> <a href="#" onclick="_locEditPct(\''+l.id+'\');return false" style="color:#0e7490;font-weight:700">✎ cambiar</a>') : '')+
+      ((l.tipo==='san_proy'||l.tipo==='plu_proy')
+        ? ('<br><a href="#" onclick="_locConvertir(\''+l.id+'\');return false" style="color:#15803d;font-weight:700">▶ Iniciar construcción</a>') : '')+
       (l.fecha?('<br><span style="font-size:11px;color:#64748b">'+l.fecha+'</span>'):'');
     function poli(coords,color,dash){
       var pl=L.polyline(coords.map(function(c){return [c[1],c[0]];}),{color:color,weight:5,opacity:.95,dashArray:dash||null});
@@ -3959,6 +3961,31 @@ function _locSplitCoords(coords, f){
   }
   return {a:coords, b:null};
 }
+/* proyectada -> construccion (parcial o total): la calle primero se proyecta
+   y cuando arranca la obra se convierte, con el % que lleve construido */
+function _locConvertir(id){
+  var lin=LOC_DIBUJOS.filter(function(x){return x.id===id;})[0]; if(!lin) return;
+  var nuevoTipo = lin.tipo==='san_proy' ? 'san_const' : (lin.tipo==='plu_proy' ? 'plu_const' : null);
+  if(!nuevoTipo) return;
+  var v=prompt('Iniciar construcción de este tramo proyectado.\n¿Qué porcentaje está construido? (1-100; el resto queda en tono claro)','50');
+  if(v===null) return;
+  var pct=parseFloat(String(v).replace(',','.')); if(isNaN(pct)) return;
+  pct=Math.max(1,Math.min(100,pct));
+  var cs=lin.coords.map(function(c){ return c[0].toFixed(6)+','+c[1].toFixed(6); }).join(';');
+  var est=document.getElementById('loc-dib-estado'); if(est) est.textContent='💾 Convirtiendo a construcción…';
+  jsonp(APPS_URL,{action:'loc_linea_del',id:id,_ts:Date.now()}).then(function(){
+    jsonp(APPS_URL,{action:'loc_linea_add',tipo:nuevoTipo,coords:cs,pct:pct,_ts:Date.now()}).then(function(r){
+      if(r&&r.ok){
+        LOC_DIBUJOS=LOC_DIBUJOS.filter(function(x){return x.id!==id;});
+        LOC_DIBUJOS.push({id:r.id,tipo:nuevoTipo,coords:lin.coords,p:pct,fecha:r.fecha||lin.fecha});
+        _locDibujosRender();
+        try{ if(window._locPopupRef) window._locPopupRef.remove(); }catch(_){}
+        if(est) est.textContent='✅ Tramo en construcción: '+pct+'% ejecutado, resto en tono claro.';
+      } else if(est) est.textContent='❌ No se pudo convertir.';
+    },function(){});
+  },function(){ if(est) est.textContent='❌ Error de conexión.'; });
+}
+
 /* cambiar el % construido de una linea existente (recrea el registro) */
 function _locEditPct(id){
   var lin=LOC_DIBUJOS.filter(function(x){return x.id===id;})[0]; if(!lin) return;
@@ -4100,6 +4127,10 @@ function _locDibujosRender(){
             html='<b>Tramo '+mejor.de+' → '+mejor.a+'</b><br>'+p.nombre+(_dm&&_dm.p?(' · Ø '+_dm.p+'\"'):'')+'<br>'+mejor.m.toFixed(1)+' m'+
                  (trs.length>1?('<br><span style="font-size:11px;color:#64748b">línea completa: '+trs.length+' tramos · '+p.m+' m</span>'):'');
           }
+        }
+        /* proyectada: arrancar construccion (parcial) desde el popup */
+        if(p.tipo==='san_proy'||p.tipo==='plu_proy'){
+          html+='<br><a href="#" onclick="_locConvertir(\''+p.id+'\');return false" style="color:#22c55e;font-size:11.5px;font-weight:700">▶ Iniciar construcción (marcar % ejecutado)</a>';
         }
         /* construccion parcial: % y edicion (solo tramos construidos) */
         if(p.tipo==='san_const'||p.tipo==='plu_const'){
