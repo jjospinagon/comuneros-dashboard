@@ -690,6 +690,8 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     body.sn-mini #side-nav .sn-brand{justify-content:center;padding:6px 0 0}
     body.sn-mini .sn-pin{margin-left:0}
     body.sn-mini #sn-collapse{transform:rotate(180deg)}
+    /* el boton Usuarios se encoge junto con la barra para no quedar "medio salido" */
+    body.sn-mini #admin-fab{max-width:44px;overflow:hidden;white-space:nowrap;padding:11px 12px;left:8px}
   }
   .sn-brand{display:flex;align-items:center;gap:9px;padding:6px 8px 0}
   .sn-brand .t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#fff;letter-spacing:-.2px}
@@ -11668,7 +11670,7 @@ if ('serviceWorker' in navigator) {
     MODS.forEach(function(m){
       if(m[3]!==sec){ sec=m[3]; html+='<div class="sn-sec">'+sec+'</div>'; }
       html+='<div class="sn-item" data-mod="'+m[0]+'" onclick="goTo(\''+m[0]+'\')" title="'+m[2]+'">'+
-            '<svg class="ic"><use href="#'+m[1]+'"></use></svg>'+m[2]+'</div>';
+            '<svg class="ic"><use href="#'+m[1]+'"></use></svg><span>'+m[2]+'</span></div>';
     });
     nav.innerHTML=html;
   }
@@ -12525,9 +12527,17 @@ function cronoEditorFilas(){
         tit+inp('desc',f.desc,'Nombre del capítulo (p. ej. 1. PRELIMINARES)',420)+
         '<div style="flex:1;color:#64748b;font-size:10.5px">agrupa y colapsa las filas de abajo hasta el próximo título</div>'+btns+'</div>';
     }
+    /* campo de fecha: escritura manual + boton de calendario */
+    function fch(cls,val){
+      return '<div style="display:flex;gap:2px;width:118px;flex-shrink:0">'+
+        '<input class="cf-'+cls+'" value="'+String(val==null?'':val).replace(/"/g,'&quot;')+'" placeholder="dd/mm/aaaa" '+
+          'style="flex:1;min-width:0;box-sizing:border-box;background:rgba(0,0,0,.4);border:1px solid rgba(148,163,184,.25);color:#fff;border-radius:6px;padding:5px 7px;font-size:12px;font-family:inherit">'+
+        '<button onclick="cronoFilaCal(this)" title="Elegir en el calendario" '+
+          'style="background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.35);color:#22d3ee;border-radius:6px;width:24px;cursor:pointer;font-size:12px;flex-shrink:0">📅</button></div>';
+    }
     return '<div class="cf-row" data-i="'+i+'" style="display:flex;align-items:center;gap:6px;padding:4px 8px;padding-left:26px;border-bottom:1px solid rgba(255,255,255,.05)">'+
       tit+inp('item',f.item,'Ítem',52)+inp('desc',f.desc,'Descripción de la actividad',260)+
-      inp('ini',f.ini,'dd/mm/aaaa',95)+inp('fin',f.fin,'dd/mm/aaaa',95)+
+      fch('ini',f.ini)+fch('fin',f.fin)+
       inp('pred',f.pred,'p.ej. 1.01FC',85)+inp('pct',f.pct,'%',48)+btns+'</div>';
   }
   function render(){
@@ -12556,6 +12566,33 @@ function cronoEditorFilas(){
     filas.push(tit?{tit:true,desc:''}:{tit:false,item:'',desc:'',ini:'',fin:'',pred:'',pct:'0',resp:'',und:'',cant:0,vrTotal:0});
     render();
     var c=document.getElementById('cf-lista'); c.scrollTop=c.scrollHeight; };
+  /* calendario nativo sobre el campo de texto: escribe dd/mm/aaaa.
+     Reemplaza la última fecha de la casilla; para agregar una etapa,
+     escribe una coma y vuelve a abrir el calendario. */
+  window.cronoFilaCal=function(btn){
+    var txt=btn.previousElementSibling; if(!txt) return;
+    var d=document.createElement('input'); d.type='date';
+    d.style.cssText='position:fixed;opacity:0;pointer-events:none;width:0;height:0';
+    var r=btn.getBoundingClientRect(); d.style.left=r.left+'px'; d.style.top=r.bottom+'px';
+    document.body.appendChild(d);
+    /* precarga: la ultima fecha valida de la casilla */
+    try{
+      var ult=(txt.value||'').split(',').pop().trim();
+      var mm=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(ult);
+      if(mm) d.value=mm[3]+'-'+mm[2]+'-'+mm[1];
+    }catch(e){}
+    d.onchange=function(){
+      if(d.value){
+        var p=d.value.split('-'); var f=p[2]+'/'+p[1]+'/'+p[0];
+        var partes=(txt.value||'').split(',');
+        partes[partes.length-1]=f;
+        txt.value=partes.map(function(s){return s.trim();}).filter(Boolean).join(', ');
+      }
+      if(d.parentNode) d.parentNode.removeChild(d);
+    };
+    d.addEventListener('blur',function(){ setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },300); });
+    try{ d.showPicker(); }catch(e){ try{ d.focus(); d.click(); }catch(e2){} }
+  };
 
   ov.innerHTML='<div style="background:#0f1830;border:1px solid rgba(148,163,184,.3);border-radius:16px;display:flex;flex-direction:column;width:940px;max-width:97vw;max-height:94vh;color:#e5e7eb;font-family:Inter,system-ui,sans-serif">'+
     '<div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08)">'+
@@ -12565,7 +12602,7 @@ function cronoEditorFilas(){
     '</div>'+
     '<div style="display:flex;gap:6px;padding:6px 8px 6px 34px;font-size:9.5px;color:#94a3b8;text-transform:uppercase;font-weight:700;letter-spacing:.04em;border-bottom:1px solid rgba(255,255,255,.06)">'+
       '<div style="width:44px"></div><div style="width:52px">Ítem</div><div style="width:260px">Actividad</div>'+
-      '<div style="width:95px">Inicio</div><div style="width:95px">Fin</div><div style="width:85px">Pred.</div><div style="width:48px">%</div></div>'+
+      '<div style="width:118px">Inicio</div><div style="width:118px">Fin</div><div style="width:85px">Pred.</div><div style="width:48px">%</div></div>'+
     '<div id="cf-lista" style="overflow:auto;flex:1;min-height:120px"></div>'+
     '<div id="cf-msg" style="display:none;color:#fca5a5;font-size:12px;padding:6px 18px"></div>'+
     '<div style="display:flex;gap:8px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.08)">'+
@@ -12604,9 +12641,19 @@ function cronoEditorFilas(){
     /* predecesoras que apuntan a items inexistentes */
     deps=deps.filter(function(d){ if(!vistos[d.de]){ errores.push('Predecesora «'+d.de+'» no existe como ítem.'); return false; } return true; });
     if(errores.length){ msg.innerHTML=errores.slice(0,5).join('<br>'); msg.style.display='block'; return; }
-    CRONO_DATA={actividades:acts}; CRONO_DEPS=deps; CRONO_DATA._capIdx=null; CRONO_COLAPSO={};
-    cronoCustomSave(); cerrar(); cronoArrancar();
-    document.getElementById('crono-estado').textContent='Cronograma guardado ✓ · '+acts.length+' actividad(es)';
+    /* feedback visible: reloj mientras guarda y confirmación antes de cerrar */
+    var okBtn=document.getElementById('cf-ok');
+    okBtn.disabled=true;
+    okBtn.innerHTML='<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(4,18,26,.35);border-top-color:#04121a;border-radius:50%;animation:btspin .8s linear infinite;vertical-align:-2px;margin-right:7px"></span>Guardando…';
+    setTimeout(function(){
+      CRONO_DATA={actividades:acts}; CRONO_DEPS=deps; CRONO_DATA._capIdx=null; CRONO_COLAPSO={};
+      cronoCustomSave();
+      okBtn.innerHTML='✓ Guardado';
+      setTimeout(function(){
+        cerrar(); cronoArrancar();
+        document.getElementById('crono-estado').textContent='Cronograma guardado ✓ · '+acts.length+' actividad(es)';
+      }, 450);
+    }, 350);
   };
 }
 
@@ -13371,6 +13418,28 @@ function cronoPintarDeps(filas){
     .ab.grn{color:#86efac;border-color:rgba(34,197,94,.3)}
     .ab.cyn{color:#67e8f9;border-color:rgba(34,211,238,.35)}
     #admin-overlay .acrear{background:#0a1120;border:1px solid #1d2941;border-radius:12px;padding:14px;margin-top:16px}
+    /* ---- MODO DÍA del panel de usuarios (y del panel de contenido) ---- */
+    body.light #admin-overlay,body.light #content-overlay{background:rgba(226,232,240,.94)}
+    body.light #admin-overlay .apanel,body.light #content-overlay .apanel{background:#ffffff;border-color:#dbe3ee;box-shadow:0 10px 40px rgba(15,23,42,.12)}
+    body.light #admin-overlay h2,body.light #content-overlay h2{color:#0f172a}
+    body.light #admin-overlay .asub{color:#334155}
+    body.light #admin-overlay th{color:#334155;border-bottom-color:#dbe3ee}
+    body.light #admin-overlay td{color:#0f172a;border-bottom-color:#e8edf5}
+    body.light #admin-overlay tr{background:transparent}
+    body.light #admin-overlay .acrear{background:#f8fafc;border-color:#dbe3ee}
+    body.light #admin-overlay input,body.light #admin-overlay select,
+    body.light #content-overlay input,body.light #content-overlay select{background:#fff !important;color:#0f172a !important;border-color:#cbd5e1 !important;color-scheme:light}
+    body.light .ab{color:#0369a1;border-color:#b6c4d6}
+    body.light .ab.red{color:#b91c1c;border-color:#fca5a5}
+    body.light .ab.grn{color:#15803d;border-color:#86efac}
+    body.light .ab.cyn{color:#0e7490;border-color:#67e8f9}
+    body.light #admin-overlay .st-ACTIVO{background:rgba(34,197,94,.15);color:#166534}
+    body.light #admin-overlay .st-PENDIENTE{background:rgba(245,158,11,.18);color:#92400e}
+    body.light #admin-overlay .st-INACTIVO{background:rgba(148,163,184,.2);color:#334155}
+    body.light #admin-overlay [style*="color:#e5e7eb"],body.light #admin-overlay [style*="color:#cbd5e1"],
+    body.light #admin-overlay [style*="color:#94a3b8"],body.light #admin-overlay [style*="color:#fbbf24"],
+    body.light #content-overlay [style*="color:#e5e7eb"],body.light #content-overlay [style*="color:#cbd5e1"],
+    body.light #content-overlay [style*="color:#94a3b8"]{color:#0f172a !important}
     #admin-overlay .acrear input,#admin-overlay .acrear select{width:100%;padding:9px 11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:13px;outline:none;font-family:inherit;margin-top:6px;box-sizing:border-box}
     #admin-overlay .acrear select option{background:#0d1424;color:#e5e7eb}
     #admin-overlay .arow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
