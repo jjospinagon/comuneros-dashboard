@@ -3784,6 +3784,30 @@ function _locRenderLf(){
     pts.push(m);
   });
   if(pts.length){ LOC_CAPA_CAM=L.layerGroup(pts).addTo(LOC_MAP); LOC_MAP.fitBounds(L.featureGroup(pts).getBounds().pad(0.2)); }
+  _locDibujosRenderLf();   /* los trazados guardados tambien se pintan en el respaldo */
+}
+
+/* Trazados construidos/proyectados en el mapa de respaldo (Leaflet).
+   Antes solo se pintaban en el mapa 3D, y si MapLibre no cargaba
+   parecia que los avances se hubieran borrado. */
+var LOC_CAPA_DIB=null;
+function _locDibujosRenderLf(){
+  if(!LOC_MAP || LOC_MODO!=='leaflet' || typeof L==='undefined') return;
+  if(LOC_CAPA_DIB){ try{ LOC_MAP.removeLayer(LOC_CAPA_DIB); }catch(_){} LOC_CAPA_DIB=null; }
+  if(!LOC_DIBUJOS || !LOC_DIBUJOS.length) return;
+  var capas=[];
+  LOC_DIBUJOS.forEach(function(l){
+    var t=LOC_TIPOS[l.tipo]||{c:'#ffffff',n:l.tipo};
+    var cs=(l.coords||[]).map(function(c){ return [c[1],c[0]]; });
+    if(cs.length<2) return;
+    var proy=(l.tipo||'').indexOf('proy')>=0;
+    var pl=L.polyline(cs,{color:t.c,weight:5,opacity:.95,
+                          dashArray: proy ? '9,7' : null});
+    pl.bindPopup('<b>'+t.n+'</b><br>Longitud: '+Math.round(_locLen(l.coords))+' m'+
+                 (l.fecha?('<br><span style="font-size:11px;color:#64748b">'+l.fecha+'</span>'):''));
+    capas.push(pl);
+  });
+  if(capas.length) LOC_CAPA_DIB=L.layerGroup(capas).addTo(LOC_MAP);
 }
 
 /* ---------- DIBUJO DE LINEAS (construido / proyectado) ---------- */
@@ -3878,11 +3902,23 @@ async function locCargarDiseno(){
   }catch(_e){}
 }
 function locCargarDibujos(){
+  var est=document.getElementById('loc-estado');
   jsonp(APPS_URL,{action:'loc_lineas',_ts:Date.now()}).then(function(r){
-    if(r&&r.ok){ LOC_DIBUJOS=r.lineas||[]; _locDibujosRender(); }
-  },function(){});
+    if(r&&r.ok){
+      LOC_DIBUJOS=r.lineas||[];
+      if(LOC_MODO==='leaflet') _locDibujosRenderLf(); else _locDibujosRender();
+      if(est&&LOC_DIBUJOS.length) est.textContent=LOC_DIBUJOS.length+' trazado(s) cargado(s)';
+    } else {
+      /* que un fallo del servidor no se vea igual que "no hay nada dibujado" */
+      if(est) est.innerHTML='<span style="color:#f59e0b">⚠ No se pudieron cargar los trazados'+
+        ((r&&r.error)?(' ('+r.error+')'):'')+'. Los datos siguen guardados en el servidor.</span>';
+    }
+  },function(){
+    if(est) est.innerHTML='<span style="color:#f59e0b">⚠ Sin respuesta al cargar los trazados.</span>';
+  });
 }
 function _locDibujosRender(){
+  if(LOC_MODO==='leaflet'){ _locDibujosRenderLf(); return; }
   if(!LOC_MAP||LOC_MODO!=='gl') return;
   var g={type:'FeatureCollection',features:LOC_DIBUJOS.map(function(l){
     var t=LOC_TIPOS[l.tipo]||{c:'#fff',n:l.tipo};
