@@ -3908,6 +3908,11 @@ function locCargarDibujos(){
       LOC_DIBUJOS=r.lineas||[];
       if(LOC_MODO==='leaflet') _locDibujosRenderLf(); else _locDibujosRender();
       if(est&&LOC_DIBUJOS.length) est.textContent=LOC_DIBUJOS.length+' trazado(s) cargado(s)';
+    } else if(r && r.error==='NO_AUTH'){
+      /* sesion caducada: el dato existe, lo que falta es volver a autenticarse */
+      if(est) est.innerHTML='<span style="color:#f59e0b">⚠ Tu sesión caducó. Los trazados están guardados '+
+        'en el servidor, pero hay que iniciar sesión de nuevo para verlos. </span>'+
+        '<a href="#" onclick="authReiniciarSesion();return false" style="color:#22d3ee;font-weight:700">Iniciar sesión</a>';
     } else {
       /* que un fallo del servidor no se vea igual que "no hay nada dibujado" */
       if(est) est.innerHTML='<span style="color:#f59e0b">⚠ No se pudieron cargar los trazados'+
@@ -13384,6 +13389,14 @@ function authRecuperar(){
 function authLogout(){
   if(AUTH.token) _authRaw({action:'auth_logout',token:AUTH.token});
   try{ sessionStorage.removeItem(AUTH_TKKEY); }catch(e){}
+  location.reload();
+}
+
+/* Sesión caducada: limpia el token muerto y devuelve a la pantalla de acceso.
+   Sin esto, una sesión vencida se ve como si los datos se hubieran borrado. */
+function authReiniciarSesion(){
+  try{ sessionStorage.removeItem(AUTH_TKKEY); }catch(e){}
+  try{ AUTH.token=null; }catch(e){}
   location.reload();
 }
 
