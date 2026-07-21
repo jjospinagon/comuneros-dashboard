@@ -692,8 +692,10 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
     body.sn-mini #side-nav{overflow-x:hidden}
     body.sn-mini .sn-pin{margin-left:0 !important}
     body.sn-mini #sn-collapse{transform:rotate(180deg)}
-    /* el boton Usuarios se encoge junto con la barra para no quedar "medio salido" */
-    body.sn-mini #admin-fab{max-width:44px;overflow:hidden;white-space:nowrap;padding:11px 12px;left:8px}
+    /* el boton Usuarios se vuelve un circulo con solo el icono al encoger la barra */
+    body.sn-mini #admin-fab{width:44px;height:44px;max-width:44px;padding:0;border-radius:50%;left:8px;
+      display:flex;align-items:center;justify-content:center;font-size:17px}
+    body.sn-mini #admin-fab .af-tx{display:none}
     /* sin desborde horizontal: era lo que creaba la barra inferior que tapaba el boton Usuarios */
     html,body{overflow-x:hidden}
     #side-nav{padding-bottom:74px}   /* la lista no queda debajo del boton Usuarios */
@@ -12057,6 +12059,73 @@ function bitaJsonp(params, tmo){
 function bitaLocal(){ try{ return JSON.parse(localStorage.getItem(BITA_KEY)||'[]'); }catch(e){ return []; } }
 function bitaLocalSet(arr){ try{ localStorage.setItem(BITA_KEY, JSON.stringify(arr)); }catch(e){} }
 function bitaEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ===== dictado por voz (Web Speech API del navegador, español) ===== */
+var _bitaRec=null;
+function bitaVoz(btn, id){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var est=document.getElementById('bt-voz-est');
+  if(!SR){ if(est) est.textContent='Este navegador no soporta dictado (usa Chrome).'; return; }
+  if(_bitaRec){ try{ _bitaRec.stop(); }catch(e){} return; }   /* segundo clic = detener */
+  var ta=document.getElementById(id); if(!ta) return;
+  var rec=new SR(); _bitaRec=rec;
+  rec.lang='es-CO'; rec.continuous=true; rec.interimResults=false;
+  btn.textContent='⏹ Detener'; btn.style.borderColor='#ef4444'; btn.style.color='#fca5a5';
+  if(est) est.textContent='🔴 Escuchando… habla con calma; toca Detener al terminar.';
+  rec.onresult=function(ev){
+    var txt='';
+    for(var i=ev.resultIndex;i<ev.results.length;i++){ if(ev.results[i].isFinal) txt+=ev.results[i][0].transcript+' '; }
+    txt=txt.trim(); if(!txt) return;
+    txt=txt.charAt(0).toUpperCase()+txt.slice(1);
+    ta.value=(ta.value?(ta.value.replace(/\s+$/,'')+(/[.;!?]$/.test(ta.value.trim())?' ':'. ')):'')+txt;
+  };
+  var fin=function(){ _bitaRec=null; btn.textContent='🎤 Dictar'; btn.style.borderColor=''; btn.style.color='';
+    if(est) est.textContent='Dictado detenido. Puedes pulir con «Redacción técnica».'; };
+  rec.onend=fin;
+  rec.onerror=function(e){ fin(); if(est) est.textContent='No se pudo escuchar ('+(e.error||'error')+'). Revisa el permiso del micrófono.'; };
+  try{ rec.start(); }catch(e){ fin(); }
+}
+
+/* ===== redacción técnica: glosario coloquial → términos de obra =====
+   Es una ayuda local basada en reglas (no inteligencia artificial):
+   normaliza términos y arma frases tipo informe. Siempre revisable. */
+var BITA_GLOSARIO=[
+  [/\b(hueco|hoyo|zanja)s?\b/gi,'excavación'],
+  [/\babrimos\s+(excavación|la\s+excavación)\b/gi,'se ejecutó excavación'],
+  [/\btubos?\b/gi,'tubería'],
+  [/\b(pegamos|pusimos|metimos|instalamos)\s+(la\s+)?tubería\b/gi,'se instaló tubería'],
+  [/\b(echamos|vaciamos|fundimos)\s+(el\s+)?concreto\b/gi,'se realizó vaciado de concreto'],
+  [/\bfundimos\b/gi,'se fundió'],
+  [/\b(rompimos|picamos)\s+(el\s+)?(pavimento|anden|andén)\b/gi,'se ejecutó demolición de $3'],
+  [/\btapamos\s+(la\s+)?(excavación|zanja)\b/gi,'se realizó lleno y compactación'],
+  [/\brellenamos\b/gi,'se realizó lleno compactado'],
+  [/\bcajas?\s+de\s+inspección\b/gi,'caja de inspección'],
+  [/\bc[aá]maras?\b/gi,'cámara de inspección'],
+  [/\btapas?\s+de\s+(la\s+)?cámara\b/gi,'placa tapa de cámara'],
+  [/\bacometidas?\b/gi,'acometida domiciliaria'],
+  [/\b(\d+(?:[.,]\d+)?)\s*metros?\b/gi,'$1 ml'],
+  [/\bsacamos\s+(el\s+)?escombro\b/gi,'se realizó retiro y transporte de escombros'],
+  [/\bles?\s+echamos\s+triturado\b/gi,'se instaló cimentación en triturado'],
+  [/\bfleje(s)?\b/gi,'flejado de acero'],
+  [/\bla\s+gente\b/gi,'el personal'],
+  [/\bpelaos?\b/gi,'ayudantes'],
+  [/\bhicimos\b/gi,'se ejecutó'],
+  [/\bterminamos\b/gi,'se culminó'],
+  [/\bempezamos\b/gi,'se dio inicio a'],
+  [/\bseguimos\s+con\b/gi,'se continuó con']
+];
+function bitaTecnica(id){
+  var ta=document.getElementById(id); if(!ta||!ta.value.trim()) return;
+  var t=' '+ta.value.trim()+' ';
+  BITA_GLOSARIO.forEach(function(g){ t=t.replace(g[0],g[1]); });
+  /* limpieza: espacios, mayúscula tras punto, punto final */
+  t=t.replace(/\s{2,}/g,' ').trim();
+  t=t.replace(/(^|[.!?]\s+)([a-záéíóúñ])/g,function(m,a,b){ return a+b.toUpperCase(); });
+  if(!/[.!?]$/.test(t)) t+='.';
+  ta.value=t;
+  var est=document.getElementById('bt-voz-est');
+  if(est) est.textContent='Redacción ajustada con el glosario técnico — revisa antes de guardar.';
+}
 function bitaHoy(){ var d=new Date(); return d.toISOString().slice(0,10); }
 function bitaFmt(f){ if(!f) return '—'; var p=String(f).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):f; }
 function bitaDiaSemana(f){ try{ var p=f.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][d.getDay()]; }catch(e){ return ''; } }
@@ -12221,7 +12290,11 @@ function bitacoraForm(r){
   h+='<div class="bt-sec">Plan de calidad</div>';
   h+='<div class="bt-fld"><label>Chequeo acciones proyectadas en el Plan de Calidad</label><textarea id="bt-i-planCalidad" rows="3">'+bitaEsc(r.planCalidad)+'</textarea></div>';
   h+='<div class="bt-sec">Eventos del día</div>';
-  h+='<div class="bt-fld"><textarea id="bt-i-eventos" rows="8" placeholder="Describe las actividades y novedades del día…">'+bitaEsc(r.eventos)+'</textarea></div>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:6px">'+
+     '<button type="button" class="bt-btn" id="bt-voz-btn" onclick="bitaVoz(this,\'bt-i-eventos\')" title="Dicta con tu voz lo ejecutado en el día">🎤 Dictar</button>'+
+     '<button type="button" class="bt-btn" onclick="bitaTecnica(\'bt-i-eventos\')" title="Convierte lo dictado a redacción técnica de obra">🛠 Redacción técnica</button>'+
+     '<span id="bt-voz-est" style="font-size:10.5px;color:#94a3b8;align-self:center"></span></div>';
+  h+='<div class="bt-fld"><textarea id="bt-i-eventos" rows="8" placeholder="Describe o dicta las actividades y novedades del día…">'+bitaEsc(r.eventos)+'</textarea></div>';
   h+='<div class="bt-sec">Firmas (nombres)</div>';
   h+='<div class="bt-grid2">'+_btF('Residente de la obra','firmaResidente',r.firmaResidente)+_btF('Residente interventoría','firmaResidenteInterv',r.firmaResidenteInterv)+'</div>';
   h+='<div class="bt-grid2">'+_btF('Director de obra','firmaDirectorObra',r.firmaDirectorObra)+_btF('Director de interventoría','firmaDirectorInterv',r.firmaDirectorInterv)+'</div>';
@@ -13637,7 +13710,7 @@ function cronoPintarDeps(filas){
 </div>
 
 <!-- Panel admin de usuarios (solo perfiles admin) -->
-<button id="admin-fab" onclick="adminAbrir()" style="display:none;position:fixed;left:16px;bottom:16px;z-index:99998;background:#0d1424;border:1px solid #22d3ee;color:#67e8f9;font-size:13px;font-weight:700;padding:11px 15px;border-radius:12px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:'Inter',system-ui,sans-serif">&#128101; Usuarios</button>
+<button id="admin-fab" onclick="adminAbrir()" style="display:none;position:fixed;left:16px;bottom:16px;z-index:99998;background:#0d1424;border:1px solid #22d3ee;color:#67e8f9;font-size:13px;font-weight:700;padding:11px 15px;border-radius:12px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:'Inter',system-ui,sans-serif"><span class="af-ic">&#128101;</span><span class="af-tx"> Usuarios</span></button>
 <div id="admin-overlay" style="display:none;position:fixed;inset:0;background:rgba(3,5,10,.92);z-index:100001;overflow-y:auto;padding:22px 14px;font-family:'Inter',system-ui,sans-serif">
   <style>
     #admin-overlay .apanel,#content-overlay .apanel{max-width:760px;margin:0 auto;background:#0d1424;border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:20px}

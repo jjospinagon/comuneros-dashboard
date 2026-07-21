@@ -213,7 +213,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         <div class="ttl2">Plan de calidad</div>
         <textarea id="bt-planCalidad" class="in" rows="3" placeholder="Acciones chequeadas…"></textarea>
         <div class="ttl2">Eventos del día</div>
-        <textarea id="bt-eventos" class="in" rows="6" placeholder="Describe lo ejecutado y las novedades…"></textarea>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button type="button" class="btn btnS" style="flex:0 0 auto;padding:8px 12px" id="bt-voz-btn" onclick="bitaVoz(this,'bt-eventos')">🎤 Dictar</button>
+          <button type="button" class="btn btnS" style="flex:0 0 auto;padding:8px 12px" onclick="bitaTecnica('bt-eventos')">🛠 Técnica</button>
+          <span id="bt-voz-est" style="font-size:10px;color:#94a3b8;align-self:center"></span>
+        </div>
+        <textarea id="bt-eventos" class="in" rows="6" placeholder="Describe o dicta lo ejecutado y las novedades…"></textarea>
         <div class="ttl2">Firmas (nombres)</div>
         <div class="row2">
           <div><label class="lb">Residente obra</label><input type="text" id="bt-firmaResidente" class="in"></div>
@@ -808,13 +813,15 @@ function pintarMseg(){
   document.getElementById('lblMes2').textContent=mes;
   var dh=diasHabiles(mes);
   document.getElementById('hintHab').textContent='Mes '+mes+': '+dh+' días hábiles (5.5 d/sem, sin festivos)';
-  document.getElementById('btnTodosMetas').textContent=MSEG_TODOS?'Ver solo ítems con meta':'Ver los 93 ítems';
+  /* el seguimiento por defecto es de las METAS POR CUADRILLA; los items del
+     presupuesto quedan como vista secundaria */
+  document.getElementById('btnTodosMetas').textContent=MSEG_TODOS?'Ver metas por cuadrilla':'Ver ítems del presupuesto';
+  if(!MSEG_TODOS){ pintarMsegCuad(mes); return; }
   var mm=(RES.metas&&RES.metas[mes])||{}, hh=(RES.hist&&RES.hist[mes])||{}, pp=(RES.pend&&RES.pend[mes])||{};
   var h='';
   for(var i=0;i<CAT.length;i++){
     var it=CAT[i];
     var tiene=mm[it.n]!==undefined;
-    if(!MSEG_TODOS && !tiene) continue;
     var meta=tiene?mm[it.n].q:null;
     var av=(hh[it.n]||0)+(pp[it.n]||0);
     var pct=(meta&&meta>0)?Math.round(av/meta*100):null;
@@ -829,6 +836,52 @@ function pintarMseg(){
       '<div id="vm_'+it.n.replace('.','_')+'_m" style="display:none"></div></div>';
   }
   document.getElementById('listaMetas').innerHTML=h||'<div class="vacio">Sin metas para '+mes+'. Créalas en la pestaña Metas.</div>';
+}
+
+/* seguimiento por CUADRILLA: meta registrada (o techo del plan) vs ejecutado real */
+function pintarMsegCuad(mes){
+  var box=document.getElementById('listaMetas');
+  box.innerHTML='<div class="vacio">Cargando avance por cuadrilla…</div>';
+  var mm=(RES&&RES.metas&&RES.metas[mes])||{};
+  var catIdx={}; CAT.forEach(function(c){ catIdx[c.n]=c.d||''; });
+  jsonp({action:'cant_log', _ts:Date.now()}, function(r){
+    var mesAv={}, semAv={};
+    MV_CUAD.forEach(function(c){ mesAv[c.n]=0; semAv[c.n]=[0,0,0,0]; });
+    var pendComp=0;
+    ((r&&r.log)||[]).forEach(function(g){
+      if(String(g.f||'').slice(0,7)!==mes) return;
+      var t=parseFloat(g.t)||0; if(t<=0) return;
+      var wk=mvSemana(parseInt(String(g.f).slice(8,10),10)||1);
+      var q=parseInt(g.q,10);
+      if(q && mesAv[q]!==undefined){ mesAv[q]+=t; semAv[q][wk]+=t; return; }
+      var d=mvCuadsDe(g.it, catIdx[g.it]||'');
+      if(d.length===1){ mesAv[d[0]]+=t; semAv[d[0]][wk]+=t; }
+      else if(d.length>1) pendComp+=t;
+    });
+    var wkNow=mvSemana(new Date().getDate());
+    var fx=function(v){ return (Math.round(v*100)/100).toLocaleString('es-CO'); };
+    var h='';
+    MV_CUAD.slice().sort(function(a,b){return a.n-b.n;}).forEach(function(c){
+      var reg=mm['C'+c.n];
+      var meta=(reg&&reg.q)?parseFloat(reg.q):c.techo;   /* meta registrada o techo del plan */
+      var av=mesAv[c.n], pct=meta>0?Math.round(av/meta*10000)/100:0;
+      var cls=_clsPct(pct);
+      var sems=semAv[c.n].map(function(v,ix){
+        var mS=meta/4, p=mS>0?Math.min(100,v/mS*100):0;
+        return '<div style="flex:1;text-align:center"><div class="bar" style="height:6px;margin:0"><div class="'+_clsPct(v/(mS||1)*100)+'" style="width:'+p+'%"></div></div>'+
+          '<div style="font-size:9px;color:'+(ix===wkNow?'#22d3ee':'#6b7280')+'">S'+(ix+1)+'</div></div>';
+      }).join('');
+      h+='<div class="metaRow"><b style="color:#fbbf24">Cuadrilla '+c.n+'</b> <span class="pill">'+c.und+'</span> '+
+        '<span style="font-size:11px;color:#9ca3af">'+c.act+'</span>'+
+        '<div style="font-size:12px;margin-top:3px">Meta mes: <b>'+fx(meta)+'</b>'+((reg&&reg.q)?'':' <span style="font-size:9.5px;color:#6b7280">(techo del plan)</span>')+
+        ' · Ejecutado: <b>'+fx(av)+'</b> ('+pct.toFixed(2).replace('.',',')+'%)</div>'+
+        '<div style="font-size:11px;color:#93c5fd">Semanal: '+fx(meta/4)+' '+c.und+' · mínima contractual: '+fx(c.minima)+'</div>'+
+        '<div class="bar"><div class="'+cls+'" style="width:'+Math.max(0,Math.min(100,pct))+'%"></div></div>'+
+        '<div style="display:flex;gap:5px;margin-top:5px">'+sems+'</div></div>';
+    });
+    if(pendComp>0) h+='<div style="color:#fbbf24;font-size:10.5px;margin-top:6px">⚠ '+fx(pendComp)+' registrados sin cuadrilla en actividades compartidas (2/5, 7/8).</div>';
+    box.innerHTML=h;
+  }, 45000);
 }
 
 /* ===== actualizar app + datos (equivale a Ctrl+Shift+R) ===== */
