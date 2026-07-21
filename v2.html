@@ -392,7 +392,7 @@ body.light .panel[style*="rgba(20"] *,body.light .panel[style*="rgba(15"] *{colo
 body.light .panel[style*="rgba(20"] th,body.light .panel[style*="rgba(15"] th{color:#475569 !important;background:#f1f5f9 !important}
 body.light .panel[style*="rgba(20"] td,body.light .panel[style*="rgba(15"] td{color:#1e293b !important}
 /* Texto/labels secundarios en color slate suave en modo día */
-body.light [style*="color:#94a3b8"],body.light [style*="color:#cbd5e1"],body.light [style*="color:#e2e8f0"]{color:#475569 !important}
+body.light [style*="color:#94a3b8"],body.light [style*="color:#cbd5e1"],body.light [style*="color:#e2e8f0"]{color:#0f172a !important}
 body.light [style*="color:#fff"],body.light [style*="color:#ffffff"]{color:#0f172a !important}
 /* Fondos sticky de tablas dentro de paneles */
 body.light th[style*="background:rgba(20"],body.light th[style*="background:rgba(15"]{background:#f1f5f9 !important}
@@ -449,8 +449,8 @@ body.light [class*="-chip"].active,body.light .mo-chip.active,body.light .maq-ch
 body.light header{border-bottom-color:rgba(15,23,42,.08) !important}
 
 /* Indicadores específicos: textos secundarios */
-body.light [style*="color:#94a3b8"],body.light [style*="color:#cbd5e1"]{color:#475569 !important}
-body.light [style*="color:#94a3b8"]{color:#6b7280 !important}
+body.light [style*="color:#94a3b8"],body.light [style*="color:#cbd5e1"]{color:#0f172a !important}
+body.light [style*="color:#94a3b8"]{color:#0f172a !important}
 body.light [style*="color:#fff"]:not([class*="badge"]):not([class*="-kpi"] .v){}
 
 /* Topbar / barras */
@@ -2466,6 +2466,40 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
   body.light #screen-mo .mo-tab{color:#94a3b8 !important}
   body.light #screen-mo .mo-tab.active{color:#7c3aed !important;border-bottom-color:#7c3aed !important}
   #screen-mo tr.clickable{cursor:pointer}
+
+  /* ============================================================
+     MODO DÍA · legibilidad de los textos grises
+     En fondo claro los grises de la paleta oscura quedan casi
+     invisibles. Aquí se llevan a negro, incluso cuando el color
+     viene escrito en el atributo style del propio elemento
+     (por eso el selector por atributo + !important).
+     ============================================================ */
+  body.light [style*="color:#94a3b8"],
+  body.light [style*="color:#cbd5e1"],
+  body.light [style*="color:#64748b"],
+  body.light [style*="color:#475569"],
+  body.light [style*="color:#8b9bd1"],
+  body.light [style*="color:#e2e8f0"],
+  body.light [style*="color:#e5e7eb"],
+  body.light [style*="color:#f1f5f9"],
+  body.light [style*="color:#334155"],
+  body.light [style*="color:#9ca3af"],
+  body.light [style*="color:#6b7280"],
+  body.light [style*="color:#a1a1aa"]{
+    color:#0f172a !important;
+  }
+  /* los mismos grises cuando vienen de una clase, no de style */
+  body.light .muted,
+  body.light .sub,
+  body.light .hint,
+  body.light small,
+  body.light .filter::placeholder,
+  body.light th{
+    color:#0f172a !important;
+  }
+  /* el gris del menú de Mano de Obra tambien se oscurece */
+  body.light #screen-mo .mo-tab{color:#334155 !important}
+
   #mo-persona-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;z-index:9999;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
   #mo-persona-modal.active{display:flex}
   #mo-persona-modal .mp-card{background:#0a0f24;border:1px solid rgba(168,85,247,.3);border-radius:14px;max-width:1100px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;color:#cbd5e1}

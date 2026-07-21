@@ -216,6 +216,31 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
         <button class="btn" id="bt-guardar" onclick="bitaGuardar()" style="margin-top:12px">💾 Guardar bitácora en Drive</button>
         <div id="bt-est" style="font-size:12px;color:#94a3b8;margin-top:8px;text-align:center"></div>
       </div>
+
+      <!-- ===== Consulta de bitácoras (solo lectura desde el celular) ===== -->
+      <div class="card" style="margin-top:14px">
+        <div class="ttl2">Consultar bitácoras</div>
+        <div class="row2">
+          <div><label class="lb">Desde</label><input type="date" id="bq-desde" class="in"></div>
+          <div><label class="lb">Hasta</label><input type="date" id="bq-hasta" class="in"></div>
+        </div>
+        <button class="btn" onclick="bitaBuscar()" style="margin-top:10px">🔎 Buscar</button>
+        <div id="bq-est" style="font-size:12px;color:#94a3b8;margin-top:8px;text-align:center"></div>
+        <div id="bq-lista" style="margin-top:10px"></div>
+        <div style="font-size:11px;color:#64748b;margin-top:10px;text-align:center;line-height:1.5">
+          Desde el celular las bitácoras solo se consultan.<br>Para editarlas o eliminarlas usa el cockpit en el PC.
+        </div>
+      </div>
+
+      <!-- visor del PDF -->
+      <div id="bq-visor" style="display:none;position:fixed;inset:0;background:#0b1220;z-index:99999;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#111c33;border-bottom:1px solid rgba(255,255,255,.1)">
+          <button onclick="bitaCerrarPdf()" style="background:none;border:0;color:#22d3ee;font-size:15px;font-weight:700">← Volver</button>
+          <div id="bq-visor-tit" style="flex:1;color:#e5e7eb;font-size:13px;font-weight:700;text-align:center"></div>
+          <a id="bq-visor-abrir" href="#" target="_blank" rel="noopener" style="color:#22d3ee;font-size:12px;font-weight:700;text-decoration:none">Abrir ↗</a>
+        </div>
+        <iframe id="bq-visor-frame" src="" style="flex:1;width:100%;border:0;background:#fff"></iframe>
+      </div>
     </div>
 
   </div>
@@ -601,6 +626,80 @@ function bitaGuardar(){
     if(r&&r.ok){ est.textContent='✓ Guardada en Drive · carpeta '+(r.carpeta||f); msg('Bitácora guardada'); }
     else{ est.textContent=''; msg((r&&r.error)||'No se pudo guardar la bitácora', true); }
   }, 60000);
+}
+
+/* ===== consulta de bitácoras (solo lectura desde el celular) =====
+   Eliminar y editar quedan a propósito fuera del móvil: se hacen en el PC. */
+var BQ_MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+              'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function bqFmt(f){ var p=String(f||'').split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):f; }
+function bqDia(f){
+  try{ var p=f.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]);
+       return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][d.getDay()]; }
+  catch(e){ return ''; }
+}
+function bqEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function bitaBuscar(){
+  var d1=document.getElementById('bq-desde'), d2=document.getElementById('bq-hasta');
+  if(!d1.value){ var atras=new Date(Date.now()-13*86400000);
+    d1.value=atras.getFullYear()+'-'+('0'+(atras.getMonth()+1)).slice(-2)+'-'+('0'+atras.getDate()).slice(-2); }
+  if(!d2.value) d2.value=hoy();
+
+  var est=document.getElementById('bq-est'), cont=document.getElementById('bq-lista');
+  est.textContent='Buscando…'; cont.innerHTML='';
+
+  jsonp({action:'bitacora_listar', desde:d1.value, hasta:d2.value}, function(r){
+    if(!r || r.error){ est.textContent=(r&&r.error)||'Sin respuesta del servidor'; return; }
+    var arr=(r.registros||[]).slice().sort(function(a,b){
+      var c=(b.fecha||'').localeCompare(a.fecha||'');
+      return c!==0 ? c : ((b._version||1)-(a._version||1));
+    });
+    if(!arr.length){ est.textContent='Sin bitácoras en ese rango.'; return; }
+    est.textContent=arr.length+' bitácora(s)';
+
+    var mesPrev='';
+    cont.innerHTML=arr.map(function(x){
+      var h='';
+      var mes=String(x.fecha||'').slice(0,7);
+      if(mes!==mesPrev){
+        mesPrev=mes;
+        var pm=mes.split('-');
+        h+='<div style="margin:12px 0 6px;color:#22d3ee;font-size:12px;font-weight:800">'+
+           (BQ_MESES[parseInt(pm[1],10)-1]||pm[1])+' '+pm[0]+'</div>';
+      }
+      var ver=(x._version>1)
+        ? '<span style="margin-left:6px;padding:1px 6px;border-radius:5px;background:rgba(168,85,247,.2);color:#c084fc;font-size:10px;font-weight:700">v'+x._version+'</span>'
+        : '';
+      var hayPdf=!!x._idPdf;
+      h+='<div onclick="'+(hayPdf?('bitaVerPdf(\''+bqEsc(x._idPdf)+'\',\''+bqEsc(x.fecha)+'\')'):'')+'" '+
+         'style="padding:10px 12px;margin-bottom:6px;border-radius:10px;'+
+         'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);'+
+         (hayPdf?'cursor:pointer':'opacity:.55')+'">'+
+         '<div style="color:#e5e7eb;font-size:13px;font-weight:700">📅 '+bqFmt(x.fecha)+' · '+bqDia(x.fecha)+ver+'</div>'+
+         '<div style="color:#94a3b8;font-size:11.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+
+           bqEsc((x.eventos||'Sin eventos registrados').slice(0,60))+'</div>'+
+         (hayPdf ? '<div style="color:#22d3ee;font-size:11px;margin-top:4px">Ver PDF ›</div>'
+                 : '<div style="color:#f59e0b;font-size:11px;margin-top:4px">Documento no generado</div>')+
+         '</div>';
+      return h;
+    }).join('');
+  }, 60000);
+}
+
+function bitaVerPdf(idPdf, fecha){
+  if(!idPdf) return;
+  var v=document.getElementById('bq-visor');
+  document.getElementById('bq-visor-tit').textContent='Bitácora '+bqFmt(fecha);
+  document.getElementById('bq-visor-frame').src='https://drive.google.com/file/d/'+idPdf+'/preview';
+  document.getElementById('bq-visor-abrir').href='https://drive.google.com/file/d/'+idPdf+'/view';
+  v.style.display='flex';
+}
+function bitaCerrarPdf(){
+  var v=document.getElementById('bq-visor');
+  v.style.display='none';
+  document.getElementById('bq-visor-frame').src='';
 }
 
 /* ===== resumen: acumulados + metas ===== */
