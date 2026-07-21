@@ -11739,27 +11739,92 @@ function bitacoraListar(){
   if(!desde||!hasta){ est.textContent='Selecciona fecha(s).'; return; }
   /* combina backend (si existe) + local */
   bitaJsonp({action:'bitacora_listar', desde:desde, hasta:hasta}).then(function(r){
-    var reg=(r&&r.ok&&Array.isArray(r.registros))?r.registros:[];
+    var okSrv=!!(r&&r.ok&&Array.isArray(r.registros));
+    var reg=okSrv?r.registros:[];
     var loc=bitaLocal().filter(function(x){ return x.fecha>=desde && x.fecha<=hasta; });
     /* el del servidor va de ultimo para que gane: trae _idPdf/_idXlsx y el estado real */
     var map={}; loc.concat(reg).forEach(function(x){ map[x.id||x.fecha]=x; });
     var arr=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
     BITA_STATE.records=arr;
     bitacoraRenderLista();
-    est.textContent=arr.length?(arr.length+' bitácora(s)'):'Sin bitácoras en ese rango.';
+
+    if(!okSrv){
+      /* sin servidor solo se ve lo de este equipo: hay que decirlo, no callarlo */
+      var motivo=(r&&r.error)?(' ('+r.error+')'):'';
+      est.innerHTML='<span style="color:#f59e0b">⚠ Sin conexión con el servidor'+bitaEsc(motivo)+
+                    '. Mostrando solo lo guardado en este equipo.</span>';
+    } else {
+      est.textContent=arr.length?(arr.length+' bitácora(s)'):'Sin bitácoras en ese rango.';
+    }
   });
 }
+var BITA_MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+var BITA_COLAPSADOS={};
+
+function bitaMesClave(f){ return String(f||'').slice(0,7); }            /* AAAA-MM */
+function bitaMesTitulo(k){
+  var p=k.split('-'); var i=parseInt(p[1],10)-1;
+  return (BITA_MESES[i]||p[1])+' '+p[0];
+}
+function bitacoraToggleMes(k){
+  BITA_COLAPSADOS[k]=!BITA_COLAPSADOS[k];
+  bitacoraRenderLista();
+}
+
+function _btItemHTML(r){
+  var sel=(BITA_STATE.current&&BITA_STATE.current.id===r.id)?' sel':'';
+  var loc=(r._local?'<span style="color:#f59e0b;font-size:9.5px"> · solo local</span>':'');
+  return '<div class="bt-list-item'+sel+'" onclick="bitacoraVer(\''+bitaEsc(r.id)+'\')">'+
+    '<div style="font-weight:700;color:#e5e7eb;font-size:12.5px">📅 '+bitaFmt(r.fecha)+' · '+bitaDiaSemana(r.fecha)+loc+'</div>'+
+    '<div style="color:#94a3b8;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+bitaEsc((r.eventos||'Sin eventos registrados').slice(0,70))+'</div>'+
+  '</div>';
+}
+
 function bitacoraRenderLista(){
   var cont=document.getElementById('bt-list'); var arr=BITA_STATE.records||[];
   if(!arr.length){ cont.innerHTML='<div style="color:#64748b;font-size:12px;text-align:center;padding:14px">No hay bitácoras. Crea una con «Nueva bitácora».</div>'; return; }
-  cont.innerHTML=arr.map(function(r){
-    var sel=(BITA_STATE.current&&BITA_STATE.current.id===r.id)?' sel':'';
-    var loc=(r._local?'<span style="color:#f59e0b;font-size:9.5px"> · solo local</span>':'');
-    return '<div class="bt-list-item'+sel+'" onclick="bitacoraVer(\''+bitaEsc(r.id)+'\')">'+
-      '<div style="font-weight:700;color:#e5e7eb;font-size:12.5px">📅 '+bitaFmt(r.fecha)+' · '+bitaDiaSemana(r.fecha)+loc+'</div>'+
-      '<div style="color:#94a3b8;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+bitaEsc((r.eventos||'Sin eventos registrados').slice(0,70))+'</div>'+
-    '</div>';
+
+  /* agrupa por mes */
+  var orden=[], grupos={};
+  arr.forEach(function(r){
+    var k=bitaMesClave(r.fecha);
+    if(!grupos[k]){ grupos[k]=[]; orden.push(k); }
+    grupos[k].push(r);
+  });
+
+  /* un solo mes: lista plana, sin encabezado que estorbe */
+  if(orden.length<2){ cont.innerHTML=arr.map(_btItemHTML).join(''); return; }
+
+  cont.innerHTML=orden.map(function(k){
+    var col=!!BITA_COLAPSADOS[k], n=grupos[k].length;
+    var cab='<div onclick="bitacoraToggleMes(\''+k+'\')" style="display:flex;align-items:center;gap:7px;cursor:pointer;'+
+      'padding:7px 9px;margin:6px 0 3px;border-radius:8px;background:rgba(34,211,238,.09);border:1px solid rgba(34,211,238,.22)">'+
+      '<span style="color:#22d3ee;font-size:11px;width:10px;display:inline-block">'+(col?'▶':'▼')+'</span>'+
+      '<b style="color:#22d3ee;font-size:12px;flex:1">'+bitaMesTitulo(k)+'</b>'+
+      '<span style="color:#94a3b8;font-size:10.5px">'+n+'</span></div>';
+    return cab + (col ? '' : grupos[k].map(_btItemHTML).join(''));
   }).join('');
+}
+
+/* ---------- descarga de todo el rango en un comprimido ---------- */
+function bitacoraDescargarRango(){
+  var m=document.getElementById('bt-modo').value, desde, hasta;
+  if(m==='dia'){ desde=hasta=document.getElementById('bt-f-dia').value; }
+  else{ desde=document.getElementById('bt-f-desde').value; hasta=document.getElementById('bt-f-hasta').value; }
+  if(!desde||!hasta){ alert('Selecciona primero las fechas a descargar.'); return; }
+
+  var btn=document.getElementById('bt-btn-zip'), txt=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Preparando…'; }
+  var est=document.getElementById('bt-estado');
+  if(est) est.textContent='Empaquetando documentos del rango…';
+
+  bitaJsonp({action:'bitacora_paquete', desde:desde, hasta:hasta}, 300000).then(function(r){
+    if(btn){ btn.disabled=false; btn.textContent=txt||'⬇ Descargar rango'; }
+    if(!r){ if(est) est.textContent='No hubo respuesta del servidor. Intenta de nuevo.'; return; }
+    if(!r.ok){ if(est) est.textContent=(r.error||'No se pudo generar el comprimido.'); return; }
+    if(est) est.textContent='Listo: '+r.archivos+' archivo(s) de '+r.dias+' día(s).';
+    window.open(r.url,'_blank');
+  });
 }
 
 /* ---------- formulario ---------- */
