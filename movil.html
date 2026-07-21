@@ -336,7 +336,14 @@ function blqHTML(i,u){
       '<button class="btnR" onclick="delBloque('+i+')" title="Quitar este registro">✕</button></div>'+
     '<div class="grid2">'+
       '<div><label>Fecha</label><input type="date" id="f_'+i+'"></div>'+
+      '<div><label>Cuadrilla</label><select id="cu_'+i+'" class="in" style="width:100%">'+
+        '<option value="">— Sin asignar —</option>'+
+        [1,2,3,4,5,6,7,8].map(function(n){return '<option value="'+n+'">Cuadrilla '+n+'</option>';}).join('')+
+      '</select></div>'+
+    '</div>'+
+    '<div class="grid2">'+
       '<div><label>Cantidad (elementos)</label><input type="text" id="q_'+i+'" inputmode="decimal" oninput="calc('+i+')"></div>'+
+      '<div></div>'+
     '</div>'+
     '<label>Descripción / ubicación (ej: Corte domiciliaria Mz 32 #10)</label>'+
     '<input id="d_'+i+'" placeholder="Qué y dónde se ejecutó">'+
@@ -436,7 +443,8 @@ function enviar(){
     var dm={};
     var mp={q:'q',alto:'alto',ancho:'ancho',diam:'diam',exp:'exp',peso:'peso',lon:'lon',area:'area'};
     for(var id in mp){ var v=num(id+'_'+i); if(v!==null) dm[mp[id]]=v; }
-    lote.push({f:f, d:dsc, dm:dm, t:t});
+    var cuSel=document.getElementById('cu_'+i);
+    lote.push({f:f, d:dsc, dm:dm, t:t, cu:(cuSel?cuSel.value:'')});
   }
   if(!lote.length){ msg('Llena al menos un registro', true); return; }
   var b=document.getElementById('btnEnviar');
