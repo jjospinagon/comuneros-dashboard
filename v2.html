@@ -2793,14 +2793,15 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <label style="font-size:11px;color:#94a3b8;font-weight:700">MES</label>
         <input type="month" id="cm-mes" style="background:rgba(0,0,0,.45);border:1px solid rgba(148,163,184,.3);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;color-scheme:dark" onchange="cmCargar()">
         <button class="bt-btn" onclick="cmCargar()" style="padding:7px 14px">↻ Actualizar</button>
+        <button class="bt-btn amber" onclick="cmReportePDF()" style="padding:7px 14px">📄 Reporte de metas (PDF)</button>
         <span id="cm-estado" style="font-size:11.5px;color:#64748b"></span>
       </div>
       <div id="cm-avisos"></div>
       <div id="cm-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px"></div>
       <div style="font-size:11px;color:#64748b;margin-top:14px;line-height:1.6">
         La <b>meta techo</b> es el objetivo mensual que habilita la bonificación de la cuadrilla. La <b>meta mínima</b> es la exigencia
-        contractual según el tiempo restante de ejecución. El avance se alimenta automáticamente del registro diario de la app de obra
-        (cada registro trae su cuadrilla) y del consolidado de seguimiento de metas; aquí no se digita nada.
+        contractual según el tiempo restante de ejecución. El avance se alimenta del <b>registro diario de metas</b> de la app de obra
+        (cantidad ejecutada por cuadrilla y por día, en unidades de la meta); aquí no se digita nada.
       </div>
     </div>
 
@@ -10358,6 +10359,7 @@ var CM_CUADRILLAS=[
   kw:/c[aá]mara/i}
 ];
 var CM_CAT=null;   /* catálogo item->desc para el mapeo por actividad */
+var CM_DIA_REGS=null, CM_DIA_MES='';   /* último listado del registro diario de metas */
 /* items reclamados explícitamente por alguna cuadrilla: las palabras clave no los tocan */
 var CM_EXPLICITOS={};
 CM_CUADRILLAS.forEach(function(c){ (c.items||[]).forEach(function(i){ CM_EXPLICITOS[i]=true; }); });
@@ -10382,28 +10384,18 @@ function cmCargar(){
   var mes=(mesEl&&mesEl.value)||cmMesActual();
   est.textContent='Cargando registros…';
 
-  var pCat = CM_CAT ? Promise.resolve(CM_CAT)
-    : jsonp(APPS_URL,{action:'cant_catalogo'}).then(function(r){
-        CM_CAT={}; ((r&&r.items)||[]).forEach(function(i){ CM_CAT[i.n]=i.d||''; }); return CM_CAT; });
-
-  Promise.all([pCat, jsonp(APPS_URL,{action:'cant_log',_ts:Date.now()})]).then(function(res){
-    var cat=res[0], lg=(res[1]&&res[1].log)||[];
-    var regs=lg.filter(function(r){ return String(r.f||'').slice(0,7)===mes; });
+  /* fuente: registro diario de metas por cuadrilla (hoja METAS_DIA) */
+  jsonp(APPS_URL,{action:'metas_dia_list', mes:mes, _ts:Date.now()}).then(function(rr){
+    var regs=(rr&&rr.regs)||[];
+    CM_DIA_REGS=regs; CM_DIA_MES=mes;
 
     var porCuad={}, porSem={}, sinAsignar=[];
     CM_CUADRILLAS.forEach(function(c){ porCuad[c.n]=0; porSem[c.n]=[0,0,0,0]; });
     var wkDe=function(f){ var d=parseInt(String(f).slice(8,10),10)||1; return Math.min(3, Math.floor((d-1)/7)); };
     regs.forEach(function(r){
-      var t=parseFloat(r.t)||0; if(t<=0) return;
-      var desc=cat[r.it]||'';
+      var t=parseFloat(r.q)||0; if(t<=0) return;
       var wk=wkDe(r.f);
-      var q=parseInt(r.q,10);
-      if(q && porCuad[q]!==undefined){ porCuad[q]+=t; porSem[q][wk]+=t; return; }
-      /* sin cuadrilla: se asigna solo si la actividad es de una unica cuadrilla */
-      var duenos=CM_CUADRILLAS.filter(function(c){ return cmItemDe(c,r.it,desc); });
-      if(duenos.length===1){ porCuad[duenos[0].n]+=t; porSem[duenos[0].n][wk]+=t; }
-      else if(duenos.length>1){ sinAsignar.push({it:r.it,t:t,desc:desc}); }
-      /* si no corresponde a ninguna actividad con meta, no cuenta aqui */
+      if(porCuad[r.c]!==undefined){ porCuad[r.c]+=t; porSem[r.c][wk]+=t; }
     });
     var esMesActual=(mes===cmMesActual());
     var wkHoy=esMesActual? Math.min(3, Math.floor((new Date().getDate()-1)/7)) : -1;
@@ -10458,6 +10450,134 @@ function cmCargar(){
     est.textContent=regs.length+' registro(s) del mes '+mes;
   }, function(){ est.textContent='No se pudieron cargar los registros.'; });
 }
+
+/* ---- Gráfica acumulada por cuadrilla (Chart.js offscreen, para el PDF) ---- */
+function cmChartURL(c, regs, mes){
+  if(typeof Chart==='undefined') return null;
+  var p=mes.split('-'), y=+p[0], mm=+p[1], nd=new Date(y,mm,0).getDate();
+  var byDay={};
+  regs.forEach(function(r){ if(r.c===c.n){ var d=parseInt(String(r.f).slice(8,10),10); byDay[d]=(byDay[d]||0)+(parseFloat(r.q)||0); } });
+  var hoyD=new Date();
+  var esMesActual=(mes===hoyD.getFullYear()+'-'+('0'+(hoyD.getMonth()+1)).slice(-2));
+  var ultDia=esMesActual?hoyD.getDate():nd;
+  var labels=[], acum=[], bono=[], mini=[], run=0;
+  for(var d=1; d<=nd; d++){
+    labels.push(d);
+    run+=(byDay[d]||0);
+    acum.push(d<=ultDia? +run.toFixed(2) : null);
+    bono.push(+(c.techo*d/nd).toFixed(2));
+    mini.push(+(c.minima*d/nd).toFixed(2));
+  }
+  var cv=document.createElement('canvas'); cv.width=620; cv.height=300;
+  var ch=new Chart(cv.getContext('2d'),{type:'line',
+    data:{labels:labels,datasets:[
+      {label:'Ejecutado acumulado',data:acum,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',borderWidth:2.5,pointRadius:0,tension:.15,fill:true,spanGaps:false},
+      {label:'Meta bono ('+c.techo+' '+c.und+')',data:bono,borderColor:'#16a34a',borderDash:[6,4],borderWidth:1.6,pointRadius:0,fill:false},
+      {label:'Meta cumplimiento ('+c.minima+' '+c.und+')',data:mini,borderColor:'#d97706',borderDash:[3,3],borderWidth:1.6,pointRadius:0,fill:false}
+    ]},
+    options:{responsive:false,animation:false,
+      plugins:{legend:{labels:{color:'#334155',font:{size:10},usePointStyle:true,boxWidth:6}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#475569',font:{size:9},maxTicksLimit:16}},
+              y:{grid:{color:'#e2e8f0'},ticks:{color:'#475569',font:{size:9}},beginAtZero:true}}}
+  });
+  var url=cv.toDataURL('image/png',1.0); try{ch.destroy();}catch(_){}
+  return url;
+}
+
+/* ---- Reporte PDF de cumplimiento de metas (solo cockpit/PC) ---- */
+window.cmReportePDF=async function(){
+  var mesEl=document.getElementById('cm-mes');
+  var mes=(mesEl&&mesEl.value)||cmMesActual();
+  var est=document.getElementById('cm-estado');
+  try{
+    if(est) est.textContent='Generando reporte PDF…';
+    await window.__REP.ensurePdfLibs();
+    var rr=await jsonp(APPS_URL,{action:'metas_dia_list', mes:mes, _ts:Date.now()});
+    var regs=(rr&&rr.regs)||[];
+    var por={}; CM_CUADRILLAS.forEach(function(c){ por[c.n]=0; });
+    var dias={};
+    regs.forEach(function(r){ var t=parseFloat(r.q)||0; if(t>0 && por[r.c]!==undefined){ por[r.c]+=t; dias[r.f]=1; } });
+    var fN=function(v){ return (Math.round(v*100)/100).toLocaleString('es-CO'); };
+    var fP=function(v){ return v.toFixed(2).replace('.',',')+'%'; };
+    var estadoDe=function(av,c){ return av>=c.techo?'Bono logrado':(av>=c.minima?'Cumple':(av>=c.minima*0.7?'Cerca':'Por debajo')); };
+
+    var jsPDF=window.jspdf.jsPDF; var doc=new jsPDF({unit:'pt',format:'a4'});
+    var PW=doc.internal.pageSize.getWidth(), PH=doc.internal.pageSize.getHeight(), M=40;
+    doc.setFillColor(13,27,62); doc.rect(0,0,PW,64,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+    doc.text('REPORTE DE CUMPLIMIENTO DE METAS POR CUADRILLA',M,27);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(196,214,238);
+    doc.text('Reposición Alcantarillado Barrio Comuneros · Montenegro (Quindío) — Contrato 023 de 2025',M,43);
+    doc.setFontSize(8.4); doc.setTextColor(150,180,222);
+    doc.text('Mes evaluado: '+mes+'        Registros: '+regs.length+' ('+Object.keys(dias).length+' día(s) con registro)        Generado: '+new Date().toLocaleString('es-CO'),M,56);
+    var y=84;
+    doc.setTextColor(71,85,105); doc.setFont('helvetica','normal'); doc.setFontSize(8.2);
+    var meto='Metodología: el ejecutado proviene del registro diario de metas de la app de obra (cantidad por cuadrilla y por día, en unidades de la meta). '+
+      'La meta bono (techo) habilita la bonificación de la cuadrilla y la meta de cumplimiento (mínima) es la exigencia contractual. '+
+      'En las gráficas, las metas se prorratean linealmente a lo largo del mes para comparar el ritmo diario.';
+    var ml=doc.splitTextToSize(meto,PW-2*M); doc.text(ml,M,y); y+=ml.length*9.6+10;
+
+    var body=CM_CUADRILLAS.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
+      var av=por[c.n]||0;
+      var pB=c.techo>0?av/c.techo*100:0, pC=c.minima>0?av/c.minima*100:0;
+      return ['C'+c.n, c.act, c.und, fN(av), fN(c.techo), fP(pB), fN(c.minima), fP(pC), estadoDe(av,c)];
+    });
+    doc.autoTable({
+      startY:y, head:[['Cuad.','Actividad','Und','Ejecutado','Meta bono','% bono','Meta cumpl.','% cumpl.','Estado']],
+      body:body, theme:'grid', margin:{left:M,right:M},
+      styles:{font:'helvetica',fontSize:7.4,cellPadding:3,overflow:'linebreak',textColor:[15,23,42],lineColor:[203,213,225],lineWidth:0.3},
+      headStyles:{fillColor:[13,27,62],textColor:[255,255,255],fontStyle:'bold',halign:'center',fontSize:7.4},
+      columnStyles:{0:{halign:'center',cellWidth:34},1:{halign:'left'},2:{halign:'center',cellWidth:36},
+        3:{halign:'right',cellWidth:52,fontStyle:'bold'},4:{halign:'right',cellWidth:52},5:{halign:'right',cellWidth:44},
+        6:{halign:'right',cellWidth:52},7:{halign:'right',cellWidth:44,fontStyle:'bold'},8:{halign:'center',cellWidth:58}},
+      didParseCell:function(d){
+        if(d.section==='body' && d.column.index===8){
+          var t=(d.cell.raw||'')+'';
+          if(t==='Bono logrado') d.cell.styles.textColor=[15,157,110];
+          else if(t==='Cumple') d.cell.styles.textColor=[22,101,52];
+          else if(t==='Cerca') d.cell.styles.textColor=[194,116,10];
+          else d.cell.styles.textColor=[214,40,40];
+          d.cell.styles.fontStyle='bold';
+        }
+      }
+    });
+    y=(doc.lastAutoTable?doc.lastAutoTable.finalY:y)+18;
+
+    /* gráficas: 2 por fila */
+    var gw=(PW-2*M-14)/2, gh=gw*300/620;
+    var ordenadas=CM_CUADRILLAS.slice().sort(function(a,b){return a.n-b.n;});
+    for(var i=0;i<ordenadas.length;i++){
+      var col=i%2, c2=ordenadas[i];
+      if(col===0 && y+gh+26>PH-46){ doc.addPage(); y=54; }
+      var x=M+col*(gw+14);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.6); doc.setTextColor(13,27,62);
+      doc.text('Cuadrilla '+c2.n+' · '+doc.splitTextToSize(c2.act,gw-90)[0],x,y+8);
+      var img=cmChartURL(c2, regs, mes);
+      if(img){ try{ doc.addImage(img,'PNG',x,y+14,gw,gh); }catch(_e){} }
+      if(col===1 || i===ordenadas.length-1) y+=gh+30;
+    }
+
+    /* conclusión */
+    if(y>PH-120){ doc.addPage(); y=60; }
+    var nBono=0,nCumple=0,nBajo=0;
+    CM_CUADRILLAS.forEach(function(c){ var av=por[c.n]||0; if(av>=c.techo)nBono++; else if(av>=c.minima)nCumple++; else nBajo++; });
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(13,27,62);
+    doc.text('Conclusión',M,y); y+=14;
+    var concl='En el mes '+mes+', '+nBono+' cuadrilla(s) alcanzaron la meta bono, '+nCumple+' cumplen la meta contractual sin llegar al bono y '+nBajo+' están por debajo de la meta mínima. '+
+      'El seguimiento se basa en '+regs.length+' registro(s) diario(s) cargados desde la app de obra.';
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.6); doc.setTextColor(15,23,42);
+    var cl=doc.splitTextToSize(concl,PW-2*M); doc.text(cl,M,y);
+
+    var np=doc.internal.getNumberOfPages();
+    for(var pg=1;pg<=np;pg++){ doc.setPage(pg); doc.setDrawColor(203,213,225); doc.setLineWidth(0.4); doc.line(M,PH-26,PW-M,PH-26);
+      doc.setFontSize(7.2); doc.setTextColor(120,130,150);
+      doc.text('Generado desde el cockpit de obra · Fuente: registro diario de metas (app de obra)',M,PH-15);
+      doc.text('Página '+pg+' / '+np,PW-M,PH-15,{align:'right'}); }
+
+    doc.save('Reporte_Metas_'+mes+'.pdf');
+    if(est) est.textContent='Reporte de metas generado ✓';
+  }catch(e){ if(est) est.textContent='Error generando el reporte: '+(e&&e.message||e); }
+};
 
 function trabSetVentana(d){
   TRAB_VENTANA = d;

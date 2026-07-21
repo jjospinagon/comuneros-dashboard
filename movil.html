@@ -127,14 +127,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#f59e0b}
 
     <div id="tabMetas" style="display:none">
       <div class="card">
-        <h2>Meta mensual <span class="pill" id="lblMes"></span></h2>
+        <h2>Registro diario de metas <span class="pill" id="lblMes"></span></h2>
         <label>Actividad (cuadrilla)</label>
         <select id="selMetaItem"></select>
         <div class="grid2">
-          <div><label>Cantidad meta del mes</label><input type="text" id="inMetaQ" inputmode="decimal"></div>
-          <div><label>Mes</label><input type="month" id="inMetaMes"></div>
+          <div><label>Cantidad ejecutada del día</label><input type="text" id="inMetaQ" inputmode="decimal"></div>
+          <div><label>Fecha</label><input type="date" id="inMetaFecha"></div>
         </div>
-        <button class="btn btnP" onclick="guardarMeta()">✔ Guardar meta</button>
+        <div style="font-size:10.5px;color:#64748b;margin:4px 0 6px">Se registra por día en unidades de la meta ([tapas], [ml], [cajas]…). El mes se deduce de la fecha. Si repites cuadrilla+fecha, el valor se reemplaza (corrige con el valor bueno).</div>
+        <button class="btn btnP" onclick="guardarMeta()">✔ Guardar ejecutado del día</button>
       </div>
 
       <!-- cumplimiento por cuadrilla · desagregado semanal (meta mensual / 4) -->
@@ -320,7 +321,7 @@ function volverInicio(){
 function iniciarTab(t){
   document.getElementById('vLogin').style.display='none';
   document.getElementById('vApp').style.display='block';
-  if(!document.getElementById('inMetaMes').value) document.getElementById('inMetaMes').value=mesAct();
+  if(document.getElementById('inMetaFecha') && !document.getElementById('inMetaFecha').value) document.getElementById('inMetaFecha').value=hoy();
   document.getElementById('lblMes').textContent=mesAct();
   if(!CAT.length) cargarCat(); else refrescarPend();
   tab(t);
@@ -624,14 +625,6 @@ function pintarSelMetas(){
     h+='<option value="C'+c.n+'">Cuadrilla '+c.n+' — '+c.act+' ('+c.und+')</option>';
   });
   document.getElementById('selMetaItem').innerHTML=h;
-  /* precarga la meta techo de la cuadrilla elegida como sugerencia */
-  var sel=document.getElementById('selMetaItem');
-  sel.onchange=function(){
-    var n=parseInt((sel.value||'').replace('C',''),10);
-    var c=MV_CUAD.filter(function(x){return x.n===n;})[0];
-    var q=document.getElementById('inMetaQ');
-    if(c&&q&&!q.value) q.value=c.techo;
-  };
 }
 function diasHabiles(mes){
   var p=mes.split('-'), y=+p[0], m=+p[1];
@@ -648,11 +641,11 @@ function diasHabiles(mes){
 function guardarMeta(){
   var it=document.getElementById('selMetaItem').value;
   var q=num('inMetaQ');
-  var mes=document.getElementById('inMetaMes').value;
-  if(!it||q===null||!mes){ msg('Completa ítem, cantidad y mes', true); return; }
-  jsonp({action:'metas_set', item:it, qty:q, mes:mes, user:''}, function(d){
-    if(d&&d.ok){ msg('Meta guardada. Revisa la pestaña Seguim.'); RES=null; }
-    else msg('Error: '+((d&&d.error)||''), true);
+  var f=document.getElementById('inMetaFecha').value;
+  if(!it||q===null||!f){ msg('Completa cuadrilla, cantidad y fecha', true); return; }
+  jsonp({action:'metas_dia_set', cuad:it, qty:q, fecha:f, user:''}, function(d){
+    if(d&&d.ok){ msg(d.upd?'Registro del día actualizado.':'Ejecutado del día guardado.'); document.getElementById('inMetaQ').value=''; mvCuadRender(); }
+    else msg('Error: '+((d&&d.error)||'sin respuesta'), true);
   });
 }
 /* ===== tabs ===== */
@@ -676,21 +669,16 @@ function mvCuadRender(){
   var mes=mesAct();
   var lbl=document.getElementById('mvCuadMes'); if(lbl) lbl.textContent=mes;
   box.textContent='Cargando…';
-  var catIdx={}; CAT.forEach(function(c){ catIdx[c.n]=c.d||''; });
-  jsonp({action:'cant_log', _ts:Date.now()}, function(r){
-    if(!r || !r.log){ box.textContent='No se pudieron cargar los registros.'; return; }
+  /* fuente: registro diario de metas (metas_dia), no el registro del presupuesto */
+  jsonp({action:'metas_dia_list', mes:mes, _ts:Date.now()}, function(r){
+    if(!r || !r.regs){ box.textContent='No se pudieron cargar los registros.'; return; }
     var mesAv={}, semAv={};
     MV_CUAD.forEach(function(c){ mesAv[c.n]=0; semAv[c.n]=[0,0,0,0]; });
     var pendComp=0;
-    r.log.forEach(function(g){
-      if(String(g.f||'').slice(0,7)!==mes) return;
-      var t=parseFloat(g.t)||0; if(t<=0) return;
+    r.regs.forEach(function(g){
+      var t=parseFloat(g.q)||0; if(t<=0) return;
       var dia=parseInt(String(g.f).slice(8,10),10)||1, wk=mvSemana(dia);
-      var q=parseInt(g.q,10);
-      if(q && mesAv[q]!==undefined){ mesAv[q]+=t; semAv[q][wk]+=t; return; }
-      var d=mvCuadsDe(g.it, catIdx[g.it]||'');
-      if(d.length===1){ mesAv[d[0]]+=t; semAv[d[0]][wk]+=t; }
-      else if(d.length>1) pendComp+=t;
+      if(mesAv[g.c]!==undefined){ mesAv[g.c]+=t; semAv[g.c][wk]+=t; }
     });
     var wkNow=mvSemana(new Date().getDate());
     var html=MV_CUAD.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
