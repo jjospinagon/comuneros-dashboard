@@ -3454,10 +3454,11 @@ function _lsAge(key){
 var COCKPIT_VERSION = 'v2.0 · 2026-06-11';
 function _edDiasAtrasISO(n){ var t=new Date(); t.setDate(t.getDate()-n); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
 function _edCacheTTL(f){ return (f < _edDiasAtrasISO(7)) ? 24*3600*1000 : 10*60*1000; } // dias cerrados 24h · recientes 10min
-function _edCacheGet(f){ return _lsGet('ed_dia:'+f); }
-function _edCacheSet(f,d){ try{ _lsSet('ed_dia:'+f, d, _edCacheTTL(f)); }catch(_){} }
-function _edCacheSetNeg(f,neg){ // negativos del dia en curso: solo 60s (el residente puede cargar en cualquier momento)
-  try{ var hoyI=_edDiasAtrasISO(0); _lsSet('ed_dia:'+f, neg, (f>=hoyI)? 60000 : _edCacheTTL(f)); }catch(_){}
+/* v2 de la clave: invalida los dias vacios que quedaron cacheados cuando la fuente estuvo caida (jul-2026) */
+function _edCacheGet(f){ return _lsGet('ed2_dia:'+f); }
+function _edCacheSet(f,d){ try{ _lsSet('ed2_dia:'+f, d, _edCacheTTL(f)); }catch(_){} }
+function _edCacheSetNeg(f,neg){ // negativos: dia en curso 60s · dias cerrados max 2h (por si el residente carga tarde)
+  try{ var hoyI=_edDiasAtrasISO(0); _lsSet('ed2_dia:'+f, neg, (f>=hoyI)? 60000 : Math.min(2*3600*1000,_edCacheTTL(f))); }catch(_){}
 }
 async function _edFetchDia(f){
   var hit=_edCacheGet(f); if(hit) return hit;
@@ -10451,34 +10452,39 @@ function cmCargar(){
   }, function(){ est.textContent='No se pudieron cargar los registros.'; });
 }
 
-/* ---- Gráfica acumulada por cuadrilla (Chart.js offscreen, para el PDF) ---- */
+/* ---- Gráfica diaria por cuadrilla (barras como Ejecución vs Meta, para el PDF) ---- */
 function cmChartURL(c, regs, mes){
   if(typeof Chart==='undefined') return null;
   var p=mes.split('-'), y=+p[0], mm=+p[1], nd=new Date(y,mm,0).getDate();
   var byDay={};
   regs.forEach(function(r){ if(r.c===c.n){ var d=parseInt(String(r.f).slice(8,10),10); byDay[d]=(byDay[d]||0)+(parseFloat(r.q)||0); } });
-  var hoyD=new Date();
-  var esMesActual=(mes===hoyD.getFullYear()+'-'+('0'+(hoyD.getMonth()+1)).slice(-2));
-  var ultDia=esMesActual?hoyD.getDate():nd;
-  var labels=[], acum=[], bono=[], mini=[], run=0;
+  var bonoDia=c.techo/nd, minDia=c.minima/nd;
+  var labels=[], ej=[], lBono=[], lMin=[], cols=[];
   for(var d=1; d<=nd; d++){
-    labels.push(d);
-    run+=(byDay[d]||0);
-    acum.push(d<=ultDia? +run.toFixed(2) : null);
-    bono.push(+(c.techo*d/nd).toFixed(2));
-    mini.push(+(c.minima*d/nd).toFixed(2));
+    labels.push(('0'+d).slice(-2));
+    var v=byDay[d]||0;
+    ej.push(+v.toFixed(2));
+    lBono.push(+bonoDia.toFixed(3));
+    lMin.push(+minDia.toFixed(3));
+    cols.push(v>=bonoDia?'rgba(16,185,129,.85)':(v>=minDia?'rgba(245,158,11,.85)':'rgba(239,68,68,.82)'));
   }
-  var cv=document.createElement('canvas'); cv.width=620; cv.height=300;
-  var ch=new Chart(cv.getContext('2d'),{type:'line',
+  var cv=document.createElement('canvas'); cv.width=1240; cv.height=420;
+  var ch=new Chart(cv.getContext('2d'),{type:'bar',
     data:{labels:labels,datasets:[
-      {label:'Ejecutado acumulado',data:acum,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',borderWidth:2.5,pointRadius:0,tension:.15,fill:true,spanGaps:false},
-      {label:'Meta bono ('+c.techo+' '+c.und+')',data:bono,borderColor:'#16a34a',borderDash:[6,4],borderWidth:1.6,pointRadius:0,fill:false},
-      {label:'Meta cumplimiento ('+c.minima+' '+c.und+')',data:mini,borderColor:'#d97706',borderDash:[3,3],borderWidth:1.6,pointRadius:0,fill:false}
+      {label:'Ejecutado del día ('+c.und+')',data:ej,backgroundColor:cols,borderRadius:3,order:2},
+      {label:'Meta diaria bono ('+c.techo+'/mes)',data:lBono,type:'line',borderColor:'#0f766e',borderWidth:2,borderDash:[5,4],pointRadius:0,tension:0,fill:false,order:1},
+      {label:'Meta diaria cumplimiento ('+c.minima+'/mes)',data:lMin,type:'line',borderColor:'#d97706',borderWidth:2,borderDash:[3,3],pointRadius:0,tension:0,fill:false,order:1}
     ]},
-    options:{responsive:false,animation:false,
-      plugins:{legend:{labels:{color:'#334155',font:{size:10},usePointStyle:true,boxWidth:6}}},
-      scales:{x:{grid:{display:false},ticks:{color:'#475569',font:{size:9},maxTicksLimit:16}},
-              y:{grid:{color:'#e2e8f0'},ticks:{color:'#475569',font:{size:9}},beginAtZero:true}}}
+    options:{responsive:false,animation:false,layout:{padding:{top:30}},
+      plugins:{legend:{labels:{color:'#334155',font:{size:13},usePointStyle:true}}},
+      scales:{x:{grid:{color:'#e2e8f0'},ticks:{color:'#475569',font:{size:11}}},
+              y:{grid:{color:'#e2e8f0'},ticks:{color:'#475569',font:{size:11}},beginAtZero:true}}},
+    plugins:[{id:'vl',afterDatasetsDraw:function(cc){
+      var mA=cc.getDatasetMeta(0); if(!mA||!mA.data)return; var x=cc.ctx; x.save();
+      x.font='700 11px Inter,system-ui,sans-serif'; x.fillStyle='#0f172a'; x.textAlign='center'; x.textBaseline='bottom';
+      mA.data.forEach(function(bar,i){ var v=ej[i]; if(!v)return; x.fillText((Math.round(v*100)/100).toLocaleString('es-CO'),bar.x,bar.y-4); });
+      x.restore();
+    }}]
   });
   var url=cv.toDataURL('image/png',1.0); try{ch.destroy();}catch(_){}
   return url;
@@ -10543,18 +10549,17 @@ window.cmReportePDF=async function(){
     });
     y=(doc.lastAutoTable?doc.lastAutoTable.finalY:y)+18;
 
-    /* gráficas: 2 por fila */
-    var gw=(PW-2*M-14)/2, gh=gw*300/620;
+    /* gráficas: una por cuadrilla a lo ancho, estilo Ejecución vs Meta */
+    var gw=PW-2*M, gh=gw*420/1240;
     var ordenadas=CM_CUADRILLAS.slice().sort(function(a,b){return a.n-b.n;});
     for(var i=0;i<ordenadas.length;i++){
-      var col=i%2, c2=ordenadas[i];
-      if(col===0 && y+gh+26>PH-46){ doc.addPage(); y=54; }
-      var x=M+col*(gw+14);
-      doc.setFont('helvetica','bold'); doc.setFontSize(8.6); doc.setTextColor(13,27,62);
-      doc.text('Cuadrilla '+c2.n+' · '+doc.splitTextToSize(c2.act,gw-90)[0],x,y+8);
+      var c2=ordenadas[i];
+      if(y+gh+30>PH-46){ doc.addPage(); y=54; }
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.4); doc.setTextColor(13,27,62);
+      doc.text('Cuadrilla '+c2.n+' · '+doc.splitTextToSize(c2.act,gw-60)[0]+' ['+c2.und+']',M,y+8);
       var img=cmChartURL(c2, regs, mes);
-      if(img){ try{ doc.addImage(img,'PNG',x,y+14,gw,gh); }catch(_e){} }
-      if(col===1 || i===ordenadas.length-1) y+=gh+30;
+      if(img){ try{ doc.addImage(img,'PNG',M,y+14,gw,gh); }catch(_e){} }
+      y+=gh+32;
     }
 
     /* conclusión */
