@@ -672,18 +672,20 @@ function mvCuadRender(){
   /* fuente: registro diario de metas (metas_dia), no el registro del presupuesto */
   jsonp({action:'metas_dia_list', mes:mes, _ts:Date.now()}, function(r){
     if(!r || !r.regs){ box.textContent='No se pudieron cargar los registros.'; return; }
-    var mesAv={}, semAv={};
-    MV_CUAD.forEach(function(c){ mesAv[c.n]=0; semAv[c.n]=[0,0,0,0]; });
-    var pendComp=0;
+    var mesAv={}, semAv={}, hoyAv={};
+    MV_CUAD.forEach(function(c){ mesAv[c.n]=0; semAv[c.n]=[0,0,0,0]; hoyAv[c.n]=0; });
+    var pendComp=0, hoyISO=hoy();
     r.regs.forEach(function(g){
       var t=parseFloat(g.q)||0; if(t<=0) return;
       var dia=parseInt(String(g.f).slice(8,10),10)||1, wk=mvSemana(dia);
-      if(mesAv[g.c]!==undefined){ mesAv[g.c]+=t; semAv[g.c][wk]+=t; }
+      if(mesAv[g.c]!==undefined){ mesAv[g.c]+=t; semAv[g.c][wk]+=t; if(g.f===hoyISO) hoyAv[g.c]+=t; }
     });
     var wkNow=mvSemana(new Date().getDate());
+    var dH=diasHabiles(mes)||24;
     var html=MV_CUAD.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
       var mT=c.techo, mS=mT/4, mMin=c.minima;
       var av=mesAv[c.n], sv=semAv[c.n][wkNow];
+      var mD=mT/dH, mMinD=mMin/dH, dv=hoyAv[c.n]||0, pD=mD>0?dv/mD*100:0;
       var pS=mS>0?sv/mS*100:0, pM=mT>0?av/mT*100:0, pMin=mMin>0?av/mMin*100:0;
       function col(p){ return p>=100?'#22c55e':(p>=70?'#fbbf24':'#f87171'); }
       function fx(v){ return (Math.round(v*100)/100).toLocaleString('es-CO'); }
@@ -698,7 +700,9 @@ function mvCuadRender(){
         '<div style="display:flex;justify-content:space-between;align-items:baseline">'+
           '<b style="color:#e5e7eb">Cuadrilla '+c.n+'</b>'+
           '<span style="font-size:10px;color:#64748b">'+c.act+' ['+c.und+']</span></div>'+
-        '<div style="margin-top:4px;font-size:11px">Semana actual: <b style="color:'+col(pS)+'">'+fx(sv)+'</b> / '+fx(mS)+
+        '<div style="margin-top:4px;font-size:11px">Hoy: <b style="color:'+col(pD)+'">'+fx(dv)+'</b> / '+fx(mD)+' día'+
+          ' ('+pD.toFixed(2).replace('.',',')+'%) <span style="color:#6b7280;font-size:10px">· mínima día '+fx(mMinD)+'</span></div>'+
+        '<div style="margin-top:2px;font-size:11px">Semana actual: <b style="color:'+col(pS)+'">'+fx(sv)+'</b> / '+fx(mS)+
           ' ('+pS.toFixed(2).replace('.',',')+'%)</div>'+
         '<div style="display:flex;gap:5px;margin-top:5px">'+sems+'</div>'+
         '<div style="margin-top:6px;font-size:11px">Mes: '+fx(av)+' / '+fx(mT)+
@@ -927,28 +931,25 @@ function pintarMsegCuad(mes){
   var box=document.getElementById('listaMetas');
   box.innerHTML='<div class="vacio">Cargando avance por cuadrilla…</div>';
   var mm=(RES&&RES.metas&&RES.metas[mes])||{};
-  var catIdx={}; CAT.forEach(function(c){ catIdx[c.n]=c.d||''; });
-  jsonp({action:'cant_log', _ts:Date.now()}, function(r){
-    var mesAv={}, semAv={};
-    MV_CUAD.forEach(function(c){ mesAv[c.n]=0; semAv[c.n]=[0,0,0,0]; });
-    var pendComp=0;
-    ((r&&r.log)||[]).forEach(function(g){
-      if(String(g.f||'').slice(0,7)!==mes) return;
-      var t=parseFloat(g.t)||0; if(t<=0) return;
+  /* fuente: registro diario de metas (METAS_DIA), la misma del cumplimiento */
+  jsonp({action:'metas_dia_list', mes:mes, _ts:Date.now()}, function(r){
+    var mesAv={}, semAv={}, hoyAv={};
+    MV_CUAD.forEach(function(c){ mesAv[c.n]=0; semAv[c.n]=[0,0,0,0]; hoyAv[c.n]=0; });
+    var pendComp=0, hoyISO=hoy();
+    ((r&&r.regs)||[]).forEach(function(g){
+      var t=parseFloat(g.q)||0; if(t<=0) return;
       var wk=mvSemana(parseInt(String(g.f).slice(8,10),10)||1);
-      var q=parseInt(g.q,10);
-      if(q && mesAv[q]!==undefined){ mesAv[q]+=t; semAv[q][wk]+=t; return; }
-      var d=mvCuadsDe(g.it, catIdx[g.it]||'');
-      if(d.length===1){ mesAv[d[0]]+=t; semAv[d[0]][wk]+=t; }
-      else if(d.length>1) pendComp+=t;
+      if(mesAv[g.c]!==undefined){ mesAv[g.c]+=t; semAv[g.c][wk]+=t; if(g.f===hoyISO) hoyAv[g.c]+=t; }
     });
     var wkNow=mvSemana(new Date().getDate());
+    var dH=diasHabiles(mes)||24;
     var fx=function(v){ return (Math.round(v*100)/100).toLocaleString('es-CO'); };
     var h='';
     MV_CUAD.slice().sort(function(a,b){return a.n-b.n;}).forEach(function(c){
       var reg=mm['C'+c.n];
       var meta=(reg&&reg.q)?parseFloat(reg.q):c.techo;   /* meta registrada o techo del plan */
       var av=mesAv[c.n], pct=meta>0?Math.round(av/meta*10000)/100:0;
+      var mD=meta/dH, dv=hoyAv[c.n]||0, pD=mD>0?Math.round(dv/mD*10000)/100:0;
       var cls=_clsPct(pct);
       var sems=semAv[c.n].map(function(v,ix){
         var mS=meta/4, p=mS>0?Math.min(100,v/mS*100):0;
@@ -959,7 +960,8 @@ function pintarMsegCuad(mes){
         '<span style="font-size:11px;color:#9ca3af">'+c.act+'</span>'+
         '<div style="font-size:12px;margin-top:3px">Meta mes: <b>'+fx(meta)+'</b>'+((reg&&reg.q)?'':' <span style="font-size:9.5px;color:#6b7280">(techo del plan)</span>')+
         ' · Ejecutado: <b>'+fx(av)+'</b> ('+pct.toFixed(2).replace('.',',')+'%)</div>'+
-        '<div style="font-size:11px;color:#93c5fd">Semanal: '+fx(meta/4)+' '+c.und+' · mínima contractual: '+fx(c.minima)+'</div>'+
+        '<div style="font-size:11px;color:#93c5fd">Semanal: '+fx(meta/4)+' '+c.und+' · Diaria: '+fx(mD)+' '+c.und+' ('+dH+' d háb) · mínima contractual: '+fx(c.minima)+'</div>'+
+        '<div style="font-size:11px;margin-top:2px">Hoy: <b style="color:'+(pD>=100?'#22c55e':(pD>=70?'#fbbf24':'#f87171'))+'">'+fx(dv)+'</b> / '+fx(mD)+' ('+pD.toFixed(2).replace('.',',')+'%)</div>'+
         '<div class="bar"><div class="'+cls+'" style="width:'+Math.max(0,Math.min(100,pct))+'%"></div></div>'+
         '<div style="display:flex;gap:5px;margin-top:5px">'+sems+'</div></div>';
     });

@@ -10366,6 +10366,20 @@ var CM_EXPLICITOS={};
 CM_CUADRILLAS.forEach(function(c){ (c.items||[]).forEach(function(i){ CM_EXPLICITOS[i]=true; }); });
 
 function cmMesActual(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2); }
+/* dias habiles del mes: L-V=1, Sab=0.5, Dom y festivos=0 (misma regla de la app movil) */
+var CM_FESTIVOS=['2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03','2026-05-01','2026-05-18','2026-06-08','2026-06-15','2026-06-29','2026-07-20','2026-08-07','2026-08-17','2026-10-12','2026-11-02','2026-11-16','2026-12-08','2026-12-25','2027-01-01','2027-01-11'];
+function cmDiasHabiles(mes){
+  var p=mes.split('-'), y=+p[0], m=+p[1];
+  var nd=new Date(y,m,0).getDate(), tot=0;
+  for(var d=1;d<=nd;d++){
+    var fx=mes+'-'+('0'+d).slice(-2);
+    if(CM_FESTIVOS.indexOf(fx)>=0) continue;
+    var dw=new Date(y,m-1,d).getDay();
+    if(dw===0) continue;
+    tot+=(dw===6)?0.5:1;
+  }
+  return tot||24;
+}
 
 function cmItemDe(c, it, desc){
   if(c.items) return c.items.indexOf(it)>=0;
@@ -10390,13 +10404,15 @@ function cmCargar(){
     var regs=(rr&&rr.regs)||[];
     CM_DIA_REGS=regs; CM_DIA_MES=mes;
 
-    var porCuad={}, porSem={}, sinAsignar=[];
-    CM_CUADRILLAS.forEach(function(c){ porCuad[c.n]=0; porSem[c.n]=[0,0,0,0]; });
+    var porCuad={}, porSem={}, porHoy={}, sinAsignar=[];
+    CM_CUADRILLAS.forEach(function(c){ porCuad[c.n]=0; porSem[c.n]=[0,0,0,0]; porHoy[c.n]=0; });
     var wkDe=function(f){ var d=parseInt(String(f).slice(8,10),10)||1; return Math.min(3, Math.floor((d-1)/7)); };
+    var _hd=new Date(), hoyISO=_hd.getFullYear()+'-'+('0'+(_hd.getMonth()+1)).slice(-2)+'-'+('0'+_hd.getDate()).slice(-2);
+    var dHab=cmDiasHabiles(mes);
     regs.forEach(function(r){
       var t=parseFloat(r.q)||0; if(t<=0) return;
       var wk=wkDe(r.f);
-      if(porCuad[r.c]!==undefined){ porCuad[r.c]+=t; porSem[r.c][wk]+=t; }
+      if(porCuad[r.c]!==undefined){ porCuad[r.c]+=t; porSem[r.c][wk]+=t; if(r.f===hoyISO) porHoy[r.c]+=t; }
     });
     var esMesActual=(mes===cmMesActual());
     var wkHoy=esMesActual? Math.min(3, Math.floor((new Date().getDate()-1)/7)) : -1;
@@ -10416,7 +10432,11 @@ function cmCargar(){
           '<span style="font-size:17px;font-weight:800;color:#a855f7">Cuadrilla '+c.n+'</span>'+
           '<span style="font-size:10.5px;color:#64748b">['+c.und+']</span></div>'+
         '<div style="font-size:11.5px;color:#94a3b8;margin-bottom:10px;min-height:28px">'+c.act+'</div>'+
-        '<div style="font-size:12px;color:#e5e7eb;margin-bottom:8px">Avance del mes: <b>'+fmt(av,c.und)+'</b></div>'+
+        '<div style="font-size:12px;color:#e5e7eb;margin-bottom:6px">Avance del mes: <b>'+fmt(av,c.und)+'</b></div>'+
+        (function(){ var mD=c.techo/dHab, dv=porHoy[c.n]||0, pD=mD>0?dv/mD*100:0;
+          var cD=pD>=100?'#22c55e':(pD>=70?'#fbbf24':'#f87171');
+          return '<div style="font-size:11px;color:#94a3b8;margin-bottom:8px">Hoy: <b style="color:'+cD+'">'+fmt(dv,c.und)+'</b> / '+fmt(mD,c.und)+
+            ' ('+pD.toFixed(2).replace('.',',')+'%) · meta diaria = techo ÷ '+dHab+' d háb</div>'; })()+
         '<div style="font-size:11px;color:#94a3b8">Meta techo (bonificación): <b style="color:#e5e7eb">'+fmt(c.techo,c.und)+'</b>'+
           ' · <b style="color:'+colT+'">'+pT.toFixed(2).replace('.',',')+'%</b>'+(pT>=100?' 🏆':'')+'</div>'+barra(pT,colT)+
         '<div style="font-size:11px;color:#94a3b8;margin-top:8px">Meta mínima (contractual): <b style="color:#e5e7eb">'+fmt(c.minima,c.und)+'</b>'+
@@ -10458,15 +10478,19 @@ function cmChartURL(c, regs, mes){
   var p=mes.split('-'), y=+p[0], mm=+p[1], nd=new Date(y,mm,0).getDate();
   var byDay={};
   regs.forEach(function(r){ if(r.c===c.n){ var d=parseInt(String(r.f).slice(8,10),10); byDay[d]=(byDay[d]||0)+(parseFloat(r.q)||0); } });
-  var bonoDia=c.techo/nd, minDia=c.minima/nd;
+  var dHab=cmDiasHabiles(mes);
+  var bonoDia=c.techo/dHab, minDia=c.minima/dHab;
   var labels=[], ej=[], lBono=[], lMin=[], cols=[];
   for(var d=1; d<=nd; d++){
     labels.push(('0'+d).slice(-2));
-    var v=byDay[d]||0;
+    var fISO=mes+'-'+('0'+d).slice(-2);
+    var dw=new Date(y,mm-1,d).getDay();
+    var peso=(dw===0||CM_FESTIVOS.indexOf(fISO)>=0)?0:(dw===6?0.5:1);   /* dom/festivo sin meta, sabado media */
+    var v=byDay[d]||0, mB=bonoDia*peso, mM=minDia*peso;
     ej.push(+v.toFixed(2));
-    lBono.push(+bonoDia.toFixed(3));
-    lMin.push(+minDia.toFixed(3));
-    cols.push(v>=bonoDia?'rgba(16,185,129,.85)':(v>=minDia?'rgba(245,158,11,.85)':'rgba(239,68,68,.82)'));
+    lBono.push(+mB.toFixed(3));
+    lMin.push(+mM.toFixed(3));
+    cols.push(peso===0?'rgba(99,102,241,.5)':(v>=mB?'rgba(16,185,129,.85)':(v>=mM?'rgba(245,158,11,.85)':'rgba(239,68,68,.82)')));
   }
   var cv=document.createElement('canvas'); cv.width=1240; cv.height=420;
   var ch=new Chart(cv.getContext('2d'),{type:'bar',
@@ -10520,7 +10544,7 @@ window.cmReportePDF=async function(){
     doc.setTextColor(71,85,105); doc.setFont('helvetica','normal'); doc.setFontSize(8.2);
     var meto='Metodología: el ejecutado proviene del registro diario de metas de la app de obra (cantidad por cuadrilla y por día, en unidades de la meta). '+
       'La meta bono (techo) habilita la bonificación de la cuadrilla y la meta de cumplimiento (mínima) es la exigencia contractual. '+
-      'En las gráficas, las metas se prorratean linealmente a lo largo del mes para comparar el ritmo diario.';
+      'En las gráficas, la meta diaria = meta mensual ÷ días hábiles del mes (L-V día completo, sábado medio día; domingos y festivos sin meta).';
     var ml=doc.splitTextToSize(meto,PW-2*M); doc.text(ml,M,y); y+=ml.length*9.6+10;
 
     var body=CM_CUADRILLAS.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
