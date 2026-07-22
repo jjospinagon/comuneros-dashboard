@@ -3782,7 +3782,9 @@ function _locRenderGL(){
     var lb=document.createElement('span');
     lb.className='loc-cam-lbl';
     lb.textContent=c.id;
-    lb.style.cssText='position:absolute;top:calc(100% + 2px);left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000,0 0 4px #000;white-space:nowrap;pointer-events:none;display:none';
+    lb.style.cssText='position:absolute;top:calc(100% + 2px);left:50%;transform:translateX(-50%);font-size:10px;font-weight:800;color:#fff;'+
+      'text-shadow:1px 1px 0 #000,-1px 1px 0 #000,1px -1px 0 #000,-1px -1px 0 #000,0 1.5px 0 #000,0 -1.5px 0 #000,1.5px 0 0 #000,-1.5px 0 0 #000,0 0 4px #000,0 0 7px #000;'+
+      'white-space:nowrap;pointer-events:none;display:none';
     el.appendChild(lb);
     var rn=(c.red&&LOC_REDES[c.red])?LOC_REDES[c.red].nombre:'';
     el.dataset.red=(c.red==='pluvial')?'plu':'san';
