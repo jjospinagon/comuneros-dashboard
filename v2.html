@@ -2885,6 +2885,9 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
             <button class="back-btn" id="lt-sat" onclick="locSat()" style="font-size:12px;padding:7px 8px;flex:1;border:2px solid #94a3b8">🛰 Satélite: NO</button>
             <button class="back-btn" id="lt-cad" onclick="locCad()" style="font-size:12px;padding:7px 8px;flex:1;border:2px solid #fbbf24">📐 CAD: NO</button>
           </div>
+          <div style="display:flex;gap:6px">
+            <button class="back-btn" id="lt-mza" onclick="locMza()" style="font-size:12px;padding:7px 8px;flex:1;border:2px solid #f59e0b;background:rgba(245,158,11,.25)">🔢 Manzanas: SÍ</button>
+          </div>
         </fieldset>
         <div id="loc-leyenda" style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;font-size:11px;color:#cbd5e1;background:rgba(20,26,55,.5);border:1px solid rgba(99,102,241,.25);border-radius:12px;padding:9px 11px">
           <span><span style="display:inline-block;width:18px;height:4px;background:#ef4444;border-radius:2px;vertical-align:middle"></span> San. construida</span>
@@ -3813,8 +3816,78 @@ function _locRenderGL(){
   if(!LOC_MAP._camZoomHook){
     LOC_MAP._camZoomHook=true;
     var _raf=null;
-    LOC_MAP.on('zoom',function(){ if(!_raf) _raf=requestAnimationFrame(function(){ _raf=null; _locEscalarCamaras(); }); });
+    LOC_MAP.on('zoom',function(){ if(!_raf) _raf=requestAnimationFrame(function(){ _raf=null; _locEscalarCamaras(); _locEscalarManzanas(); }); });
   }
+  /* números de manzana: capa aparte, se pinta después de las cámaras */
+  _locMzaCargar().then(_locMzaRender);
+}
+
+/* ---------- NÚMEROS DE MANZANA (manzanas.json · rótulos del plano CAD) ----------
+   Capa independiente: no toca redes, cámaras ni trazados. Se apaga con su botón. */
+var LOC_MZA=true, LOC_MZA_DATA=null, LOC_MZA_MK=[], LOC_MZA_LF=null, LOC_MZA_Z=15.4;
+function _locMzaCargar(){
+  if(LOC_MZA_DATA) return Promise.resolve(LOC_MZA_DATA);
+  return fetch('manzanas.json?v=1').then(function(r){ return r.json(); })
+    .then(function(j){ LOC_MZA_DATA=(j&&j.features)||[]; return LOC_MZA_DATA; })
+    .catch(function(){ LOC_MZA_DATA=[]; return LOC_MZA_DATA; });
+}
+function _locMzaRender(){
+  if(!LOC_MAP || LOC_MODO!=='gl' || typeof maplibregl==='undefined') return;
+  LOC_MZA_MK.forEach(function(m){ try{ m.remove(); }catch(_){} }); LOC_MZA_MK=[];
+  if(!LOC_MZA || !LOC_MZA_DATA) return;
+  LOC_MZA_DATA.forEach(function(f){
+    var c=f.geometry&&f.geometry.coordinates; if(!c) return;
+    var el=document.createElement('div');
+    el.className='loc-mza-mk';
+    el.textContent=(f.properties&&f.properties.mza)||'';
+    el.title='Manzana '+el.textContent;
+    el.style.cssText='display:flex;align-items:center;justify-content:center;border-radius:50%;'+
+      'background:rgba(245,158,11,.94);color:#3a2504;border:2px solid #78350f;font-weight:800;'+
+      'font-family:Inter,system-ui,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:default;'+
+      'width:26px;height:26px;font-size:12px;pointer-events:none';
+    var mk=new maplibregl.Marker({element:el}).setLngLat(c).addTo(LOC_MAP);
+    LOC_MZA_MK.push(mk);
+  });
+  _locEscalarManzanas();
+}
+/* tamaño según zoom: se ocultan en la vista general para no saturar el plano */
+function _locEscalarManzanas(){
+  if(!LOC_MAP || LOC_MODO!=='gl') return;
+  var z=LOC_MAP.getZoom();
+  var ver=(z>=LOC_MZA_Z);
+  var s=Math.round(Math.max(18, Math.min(34, (z-13.6)*7)));
+  document.querySelectorAll('.loc-mza-mk').forEach(function(el){
+    el.style.display=ver?'flex':'none';
+    el.style.width=s+'px'; el.style.height=s+'px';
+    el.style.fontSize=Math.max(9, Math.round(s*0.46))+'px';
+  });
+}
+function locMza(){
+  var b=document.getElementById('lt-mza');
+  LOC_MZA=!LOC_MZA;
+  if(b){
+    b.textContent='🔢 Manzanas: '+(LOC_MZA?'SÍ':'NO');
+    b.style.background=LOC_MZA?'rgba(245,158,11,.25)':'';
+  }
+  if(LOC_MODO==='leaflet'){ _locMzaRenderLf(); return; }
+  if(LOC_MZA && !LOC_MZA_DATA){ _locMzaCargar().then(_locMzaRender); return; }
+  _locMzaRender();
+}
+/* mismo rótulo en el mapa 2D de respaldo */
+function _locMzaRenderLf(){
+  if(!LOC_MAP || LOC_MODO!=='leaflet' || typeof L==='undefined') return;
+  if(LOC_MZA_LF){ try{ LOC_MAP.removeLayer(LOC_MZA_LF); }catch(_){} LOC_MZA_LF=null; }
+  if(!LOC_MZA || !LOC_MZA_DATA || !LOC_MZA_DATA.length) return;
+  if((LOC_MAP.getZoom()||16) < LOC_MZA_Z) return;
+  var capas=LOC_MZA_DATA.map(function(f){
+    var c=f.geometry&&f.geometry.coordinates; if(!c) return null;
+    var n=(f.properties&&f.properties.mza)||'';
+    return L.marker([c[1],c[0]],{interactive:false,icon:L.divIcon({className:'',iconSize:[26,26],iconAnchor:[13,13],
+      html:'<div style="width:26px;height:26px;border-radius:50%;background:rgba(245,158,11,.94);color:#3a2504;'+
+           'border:2px solid #78350f;font-weight:800;font-size:12px;display:flex;align-items:center;'+
+           'justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.5)">'+n+'</div>'})});
+  }).filter(Boolean);
+  if(capas.length) LOC_MZA_LF=L.layerGroup(capas).addTo(LOC_MAP);
 }
 
 /* Las cámaras se encogen al alejar el zoom, igual que las líneas,
@@ -3875,6 +3948,7 @@ function _locRenderLf(){
   });
   if(pts.length){ LOC_CAPA_CAM=L.layerGroup(pts).addTo(LOC_MAP); LOC_MAP.fitBounds(L.featureGroup(pts).getBounds().pad(0.2)); }
   _locDibujosRenderLf();   /* los trazados guardados tambien se pintan en el respaldo */
+  _locMzaCargar().then(_locMzaRenderLf);   /* números de manzana en el mapa de respaldo */
 }
 
 /* Trazados construidos/proyectados en el mapa de respaldo (Leaflet).
