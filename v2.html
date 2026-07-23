@@ -3457,11 +3457,13 @@ function _lsAge(key){
 var COCKPIT_VERSION = 'v2.0 · 2026-06-11';
 function _edDiasAtrasISO(n){ var t=new Date(); t.setDate(t.getDate()-n); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
 function _edCacheTTL(f){ return (f < _edDiasAtrasISO(7)) ? 24*3600*1000 : 10*60*1000; } // dias cerrados 24h · recientes 10min
-/* v2 de la clave: invalida los dias vacios que quedaron cacheados cuando la fuente estuvo caida (jul-2026) */
-function _edCacheGet(f){ return _lsGet('ed2_dia:'+f); }
-function _edCacheSet(f,d){ try{ _lsSet('ed2_dia:'+f, d, _edCacheTTL(f)); }catch(_){} }
-function _edCacheSetNeg(f,neg){ // negativos: dia en curso 60s · dias cerrados max 2h (por si el residente carga tarde)
-  try{ var hoyI=_edDiasAtrasISO(0); _lsSet('ed2_dia:'+f, neg, (f>=hoyI)? 60000 : Math.min(2*3600*1000,_edCacheTTL(f))); }catch(_){}
+/* v3 de la clave: invalida de golpe, en todos los PC, lo que quedó cacheado (positivo o
+   vacío) mientras la fuente de AVANCE DIARIO estuvo desactualizada. Así el "agrupar da cero"
+   se corrige sin tener que limpiar la caché equipo por equipo. */
+function _edCacheGet(f){ return _lsGet('ed3_dia:'+f); }
+function _edCacheSet(f,d){ try{ _lsSet('ed3_dia:'+f, d, _edCacheTTL(f)); }catch(_){} }
+function _edCacheSetNeg(f,neg){ // negativos con TTL corto: un día que hoy salió vacío se re-consulta pronto
+  try{ var hoyI=_edDiasAtrasISO(0); _lsSet('ed3_dia:'+f, neg, (f>=hoyI)? 60000 : 20*60000); }catch(_){}
 }
 async function _edFetchDia(f){
   var hit=_edCacheGet(f); if(hit) return hit;
@@ -5306,35 +5308,39 @@ function hideBootLoader(){
 }
 
 async function boot(){
+  /* Arranque infalible: cada módulo (indicadores, inventario) es opcional según el
+     perfil. Un fallo en cualquiera de ellos NO debe impedir el ingreso al cockpit. */
+  try { await _ensureLibs(); } catch(_){}
+
+  // ---- Indicadores (opcional por perfil / por capítulos restringidos) ----
   try{
-    // V2 FIX: garantizar Chart.js/ApexCharts ANTES de cualquier render
-    // (boot corre al instante con login recurrente y ganaba la carrera a las libs)
-    try { await _ensureLibs(); } catch(_){}
     setBootMsg('Cargando indicadores contractuales…');
     const ind = await jsonp(APPS_URL,{action:'indicadores'});
-    /* perfiles sin permiso de Indicadores reciben {error:'SIN_PERMISO'}: el cockpit
-       arranca igual con el contenido que sí tengan habilitado */
     if(ind && !ind.error && !ind._error){
       IND_DATA = ind;
       IND_CORTES = _cortesValidos(ind);
       IND_LATEST = IND_CORTES[0];
-      setTimeout(function(){ try{ renderAccionesHoy(); }catch(e){console.warn(e);} }, 800);
       IND_CURRENT = IND_LATEST;
-      if(IND_CURRENT){ renderIndCorteSelect(); renderIndCorte(); }
-      fillMenuKPIsInd();
+      if(IND_CURRENT){
+        try{ renderIndCorteSelect(); }catch(e){ console.warn('corteSelect:',e); }
+        try{ renderIndCorte(); }catch(e){ console.warn('renderIndCorte:',e); }
+      }
+      try{ fillMenuKPIsInd(); }catch(_){}
+      setTimeout(function(){ try{ renderAccionesHoy(); }catch(e){console.warn(e);} }, 800);
     } else {
       console.warn('Indicadores no disponibles para este perfil:', ind && (ind.error||ind._error));
     }
+  }catch(e){ console.warn('Bloque indicadores omitido:', e); }
 
+  // ---- Inventario (opcional por perfil) ----
+  try{
     setBootMsg('Cargando inventario en línea…');
     const inv = await jsonp(APPS_URL,{action:'data'});
-    if(inv && !inv.error && !inv._error){ INV_DATA = inv; fillMenuKPIsInv(); }
+    if(inv && !inv.error && !inv._error){ INV_DATA = inv; try{ fillMenuKPIsInv(); }catch(_){} }
     else console.warn('Inventario no disponible para este perfil:', inv && (inv.error||inv._error));
-    hideBootLoader();
-  }catch(e){
-    console.error(e);
-    setBootErr('Error: '+(e.message||e));
-  }
+  }catch(e){ console.warn('Bloque inventario omitido:', e); }
+
+  hideBootLoader();   /* SIEMPRE se llega al menú */
 }
 
 /* ====================== MENU KPIs (precarga) ====================== */
@@ -5533,6 +5539,7 @@ function renderIndAIU(d){
 function renderIndCorte(){
   if(!IND_DATA || !IND_CURRENT || !IND_DATA[IND_CURRENT]) return;   /* perfil sin indicadores */
   const d = IND_DATA[IND_CURRENT];
+  if(!d.actividades) d.actividades = [];   /* perfil con capítulos restringidos: corte sin actividades */
   const isLatest = (IND_CURRENT === IND_LATEST);
   document.getElementById('topbar-corte-ind').textContent = IND_CURRENT.replace(/-/g,'/');
   document.getElementById('headerSub').textContent = 'Barrio Comuneros, Montenegro (Quindío) · Corte ' + IND_CURRENT.replace(/-/g,'/');
