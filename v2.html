@@ -5307,21 +5307,24 @@ async function boot(){
     try { await _ensureLibs(); } catch(_){}
     setBootMsg('Cargando indicadores contractuales…');
     const ind = await jsonp(APPS_URL,{action:'indicadores'});
-    if(!ind || ind._error) throw new Error((ind&&ind._error)||'Indicadores vacíos');
-    IND_DATA = ind;
-    IND_CORTES = _cortesValidos(ind);
-    IND_LATEST = IND_CORTES[0];
-    // Disparar panel acciones cuando hay data
-    setTimeout(function(){ try{ renderAccionesHoy(); }catch(e){console.warn(e);} }, 800);
-    IND_CURRENT = IND_LATEST;
-    renderIndCorteSelect();
-    renderIndCorte();
-    fillMenuKPIsInd();
+    /* perfiles sin permiso de Indicadores reciben {error:'SIN_PERMISO'}: el cockpit
+       arranca igual con el contenido que sí tengan habilitado */
+    if(ind && !ind.error && !ind._error){
+      IND_DATA = ind;
+      IND_CORTES = _cortesValidos(ind);
+      IND_LATEST = IND_CORTES[0];
+      setTimeout(function(){ try{ renderAccionesHoy(); }catch(e){console.warn(e);} }, 800);
+      IND_CURRENT = IND_LATEST;
+      if(IND_CURRENT){ renderIndCorteSelect(); renderIndCorte(); }
+      fillMenuKPIsInd();
+    } else {
+      console.warn('Indicadores no disponibles para este perfil:', ind && (ind.error||ind._error));
+    }
 
     setBootMsg('Cargando inventario en línea…');
     const inv = await jsonp(APPS_URL,{action:'data'});
-    INV_DATA = inv;
-    fillMenuKPIsInv();
+    if(inv && !inv.error && !inv._error){ INV_DATA = inv; fillMenuKPIsInv(); }
+    else console.warn('Inventario no disponible para este perfil:', inv && (inv.error||inv._error));
     hideBootLoader();
   }catch(e){
     console.error(e);
@@ -5523,6 +5526,7 @@ function renderIndAIU(d){
 }
 
 function renderIndCorte(){
+  if(!IND_DATA || !IND_CURRENT || !IND_DATA[IND_CURRENT]) return;   /* perfil sin indicadores */
   const d = IND_DATA[IND_CURRENT];
   const isLatest = (IND_CURRENT === IND_LATEST);
   document.getElementById('topbar-corte-ind').textContent = IND_CURRENT.replace(/-/g,'/');
