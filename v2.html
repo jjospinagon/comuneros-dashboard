@@ -4299,8 +4299,13 @@ function locSat(){
     if(!LOC_MAP.getSource('loc-sat')) LOC_MAP.addSource('loc-sat',{type:'raster',
       tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
       tileSize:256, maxzoom:18, attribution:'Imagen satelital: Esri World Imagery'});
-    if(!LOC_MAP.getLayer('loc-sat-l')) LOC_MAP.addLayer({id:'loc-sat-l',type:'raster',source:'loc-sat',paint:{'raster-opacity':1}},
-      LOC_MAP.getLayer('loc-dib-l')?'loc-dib-l':undefined);
+    if(!LOC_MAP.getLayer('loc-sat-l')){
+      /* el raster va DEBAJO de todas las capas loc-* (diseño, tramos, dibujos),
+         si no, tapa las líneas grises de diseño sanitaria/pluvial */
+      var _antesSat=null;
+      LOC_MAP.getStyle().layers.some(function(l){ if(l.id.indexOf('loc-')===0){ _antesSat=l.id; return true; } return false; });
+      LOC_MAP.addLayer({id:'loc-sat-l',type:'raster',source:'loc-sat',paint:{'raster-opacity':1}}, _antesSat||undefined);
+    }
   } else { if(LOC_MAP.getLayer('loc-sat-l')) LOC_MAP.removeLayer('loc-sat-l'); }
   var b=document.getElementById('lt-sat');
   if(b){ b.textContent='🛰 Satélite: '+(LOC_SAT?'SÍ':'NO'); b.style.background=LOC_SAT?'rgba(148,163,184,.3)':''; }
@@ -12703,8 +12708,13 @@ function bitacoraPreview(r){
   /* Si el documento oficial ya está generado, se muestra ESE (tu formato real,
      con los logos), no una recreación. Si aún no existe, se ofrece generarlo. */
   if(r && r._idPdf){
+    /* En celular el iframe de Drive a veces no renderiza; se ofrece abrir a pantalla completa. */
     wrap.innerHTML='<iframe src="https://drive.google.com/file/d/'+r._idPdf+'/preview" '+
-      'style="width:100%;height:72vh;border:0;border-radius:8px;background:#fff" allow="autoplay"></iframe>';
+      'style="width:100%;height:72vh;border:0;border-radius:8px;background:#fff" allow="autoplay"></iframe>'+
+      '<div style="text-align:center;margin-top:8px"><a href="https://drive.google.com/file/d/'+r._idPdf+'/view" target="_blank" rel="noopener" '+
+      'style="display:inline-block;background:#22d3ee;color:#062b33;font-weight:700;font-size:13px;text-decoration:none;border-radius:9px;padding:9px 16px">'+
+      '📄 Abrir el documento en pantalla completa</a>'+
+      '<div style="font-size:11px;color:#94a3b8;margin-top:5px">Si el recuadro de arriba sale en blanco (común en celular), abre el documento con este botón.</div></div>';
     return;
   }
   wrap.innerHTML='<div style="text-align:center;padding:38px 16px;color:#cbd5e1">'+
