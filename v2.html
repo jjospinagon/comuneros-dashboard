@@ -5709,8 +5709,8 @@ function renderIndCorte(){
   const cats = d.categorias||[];
   document.getElementById('tbl-cat').innerHTML = cats.map(c=>'<tr><td>'+c.id+'</td><td>'+c.nombre+'</td><td style="text-align:right">'+moneyC(c.proy_corte)+'</td><td style="text-align:right">'+moneyC(c.proy_final)+'</td></tr>').join('');
 
-  // Actividades
-  const acts = d.actividades||[];
+  // Actividades (filtradas por los capítulos permitidos del usuario)
+  const acts = _filtrarCaps(d.actividades||[]);
   ACT_ROWS = acts;
   renderActividades();
 
@@ -7494,6 +7494,7 @@ function obraAplicarFiltros(){
   const porCap = {};
   all.forEach(a => {
     if (!a.cap) return;
+    if (AUTH_CAPS && !_capPermitido(a)) return;   /* capítulos restringidos */
     if (fResp !== 'TODOS' && a.resp !== fResp) return;
     if (!porCap[a.cap]) porCap[a.cap] = {vrTotal:0, vrEjec:0};
     porCap[a.cap].vrTotal += a.vrTotal || 0;
@@ -7895,6 +7896,8 @@ function hojaAvancePintar(filtro){
       if(!hay) continue;
     }
     var esHeader=(i<5);
+    /* capítulos restringidos: ocultar filas de ítem fuera de los capítulos permitidos */
+    if(!esHeader && AUTH_CAPS){ var _cn=_capNum(rw[0]); if(_cn && !AUTH_CAPS[_cn]) continue; }
     var bg=esHeader?'background:#1e2a4a;position:sticky;top:0;z-index:2':'';
     html+='<tr>';
     for(var j=0;j<rw.length;j++){
@@ -8507,6 +8510,7 @@ function ejecDiariaRender(){
   const grupos = {};
   items.forEach(it => {
     const cap = it.capitulo || '0';
+    if (AUTH_CAPS && _capNum(it.item!=null?it.item:cap) && !AUTH_CAPS[_capNum(it.item!=null?it.item:cap)]) return;   /* capítulos restringidos */
     if (!grupos[cap]) grupos[cap] = { capitulo: cap, capDesc: it.capituloDesc || ('CAPÍTULO ' + cap), items: [], totalVrDia: 0, totalCantDia: 0 };
     grupos[cap].items.push(it);
     grupos[cap].totalVrDia += (it.vrDia || 0);
@@ -14419,6 +14423,8 @@ function authVista(v){
 }
 function authEntrar(d){
   AUTH.token=d.token; AUTH.usuario=d.usuario; AUTH.perfil=d.perfil; AUTH.modulos=d.modulos||null;
+  AUTH.capitulos=d.capitulos||'*';
+  try{ if(window.AUTH_CAPS_SET) AUTH_CAPS_SET(d.capitulos); }catch(_ec){}
   /* la sesion vive solo mientras la pestaña este abierta; al recargar se pide login de nuevo */
   try{ sessionStorage.setItem(AUTH_TKKEY, JSON.stringify({t:d.token,u:d.usuario,p:d.perfil,x:d.expira})); }catch(e){}
   var ov=document.getElementById('auth-overlay'); if(ov) ov.style.display='none';
@@ -14663,14 +14669,43 @@ function contentGuardar(){
   var btn=document.getElementById('content-save-btn');
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="aspin"></span>Guardando\u2026'; }
   var msg=document.getElementById('content-msg'); msg.textContent='Guardando cambios\u2026'; msg.className='amsg2 ok';
+  var caps=[]; for(var c in _adminCapsSel){ if(_adminCapsSel[c]) caps.push(c); }
   _authRaw({action:'auth_modulos', token:AUTH.token, usuario:_adminUsuario, modulos:JSON.stringify(sel)}).then(function(r){
-    if(btn){ btn.disabled=false; btn.innerHTML='Guardar contenido'; }
-    if(r&&r.ok){ msg.textContent='\u2713 Contenido actualizado ('+r.modulos.length+' m\u00f3dulos).'; msg.className='amsg2 ok'; adminCargar();
-      setTimeout(contentCerrar,900);
-      /* si el admin se editó a sí mismo, re-aplicar en caliente */
-      if(_adminUsuario===AUTH.usuario){ AUTH.modulos=r.modulos; AUTH_APLICAR_PERFIL(AUTH.perfil, r.modulos); }
-    } else { msg.textContent=(r&&r.error)||'No se pudo guardar'; msg.className='amsg2 err'; }
+    if(!(r&&r.ok)){ if(btn){ btn.disabled=false; btn.innerHTML='Guardar contenido'; } msg.textContent=(r&&r.error)||'No se pudo guardar'; msg.className='amsg2 err'; return; }
+    _authRaw({action:'auth_capitulos_set', token:AUTH.token, usuario:_adminUsuario, capitulos:JSON.stringify(caps)}).then(function(rc){
+      if(btn){ btn.disabled=false; btn.innerHTML='Guardar contenido'; }
+      var capsTxt=(rc&&rc.ok)?(rc.capitulos==='*'?'todos los cap\u00edtulos':(rc.capitulos.length+' cap\u00edtulos')):'cap\u00edtulos sin cambio';
+      msg.textContent='\u2713 Contenido actualizado ('+r.modulos.length+' m\u00f3dulos \u00b7 '+capsTxt+').'; msg.className='amsg2 ok'; adminCargar();
+      setTimeout(contentCerrar,1100);
+      if(_adminUsuario===AUTH.usuario){
+        AUTH.modulos=r.modulos; AUTH_APLICAR_PERFIL(AUTH.perfil, r.modulos);
+        if(rc&&rc.ok){ AUTH.capitulos=rc.capitulos; AUTH_CAPS_SET(rc.capitulos); }
+      }
+    });
   });
+}
+
+/* ---- FILTRO DE CAPITULOS por usuario ---- */
+var AUTH_CAPS=null;
+function AUTH_CAPS_SET(caps){
+  if(!caps || caps==='*' || (caps.indexOf && caps.indexOf('*')>=0) || (caps.length===0)){ AUTH_CAPS=null; return; }
+  AUTH_CAPS={}; for(var i=0;i<caps.length;i++) AUTH_CAPS[String(caps[i])]=true;
+}
+function _capNum(x){ var m=String(x==null?'':x).match(/^\s*(\d+)/); return m?m[1]:null; }
+function _capDeActividad(a){
+  if(a==null) return null;
+  if(typeof a!=='object') return _capNum(a);
+  return _capNum(a.cap!=null&&a.cap!==''?a.cap:(a.item!=null?a.item:a.it));
+}
+function _capPermitido(a){
+  if(!AUTH_CAPS) return true;
+  var c=_capDeActividad(a);
+  if(c==null) return true;          /* filas sin capítulo (totales, AIU) siempre visibles */
+  return !!AUTH_CAPS[c];
+}
+function _filtrarCaps(acts){
+  if(!AUTH_CAPS || !acts || !acts.length) return acts||[];
+  return acts.filter(function(a){ return _capPermitido(a); });
 }
 
 /* ---- aplica permisos de contenido: oculta menu-cards y bloquea goTo ---- */
