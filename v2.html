@@ -5357,7 +5357,12 @@ function fabRender(){
   m.style.background=light?'rgba(255,255,255,.98)':'rgba(10,14,39,.97)';
   m.style.border='1px solid '+(light?'#cbd5e1':'rgba(99,102,241,.45)');
   var cur=(document.querySelector('.screen.active')||{}).id||'';
-  m.innerHTML=FAB_VISTAS.map(function(v){
+  m.innerHTML=FAB_VISTAS.filter(function(v){
+    /* respetar los módulos habilitados del usuario (menú siempre visible) */
+    if(v[0]==='menu') return true;
+    if(_AUTH_MODSET && _adminModuloConocido(v[0]) && !_AUTH_MODSET[v[0]]) return false;
+    return true;
+  }).map(function(v){
     var act=cur==='screen-'+v[0];
     var col=act?'#22d3ee':(light?'#334155':'#dbe4ff');
     var bg=act?(light?'rgba(14,165,233,.1)':'rgba(34,211,238,.12)'):'transparent';
@@ -12409,6 +12414,8 @@ if ('serviceWorker' in navigator) {
     var nav=document.getElementById('sn-list'); if(!nav) return;
     var html='', sec='';
     MODS.forEach(function(m){
+      /* ocultar del menú lateral los módulos no habilitados para el usuario */
+      if(typeof _AUTH_MODSET!=='undefined' && _AUTH_MODSET && typeof _adminModuloConocido==='function' && _adminModuloConocido(m[0]) && !_AUTH_MODSET[m[0]]) return;
       if(m[3]!==sec){ sec=m[3]; html+='<div class="sn-sec">'+sec+'</div>'; }
       html+='<div class="sn-item" data-mod="'+m[0]+'" onclick="goTo(\''+m[0]+'\')" title="'+m[2]+'">'+
             '<svg class="ic"><use href="#'+m[1]+'"></use></svg><span>'+m[2]+'</span></div>';
@@ -12447,6 +12454,7 @@ if ('serviceWorker' in navigator) {
     } else if(name==='loc'){ moverMapa(false); }
   }
   window.snAplicar=aplicar;
+  window._snRender=render;   /* expuesto para re-dibujar el sidebar tras aplicar permisos */
 
   /* Resumen superior: % programado (PV/BAC) · % avance (EV/BAC) · valores · BAC */
   var _kpiTries=0;
@@ -14728,6 +14736,19 @@ function AUTH_APLICAR_PERFIL(perfil, modulos){
       cards[c].style.display = (todo || _AUTH_MODSET[key]) ? '' : 'none';
     }
   }catch(e){}
+  /* ocultar del menú lateral (sidebar) los módulos no permitidos, ya renderizados */
+  try{
+    var items=document.querySelectorAll('#sn-list .sn-item');
+    for(var s=0;s<items.length;s++){
+      var mk=items[s].getAttribute('data-mod')||'';
+      if(!_adminModuloConocido(mk)) continue;
+      items[s].style.display = (todo || _AUTH_MODSET[mk]) ? '' : 'none';
+    }
+    /* re-render del sidebar si existe la función expuesta, para respetar los separadores de sección */
+    if(typeof window._snRender==='function') try{ window._snRender(); }catch(_){}
+    /* el FAB se re-renderiza al abrir; limpiar su caché */
+    var fm=document.getElementById('fab-menu'); if(fm) fm.innerHTML='';
+  }catch(e3){}
   /* envolver goTo una sola vez para bloquear navegación directa */
   try{
     if(typeof window.goTo==='function' && !window._goToGuard){
