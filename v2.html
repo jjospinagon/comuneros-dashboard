@@ -2854,6 +2854,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto;align-items:center">
         <button class="back-btn" id="loc-3d-btn" onclick="locToggle3D()" style="display:none;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#04121f;font-weight:800;border:none" title="Inclinar el mapa y ver los edificios con volumen">Vista 3D</button>
         <button class="back-btn" onclick="locCentrar()" title="Volver al encuadre de la obra">Centrar obra</button>
+        <button class="back-btn" id="loc-kmz-btn" onclick="locDescargarKMZ()" style="background:linear-gradient(135deg,#34d399,#059669);color:#03251a;font-weight:800;border:none" title="Descarga un KMZ con lo ejecutado (Google Earth): trazados construidos, cámaras y manzanas">⬇ KMZ ejecutado</button>
         <button class="back-btn" onclick="locReporte()" style="background:linear-gradient(135deg,#fbbf24,#ef4444);color:#1a0f04;font-weight:800;border:none" title="PDF con resumen construido vs proyectado, tramos cámara a cámara y plano general">📄 Generar reporte</button>
       </div>
     </div>
@@ -3998,6 +3999,109 @@ var LOC_TIPOS={
   plu_proy:{n:'Pluvial proyectada',    c:'#7dd3fc'}
 };
 var LOC_DIBUJOS=[], LOC_HERR=null, LOC_TMP=[], LOC_DIB_LISTO=false;
+
+/* ============ DESCARGA KMZ DE LO EJECUTADO (Google Earth) ============
+   Arma un KML con: trazados construidos (san/plu, con % y longitud),
+   trazados proyectados, cámaras y números de manzana. Lo empaqueta como KMZ. */
+function _kmlEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _kmzColor(hex){ /* KML es aabbggrr; entra #rrggbb */
+  hex=String(hex||'#ffffff').replace('#',''); if(hex.length!==6) hex='ffffff';
+  var rr=hex.slice(0,2), gg=hex.slice(2,4), bb=hex.slice(4,6);
+  return 'ff'+bb+gg+rr;
+}
+function _kmzEstilo(id,hex,ancho){
+  return '<Style id="'+id+'"><LineStyle><color>'+_kmzColor(hex)+'</color><width>'+(ancho||4)+'</width></LineStyle>'+
+    '<PolyStyle><fill>0</fill></PolyStyle></Style>';
+}
+async function locDescargarKMZ(){
+  var btn=document.getElementById('loc-kmz-btn');
+  var txt0=btn?btn.textContent:'';
+  try{
+    if(btn){ btn.disabled=true; btn.textContent='⏳ Generando KMZ…'; }
+    /* asegurar JSZip */
+    if(typeof JSZip==='undefined'){
+      await new Promise(function(res,rej){
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload=res; s.onerror=function(){ rej(new Error('No se pudo cargar el empaquetador KMZ')); };
+        document.head.appendChild(s);
+      });
+    }
+    var K=['<?xml version="1.0" encoding="UTF-8"?>',
+      '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>',
+      '<name>Comuneros 023-2025 · Ejecutado</name>',
+      '<description>Reposición de alcantarillado Barrio Comuneros · Montenegro (Quindío). Generado '+_kmlEsc(new Date().toLocaleString('es-CO'))+'</description>'];
+    /* estilos por tipo de trazado */
+    Object.keys(LOC_TIPOS).forEach(function(k){ K.push(_kmzEstilo('st_'+k, LOC_TIPOS[k].c, (k.indexOf('const')>=0?5:3))); });
+    K.push(_kmzEstilo('st_cam','#0ea5e9',1));
+
+    /* --- Trazados: carpetas separadas construido / proyectado --- */
+    var construido=(LOC_DIBUJOS||[]).filter(function(l){ return (l.tipo||'').indexOf('const')>=0 && (l.coords||[]).length>=2; });
+    var proyectado=(LOC_DIBUJOS||[]).filter(function(l){ return (l.tipo||'').indexOf('proy')>=0 && (l.coords||[]).length>=2; });
+    function _lineaKML(l){
+      var t=LOC_TIPOS[l.tipo]||{n:l.tipo};
+      var m=Math.round(_locLen(l.coords));
+      var pct=parseFloat(l.p); if(isNaN(pct)) pct=100;
+      var desc='Tipo: '+t.n+'\nLongitud: '+m+' m'+((l.tipo.indexOf('const')>=0&&pct<100)?('\nConstruido: '+pct+'%'):'')+(l.fecha?('\nFecha: '+l.fecha):'');
+      var coordStr=l.coords.map(function(c){ return c[0]+','+c[1]+',0'; }).join(' ');
+      return '<Placemark><name>'+_kmlEsc(t.n+' · '+m+' m')+'</name><description>'+_kmlEsc(desc)+'</description>'+
+        '<styleUrl>#st_'+l.tipo+'</styleUrl><LineString><tessellate>1</tessellate><coordinates>'+coordStr+'</coordinates></LineString></Placemark>';
+    }
+    var totCon=0;
+    if(construido.length){
+      K.push('<Folder><name>Ejecutado (construido)</name>');
+      construido.forEach(function(l){ K.push(_lineaKML(l)); totCon+=_locLen(l.coords); });
+      K.push('</Folder>');
+    }
+    if(proyectado.length){
+      K.push('<Folder><name>Proyectado (pendiente)</name>');
+      proyectado.forEach(function(l){ K.push(_lineaKML(l)); });
+      K.push('</Folder>');
+    }
+    /* --- Cámaras --- */
+    if(typeof LOC_CAMARAS!=='undefined' && LOC_CAMARAS.length){
+      K.push('<Folder><name>Cámaras</name>');
+      LOC_CAMARAS.forEach(function(c){
+        if(c.lat==null||c.lng==null) return;
+        var d='Red: '+(c.red==='pluvial'?'Pluvial':'Sanitaria')+(c.prof?('\nProfundidad: '+c.prof+' m'):'')+(c.diam?('\nØ: '+c.diam+' mm'):'');
+        K.push('<Placemark><name>'+_kmlEsc(c.id)+'</name><description>'+_kmlEsc(d)+'</description>'+
+          '<styleUrl>#st_cam</styleUrl><Point><coordinates>'+c.lng+','+c.lat+',0</coordinates></Point></Placemark>');
+      });
+      K.push('</Folder>');
+    }
+    /* --- Manzanas --- */
+    if(typeof LOC_MZA_DATA!=='undefined' && LOC_MZA_DATA && LOC_MZA_DATA.length){
+      K.push('<Folder><name>Manzanas</name>');
+      LOC_MZA_DATA.forEach(function(f){
+        var c=f.geometry&&f.geometry.coordinates; if(!c) return;
+        K.push('<Placemark><name>'+_kmlEsc('Mz '+(f.properties&&f.properties.mza||''))+'</name>'+
+          '<Point><coordinates>'+c[0]+','+c[1]+',0</coordinates></Point></Placemark>');
+      });
+      K.push('</Folder>');
+    }
+    K.push('</Document></kml>');
+    var kml=K.join('\n');
+
+    if(!construido.length && !proyectado.length){
+      if(btn){ btn.disabled=false; btn.textContent=txt0; }
+      alert('Aún no hay trazados dibujados en el mapa para exportar.');
+      return;
+    }
+    var zip=new JSZip();
+    zip.file('doc.kml', kml);
+    var blob=await zip.generateAsync({type:'blob', compression:'DEFLATE'});
+    var fecha=new Date().toISOString().slice(0,10);
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='Comuneros_ejecutado_'+fecha+'.kmz';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    if(btn){ btn.disabled=false; btn.textContent='✓ KMZ descargado'; setTimeout(function(){ btn.textContent=txt0; }, 2500); }
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.textContent=txt0; }
+    alert('No se pudo generar el KMZ: '+(e&&e.message||e));
+  }
+}
 
 function _locHav(a,b){ var R=6371000,rad=Math.PI/180;
   var dLa=(b[1]-a[1])*rad, dLo=(b[0]-a[0])*rad;
