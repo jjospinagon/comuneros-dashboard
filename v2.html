@@ -2101,6 +2101,7 @@ body.light #login-overlay [style*="background:#0f172a"]{background:transparent !
         <button class="back-btn" onclick="ejecDiariaIrAyer()" id="ed-ayer-btn" title="Volver al día de ayer">Ayer</button>
         <button class="back-btn" onclick="ejecDiariaRefrescar()" id="ed-refresh-btn">Refrescar</button>
         <button class="back-btn" id="ed-bita-btn" onclick="goTo('bitacora')" title="Bitácora de obra (GTO-P-04-R-01)" style="background:linear-gradient(135deg,#f59e0b,#f97316);color:#1a1206;font-weight:800;border:none">📓 Bitácora</button>
+        <button class="back-btn" id="ed-hoja-btn" onclick="hojaAvanceAbrir()" title="Ver la hoja AVANCE DIARIO completa tal cual" style="background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;font-weight:800;border:none">📋 Hoja completa</button>
         <button class="back-btn" id="ed-rep-btn" onclick="repAbrir()" title="Generar reporte de rendimiento en PDF" style="background:linear-gradient(135deg,#22d3ee,#10b981);color:#04263b;font-weight:800;border:none">Generar reporte</button>
       </div>
     </div>
@@ -7837,6 +7838,78 @@ async function fotosRefrescarConSync(){
   fotosCargarIndice();
 }
 
+
+/* ========== HOJA AVANCE DIARIO COMPLETA (consulta tal cual) ========== */
+var HOJA_AV_DATA=null;
+function hojaAvanceAbrir(){
+  var ov=document.getElementById('hoja-av-modal');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='hoja-av-modal';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(3,6,20,.9);z-index:9000;display:flex;flex-direction:column;padding:14px';
+    ov.innerHTML=
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">'+
+        '<b style="color:#c084fc;font-size:16px">📋 Hoja AVANCE DIARIO · consulta completa</b>'+
+        '<input id="hoja-av-buscar" placeholder="🔍 Filtrar por ítem o descripción" oninput="hojaAvanceFiltrar()" '+
+          'style="flex:1;min-width:180px;max-width:340px;background:rgba(0,0,0,.4);border:1px solid rgba(148,163,184,.3);color:#e5e7eb;border-radius:9px;padding:8px 11px;font-size:13px">'+
+        '<span id="hoja-av-info" style="font-size:11.5px;color:#94a3b8"></span>'+
+        '<button onclick="hojaAvanceCargar(true)" style="background:rgba(255,255,255,.08);border:1px solid rgba(148,163,184,.3);color:#e5e7eb;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer">↻ Actualizar</button>'+
+        '<button onclick="document.getElementById(\'hoja-av-modal\').style.display=\'none\'" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.4);color:#fca5a5;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer">✕ Cerrar</button>'+
+      '</div>'+
+      '<div id="hoja-av-wrap" style="flex:1;overflow:auto;background:#0b1020;border:1px solid rgba(148,163,184,.2);border-radius:12px"></div>';
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+  hojaAvanceCargar(false);
+}
+async function hojaAvanceCargar(force){
+  var wrap=document.getElementById('hoja-av-wrap');
+  var info=document.getElementById('hoja-av-info');
+  if(HOJA_AV_DATA && !force){ hojaAvancePintar(); return; }
+  if(wrap) wrap.innerHTML='<div style="padding:34px;text-align:center;color:#94a3b8">⏳ Cargando la hoja completa…</div>';
+  if(info) info.textContent='';
+  try{
+    var r=await jsonp(APPS_URL,{action:'avance_hoja', _ts:Date.now()});
+    if(!r || r.error || !r.rows){ if(wrap) wrap.innerHTML='<div style="padding:34px;text-align:center;color:#fca5a5">No se pudo cargar: '+escapeHTML((r&&r.error)||'sin datos')+'</div>'; return; }
+    HOJA_AV_DATA=r.rows;
+    if(info) info.textContent=r.filas+' filas · '+r.cols+' columnas';
+    hojaAvancePintar();
+  }catch(e){ if(wrap) wrap.innerHTML='<div style="padding:34px;text-align:center;color:#fca5a5">Error: '+escapeHTML(e&&e.message||e)+'</div>'; }
+}
+function hojaAvancePintar(filtro){
+  var wrap=document.getElementById('hoja-av-wrap'); if(!wrap||!HOJA_AV_DATA) return;
+  var rows=HOJA_AV_DATA;
+  /* fila de encabezado = la que tiene más fechas (índice 4 en la fuente); se detecta por más celdas no vacías con "-" o dígitos */
+  var f=(filtro||'').trim().toLowerCase();
+  var fmt=function(v){
+    if(v===''||v==null) return '';
+    if(typeof v==='number'){ return (Math.round(v*100)/100).toLocaleString('es-CO'); }
+    return escapeHTML(String(v));
+  };
+  var html='<table style="border-collapse:collapse;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums">';
+  for(var i=0;i<rows.length;i++){
+    var rw=rows[i]||[];
+    /* filtro: solo aplica a filas de ítem (col0 con formato n.nn); las 5 primeras filas siempre visibles */
+    if(f && i>=5){
+      var hay=((rw[0]||'')+' '+(rw[1]||'')).toLowerCase().indexOf(f)>=0;
+      if(!hay) continue;
+    }
+    var esHeader=(i<5);
+    var bg=esHeader?'background:#1e2a4a;position:sticky;top:0;z-index:2':'';
+    html+='<tr>';
+    for(var j=0;j<rw.length;j++){
+      var val=fmt(rw[j]);
+      var sticky=(j===0)?'position:sticky;left:0;z-index:'+(esHeader?3:1)+';background:'+(esHeader?'#1e2a4a':'#0f1730'):'';
+      var color=esHeader?'color:#cbd5e1;font-weight:700':(j<6?'color:#e5e7eb':'color:#a5b4d4');
+      var alin=(typeof (rw[j])==='number')?'text-align:right':'';
+      html+='<td style="border:1px solid rgba(148,163,184,.14);padding:4px 8px;'+bg+';'+sticky+';'+color+';'+alin+'">'+val+'</td>';
+    }
+    html+='</tr>';
+  }
+  html+='</table>';
+  wrap.innerHTML=html;
+}
+function hojaAvanceFiltrar(){ var i=document.getElementById('hoja-av-buscar'); hojaAvancePintar(i?i.value:''); }
 
 /* ====================== EJECUCIÓN DIARIA ====================== */
 let EJEC_DIARIA_LOADED = false;
