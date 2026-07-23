@@ -14341,6 +14341,19 @@ function cronoPintarDeps(filas){
       <button class="ab" onclick="contentTodos(false)">Desmarcar todo</button>
     </div>
     <div id="content-grid" class="cgrid"></div>
+
+    <div style="margin-top:18px;border-top:1px solid rgba(148,163,184,.18);padding-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <b style="color:#a855f7;font-size:13.5px">📚 Capítulos del presupuesto visibles</b>
+        <div style="display:flex;gap:8px">
+          <button class="ab" onclick="contentCapsTodos(true)">Todos</button>
+          <button class="ab" onclick="contentCapsTodos(false)">Ninguno</button>
+        </div>
+      </div>
+      <div style="color:#94a3b8;font-size:11px;margin:4px 0 8px">Si no marcas ninguno, el usuario ve <b>todos</b> los capítulos. Si marcas algunos, solo verá esos en Indicadores, Ejecución de Obra, Ejecución Diaria y la Hoja completa.</div>
+      <div id="content-caps-grid" class="cgrid"></div>
+    </div>
+
     <div id="content-msg" class="amsg2"></div>
     <button id="content-save-btn" class="ab grn" style="padding:10px 18px" onclick="contentGuardar()">Guardar contenido</button>
   </div>
@@ -14588,23 +14601,54 @@ function adminCrear(){
   });
 }
 
-/* ---- sub-panel: contenido (modulos) por usuario ---- */
+/* ---- catálogo de capítulos del presupuesto (dinámico desde los ítems) ---- */
+var _adminCapsSel={};   /* {capNum: bool} */
+var CAP_NOMBRES={'1':'Preliminares','2':'Movimiento de tierras','3':'Redes / Tubería','4':'Cámaras y cajas','5':'Estructuras','6':'Acero','7':'Concretos','8':'Acabados','9':'Obras complementarias'};
+function _capsCatalogo(){
+  /* números de capítulo presentes en las actividades del corte actual */
+  var set={};
+  try{
+    var acts=(IND_DATA && IND_CURRENT && IND_DATA[IND_CURRENT] && IND_DATA[IND_CURRENT].actividades)||[];
+    acts.forEach(function(a){ var it=String(a.item||a.it||''); var m=it.match(/^(\d+)\./); if(m) set[m[1]]=true; });
+  }catch(_){}
+  var arr=Object.keys(set).map(Number).sort(function(a,b){return a-b;}).map(String);
+  if(!arr.length) arr=['1','2','3','4','5','6','7','8'];   /* fallback si aún no cargaron indicadores */
+  return arr;
+}
+function _capNombre(n){ return 'Cap. '+n+(CAP_NOMBRES[n]?(' · '+CAP_NOMBRES[n]):''); }
+
+/* ---- sub-panel: contenido (modulos + capítulos) por usuario ---- */
 function adminContenido(usuario){
-  _adminUsuario=usuario; _adminSel={};
+  _adminUsuario=usuario; _adminSel={}; _adminCapsSel={};
   document.getElementById('content-quien').textContent='Usuario: '+usuario;
   document.getElementById('content-msg').className='amsg2';
-  /* traer el estado actual del usuario para pre-marcar */
   _authRaw({action:'auth_usuarios', token:AUTH.token}).then(function(r){
-    var actuales=[];
-    if(r&&r.ok){ _adminCat=r.catalogo||_adminCat; var uu=(r.usuarios||[]).filter(function(x){return x.usuario===usuario;})[0]; if(uu) actuales=uu.modulos||[]; }
+    var actuales=[], capsActuales='*';
+    if(r&&r.ok){ _adminCat=r.catalogo||_adminCat; var uu=(r.usuarios||[]).filter(function(x){return x.usuario===usuario;})[0]; if(uu){ actuales=uu.modulos||[]; capsActuales=uu.capitulos||'*'; } }
     var g='';
     for(var i=0;i<_adminCat.length;i++){
       var k=_adminCat[i].k, on=actuales.indexOf(k)>=0; _adminSel[k]=on;
       g+='<label class="citem"><input type="checkbox" '+(on?'checked':'')+' onchange="_adminSel[\''+k+'\']=this.checked"><span>'+_adminCat[i].n+'</span></label>';
     }
     document.getElementById('content-grid').innerHTML=g;
+    /* capítulos */
+    var caps=_capsCatalogo();
+    var todosCaps=(capsActuales==='*'||!capsActuales||(capsActuales.length===0));
+    var cg='';
+    caps.forEach(function(n){
+      var on=todosCaps ? false : (capsActuales.indexOf(n)>=0);
+      _adminCapsSel[n]=on;
+      cg+='<label class="citem"><input type="checkbox" '+(on?'checked':'')+' onchange="_adminCapsSel[\''+n+'\']=this.checked"><span>'+_capNombre(n)+'</span></label>';
+    });
+    document.getElementById('content-caps-grid').innerHTML=cg;
     document.getElementById('content-overlay').style.display='block';
   });
+}
+function contentCapsTodos(v){
+  var g=document.getElementById('content-caps-grid'); if(!g) return;
+  var chs=g.querySelectorAll('input[type=checkbox]');
+  for(var k in _adminCapsSel) _adminCapsSel[k]=v;
+  for(var j=0;j<chs.length;j++) chs[j].checked=v;
 }
 function contentCerrar(){ document.getElementById('content-overlay').style.display='none'; }
 function contentTodos(v){
